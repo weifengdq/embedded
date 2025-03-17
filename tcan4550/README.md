@@ -1,7 +1,23 @@
 # TCAN4550
 
-[TOC]
-
+- [TCAN4550](#tcan4550)
+  - [标准版与Q1版](#标准版与q1版)
+  - [原理图](#原理图)
+  - [实物图](#实物图)
+  - [测试接线](#测试接线)
+  - [默认上电测试](#默认上电测试)
+  - [STM32CubeMX配置](#stm32cubemx配置)
+  - [SLLC469驱动库的适配](#sllc469驱动库的适配)
+  - [SPI读ID测试](#spi读id测试)
+  - [发送接收CAN消息的步骤](#发送接收can消息的步骤)
+  - [MCAN与MRAM的配置](#mcan与mram的配置)
+  - [CAN发送测试](#can发送测试)
+  - [CAN接收测试](#can接收测试)
+  - [VCCOUT直接5V测试](#vccout直接5v测试)
+  - [断路短路与Busoff测试](#断路短路与busoff测试)
+  - [程序链接](#程序链接)
+  - [交流群](#交流群)
+  - [板子购买](#板子购买)
 
 
 ## 标准版与Q1版
@@ -228,23 +244,24 @@ SPI 读的构成为 主机发送四字节 读操作码(0x41) + 16bit地址 + 要
 ## 发送接收CAN消息的步骤
 
 为了使用TCAN4550-Q1传输消息，应完成以下操作：
-1．确保TCAN4550-Q1处于待机模式（寄存器0x0800[7:6]=0'b01）。这会强制 M_CAN 进入INIT 模式。
-2．设置M_CAN CCR 寄存器以允许配置。如果尚未设置，请设置CCE 和INIT 位。注意：在待机模式下，CSR 位读回1，但用户在执行读取-修改-写入时必须将0写入此位；否则，CAN 通信失败。
-3．如果需要CANFD和比特率切换（BRS）支持，则必须在配置期间通过CCR寄存器中的FDF和BRS位全局启用它。有关此寄存器的更多信息，请参阅设备数据表。
-4．应配置任何所需的设备功能，例如看门狗定时器等。
-5．必须设置CAN时序信息。
-6．应使用任意数据来配置和初始化MRAM部分。
-7．将TCAN4550-Q1设备置于“正常"模式（寄存器0x0800[7:6]=0"b10）以打开收发器并使能CAN核心进行传输。
-完成这些步骤后，微控制器就能够通过写入TX 缓冲区来传输消息，然后通过写入TXBAR 寄存器来请求发送消息。
+
+1. 确保TCAN4550-Q1处于待机模式（寄存器0x0800[7:6]=0'b01）。这会强制 M_CAN 进入INIT 模式。
+2. 设置M_CAN CCR 寄存器以允许配置。如果尚未设置，请设置CCE 和INIT 位。注意：在待机模式下，CSR 位读回1，但用户在执行读取-修改-写入时必须将0写入此位；否则，CAN 通信失败。
+3. 如果需要CANFD和比特率切换（BRS）支持，则必须在配置期间通过CCR寄存器中的FDF和BRS位全局启用它。有关此寄存器的更多信息，请参阅设备数据表。
+4. 应配置任何所需的设备功能，例如看门狗定时器等。
+5. 必须设置CAN时序信息。
+6. 应使用任意数据来配置和初始化MRAM部分。
+7. 将TCAN4550-Q1设备置于“正常"模式（寄存器0x0800[7:6]=0"b10）以打开收发器并使能CAN核心进行传输。
+8. 完成这些步骤后，微控制器就能够通过写入TX 缓冲区来传输消息，然后通过写入TXBAR 寄存器来请求发送消息。
 
 ## MCAN与MRAM的配置
 
 TCAN4550 寄存器的分配:
 
-• Register 16'h0000 through 16'h000C are Device ID and SPI Registers
-• Register 16'h0800 through 16'h083C are device configuration registers and Interrupt Flags
-• Register 16'h1000 through 16'h10FC are for M_CAN
-• **Register 16'h8000 through 16'h87FF is for MRAM.**  
+- Register 16'h0000 through 16'h000C are Device ID and SPI Registers
+- Register 16'h0800 through 16'h083C are device configuration registers and Interrupt Flags
+- Register 16'h1000 through 16'h10FC are for M_CAN
+- **Register 16'h8000 through 16'h87FF is for MRAM.**  
 
 类似 STM32H7 或 TC397, TCAN4550 也是 MCAN, 2KB 的 Message RAM, 配置也就大同小异了:
 
