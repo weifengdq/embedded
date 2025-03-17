@@ -1,7 +1,23 @@
 # TCAN4550
 
-[TOC]
-
+- [TCAN4550](#tcan4550)
+  - [标准版与Q1版](#标准版与q1版)
+  - [原理图](#原理图)
+  - [实物图](#实物图)
+  - [测试接线](#测试接线)
+  - [默认上电测试](#默认上电测试)
+  - [STM32CubeMX配置](#stm32cubemx配置)
+  - [SLLC469驱动库的适配](#sllc469驱动库的适配)
+  - [SPI读ID测试](#spi读id测试)
+  - [发送接收CAN消息的步骤](#发送接收can消息的步骤)
+  - [MCAN与MRAM的配置](#mcan与mram的配置)
+  - [CAN发送测试](#can发送测试)
+  - [CAN接收测试](#can接收测试)
+  - [VCCOUT直接5V测试](#vccout直接5v测试)
+  - [断路短路与Busoff测试](#断路短路与busoff测试)
+  - [程序链接](#程序链接)
+  - [交流群](#交流群)
+  - [板子购买](#板子购买)
 
 
 ## 标准版与Q1版
@@ -228,16 +244,24 @@ SPI 读的构成为 主机发送四字节 读操作码(0x41) + 16bit地址 + 要
 ## 发送接收CAN消息的步骤
 
 为了使用TCAN4550-Q1传输消息，应完成以下操作：
-1．确保TCAN4550-Q1处于待机模式（寄存器0x0800[7:6]=0'b01）。这会强制 M_CAN 进入INIT 模式。
-2．设置M_CAN CCR 寄存器以允许配置。如果尚未设置，请设置CCE 和INIT 位。注意：在待机模式下，CSR 位读回1，但用户在执行读取-修改-写入时必须将0写入此位；否则，CAN 通信失败。
-3．如果需要CANFD和比特率切换（BRS）支持，则必须在配置期间通过CCR寄存器中的FDF和BRS位全局启用它。有关此寄存器的更多信息，请参阅设备数据表。
-4．应配置任何所需的设备功能，例如看门狗定时器等。
-5．必须设置CAN时序信息。
-6．应使用任意数据来配置和初始化MRAM部分。
-7．将TCAN4550-Q1设备置于“正常"模式（寄存器0x0800[7:6]=0"b10）以打开收发器并使能CAN核心进行传输。
-完成这些步骤后，微控制器就能够通过写入TX 缓冲区来传输消息，然后通过写入TXBAR 寄存器来请求发送消息。
+
+1. 确保TCAN4550-Q1处于待机模式（寄存器0x0800[7:6]=0'b01）。这会强制 M_CAN 进入INIT 模式。
+2. 设置M_CAN CCR 寄存器以允许配置。如果尚未设置，请设置CCE 和INIT 位。注意：在待机模式下，CSR 位读回1，但用户在执行读取-修改-写入时必须将0写入此位；否则，CAN 通信失败。
+3. 如果需要CANFD和比特率切换（BRS）支持，则必须在配置期间通过CCR寄存器中的FDF和BRS位全局启用它。有关此寄存器的更多信息，请参阅设备数据表。
+4. 应配置任何所需的设备功能，例如看门狗定时器等。
+5. 必须设置CAN时序信息。
+6. 应使用任意数据来配置和初始化MRAM部分。
+7. 将TCAN4550-Q1设备置于“正常"模式（寄存器0x0800[7:6]=0"b10）以打开收发器并使能CAN核心进行传输。
+8. 完成这些步骤后，微控制器就能够通过写入TX 缓冲区来传输消息，然后通过写入TXBAR 寄存器来请求发送消息。
 
 ## MCAN与MRAM的配置
+
+TCAN4550 寄存器的分配:
+
+- Register 16'h0000 through 16'h000C are Device ID and SPI Registers
+- Register 16'h0800 through 16'h083C are device configuration registers and Interrupt Flags
+- Register 16'h1000 through 16'h10FC are for M_CAN
+- **Register 16'h8000 through 16'h87FF is for MRAM.**  
 
 类似 STM32H7 或 TC397, TCAN4550 也是 MCAN, 2KB 的 Message RAM, 配置也就大同小异了:
 
@@ -249,7 +273,14 @@ SPI 读的构成为 主机发送四字节 读操作码(0x41) + 16bit地址 + 要
 
 配置代码示例如下:
 
-- 开启了 低电压
+- 开启了 低电压, 短路, 开路, Busoff 的中断
+- 开启了 FDF 和 BRS, 对 CANFD 进行支持(不影响发送普通的CAN报文, 好比人有跑步的功能但不影响走路)
+- 根据波特率和采样点自动计算Tq参数(只测试了1M@0.8, 5M@0.75)
+- 一个标准帧滤波器(每个占用4个字节MRAM, 寄存器地址为 0x8000), 掩码方式, 全接收到RXFIFO0
+- 一个扩展帧滤波器(每个占用8个字节MRAM, 寄存器地址为 0x8004), 掩码方式, 全接收到RXFIFO0
+- 11个可以接收64字节CANFD数据的RX FIFO0(每个占用72个字节MRAM, 寄存器地址为 0x800C, 0x800C, 0x809C, ..., 0x82DC), 当然也能接收长度为 `[0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64]` 的帧
+- 16个可以发送64字节CANFD数据的TX Buffer(每个占用72个字节MRAM, 寄存器地址为 0x8324, 0x836C, ..., 0x875C), 当然也能发送长度为 `[0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64]` 的普通CAN, CANFD, CANFD with BRS 的帧
+- 还剩余 0x800 - 0x7A4 = 0x5C = 92 字节的RAM没有用
 
 ```c
 void tcan4x5x_mcan_config(uint32_t baud, float sample_point,
@@ -460,6 +491,56 @@ void tcan4x5x_mcan_write_test_2(void) {
 
 ![image-20250317150532421](Readme.assets/image-20250317150532421.png)
 
+逻辑分析仪抓到的波形:
+
+- 第一次写对应 `TCAN4x5x_MCAN_WriteTXBuffer(buffer_index, &tx_header, data)`
+
+- 61, 写操作码
+
+- 8324, 参考上面 MRAM, 是配置的 TX Buffer0 的地址
+
+- 04, 4 words 的长度
+
+- 0x11580000, 计算方式参考 
+
+  - ```c
+        SPIData = 0;
+    
+        SPIData         |= ((uint32_t)header->ESI & 0x01) << 31;
+        SPIData         |= ((uint32_t)header->XTD & 0x01) << 30;
+        SPIData         |= ((uint32_t)header->RTR & 0x01) << 29;
+    
+        if (header->XTD)
+            SPIData     |= ((uint32_t)header->ID & 0x1FFFFFFF);
+        else
+            SPIData     |= ((uint32_t)header->ID & 0x07FF) << 18;
+    
+    // 0x456 << 18 = 0x11580000
+    ```
+
+- 标志位0x00080000, 参考
+
+  - ```c
+        SPIData = 0;
+        SPIData         |= ((uint32_t)header->DLC & 0x0F) << 16;
+        SPIData         |= ((uint32_t)header->BRS & 0x01) << 20;
+        SPIData         |= ((uint32_t)header->FDF & 0x01) << 21;
+        SPIData         |= ((uint32_t)header->EFC & 0x01) << 23;
+        SPIData         |= ((uint32_t)header->MM & 0xFF) << 24;
+    
+    // DLC = 8, 查表[0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64], 数据长度8字节
+    ```
+
+- 数据 `0F 00 00 00 00 00 00 00`
+
+- 后面的一次写对应 `TCAN4x5x_MCAN_TransmitBufferContents(0)`, 10D0 是 `REG_MCAN_TXBAR` 寄存器, 32bit 对应最大32个buffer, 这里要把 TX Buffer0 里面的东西丢出去, 就 1 << 0
+
+![image-20250317171615286](Readme.assets/image-20250317171615286.png)
+
+下一帧的波形, TX Buffer1, 数据 `10 00 00 00 00 00 00 00`, 把 TX Buffer1 里面的东西发出去 1 << 1
+
+![image-20250317171128159](Readme.assets/image-20250317171128159.png)
+
 微改一下
 
 ```c
@@ -587,6 +668,22 @@ void bsp_tcan4x5x_process(void) {
 
 ![image-20250317152136441](Readme.assets/image-20250317152136441.png)
 
+下面是一帧12字节CANFD扩展帧的读取:
+
+```bash
+RF0N, RXFIFO0: 12 bytes
+  ID: 0x1234567A
+  XTD: 1
+  RTR: 0
+  FDF: 1
+  BRS: 1
+  ESI: 0
+  DLC: 9
+  Data: 01 02 03 04 05 06 07 08 00 00 00 00 
+```
+
+![image-20250317175211040](Readme.assets/image-20250317175211040.png)
+
 ## VCCOUT直接5V测试
 
 VSUP VCCOUT 引脚短路都接5V, 可以正常工作, 但是 4.9V 就不行了, 意味着用 USB 直接给 VSUP 和 VCCOUT 供电是有风险的.
@@ -619,7 +716,7 @@ VSUP VCCOUT 引脚短路都接5V, 可以正常工作, 但是 4.9V 就不行了, 
 
 ## 程序链接
 
-[https://github.com/weifengdq/embedded/tcan4550](https://github.com/weifengdq/embedded/tcan4550)
+[https://github.com/weifengdq/embedded/tree/main/tcan4550](https://github.com/weifengdq/embedded/tree/main/tcan4550)
 
 环境:
 
@@ -634,7 +731,7 @@ QQ群: 1040239879
 
 ## 板子购买
 
-主要是打板太少, 都贴到换料费了, 敬请谅解.
+主要是打板太少, 都贴到换料费了, 敬请谅解. 非板子质量问题可以交流群, 不保证有答复.
 
 ![image-20250317160632572](Readme.assets/image-20250317160632572.png)
 
