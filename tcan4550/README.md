@@ -239,6 +239,13 @@ SPI 读的构成为 主机发送四字节 读操作码(0x41) + 16bit地址 + 要
 
 ## MCAN与MRAM的配置
 
+TCAN4550 寄存器的分配:
+
+• Register 16'h0000 through 16'h000C are Device ID and SPI Registers
+• Register 16'h0800 through 16'h083C are device configuration registers and Interrupt Flags
+• Register 16'h1000 through 16'h10FC are for M_CAN
+• **Register 16'h8000 through 16'h87FF is for MRAM.**  
+
 类似 STM32H7 或 TC397, TCAN4550 也是 MCAN, 2KB 的 Message RAM, 配置也就大同小异了:
 
 - 以最长的64字节的CANFD帧为例, 加上ID标志位之类的需要占用72字节的MRAM, 2KB最大可以支持 `2048/72 =28.44` 个收发, 当然要至少保留 1个标准帧 加 1个扩展帧 滤波器(掩码方式写0全接收)的空间, 收发可分 27 个.
@@ -249,7 +256,14 @@ SPI 读的构成为 主机发送四字节 读操作码(0x41) + 16bit地址 + 要
 
 配置代码示例如下:
 
-- 开启了 低电压
+- 开启了 低电压, 短路, 开路, Busoff 的中断
+- 开启了 FDF 和 BRS, 对 CANFD 进行支持(不影响发送普通的CAN报文, 好比人有跑步的功能但不影响走路)
+- 根据波特率和采样点自动计算Tq参数(只测试了1M@0.8, 5M@0.75)
+- 一个标准帧滤波器(每个占用4个字节MRAM, 寄存器地址为 0x8000), 掩码方式, 全接收到RXFIFO0
+- 一个扩展帧滤波器(每个占用8个字节MRAM, 寄存器地址为 0x8004), 掩码方式, 全接收到RXFIFO0
+- 11个可以接收64字节CANFD数据的RX FIFO0(每个占用72个字节MRAM, 寄存器地址为 0x800C, 0x800C, 0x809C, ..., 0x82DC), 当然也能接收长度为 `[0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64]` 的帧
+- 16个可以发送64字节CANFD数据的TX Buffer(每个占用72个字节MRAM, 寄存器地址为 0x8324, 0x836C, ..., 0x875C), 当然也能发送长度为 `[0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64]` 的普通CAN, CANFD, CANFD with BRS 的帧
+- 还剩余 0x800 - 0x7A4 = 0x5C = 92 字节的RAM没有用
 
 ```c
 void tcan4x5x_mcan_config(uint32_t baud, float sample_point,
@@ -460,6 +474,56 @@ void tcan4x5x_mcan_write_test_2(void) {
 
 ![image-20250317150532421](Readme.assets/image-20250317150532421.png)
 
+逻辑分析仪抓到的波形:
+
+- 第一次写对应 `TCAN4x5x_MCAN_WriteTXBuffer(buffer_index, &tx_header, data)`
+
+- 61, 写操作码
+
+- 8324, 参考上面 MRAM, 是配置的 TX Buffer0 的地址
+
+- 04, 4 words 的长度
+
+- 0x11580000, 计算方式参考 
+
+  - ```c
+        SPIData = 0;
+    
+        SPIData         |= ((uint32_t)header->ESI & 0x01) << 31;
+        SPIData         |= ((uint32_t)header->XTD & 0x01) << 30;
+        SPIData         |= ((uint32_t)header->RTR & 0x01) << 29;
+    
+        if (header->XTD)
+            SPIData     |= ((uint32_t)header->ID & 0x1FFFFFFF);
+        else
+            SPIData     |= ((uint32_t)header->ID & 0x07FF) << 18;
+    
+    // 0x456 << 18 = 0x11580000
+    ```
+
+- 标志位0x00080000, 参考
+
+  - ```c
+        SPIData = 0;
+        SPIData         |= ((uint32_t)header->DLC & 0x0F) << 16;
+        SPIData         |= ((uint32_t)header->BRS & 0x01) << 20;
+        SPIData         |= ((uint32_t)header->FDF & 0x01) << 21;
+        SPIData         |= ((uint32_t)header->EFC & 0x01) << 23;
+        SPIData         |= ((uint32_t)header->MM & 0xFF) << 24;
+    
+    // DLC = 8, 查表[0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64], 数据长度8字节
+    ```
+
+- 数据 `0F 00 00 00 00 00 00 00`
+
+- 后面的一次写对应 `TCAN4x5x_MCAN_TransmitBufferContents(0)`, 10D0 是 `REG_MCAN_TXBAR` 寄存器, 32bit 对应最大32个buffer, 这里要把 TX Buffer0 里面的东西丢出去, 就 1 << 0
+
+![image-20250317171615286](Readme.assets/image-20250317171615286.png)
+
+下一帧的波形, TX Buffer1, 数据 `10 00 00 00 00 00 00 00`, 把 TX Buffer1 里面的东西发出去 1 << 1
+
+![image-20250317171128159](Readme.assets/image-20250317171128159.png)
+
 微改一下
 
 ```c
@@ -619,7 +683,7 @@ VSUP VCCOUT 引脚短路都接5V, 可以正常工作, 但是 4.9V 就不行了, 
 
 ## 程序链接
 
-[https://github.com/weifengdq/embedded/tcan4550](https://github.com/weifengdq/embedded/tcan4550)
+[https://github.com/weifengdq/embedded/tree/main/tcan4550](https://github.com/weifengdq/embedded/tree/main/tcan4550)
 
 环境:
 
