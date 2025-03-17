@@ -668,6 +668,22 @@ void bsp_tcan4x5x_process(void) {
 
 ![image-20250317152136441](Readme.assets/image-20250317152136441.png)
 
+下面是一帧12字节CANFD扩展帧的读取:
+
+```bash
+RF0N, RXFIFO0: 12 bytes
+  ID: 0x1234567A
+  XTD: 1
+  RTR: 0
+  FDF: 1
+  BRS: 1
+  ESI: 0
+  DLC: 9
+  Data: 01 02 03 04 05 06 07 08 00 00 00 00 
+```
+
+![image-20250317175211040](Readme.assets/image-20250317175211040.png)
+
 ## VCCOUT直接5V测试
 
 VSUP VCCOUT 引脚短路都接5V, 可以正常工作, 但是 4.9V 就不行了, 意味着用 USB 直接给 VSUP 和 VCCOUT 供电是有风险的.
@@ -715,7 +731,7 @@ QQ群: 1040239879
 
 ## 板子购买
 
-主要是打板太少, 都贴到换料费了, 敬请谅解.
+主要是打板太少, 都贴到换料费了, 敬请谅解. 非板子质量问题可以交流群, 不保证有答复.
 
 ![image-20250317160632572](Readme.assets/image-20250317160632572.png)
 
