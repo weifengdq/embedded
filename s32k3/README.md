@@ -364,17 +364,32 @@ File -> Import, 导入本地已有工程
 
 ![image-20250710152838071](README.assets/image-20250710152838071.png)
 
-## UART ECHO
+## UART
 
+引脚配置:
 
+- LPUART0_RX, PTC2
+- LPUART0_TX, PTC3
 
+![image-20250710172449976](README.assets/image-20250710172449976.png)
 
+![image-20250710172548972](README.assets/image-20250710172548972.png)
 
+时钟配置 LPUART0 的时钟默认是 60MHz
 
+![image-20250710172757794](README.assets/image-20250710172757794.png)
 
+外设配置加入 Lpuart 和 中断控制IntCtrl
 
+自定义 60M / 15 = 4M 波特率
 
+![image-20250710173320749](README.assets/image-20250710173320749.png)
 
+打开中断
+
+![image-20250710173443608](README.assets/image-20250710173443608.png)
+
+更新源代码
 
 
 
