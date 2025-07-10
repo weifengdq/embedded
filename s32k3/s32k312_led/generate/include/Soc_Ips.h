@@ -20,21 +20,23 @@
 *   bound by the applicable license terms, then you may not retain, install,
 *   activate or otherwise use the software.
 ==================================================================================================*/
-
-#ifndef SOC_IPS_H
-#define SOC_IPS_H
-
 /**
-*   @file   Soc_Ips.h
+*   @file Soc_Ips.h
+*   @version 6.0.0
+*
+*   @brief   BaseNXP - Driver header file.
+*   @details Specific driver header file.
 *
 *   @addtogroup BASENXP_COMPONENT
 *   @{
 */
 
+#ifndef SOC_IPS_H
+#define SOC_IPS_H
+
 #ifdef __cplusplus
 extern "C"{
 #endif
-
 
 /*==================================================================================================
 *                                         INCLUDE FILES
@@ -201,18 +203,22 @@ extern "C"{
 /*==================================================================================================
 *                              Software Erratas for Hardware Erratas
 ==================================================================================================*/
+
 /**
 * @brief Hardware errata for LPSPI: (ERR051588)
 * @details ERR051588 LPSPI: Reset transmit FIFO after FIFO underrun by LPSPI Slave
 */
 #define ERR_IPV_LPSPIV2_E051588         (STD_ON)
 
+
+
+  
 /**
 * @brief Hardware errata for SAI applicable only for S32K148: (e050476)
 * @details e050476 SAI: FCONT must be disabled when TMR is higher than 0.
 */
-#define ERR_IPV_SAI_ERR050476           (STD_OFF)
-
+#define ERR_IPV_SAI_ERR050476         (STD_OFF)
+  
 /*==================================================================================================
 *                                       DEFINES AND MACROS
 ==================================================================================================*/
@@ -257,7 +263,8 @@ extern "C"{
 }
 #endif
 
+#endif /* SOC_IPS_H */
 
 /** @} */
 
-#endif /* SOC_IPS_H */
+

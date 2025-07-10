@@ -1,22 +1,22 @@
 /*==================================================================================================
-* Project : RTD AUTOSAR 4.7
-* Platform : CORTEXM
-* Peripheral : S32K3XX
-* Dependencies : none
+*   Project              : RTD AUTOSAR 4.7
+*   Platform             : CORTEXM
+*   Peripheral           : SIUL2
+*   Dependencies         : none
 *
-* Autosar Version : 4.7.0
-* Autosar Revision : ASR_REL_4_7_REV_0000
-* Autosar Conf.Variant :
-* SW Version : 6.0.0
-* Build Version : S32K3_RTD_6_0_0_D2506_ASR_REL_4_7_REV_0000_20250610
+*   Autosar Version      : 4.7.0
+*   Autosar Revision     : ASR_REL_4_7_REV_0000
+*   Autosar Conf.Variant :
+*   SW Version           : 6.0.0
+*   Build Version        : S32K3_RTD_6_0_0_D2506_ASR_REL_4_7_REV_0000_20250610
 *
-* Copyright 2020 - 2025 NXP
+*   Copyright 2020 - 2025 NXP
 *
-* NXP Confidential and Proprietary. This software is owned or controlled by NXP and may only be 
-*   used strictly in accordance with the applicable license terms.  By expressly 
-*   accepting such terms or by downloading, installing, activating and/or otherwise 
-*   using the software, you are agreeing that you have read, and that you agree to 
-*   comply with and are bound by, such license terms.  If you do not agree to be 
+*   NXP Confidential and Proprietary. This software is owned or controlled by NXP and may only be
+*   used strictly in accordance with the applicable license terms. By expressly
+*   accepting such terms or by downloading, installing, activating and/or otherwise
+*   using the software, you are agreeing that you have read, and that you agree to
+*   comply with and are bound by, such license terms. If you do not agree to be
 *   bound by the applicable license terms, then you may not retain, install,
 *   activate or otherwise use the software.
 ==================================================================================================*/
@@ -73,7 +73,7 @@ extern "C"{
 /* S32K3XX */
 #define SIUL2_PORT_IP_HAS_ONEBIT_SLEWRATE           (STD_ON)
 #define SIUL2_PORT_IP_HAS_ADC_INTERLEAVE            (STD_ON)
-#define SIUL2_PORT_IP_HAS_NO_RECEIVER_SELECT        (STD_ON)
+#define FEATURE_SIUL2_PORT_IP_HAS_RECEIVER_SELECT   (STD_OFF)
 
 /*! @brief SIUL2 module has DSE bit */
 #define FEATURE_SIUL2_PORT_IP_HAS_DRIVE_STRENGTH    (STD_ON)
@@ -115,7 +115,7 @@ extern "C"{
 /* Pre-processor switch to enable/disable development error detection for Siul2 Ip API */
 #define SIUL2_PORT_IP_DEV_ERROR_DETECT                         (STD_ON)
 
-#define PORT_SIUL2_0_IMCRS_IDX_END_U16     ((uint16)378)
+#define PORT_SIUL2_0_IMCRS_IDX_END_U16     ((uint16)370)
 
 /* Pre-processor switch to enable/disable VirtWrapper support */
 #define PORT_VIRTWRAPPER_SUPPORT                      (STD_OFF)
@@ -144,14 +144,6 @@ extern "C"{
 #define PORTE_L_HALF                            ((Siul2_Port_Ip_PortType *)(SIUL2_MSCR_BASE + 0x80))
 /** Peripheral PORTE_H_HALF base pointer */
 #define PORTE_H_HALF                            ((Siul2_Port_Ip_PortType *)(SIUL2_MSCR_BASE + 0x90))
-/** Peripheral PORTF_L_HALF base pointer */
-#define PORTF_L_HALF                            ((Siul2_Port_Ip_PortType *)(SIUL2_MSCR_BASE + 0xA0))
-/** Peripheral PORTF_H_HALF base pointer */
-#define PORTF_H_HALF                            ((Siul2_Port_Ip_PortType *)(SIUL2_MSCR_BASE + 0xB0))
-/** Peripheral PORTG_L_HALF base pointer */
-#define PORTG_L_HALF                            ((Siul2_Port_Ip_PortType *)(SIUL2_MSCR_BASE + 0xC0))
-/** Peripheral PORTG_H_HALF base pointer */
-#define PORTG_H_HALF                            ((Siul2_Port_Ip_PortType *)(SIUL2_MSCR_BASE + 0xD0))
 
 /*==================================================================================================
 *                                             ENUMS

@@ -1,5 +1,5 @@
 /*==================================================================================================
-*   Project              : RTD AUTOSAR 4.7 
+*   Project              : RTD AUTOSAR 4.7
 *   Platform             : CORTEXM
 *   Peripheral           : SIUL2
 *   Dependencies         : none
@@ -8,11 +8,11 @@
 *   Autosar Revision     : ASR_REL_4_7_REV_0000
 *   Autosar Conf.Variant :
 *   SW Version           : 6.0.0
-*   Build Version        : S32K3_S32M27x_Real-Time_Drivers_AUTOSAR_R21-11_Version_6_0_0_D2506_ASR_REL_4_7_REV_0000_20250610
+*   Build Version        : S32K3_RTD_6_0_0_D2506_ASR_REL_4_7_REV_0000_20250610
 *
 *   Copyright 2020 - 2025 NXP
 *
-*   NXP Confidential. This software is owned or controlled by NXP and may only be
+*   NXP Confidential and Proprietary. This software is owned or controlled by NXP and may only be
 *   used strictly in accordance with the applicable license terms. By expressly
 *   accepting such terms or by downloading, installing, activating and/or otherwise
 *   using the software, you are agreeing that you have read, and that you agree to
@@ -21,15 +21,8 @@
 *   activate or otherwise use the software.
 ==================================================================================================*/
 
-#ifndef TSPC_PORT_IP_CFG_H
-#define TSPC_PORT_IP_CFG_H
-
-/**
-*   @file      Tspc_Port_Ip_Cfg.h
-*
-*   @addtogroup Port_CFG
-*   @{
-*/
+#ifndef SIUL2_DIO_IP_CFG_H
+#define SIUL2_DIO_IP_CFG_H
 
 #ifdef __cplusplus
 extern "C"{
@@ -37,76 +30,80 @@ extern "C"{
 
 
 /*==================================================================================================
-                                         INCLUDE FILES
- 1) system and project includes
- 2) needed interfaces from external units
- 3) internal and external interfaces from this unit
+*                                        INCLUDE FILES
+* 1) system and project includes
+* 2) needed interfaces from external units
+* 3) internal and external interfaces from this unit
 ==================================================================================================*/
-#include "Tspc_Port_Ip_Types.h"
-#include "S32K312_TSPC.h"
-
+#include "S32K312_SIUL2.h"
 /*==================================================================================================
 *                              SOURCE FILE VERSION INFORMATION
 ==================================================================================================*/
-#define TSPC_PORT_IP_VENDOR_ID_CFG_H                       43
-#define TSPC_PORT_IP_AR_RELEASE_MAJOR_VERSION_CFG_H        4
-#define TSPC_PORT_IP_AR_RELEASE_MINOR_VERSION_CFG_H        7
-#define TSPC_PORT_IP_AR_RELEASE_REVISION_VERSION_CFG_H     0
-#define TSPC_PORT_IP_SW_MAJOR_VERSION_CFG_H                6
-#define TSPC_PORT_IP_SW_MINOR_VERSION_CFG_H                0
-#define TSPC_PORT_IP_SW_PATCH_VERSION_CFG_H                0
+#define SIUL2_DIO_IP_VENDOR_ID_CFG_H                       43
+#define SIUL2_DIO_IP_AR_RELEASE_MAJOR_VERSION_CFG_H        4
+#define SIUL2_DIO_IP_AR_RELEASE_MINOR_VERSION_CFG_H        7
+#define SIUL2_DIO_IP_AR_RELEASE_REVISION_VERSION_CFG_H     0
+#define SIUL2_DIO_IP_SW_MAJOR_VERSION_CFG_H                6
+#define SIUL2_DIO_IP_SW_MINOR_VERSION_CFG_H                0
+#define SIUL2_DIO_IP_SW_PATCH_VERSION_CFG_H                0
 
 /*==================================================================================================
 *                                     FILE VERSION CHECKS
 ==================================================================================================*/
-/* Check if the files Tspc_Port_Ip_Cfg.h and Tspc_Port_Ip_Types.h are of the same version */
-#if (TSPC_PORT_IP_VENDOR_ID_CFG_H != TSPC_PORT_IP_TYPES_VENDOR_ID_H)
-    #error "Tspc_Port_Ip_Cfg.h and Tspc_Port_Ip_Types.h have different vendor ids"
-#endif
-/* Check if Tspc_Port_Ip_Cfg.h and Tspc_Port_Ip_Types.h are of the same Autosar version */
-#if ((TSPC_PORT_IP_AR_RELEASE_MAJOR_VERSION_CFG_H    != TSPC_PORT_IP_TYPES_AR_RELEASE_MAJOR_VERSION_H) || \
-    (TSPC_PORT_IP_AR_RELEASE_MINOR_VERSION_CFG_H    != TSPC_PORT_IP_TYPES_AR_RELEASE_MINOR_VERSION_H) || \
-    (TSPC_PORT_IP_AR_RELEASE_REVISION_VERSION_CFG_H != TSPC_PORT_IP_TYPES_AR_RELEASE_REVISION_VERSION_H) \
-    )
-    #error "AutoSar Version Numbers of Tspc_Port_Ip_Cfg.h and Tspc_Port_Ip_Types.h are different"
-#endif
-/* Check if Tspc_Port_Ip_Cfg.h and Tspc_Port_Ip_Types.h are of the same Software version */
-#if ((TSPC_PORT_IP_SW_MAJOR_VERSION_CFG_H != TSPC_PORT_IP_TYPES_SW_MAJOR_VERSION_H) || \
-    (TSPC_PORT_IP_SW_MINOR_VERSION_CFG_H != TSPC_PORT_IP_TYPES_SW_MINOR_VERSION_H) || \
-    (TSPC_PORT_IP_SW_PATCH_VERSION_CFG_H != TSPC_PORT_IP_TYPES_SW_PATCH_VERSION_H)    \
-    )
-    #error "Software Version Numbers of Tspc_Port_Ip_Cfg.h and Tspc_Port_Ip_Types.h are different"
-#endif
+
 /*==================================================================================================
-                                           CONSTANTS
+*                                          CONSTANTS
 ==================================================================================================*/
 
 /*==================================================================================================
-                                      DEFINES AND MACROS
-==================================================================================================*/
-/* Pre-processor switch to enable/disable Touch Sense support */
-#define FEATURE_TSPC_PORT_IP_SUPPORT      (STD_ON)
-/*! @brief No pin was configured for this group or no need any configuration */
-
-/*==================================================================================================
-                                           ENUMS
+*                                      DEFINES AND MACROS
 ==================================================================================================*/
 
+/* Pre-processor switch to enable/disable VirtWrapper support */
+#define DIO_VIRTWRAPPER_SUPPORT                 (STD_OFF)
+
+/* Pre-processor switch to enable/disable development error detection for Dio Ip API */
+#define SIUL2_DIO_IP_DEV_ERROR_DETECT            (STD_ON)
+
+/* GPIO - Peripheral instance base addresses */
+/** Peripheral PTA base address */
+#define PTA_L_HALF ((Siul2_Dio_Ip_GpioType *)(&(IP_SIUL2->PGPDO0)))
+#define PTA_H_HALF ((Siul2_Dio_Ip_GpioType *)(&(IP_SIUL2->PGPDO1)))
+/** Peripheral PTB base address */
+#define PTB_L_HALF ((Siul2_Dio_Ip_GpioType *)(&(IP_SIUL2->PGPDO2)))
+#define PTB_H_HALF ((Siul2_Dio_Ip_GpioType *)(&(IP_SIUL2->PGPDO3)))
+/** Peripheral PTC base address */
+#define PTC_L_HALF ((Siul2_Dio_Ip_GpioType *)(&(IP_SIUL2->PGPDO4)))
+#define PTC_H_HALF ((Siul2_Dio_Ip_GpioType *)(&(IP_SIUL2->PGPDO5)))
+/** Peripheral PTD base address */
+#define PTD_L_HALF ((Siul2_Dio_Ip_GpioType *)(&(IP_SIUL2->PGPDO6)))
+#define PTD_H_HALF ((Siul2_Dio_Ip_GpioType *)(&(IP_SIUL2->PGPDO7)))
+/** Peripheral PTE base address */
+#define PTE_L_HALF ((Siul2_Dio_Ip_GpioType *)(&(IP_SIUL2->PGPDO8)))
+#define PTE_H_HALF ((Siul2_Dio_Ip_GpioType *)(&(IP_SIUL2->PGPDO9)))
 /*==================================================================================================
-                               STRUCTURES AND OTHER TYPEDEFS
+*                                             ENUMS
 ==================================================================================================*/
 
 /*==================================================================================================
-                               GLOBAL VARIABLE DECLARATIONS
+*                                STRUCTURES AND OTHER TYPEDEFS
+==================================================================================================*/
+
+
+/*==================================================================================================
+*                                GLOBAL VARIABLE DECLARATIONS
 ==================================================================================================*/
 
 /*==================================================================================================
-                               FUNCTION PROTOTYPES
+*                                    FUNCTION PROTOTYPES
 ==================================================================================================*/
+
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TSPC_PORT_IP_CFG_H */
+/** @} */
+
+#endif /* SIUL2_DIO_IP_CFG_H */
 

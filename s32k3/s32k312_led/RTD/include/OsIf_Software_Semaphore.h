@@ -21,7 +21,7 @@
 *   activate or otherwise use the software.
 ==================================================================================================*/
 /**
-*   @file OsIf_ArchCfg.h
+*   @file OsIf_Software_Semaphore.h
 *   @version 6.0.0
 *
 *   @brief   BaseNXP - Driver header file.
@@ -31,79 +31,116 @@
 *   @{
 */
 
-#ifndef OSIF_ARCHCFG_H
-#define OSIF_ARCHCFG_H
+#ifndef OSIF_SOFTWARE_SEMAPHORE_H
+#define OSIF_SOFTWARE_SEMAPHORE_H
 
 #ifdef __cplusplus
 extern "C"{
 #endif
 
 /*==================================================================================================
-                                         INCLUDE FILES
- 1) system and project includes
- 2) needed interfaces from external units
- 3) internal and external interfaces from this unit
+*                                          INCLUDE FILES
+* 1) system and project includes
+* 2) needed interfaces from external units
+* 3) internal and external interfaces from this unit
 ==================================================================================================*/
+#include "StandardTypes.h"
+#include "OsIf_Cfg.h"
 
 /*==================================================================================================
-*                              SOURCE FILE VERSION INFORMATION
+*                                 SOURCE FILE VERSION INFORMATION
 ==================================================================================================*/
-#define OSIF_ARCHCFG_VENDOR_ID                    43
-#define OSIF_ARCHCFG_AR_RELEASE_MAJOR_VERSION     4
-#define OSIF_ARCHCFG_AR_RELEASE_MINOR_VERSION     7
-#define OSIF_ARCHCFG_AR_RELEASE_REVISION_VERSION  0
-#define OSIF_ARCHCFG_SW_MAJOR_VERSION             6
-#define OSIF_ARCHCFG_SW_MINOR_VERSION             0
-#define OSIF_ARCHCFG_SW_PATCH_VERSION             0
+#define OSIF_SOFTWARE_SEMAPHORE_VENDOR_ID_H                    43
+#define OSIF_SOFTWARE_SEMAPHORE_AR_RELEASE_MAJOR_VERSION_H     4
+#define OSIF_SOFTWARE_SEMAPHORE_AR_RELEASE_MINOR_VERSION_H     7
+#define OSIF_SOFTWARE_SEMAPHORE_AR_RELEASE_REVISION_VERSION_H  0
+#define OSIF_SOFTWARE_SEMAPHORE_SW_MAJOR_VERSION_H             6
+#define OSIF_SOFTWARE_SEMAPHORE_SW_MINOR_VERSION_H             0
+#define OSIF_SOFTWARE_SEMAPHORE_SW_PATCH_VERSION_H             0
 
 /*==================================================================================================
-*                                     FILE VERSION CHECKS
+*                                       FILE VERSION CHECKS
 ==================================================================================================*/
+/* Checks against StandardTypes.h */
+#ifndef DISABLE_MCAL_INTERMODULE_ASR_CHECK
+    #if ((OSIF_SOFTWARE_SEMAPHORE_AR_RELEASE_MAJOR_VERSION_H != STD_AR_RELEASE_MAJOR_VERSION) || \
+         (OSIF_SOFTWARE_SEMAPHORE_AR_RELEASE_MINOR_VERSION_H != STD_AR_RELEASE_MINOR_VERSION))
+        #error "AutoSar Version Numbers of OsIf_Software_Semaphore.h and StandardTypes.h are different"
+    #endif
+#endif
+
+/* Checks against OsIf_Cfg.h */
+#ifndef DISABLE_MCAL_INTERMODULE_ASR_CHECK
+    #if ((OSIF_SOFTWARE_SEMAPHORE_AR_RELEASE_MAJOR_VERSION_H != OSIF_CFG_AR_RELEASE_MAJOR_VERSION) || \
+         (OSIF_SOFTWARE_SEMAPHORE_AR_RELEASE_MINOR_VERSION_H != OSIF_CFG_AR_RELEASE_MINOR_VERSION))
+        #error "AutoSar Version Numbers of OsIf_Software_Semaphore.h and OsIf_Cfg.h are different"
+    #endif
+#endif
 
 /*==================================================================================================
 *                                            CONSTANTS
 ==================================================================================================*/
-#define MCAL_ARM_MARCH      (16)  /* for ARM M4 Thumb2      */
-#define MCAL_ARM_AARCH32    (32)  /* for ARM ARCH32         */
-#define MCAL_ARM_AARCH64    (64)  /* for ARM ARCH64         */
-#define MCAL_ARM_RARCH      (52)  /* for ARM R platform     */
-#define MCAL_ZENV_ZV2790    (27)  /* for ZENV ZV2790        */
 
 /*==================================================================================================
-*                                      DEFINES AND MACROS
+*                                       DEFINES AND MACROS
 ==================================================================================================*/
-/* ARM_MARCH - is used to specify the ARM architecture MCAL_MARCH, MCAL_RARCH, MCAL_AARCH32, MCAL_AARCH64 */
-#define MCAL_PLATFORM_ARM  MCAL_ARM_MARCH
-        
-    
+#ifdef OSIF_SOFTWARE_SEMAPHORE_ENABLE
+#if (OSIF_SOFTWARE_SEMAPHORE_ENABLE == STD_ON)
 
- 
+#define OSIF_SOFTWARE_SEMAPHORE_UNLOCKED_VALUE  0U
+
 /*==================================================================================================
-*                                             ENUMS
+*                                              ENUMS
 ==================================================================================================*/
 
 /*==================================================================================================
-*                                STRUCTURES AND OTHER TYPEDEFS
+*                                  STRUCTURES AND OTHER TYPEDEFS
 ==================================================================================================*/
 
 /*==================================================================================================
-*                                GLOBAL VARIABLE DECLARATIONS
+*                                  GLOBAL VARIABLE DECLARATIONS
 ==================================================================================================*/
 
 /*==================================================================================================
-                                       GLOBAL CONSTANTS
+*                                       FUNCTION PROTOTYPES
 ==================================================================================================*/
+#define BASENXP_START_SEC_CODE
+#include "BaseNXP_MemMap.h"
 
-/*==================================================================================================
-*                                    FUNCTION PROTOTYPES
-==================================================================================================*/
+/*!
+ * @brief Lock software semaphore
+ *
+ * This function locks software semaphore
+ *
+ * @param[in] Semaphore the pointer to software semaphore
+ * @param[in] Lockval the lock value
+ */
+boolean OsIf_Software_Semaphore_Lock(const uint32 *Semaphore,
+                                     uint32 Lockval
+                                    );
 
+/*!
+ * @brief Unlock software semaphore
+ *
+ * This function unlocks software semaphore
+ *
+ * @param[in] Semaphore the pointer to software semaphore
+ * @param[in] Lockval the lock value
+ */
+boolean OsIf_Software_Semaphore_Unlock(const uint32 *Semaphore,
+                                       uint32 Lockval
+                                      );
+
+#define BASENXP_STOP_SEC_CODE
+#include "BaseNXP_MemMap.h"
+
+#endif /* #if (OSIF_SOFTWARE_SEMAPHORE_ENABLE == STD_ON) */
+#endif /* #ifdef OSIF_SOFTWARE_SEMAPHORE_ENABLE */
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif
 
-#endif /* OSIF_ARCHCFG_H */
+#endif /* OSIF_SOFTWARE_SEMAPHORE_H */
 
 /** @} */
-

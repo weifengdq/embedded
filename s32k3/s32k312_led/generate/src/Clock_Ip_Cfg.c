@@ -1,22 +1,22 @@
 /*==================================================================================================
-* Project : RTD AUTOSAR 4.7
-* Platform : CORTEXM
-* Peripheral : S32K3XX
-* Dependencies : none
+*   Project              : RTD AUTOSAR 4.7
+*   Platform             : CORTEXM
+*   Peripheral           : 
+*   Dependencies         : none
 *
-* Autosar Version : 4.7.0
-* Autosar Revision : ASR_REL_4_7_REV_0000
-* Autosar Conf.Variant :
-* SW Version : 6.0.0
-* Build Version : S32K3_RTD_6_0_0_D2506_ASR_REL_4_7_REV_0000_20250610
+*   Autosar Version      : 4.7.0
+*   Autosar Revision     : ASR_REL_4_7_REV_0000
+*   Autosar Conf.Variant :
+*   SW Version           : 6.0.0
+*   Build Version        : S32K3_RTD_6_0_0_D2506_ASR_REL_4_7_REV_0000_20250610
 *
-* Copyright 2020 - 2025 NXP
+*   Copyright 2020 - 2025 NXP
 *
-* NXP Confidential and Proprietary. This software is owned or controlled by NXP and may only be 
-*   used strictly in accordance with the applicable license terms.  By expressly 
-*   accepting such terms or by downloading, installing, activating and/or otherwise 
-*   using the software, you are agreeing that you have read, and that you agree to 
-*   comply with and are bound by, such license terms.  If you do not agree to be 
+*   NXP Confidential and Proprietary. This software is owned or controlled by NXP and may only be
+*   used strictly in accordance with the applicable license terms. By expressly
+*   accepting such terms or by downloading, installing, activating and/or otherwise
+*   using the software, you are agreeing that you have read, and that you agree to
+*   comply with and are bound by, such license terms. If you do not agree to be
 *   bound by the applicable license terms, then you may not retain, install,
 *   activate or otherwise use the software.
 ==================================================================================================*/
@@ -220,23 +220,6 @@ static const Clock_Ip_XoscConfigType Clock_Ip_XoscConfigurations_0[CLOCK_IP_CONF
         0U,                     /* Comparator Current */
     },
     #endif
-
-    #if CLOCK_IP_CONFIGURED_XOSCS_0_NO > 1U
-    {
-        SXOSC_CLK,              /* name */
-        32768U,              /* frequency */ 
-        1U,                     /* enable */
-        125U,                   /* startupDelay */
-        0U,                     /* bypassOption */ 
-        0U,                     /* Comparator is not enabled */ 
-        0U,                     /* Crystal overdrive protection */
-        0U,                     /* Gain value */
-        0U,                     /* Monitor type */
-        0U,                     /* Automatic level controller */
-        0U,                     /* Level Shifter Current */
-        0U,                     /* Comparator Current */
-    },
-    #endif
 };
 
 
@@ -312,7 +295,7 @@ static const Clock_Ip_SelectorConfigType Clock_Ip_SelectorConfigurations_0[CLOCK
     #if CLOCK_IP_CONFIGURED_SELECTORS_0_NO > 5U
     {
         RTC_CLK,                    /* Clock name associated to selector */
-        SXOSC_CLK,                    /* Name of the selected input source */
+        FIRC_CLK,                    /* Name of the selected input source */
     },
     #endif
 
@@ -1034,7 +1017,7 @@ const Clock_Ip_ClockConfigType Clock_Ip_aClockConfig[1U] = {
         (NULL_PTR),               /* Register data if register value optimization is enabled */
 
         3U,                       /* ircoscsCount */
-        2U,                       /* xoscsCount */
+        1U,                       /* xoscsCount */
         1U,                       /* pllsCount */
         8U,                       /* selectorsCount */
         14U,                       /* dividersCount */

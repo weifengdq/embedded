@@ -24,6 +24,8 @@
 *   @file       OsIf_Cfg.c
 *   @version 6.0.0
 *
+*   @brief   BaseNXP - Driver configuration file.
+*   @details Precompile structure configuration for the driver initialization.
 *
 *   @addtogroup OSIF_DRIVER
 *   @{
@@ -63,15 +65,17 @@ extern "C"{
 /*==================================================================================================
 *                                     FILE VERSION CHECKS
 ==================================================================================================*/
-/* Checks against OsIf_Cfg.h */
+/* Check if OsIf_Cfg.c file and OsIf_Cfg.h file are of the same vendor */
 #if (OSIF_CFG_VENDOR_ID_C != OSIF_CFG_VENDOR_ID)
     #error "OsIf_Cfg.c and OsIf_Cfg.h have different vendor ids"
 #endif
+/* Check if OsIf_Cfg.c file and OsIf_Cfg.h file are of the same Autosar version */
 #if ((OSIF_CFG_AR_RELEASE_MAJOR_VERSION_C    != OSIF_CFG_AR_RELEASE_MAJOR_VERSION) || \
      (OSIF_CFG_AR_RELEASE_MINOR_VERSION_C    != OSIF_CFG_AR_RELEASE_MINOR_VERSION) || \
      (OSIF_CFG_AR_RELEASE_REVISION_VERSION_C != OSIF_CFG_AR_RELEASE_REVISION_VERSION))
     #error "AUTOSAR Version Numbers of OsIf_Cfg.c and OsIf_Cfg.h are different"
 #endif
+/* Check if OsIf_Cfg.c file and OsIf_Cfg.h file are of the same Software version */
 #if ((OSIF_CFG_SW_MAJOR_VERSION_C != OSIF_CFG_SW_MAJOR_VERSION) || \
      (OSIF_CFG_SW_MINOR_VERSION_C != OSIF_CFG_SW_MINOR_VERSION) || \
      (OSIF_CFG_SW_PATCH_VERSION_C != OSIF_CFG_SW_PATCH_VERSION) \
@@ -79,15 +83,17 @@ extern "C"{
     #error "Software Version Numbers of OsIf_Cfg.c and OsIf_Cfg.h are different"
 #endif
 
-/* Checks against OsIf_Cfg_TypesDef.h */
+/* Check if OsIf_Cfg.c file and OsIf_Cfg_TypesDef.h file are of the same vendor */
 #if (OSIF_CFG_VENDOR_ID_C != OSIF_CFG_TYPESDEF_VENDOR_ID)
     #error "OsIf_Cfg.c and OsIf_Cfg_TypesDef.h have different vendor ids"
 #endif
+/* Check if OsIf_Cfg.c file and OsIf_Cfg_TypesDef.h file are of the same Autosar version */
 #if ((OSIF_CFG_AR_RELEASE_MAJOR_VERSION_C    != OSIF_CFG_TYPESDEF_AR_RELEASE_MAJOR_VERSION) || \
      (OSIF_CFG_AR_RELEASE_MINOR_VERSION_C    != OSIF_CFG_TYPESDEF_AR_RELEASE_MINOR_VERSION) || \
      (OSIF_CFG_AR_RELEASE_REVISION_VERSION_C != OSIF_CFG_TYPESDEF_AR_RELEASE_REVISION_VERSION))
     #error "AUTOSAR Version Numbers of OsIf_Cfg.c and OsIf_Cfg_TypesDef.h are different"
 #endif
+/* Check if OsIf_Cfg.c file and OsIf_Cfg_TypesDef.h file are of the same Software version */
 #if ((OSIF_CFG_SW_MAJOR_VERSION_C != OSIF_CFG_TYPESDEF_SW_MAJOR_VERSION) || \
      (OSIF_CFG_SW_MINOR_VERSION_C != OSIF_CFG_TYPESDEF_SW_MINOR_VERSION) || \
      (OSIF_CFG_SW_PATCH_VERSION_C != OSIF_CFG_TYPESDEF_SW_PATCH_VERSION) \
@@ -95,31 +101,43 @@ extern "C"{
     #error "Software Version Numbers of OsIf_Cfg.c and OsIf_Cfg_TypesDef.h are different"
 #endif
 
+#if defined(USING_OS_AUTOSAROS)
+/* Check if OsIf_Cfg.c file and Os.h file are of the same Autosar version */
+#ifndef DISABLE_MCAL_INTERMODULE_ASR_CHECK
+    #if ((OSIF_CFG_AR_RELEASE_MAJOR_VERSION_C != OS_AR_RELEASE_MAJOR_VERSION) || \
+         (OSIF_CFG_AR_RELEASE_MINOR_VERSION_C != OS_AR_RELEASE_MINOR_VERSION))
+        #error "AutoSar Version Numbers of OsIf_Cfg.c and Os.h are different"
+    #endif
+#endif /* DISABLE_MCAL_INTERMODULE_ASR_CHECK */
+#endif /* defined(USING_OS_AUTOSAROS) */
+
 /*==================================================================================================
-*                                      DEFINES AND MACROS
-==================================================================================================*/
-/*==================================================================================================
-*                                      LOCAL VARIABLES
+*                          LOCAL TYPEDEFS (STRUCTURES, UNIONS, ENUMS)
 ==================================================================================================*/
 
 /*==================================================================================================
-*                                STRUCTURES AND OTHER TYPEDEFS
+*                                      LOCAL MACROS
+==================================================================================================*/
+
+
+/*==================================================================================================
+*                                    LOCAL FUNCTION PROTOTYPES
 ==================================================================================================*/
 
 /*==================================================================================================
-*                                      GLOBAL VARIABLES
-==================================================================================================*/
-/*==================================================================================================
-*                                      GLOBAL CONSTANTS
+*                                       LOCAL FUNCTIONS
 ==================================================================================================*/
 
 /*==================================================================================================
-*                                    FUNCTION PROTOTYPES
+*                                       GLOBAL FUNCTIONS
 ==================================================================================================*/
+
+/*================================================================================================*/
 
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
+
 /** @} */
 
