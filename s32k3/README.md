@@ -275,20 +275,20 @@ Siul2_Port_Ip_Init(
       g_pin_mux_InitConfigArr_PortContainer_0_BOARD_InitPeripherals);
 
 Siul2_Dio_Ip_WritePin(LED1_PORT, LED1_PIN, 0);
-for(volatile int i = 0; i < 1000000U; i++);
+for(volatile int i = 0; i < 1000000; i++);
 Siul2_Dio_Ip_WritePin(LED1_PORT, LED1_PIN, 1);
-for(volatile int i = 0; i < 1000000U; i++);
+for(volatile int i = 0; i < 1000000; i++);
 ```
 
 如图:
 
-![image-20250710163519798](README.assets/image-20250710163519798.png)
+![image-20250710170911209](README.assets/image-20250710170911209.png)
 
 ### 工程编译
 
 工程右键 Build Project
 
-![image-20250710161933932](README.assets/image-20250710161933932.png)
+![image-20250710170947471](README.assets/image-20250710170947471.png)
 
 ### 代码调试
 
@@ -318,7 +318,7 @@ S32DS 工程右键 Properties
 
 ![image-20250710151135845](README.assets/image-20250710151135845.png)
 
-勾选完后再随便点击最左侧某个设置项再回来上个页面
+勾选完后, 再随便点击最左侧某个设置项比如Logging转移一下IDE的注意力, 然后再点回来Settings页面
 
 ![image-20250710151223880](README.assets/image-20250710151223880.png)
 

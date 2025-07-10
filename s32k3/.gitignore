@@ -1,5 +1,3 @@
 .metadata
 RemoteSystemsTempFiles
 Debug_FLASH
-Release_FLASH/*
-!Release_FLASH/*.hex

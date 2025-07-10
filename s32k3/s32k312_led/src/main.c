@@ -33,6 +33,8 @@
 
 volatile int exit_code = 0;
 /* User includes */
+#include "Siul2_Dio_Ip.h"
+#include "Siul2_Port_Ip.h"
 
 /*!
   \brief The main function for the project.
@@ -43,9 +45,17 @@ volatile int exit_code = 0;
 int main(void)
 {
     /* Write your code here */
+	Siul2_Port_Ip_Init(
+	      NUM_OF_CONFIGURED_PINS_PortContainer_0_BOARD_InitPeripherals,
+	      g_pin_mux_InitConfigArr_PortContainer_0_BOARD_InitPeripherals);
 
     for(;;)
     {
+    	Siul2_Dio_Ip_WritePin(LED1_PORT, LED1_PIN, 0);
+    	for(volatile int i = 0; i < 1000000; i++);
+    	Siul2_Dio_Ip_WritePin(LED1_PORT, LED1_PIN, 1);
+    	for(volatile int i = 0; i < 1000000; i++);
+
         if(exit_code != 0)
         {
             break;
