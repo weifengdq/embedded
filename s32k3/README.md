@@ -370,7 +370,7 @@ File -> Import, 导入本地已有工程
 
 ![image-20250710152838071](README.assets/image-20250710152838071.png)
 
-## UART
+## UART 2M
 
 引脚配置:
 
@@ -401,7 +401,7 @@ File -> Import, 导入本地已有工程
 
 ![image-20250710173443608](README.assets/image-20250710173443608.png)
 
-这里的 Handler 是和 `s32k3\s32k312_uart\RTD\include\Lpuart_Uart_Ip_Irq.h` 中的名称对应上的
+这里的 Handler 是和 `s32k3\s32k312_uart\RTD\include\Lpuart_Uart_Ip_Irq.c` 中的名称对应上的
 
 点击 `更新源代码`, 然后修改 main.c
 
@@ -496,6 +496,127 @@ int main(void) {
 测试, 打开串口调试助手, 2M-8-N-1, 收到欢迎语后清空, 然后每 1ms 定时发送 100字节(含回车换行), 可以看到收发字节相同:
 
 ![image-20250711135330922](README.assets/image-20250711135330922.png)
+
+## CANFD 1M+5M
+
+### Message Buffer 划分
+
+类似于 BxCAN 或 MCAN, S32K3 的 FlexCAN 也遵循 CAN 的基本配置:
+
+- 直接配置成 CANFD 64字节 使能 BRS, 正常模式, 这样不论 CAN2.0 还是 CANFD 都能正常使用, 一劳永逸
+- 主时钟一般 40/80M 居多, 60/120M 也常见, 这里使用 60M
+- 仲裁段 预分频6得 10M, 然后 1+6+1+2 得 1M 和 80% 采样点
+- 数据段 预分频1得 60M, 然后 1+7+1+3 得 12M 和 75% 采样点
+- `MessageRAM`(MessageBuffers, MBs) 按 72B(Header_8B + Data_64B) 分, 同时还要注意 512B Block 对齐, 也就是80B对齐, 得出 RX + TX 总的Buffer数()MBs), 刚好MB也是mailbox邮箱的缩写, 这里姑且叫它邮箱吧
+- RX 全接收一般占 2 个邮箱(Buffer), 用于设置一个标准帧滤波器 + 一个扩展帧滤波器
+- 剩下的邮箱(Buffer)可以全给 TX, 方便能一次性填充多个
+- 超过 2M 速率要配置 TDC, 一般可优先尝试 (数据段时钟 / 数据段速率 * 采样点) 的计算方式, 这里 5M 对应的 TDC 是 60M/5M*0.75 = 9
+
+再看 S32K312 6路 CANFD 的资源:
+
+![image-20250711142432147](README.assets/image-20250711142432147.png)
+
+表中:
+
+- CAN0, CAN1, CAN2 可用 64*16 = 1024B, 刚好 2个 Block, 每个 Block 可分出 512/72= 7.111, 2 个Block合计 14个 MBs (64B负载的)
+- CAN3, CAN4, CAN5 的 RX + TX 合计可用 7 MBs
+
+**我们就按 7 个分吧, 这样 6 路都适用. 前 2 个给 RX, 后面 5 个给 TX.** 其它独有的或高级的特性也暂且不用.
+
+附上 Block 的解释
+
+![image-20250711160931762](README.assets/image-20250711160931762.png)
+
+### Header 定义
+
+72B 的 Header 部分的定义:
+
+![image-20250711145202335](README.assets/image-20250711145202335.png)
+
+图中:
+
+- IDE, 区分 标准帧 / 扩展帧
+- EDL, 区分 CAN / CANFD, 也就是常说的 FDF
+- BRS, 区分 CANFD / CANFD加速, 位速率变换
+- RTR, 区分 数据帧 / 远程帧
+
+### 图形配置
+
+切换封装到 100PIN
+
+![image-20250711150026264](README.assets/image-20250711150026264.png)
+
+引脚配置:
+
+- CAN0_TX, PTA7
+- CAN0_RX, PTA6 
+
+![image-20250711150147729](README.assets/image-20250711150147729.png)
+
+![image-20250711150211998](README.assets/image-20250711150211998.png)
+
+时钟配置成使用 AIPS_PLAT_CLK 1分频 得到 60M
+
+![image-20250711150314338](README.assets/image-20250711150314338.png)
+
+![image-20250711150431723](README.assets/image-20250711150431723.png)
+
+FlexCAN 配置:
+
+- 正常模式
+- 64B Payload, RX+TX 7MBs, 这对于其它CAN也适用
+- 使能 BRS CANFDISO 自动BusOff
+- 主时钟 60M, 仲裁段 1M 80%, 数据段 5M 75%
+- 设置中断回调函数
+
+![image-20250711151537632](README.assets/image-20250711151537632.png)
+
+中断控制器里开中断:
+
+![image-20250711161210188](README.assets/image-20250711161210188.png)
+
+其中:
+
+- Interrupt Name 是 `D:\NXP\S32DS.3.6.2\S32DS\software\PlatformSDK_S32K3\RTD\BaseNXP_TS_T40D34M60I0R0\header\S32K312_COMMON.h` 中定义了的:
+  - FlexCANx_0_IRQn, 用于 Busoff (Interrupt indicating that the CAN bus went to Bus Off state)
+  - FlexCANx_1_IRQn, 用于 Block0 的指示 (Message Buffer Interrupt line 0-31,ORed Interrupt for Message Buffers)
+- Handler 是 `s32k3\s32k312_can0\RTD\src\FlexCAN_Ip_Irq.c` 中定义的
+  - FlexCANx_0_IRQn, Busoff 对应 CAN0_ORED_IRQHandler
+  - FlexCANx_1_IRQn 对应 CAN0_ORED_0_31_MB_IRQHandler
+
+
+
+默认新工程的时钟树里 FlexCAN 的
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
