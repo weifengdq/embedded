@@ -142,9 +142,9 @@ extern "C"{
 const Lpuart_Uart_Ip_UserConfigType Lpuart_Uart_Ip_xHwConfigPB_0 =
 {
     /* Actual baudrate */
-    4000000U,
+    2000000U,
     /* Baudrate mantissa*/
-    1U,
+    2U,
     /* Baudrate Divisor*/
     15U,
     /* Parity type */
@@ -156,7 +156,7 @@ const Lpuart_Uart_Ip_UserConfigType Lpuart_Uart_Ip_xHwConfigPB_0 =
     /* Type of UART transfer (interrupt/dma based) */
     LPUART_UART_IP_USING_INTERRUPTS,
     /* Callback to invoke for Uart Event.*/
-    NULL_PTR,
+    UART0_CALLBACK,
     /* User callback parameter pointer.*/
     NULL_PTR,
 #if (LPUART_UART_IP_HAS_DMA_ENABLED == STD_ON)

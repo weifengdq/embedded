@@ -1,0 +1,3 @@
+/Release_FLASH/*
+!/Release_FLASH/*.hex
+/Release_FLASH/

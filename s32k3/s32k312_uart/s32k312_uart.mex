@@ -470,15 +470,15 @@
                            <setting name="POST_BUILD_VARIANT_USED" value="false"/>
                            <setting name="IMPLEMENTATION_CONFIG_VARIANT" value="VARIANT-PRE-COMPILE"/>
                         </struct>
-                        <struct name="GeneralConfiguration" quick_selection="Default">
+                        <struct name="GeneralConfiguration">
                            <setting name="Name" value="GeneralConfiguration"/>
                            <setting name="UartDevErrorDetect" value="true"/>
                            <setting name="UartTimeoutMethod" value="OSIF_COUNTER_DUMMY"/>
                            <setting name="UartTimeoutDuration" value="0"/>
                            <setting name="UartDmaEnable" value="false"/>
-                           <setting name="UartCallbackCapability" value="false"/>
+                           <setting name="UartCallbackCapability" value="true"/>
                            <array name="UartCallback">
-                              <setting name="0" value=""/>
+                              <setting name="0" value="UART0_CALLBACK"/>
                            </array>
                            <array name="UartCallbackParam"/>
                         </struct>
@@ -493,7 +493,7 @@
                                     <setting name="Name" value="DetailModuleConfiguration"/>
                                     <setting name="UartHwChannel" value="LPUART_0"/>
                                     <setting name="DesireBaudrate" value="LPUART_UART_BAUDRATE_CUSTOM"/>
-                                    <setting name="CustomBaudrateMantissa" value="1"/>
+                                    <setting name="CustomBaudrateMantissa" value="2"/>
                                     <setting name="CustomBaudrateDivisor" value="15"/>
                                     <setting name="UartInteruptDmaMethod" value="LPUART_UART_IP_USING_INTERRUPTS"/>
                                     <array name="UartDmaTxChannelRef"/>
