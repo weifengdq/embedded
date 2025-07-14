@@ -158,8 +158,8 @@ const Flexcan_Ip_ConfigType FlexCAN_Config0  = {
      /*ctrlOptions*/
     (uint32)(FLEXCAN_IP_ISO_U32 | \
     FLEXCAN_IP_BUSOFF_RECOVERY_U32 | \
-    \
-    \
+    FLEXCAN_IP_REM_STORE_U32 | \
+    FLEXCAN_IP_LOWEST_BUFF_FIRST_U32 | \
     0U),
      /* Can FD RamBlock specified .payload*/
      {

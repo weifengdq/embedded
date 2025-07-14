@@ -471,8 +471,8 @@
                               <setting name="bitRateSwitch" value="true"/>
                               <setting name="CanControllerFdISO" value="true"/>
                               <setting name="CanControllerAutoBusOff" value="true"/>
-                              <setting name="CanRemoteRequestStore" value="false"/>
-                              <setting name="CanLowestBufferTransmittedFirst" value="false"/>
+                              <setting name="CanRemoteRequestStore" value="true"/>
+                              <setting name="CanLowestBufferTransmittedFirst" value="true"/>
                               <setting name="timeStampSurce" value="FLEXCAN_CAN_CLK_TIMESTAMP_SRC"/>
                               <setting name="msgBuffTimeStampType" value="FLEXCAN_MSGBUFFTIMESTAMP_TIMER"/>
                               <setting name="hrConfigType" value="FLEXCAN_TIMESTAMPCAPTURE_DISABLE"/>
