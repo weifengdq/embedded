@@ -599,7 +599,7 @@ FlexCAN 配置:
 
 代码如下:
 
-```bash
+```c
 #include "Clock_Ip.h"
 #include "FlexCAN_Ip.h"
 #include "FlexCAN_Ip_HwAccess.h"
@@ -934,13 +934,22 @@ padding, len 填充9, 但是 canfd 标准长度没有9, 就自动扩充到 12, �
 
 ![image-20250714132946473](README.assets/image-20250714132946473.png)
 
+## 6路 CANFD
 
+引脚配置:
+![image-20250714134000153](README.assets/image-20250714134000153.png)
 
+时钟配置成 60MHz 主时钟:
 
+![image-20250714134050363](README.assets/image-20250714134050363.png)
 
+FlexCAN 先按照上节配置好 CAN0, 然后右键复制, 粘贴出其它5路, 修改 Channel 和 Name 即可:
 
+![image-20250714134950255](README.assets/image-20250714134950255.png)
 
+中断配置:
 
+![image-20250714135611092](README.assets/image-20250714135611092.png)
 
 
 
