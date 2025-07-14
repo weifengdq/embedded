@@ -45,7 +45,7 @@ NXP S32K312 评估板:
 
 S32K3xx MCU有以下时钟源:
 
-- 8 - 40 MHz Fast External Oscillator (FXOSC), 外部晶振
+- 8 ~ 40 MHz Fast External Oscillator (FXOSC), 外部晶振
 - 48 MHz Fast Internal RC oscillator (FIRC)
 - 32 kHz Low Power Oscillator (SIRC)
 - 32 kHz Slow External Oscillator (SXOSC)
@@ -75,9 +75,13 @@ SWD 或 JTAG
 
 - SWCLK, PTC4
 - SWDIO, PTA4
-- 一般会加上 RESET_B PTA5 引脚方便直接复位运行
+- 建议加上 RESET_B PTA5 引脚方便直接复位运行
 
 ![image-20250710142726338](README.assets/image-20250710142726338.png)
+
+如图连接了 3V3 DIO CLK GND RST 5根线到 Jlink 的 Vref SWDIO SWCLK GND RESET 上:
+
+![image-20250714151057483](README.assets/image-20250714151057483.png)
 
 JTAG 接口有常见的 `2.54_2*10P 20PIN` 和 `1.27_2*5P 10PIN` 两种接口, 后者 7 9 有的调试器拿来做调试串口, 有的直接接地, 这里为了避免冲突, 直接悬空, 如下图:
 
