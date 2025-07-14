@@ -1,0 +1,428 @@
+<?xml version="1.0" encoding= "UTF-8" ?>
+<configuration name="S32K312" xsi:schemaLocation="http://mcuxpresso.nxp.com/XSD/mex_configuration_17 http://mcuxpresso.nxp.com/XSD/mex_configuration_17.xsd" uuid="cb0a0571-31b0-4026-b225-2a0da4ce6ac1" version="17" xmlns="http://mcuxpresso.nxp.com/XSD/mex_configuration_17" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+   <common>
+      <processor>S32K312</processor>
+      <package>S32K312_100HDQFP</package>
+      <mcu_data>PlatformSDK_S32K3</mcu_data>
+      <cores selected="M7_0">
+         <core name="Cortex-M7" id="M7_0" description=""/>
+      </cores>
+      <description></description>
+   </common>
+   <preferences>
+      <validate_boot_init_only>true</validate_boot_init_only>
+      <generate_code_modified_registers_only>false</generate_code_modified_registers_only>
+      <update_include_paths>true</update_include_paths>
+      <generate_registers_defines>false</generate_registers_defines>
+   </preferences>
+   <tools>
+      <pins name="Pins" version="17.0" enabled="true" update_project_code="true">
+         <generated_project_files>
+            <file path="board/Siul2_Port_Ip_Cfg.c" update_enabled="true"/>
+            <file path="board/Siul2_Port_Ip_Cfg.h" update_enabled="true"/>
+            <file path="board/Tspc_Port_Ip_Cfg.c" update_enabled="true"/>
+            <file path="board/Tspc_Port_Ip_Cfg.h" update_enabled="true"/>
+         </generated_project_files>
+         <pins_profile>
+            <processor_version>0.0.0</processor_version>
+            <pin_labels>
+               <pin_label pin_num="75" pin_signal="PTB10" label="LED1" identifier="LED1"/>
+            </pin_labels>
+         </pins_profile>
+         <functions_list>
+            <function name="PortContainer_0_BOARD_InitPeripherals">
+               <description>Configures pin routing and optionally pin electrical features.</description>
+               <options>
+                  <callFromInitBoot>true</callFromInitBoot>
+                  <coreID>M7_0</coreID>
+               </options>
+               <dependencies>
+                  <dependency resourceType="SWComponent" resourceId="platform.driver.pins" description="Pins initialization requires the PINS Driver in the project." problem_level="2" source="Pins:PortContainer_0_BOARD_InitPeripherals">
+                     <feature name="enabled" evaluation="equal" configuration="M7_0">
+                        <data>true</data>
+                     </feature>
+                  </dependency>
+               </dependencies>
+               <pins>
+                  <pin peripheral="SIUL2" signal="gpio, 42" pin_num="75" pin_signal="PTB10">
+                     <pin_features>
+                        <pin_feature name="direction" value="OUTPUT"/>
+                     </pin_features>
+                  </pin>
+               </pins>
+            </function>
+         </functions_list>
+      </pins>
+      <clocks name="Clocks" version="15.0" enabled="true" update_project_code="true">
+         <generated_project_files>
+            <file path="generate/include/Clock_Ip_Cfg.h" update_enabled="true"/>
+            <file path="generate/include/Clock_Ip_Cfg_Defines.h" update_enabled="true"/>
+            <file path="generate/src/Clock_Ip_Cfg.c" update_enabled="true"/>
+         </generated_project_files>
+         <clocks_profile>
+            <processor_version>0.0.0</processor_version>
+         </clocks_profile>
+         <clock_configurations>
+            <clock_configuration name="ClockConfig0" id_prefix="" prefix_user_defined="false">
+               <description></description>
+               <options/>
+               <dependencies>
+                  <dependency resourceType="PinSignal" resourceId="FXOSC_CLK.EXTAL" description="&apos;External pin&apos; (Pins tool id: FXOSC_CLK.EXTAL, Clocks tool id: FXOSC_CLK.EXTAL) needs to be routed" problem_level="1" source="Clocks:ClockConfig0">
+                     <feature name="routed" evaluation="">
+                        <data>true</data>
+                     </feature>
+                     <feature name="direction" evaluation="">
+                        <data>INPUT</data>
+                     </feature>
+                  </dependency>
+                  <dependency resourceType="PinSignal" resourceId="FXOSC_CLK.XTAL" description="&apos;External pin&apos; (Pins tool id: FXOSC_CLK.XTAL, Clocks tool id: FXOSC_CLK.XTAL) needs to be routed" problem_level="1" source="Clocks:ClockConfig0">
+                     <feature name="routed" evaluation="">
+                        <data>true</data>
+                     </feature>
+                     <feature name="direction" evaluation="">
+                        <data>OUTPUT</data>
+                     </feature>
+                  </dependency>
+                  <dependency resourceType="SWComponent" resourceId="platform.driver.clock" description="Clocks initialization requires the CLOCK Driver in the project." problem_level="2" source="Clocks:ClockConfig0">
+                     <feature name="enabled" evaluation="equal" configuration="M7_0">
+                        <data>true</data>
+                     </feature>
+                  </dependency>
+               </dependencies>
+               <clock_sources>
+                  <clock_source id="FXOSC_CLK.FXOSC_CLK.outFreq" value="16 MHz" locked="false" enabled="true"/>
+               </clock_sources>
+               <clock_outputs>
+                  <clock_output id="ADC0_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="ADC1_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="AIPS_PLAT_CLK.outFreq" value="60 MHz" locked="false" accuracy=""/>
+                  <clock_output id="AIPS_SLOW_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="BCTU0_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="CLKOUT_RUN_CLK.outFreq" value="8 MHz" locked="false" accuracy=""/>
+                  <clock_output id="CLKOUT_STANDBY_CLK.outFreq" value="24 MHz" locked="false" accuracy=""/>
+                  <clock_output id="CMP0_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="CMP1_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="CORE_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="CRC0_CLK.outFreq" value="60 MHz" locked="false" accuracy=""/>
+                  <clock_output id="DCM0_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="DCM_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="DMAMUX0_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="DMAMUX1_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="EDMA0_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="EDMA0_TCD0_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="EDMA0_TCD10_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="EDMA0_TCD11_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="EDMA0_TCD1_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="EDMA0_TCD2_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="EDMA0_TCD3_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="EDMA0_TCD4_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="EDMA0_TCD5_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="EDMA0_TCD6_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="EDMA0_TCD7_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="EDMA0_TCD8_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="EDMA0_TCD9_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="EIM0_CLK.outFreq" value="60 MHz" locked="false" accuracy=""/>
+                  <clock_output id="EMIOS0_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="EMIOS1_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="ERM0_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="FIRCOUT.outFreq" value="48 MHz" locked="false" accuracy=""/>
+                  <clock_output id="FLASH0_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="FLEXCAN0_CLK.outFreq" value="24 MHz" locked="false" accuracy=""/>
+                  <clock_output id="FLEXCAN1_CLK.outFreq" value="24 MHz" locked="false" accuracy=""/>
+                  <clock_output id="FLEXCAN2_CLK.outFreq" value="24 MHz" locked="false" accuracy=""/>
+                  <clock_output id="FLEXCAN3_CLK.outFreq" value="24 MHz" locked="false" accuracy=""/>
+                  <clock_output id="FLEXCAN4_CLK.outFreq" value="24 MHz" locked="false" accuracy=""/>
+                  <clock_output id="FLEXCAN5_CLK.outFreq" value="24 MHz" locked="false" accuracy=""/>
+                  <clock_output id="FLEXCANA_CLK.outFreq" value="24 MHz" locked="false" accuracy=""/>
+                  <clock_output id="FLEXCANB_CLK.outFreq" value="24 MHz" locked="false" accuracy=""/>
+                  <clock_output id="FLEXIO0_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="FXOSCOUT.outFreq" value="16 MHz" locked="false" accuracy=""/>
+                  <clock_output id="HSE_CLK.outFreq" value="60 MHz" locked="false" accuracy=""/>
+                  <clock_output id="INTM_CLK.outFreq" value="60 MHz" locked="false" accuracy=""/>
+                  <clock_output id="LCU0_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="LCU1_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="LPI2C0_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="LPI2C1_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="LPSPI0_CLK.outFreq" value="60 MHz" locked="false" accuracy=""/>
+                  <clock_output id="LPSPI1_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="LPSPI2_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="LPSPI3_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="LPUART0_CLK.outFreq" value="60 MHz" locked="false" accuracy=""/>
+                  <clock_output id="LPUART1_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="LPUART2_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="LPUART3_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="LPUART4_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="LPUART5_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="LPUART6_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="LPUART7_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="MSCM_CLK.outFreq" value="60 MHz" locked="false" accuracy=""/>
+                  <clock_output id="PIT0_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="PIT1_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="PLL_PHI0.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="PLL_PHI1.outFreq" value="48 MHz" locked="false" accuracy=""/>
+                  <clock_output id="RTC0_CLK.outFreq" value="48 MHz" locked="false" accuracy=""/>
+                  <clock_output id="RTC_CLK.outFreq" value="48 MHz" locked="false" accuracy=""/>
+                  <clock_output id="SCS_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="SIRCOUT.outFreq" value="32 kHz" locked="false" accuracy=""/>
+                  <clock_output id="SIUL2_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="STCU0_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="STM0_CLK.outFreq" value="48 MHz" locked="false" accuracy=""/>
+                  <clock_output id="STMA_CLK.outFreq" value="48 MHz" locked="false" accuracy=""/>
+                  <clock_output id="SWT0_CLK.outFreq" value="32 kHz" locked="false" accuracy=""/>
+                  <clock_output id="TEMPSENSE_CLK.outFreq" value="120 MHz" locked="false" accuracy=""/>
+                  <clock_output id="TRACE_CLK.outFreq" value="48 MHz" locked="false" accuracy=""/>
+                  <clock_output id="TRGMUX0_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="TSENSE0_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+                  <clock_output id="WKPU0_CLK.outFreq" value="30 MHz" locked="false" accuracy=""/>
+               </clock_outputs>
+               <clock_settings>
+                  <setting id="CORE_MFD.scale" value="120" locked="true"/>
+                  <setting id="CORE_PLLODIV_0_DE" value="Enabled" locked="false"/>
+                  <setting id="CORE_PLLODIV_1_DE" value="Enabled" locked="false"/>
+                  <setting id="CORE_PLL_PD" value="Power_up" locked="false"/>
+                  <setting id="FXOSC_PM" value="Crystal_mode" locked="false"/>
+                  <setting id="MC_CGM_MUX_0.sel" value="PHI0" locked="false"/>
+                  <setting id="MC_CGM_MUX_0_DIV0.scale" value="1" locked="true"/>
+                  <setting id="MC_CGM_MUX_0_DIV0_Trigger" value="Common" locked="false"/>
+                  <setting id="MC_CGM_MUX_0_DIV1.scale" value="2" locked="true"/>
+                  <setting id="MC_CGM_MUX_0_DIV1_Trigger" value="Common" locked="false"/>
+                  <setting id="MC_CGM_MUX_0_DIV2.scale" value="4" locked="true"/>
+                  <setting id="MC_CGM_MUX_0_DIV2_Trigger" value="Common" locked="false"/>
+                  <setting id="MC_CGM_MUX_0_DIV3.scale" value="2" locked="true"/>
+                  <setting id="MC_CGM_MUX_0_DIV3_Trigger" value="Common" locked="false"/>
+                  <setting id="MC_CGM_MUX_0_DIV4.scale" value="4" locked="true"/>
+                  <setting id="MC_CGM_MUX_0_DIV4_Trigger" value="Common" locked="false"/>
+                  <setting id="MC_CGM_MUX_6.sel" value="N/A" locked="false"/>
+                  <setting id="MC_CGM_MUX_6_DE0" value="Enabled" locked="false"/>
+                  <setting id="MC_CGM_MUX_6_DIV0.scale" value="2" locked="true"/>
+                  <setting id="MODULE_CLOCKS.MC_CGM_AUX3_DIV0.scale" value="2" locked="true"/>
+                  <setting id="MODULE_CLOCKS.MC_CGM_AUX4_DIV0.scale" value="2" locked="true"/>
+                  <setting id="PHI0.scale" value="2" locked="true"/>
+                  <setting id="PHI1.scale" value="5" locked="true"/>
+                  <setting id="PLL_PREDIV.scale" value="2" locked="true"/>
+                  <setting id="POSTDIV.scale" value="4" locked="true"/>
+               </clock_settings>
+               <called_from_default_init>true</called_from_default_init>
+            </clock_configuration>
+         </clock_configurations>
+      </clocks>
+      <ddr name="DDR" version="1.0" enabled="false" update_project_code="true">
+         <generated_project_files/>
+         <components/>
+      </ddr>
+      <dcd name="DCD" version="1.0" enabled="false" update_project_code="true" isSelfTest="false">
+         <generated_project_files/>
+         <dcdx_profile>
+            <processor_version>N/A</processor_version>
+         </dcdx_profile>
+         <dcdx_configurations/>
+      </dcd>
+      <ivt name="IVT" version="1.0" enabled="false" update_project_code="true">
+         <generated_project_files/>
+         <ivt_profile>
+            <processor_version>N/A</processor_version>
+         </ivt_profile>
+      </ivt>
+      <quadspi name="QuadSPI" version="1.0" enabled="false" update_project_code="true">
+         <generated_project_files/>
+         <quadspi_profile>
+            <processor_version>N/A</processor_version>
+         </quadspi_profile>
+      </quadspi>
+      <efuse name="eFUSE" version="1.0" enabled="false" update_project_code="true">
+         <efuse_profile>
+            <processor_version>N/A</processor_version>
+         </efuse_profile>
+      </efuse>
+      <gtm name="GTM" version="1.0" enabled="false" update_project_code="true">
+         <generated_project_files/>
+         <gtm_profile>
+            <processor_version>N/A</processor_version>
+         </gtm_profile>
+      </gtm>
+      <ice name="ICE" version="1.0" enabled="false" update_project_code="true">
+         <ice_profile>
+            <processor_version>N/A</processor_version>
+         </ice_profile>
+      </ice>
+      <periphs name="Peripherals" version="15.0" enabled="true" update_project_code="true">
+         <dependencies>
+            <dependency resourceType="SWComponent" resourceId="platform.driver.osif" description="工具链/IDE工程中未找到osif。工程不会被编译！" problem_level="2" source="Peripherals">
+               <feature name="enabled" evaluation="equal">
+                  <data type="Boolean">true</data>
+               </feature>
+            </dependency>
+            <dependency resourceType="SWComponent" resourceId="platform.driver.osif" description="工具链/IDE工程不支持osif版本。所需值: ${required_value}, 实际值: ${actual_value}. 工程可能没有被正确编译。" problem_level="1" source="Peripherals">
+               <feature name="version" evaluation="equivalent">
+                  <data type="Version">1.0.0</data>
+               </feature>
+            </dependency>
+            <dependency resourceType="SWComponent" resourceId="platform.driver.siul2_port" description="工具链/IDE工程中未找到siul2_port。工程不会被编译！" problem_level="2" source="Peripherals">
+               <feature name="enabled" evaluation="equal">
+                  <data type="Boolean">true</data>
+               </feature>
+            </dependency>
+            <dependency resourceType="SWComponent" resourceId="platform.driver.siul2_port" description="工具链/IDE工程不支持siul2_port版本。所需值: ${required_value}, 实际值: ${actual_value}. 工程可能没有被正确编译。" problem_level="1" source="Peripherals">
+               <feature name="version" evaluation="equivalent">
+                  <data type="Version">1.0.0</data>
+               </feature>
+            </dependency>
+            <dependency resourceType="SWComponent" resourceId="platform.driver.siul2_dio" description="工具链/IDE工程中未找到siul2_dio。工程不会被编译！" problem_level="2" source="Peripherals">
+               <feature name="enabled" evaluation="equal">
+                  <data type="Boolean">true</data>
+               </feature>
+            </dependency>
+            <dependency resourceType="SWComponent" resourceId="platform.driver.siul2_dio" description="工具链/IDE工程不支持siul2_dio版本。所需值: ${required_value}, 实际值: ${actual_value}. 工程可能没有被正确编译。" problem_level="1" source="Peripherals">
+               <feature name="version" evaluation="equivalent">
+                  <data type="Version">1.0.0</data>
+               </feature>
+            </dependency>
+         </dependencies>
+         <generated_project_files>
+            <file path="generate/include/DeviceDefinition.h" update_enabled="true"/>
+            <file path="generate/include/OsIf_ArchCfg.h" update_enabled="true"/>
+            <file path="generate/include/OsIf_Cfg.h" update_enabled="true"/>
+            <file path="generate/include/Siul2_Dio_Ip_Cfg.h" update_enabled="true"/>
+            <file path="generate/include/Siul2_Port_Ip_Defines.h" update_enabled="true"/>
+            <file path="generate/include/Soc_Ips.h" update_enabled="true"/>
+            <file path="generate/include/modules.h" update_enabled="true"/>
+            <file path="generate/src/OsIf_Cfg.c" update_enabled="true"/>
+         </generated_project_files>
+         <peripherals_profile>
+            <processor_version>0.0.0</processor_version>
+         </peripherals_profile>
+         <functional_groups>
+            <functional_group name="BOARD_InitPeripherals" uuid="343d8c09-29ab-44df-a8a2-0e35bf16a60f" called_from_default_init="true" id_prefix="" core="M7_0">
+               <description></description>
+               <options/>
+               <dependencies/>
+               <instances>
+                  <instance name="BaseNXP" uuid="a62e3129-c7ba-41d9-97d3-6cb575e7e56b" type="BaseNXP" type_id="Base" mode="general" enabled="true" comment="" custom_name_enabled="false" editing_lock="false">
+                     <config_set name="BaseNXP">
+                        <setting name="Name" value="BaseNXP"/>
+                        <struct name="ConfigTimeSupport">
+                           <setting name="POST_BUILD_VARIANT_USED" value="false"/>
+                           <setting name="IMPLEMENTATION_CONFIG_VARIANT" value="VARIANT-PRE-COMPILE"/>
+                        </struct>
+                        <struct name="OsIfGeneral">
+                           <setting name="Name" value="OsIfGeneral"/>
+                           <setting name="OsIfMulticoreSupport" value="false"/>
+                           <setting name="OsIfEnableUserModeSupport" value="false"/>
+                           <setting name="OsIfDevErrorDetect" value="true"/>
+                           <setting name="OsIfUseSystemTimer" value="false"/>
+                           <setting name="OsIfUseCustomTimer" value="false"/>
+                           <setting name="OsIfUseGetUserId" value="GET_CORE_ID"/>
+                           <setting name="OsIfInstanceId" value="255"/>
+                           <setting name="OsIfGetPhysicalCoreIdEnable" value="false"/>
+                           <setting name="OsIfSoftwareSemaphoredEnable" value="false"/>
+                           <struct name="OsIfOperatingSystemType">
+                              <setting name="Name" value="OsIfOperatingSystemType"/>
+                              <setting name="Choice" value="OsIfBaremetalType"/>
+                              <struct name="OsIfBaremetalType" quick_selection="Default">
+                                 <setting name="Name" value="OsIfOperatingSystemType"/>
+                              </struct>
+                           </struct>
+                           <array name="OsIfEcucPartitionRef"/>
+                           <array name="OsIfCounterConfig"/>
+                        </struct>
+                        <struct name="CommonPublishedInformation" quick_selection="Default">
+                           <setting name="Name" value="CommonPublishedInformation"/>
+                           <setting name="ModuleId" value="0"/>
+                           <setting name="VendorId" value="43"/>
+                           <array name="VendorApiInfix"/>
+                           <setting name="ArReleaseMajorVersion" value="4"/>
+                           <setting name="ArReleaseMinorVersion" value="7"/>
+                           <setting name="ArReleaseRevisionVersion" value="0"/>
+                           <setting name="SwMajorVersion" value="5"/>
+                           <setting name="SwMinorVersion" value="0"/>
+                           <setting name="SwPatchVersion" value="0"/>
+                        </struct>
+                     </config_set>
+                  </instance>
+                  <instance name="Siul2_Port" uuid="16480d47-54a9-4096-9930-a993ccf616b6" type="Siul2_Port" type_id="Siul2_Port" mode="ip" enabled="true" comment="" custom_name_enabled="false" editing_lock="false">
+                     <config_set name="Siul2_Port" quick_selection="Siul2PortDefault">
+                        <setting name="Name" value="Siul2_Port"/>
+                        <struct name="ConfigTimeSupport">
+                           <setting name="POST_BUILD_VARIANT_USED" value="false"/>
+                           <setting name="IMPLEMENTATION_CONFIG_VARIANT" value="VARIANT-PRE-COMPILE"/>
+                        </struct>
+                        <struct name="PortGeneral">
+                           <setting name="Name" value="PortGeneral"/>
+                           <setting name="SIUL2PortIPDevErrorDetect" value="true"/>
+                           <setting name="PortEnableUserModeSupport" value="false"/>
+                        </struct>
+                        <struct name="PortConfigSet">
+                           <setting name="Name" value="PortConfigSet"/>
+                           <array name="PortContainer">
+                              <struct name="0">
+                                 <setting name="Name" value="PortContainer_0"/>
+                                 <array name="PortPin">
+                                    <struct name="0">
+                                       <setting name="Name" value="PortPin_0"/>
+                                       <setting name="PortPinPue" value="false"/>
+                                       <setting name="PortPinPus" value="false"/>
+                                       <setting name="PortPinSafeMode" value="false"/>
+                                       <setting name="PortPinDse" value="false"/>
+                                       <setting name="PortPinWithReadBack" value="false"/>
+                                       <setting name="PortPinPke" value="false"/>
+                                       <setting name="PortPinIfe" value="false"/>
+                                       <setting name="PortPinDirectionChangeable" value="true"/>
+                                       <setting name="PortPinModeChangeable" value="true"/>
+                                       <setting name="PortPinInvertControl" value="false"/>
+                                       <setting name="PortPinSiul2Instance" value="SIUL2_0"/>
+                                       <setting name="PortPinId" value="1"/>
+                                       <setting name="PortPinInitialMode" value="PORT_GPIO_MODE"/>
+                                    </struct>
+                                 </array>
+                              </struct>
+                           </array>
+                        </struct>
+                     </config_set>
+                  </instance>
+                  <instance name="Siul2_Dio" uuid="ad393ab4-6b9a-4def-95f3-e4d88470bc60" type="Siul2_Dio" type_id="Siul2_Dio" mode="ip" enabled="true" comment="" custom_name_enabled="false" editing_lock="false">
+                     <config_set name="Siul2_Dio" quick_selection="Siul2DiotDefault">
+                        <setting name="Name" value="Siul2_Dio"/>
+                        <struct name="ConfigTimeSupport">
+                           <setting name="POST_BUILD_VARIANT_USED" value="false"/>
+                           <setting name="IMPLEMENTATION_CONFIG_VARIANT" value="VARIANT-PRE-COMPILE"/>
+                        </struct>
+                        <struct name="DioGeneral">
+                           <setting name="Name" value="DioGeneral"/>
+                           <setting name="SIUL2DioIPDevErrorDetect" value="true"/>
+                        </struct>
+                     </config_set>
+                  </instance>
+               </instances>
+            </functional_group>
+         </functional_groups>
+         <components>
+            <component name="system" uuid="dad901f7-0eee-486e-b501-0915a8dc0834" type_id="system">
+               <config_set_global name="SystemModel" quick_selection="Default">
+                  <setting name="Name" value="SystemModel"/>
+                  <setting name="EcvdGenerationMethod" value="INDIVIDUAL"/>
+                  <setting name="EcvdOutputPath" value=""/>
+                  <setting name="EcvdGenerationTrigger" value="Generate Configuration"/>
+                  <setting name="SyncFunctionalGroups" value="true"/>
+                  <setting name="IgnoreComponentSuffix" value="true"/>
+                  <setting name="ComponentGenerationMethod" value="EcucPostBuildVariants"/>
+                  <setting name="DefaultFunctionalGroup" value="BOARD_InitPeripherals"/>
+                  <struct name="PostBuildSelectable" quick_selection="Default">
+                     <setting name="Name" value="PostBuildSelectable"/>
+                     <array name="PredefinedVariants">
+                        <struct name="0">
+                           <setting name="Name" value="BOARD_InitPeripherals"/>
+                           <setting name="Path" value="/system/SystemModel/PostBuildSelectable/BOARD_InitPeripherals"/>
+                           <array name="PostBuildVariantCriterionValues"/>
+                        </struct>
+                     </array>
+                  </struct>
+                  <struct name="Criterions" quick_selection="Default">
+                     <setting name="Name" value="Criterions"/>
+                     <array name="PostBuildVariantCriterions"/>
+                  </struct>
+               </config_set_global>
+            </component>
+         </components>
+      </periphs>
+   </tools>
+</configuration>

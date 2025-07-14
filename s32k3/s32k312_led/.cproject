@@ -1,0 +1,745 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
+	<storageModule moduleId="org.eclipse.cdt.core.settings">
+		<cconfiguration id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.debug.2043426166">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.debug.2043426166" moduleId="org.eclipse.cdt.core.settings" name="Debug_FLASH">
+				<externalSettings/>
+				<extensions>
+					<extension id="org.eclipse.cdt.core.GNU_ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="com.freescale.s32ds.cdt.core.errorParsers.S32DSGNULinkerErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+				</extensions>
+			</storageModule>
+			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+				<configuration artifactExtension="elf" artifactName="${ProjName}" buildArtefactType="com.nxp.s32ds.cle.arm.mbs.arm32.bare.buildArtefact.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=com.nxp.s32ds.cle.arm.mbs.arm32.bare.buildArtefact.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug" description="" id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.debug.2043426166" name="Debug_FLASH" parent="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.debug">
+					<folderInfo id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.debug.2043426166." name="/" resourcePath="">
+						<toolChain id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.toolchain.debug.1358320521" name="NXP GCC 10.2 for Arm 32-bit Bare-Metal" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.toolchain.debug">
+							<option defaultValue="true" id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.addtools.printsize.80997731" name="Print size" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.addtools.printsize" valueType="boolean"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.option.compiler.path.329816163" name="Path" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.option.compiler.path" value="${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}" valueType="string"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.option.target.libraries.270105642" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.option.target.libraries" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.mcpu.613377048" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.mcpu" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.instructionset.424684994" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.instructionset" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.instructionset.thumb" valueType="enumerated"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.sysroot.301883765" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.sysroot" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.endianness.1431745682" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.endianness" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.endianness.little" valueType="enumerated"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.abi.578960146" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.abi" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.abi.hard" valueType="enumerated"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.unit.1246297120" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.unit" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.GNU_ELF" id="cdt.managedbuild.targetPlatform.gnu.cross.1914179414" isAbstract="false" osList="all" superClass="cdt.managedbuild.targetPlatform.gnu.cross"/>
+							<builder buildPath="${workspace_loc:/s32k312_led}/Debug_FLASH" id="com.freescale.s32ds.cross.gnu.builder.1558733387" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="FSL Make Builder" superClass="com.freescale.s32ds.cross.gnu.builder"/>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler.227045590" name="Standard S32DS C Compiler" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler">
+								<option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.option.optimization.level.642112716" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" useByScannerDiscovery="false" value="gnu.c.optimization.level.size" valueType="enumerated"/>
+								<option defaultValue="gnu.c.debugging.level.max" id="gnu.c.compiler.option.debugging.level.834525395" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.c.debugging.level.none" valueType="enumerated"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.functionsections.1196683324" name="Function sections (-ffunction-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.functionsections" useByScannerDiscovery="true" value="false" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.datasections.2065245421" name="Data sections (-fdata-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.datasections" useByScannerDiscovery="true" value="false" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.debugging.format.833322710" name="Debug format" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.debugging.format" useByScannerDiscovery="true"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.libraries.1866763371" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.libraries" useByScannerDiscovery="false" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.1123321401" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="../RTD/include"/>
+									<listOptionValue builtIn="false" value="${ProjDirPath}/generate/include"/>
+									<listOptionValue builtIn="false" value="${ProjDirPath}/RTD/include"/>
+									<listOptionValue builtIn="false" value="&quot;${PLATFORMSDK_S32K3_S32K312_M7_6.0.0_PATH}/RTD/BaseNXP_TS_T40D34M60I0R0/header&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${BASE_PLATFORMSDK_S32K3}/header/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${BASE_PLATFORMSDK_S32K3}/include/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${PLATFORM_PLATFORMSDK_S32K3}/include/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${PLATFORM_PLATFORMSDK_S32K3}/startup/include/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/board&quot;"/>
+								</option>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.mcpu.111547336" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.mcpu" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.preprocessor.def.symbols.541797585" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="D_CACHE_ENABLE"/>
+									<listOptionValue builtIn="false" value="I_CACHE_ENABLE"/>
+									<listOptionValue builtIn="false" value="ENABLE_FPU"/>
+									<listOptionValue builtIn="false" value="MPU_ENABLE"/>
+									<listOptionValue builtIn="false" value="GCC"/>
+									<listOptionValue builtIn="false" value="CPU_S32K312"/>
+									<listOptionValue builtIn="false" value="CPU_CORTEX_M7"/>
+								</option>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.instructionset.1224572003" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.instructionset" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.instructionset.thumb" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.sysroot.102081028" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.sysroot" useByScannerDiscovery="false" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler.option.dialect.std.460127615" name="Language standard" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler.option.dialect.std" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler.option.dialect.std.c99" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.endianness.1649598593" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.endianness" useByScannerDiscovery="false" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.endianness.little" valueType="enumerated"/>
+								<option id="gnu.c.compiler.option.debugging.other.2038219203" name="Other debugging flags" superClass="gnu.c.compiler.option.debugging.other" useByScannerDiscovery="false" value="-ggdb3" valueType="string"/>
+								<option id="gnu.c.compiler.option.warnings.pedantic.1044885188" name="Pedantic (-pedantic)" superClass="gnu.c.compiler.option.warnings.pedantic" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+								<option id="gnu.c.compiler.option.warnings.extrawarn.316757791" name="Extra warnings (-Wextra)" superClass="gnu.c.compiler.option.warnings.extrawarn" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.warnings.unused.1656925659" name="Warn on various unused elements (-Wunused)" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.warnings.unused" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.unsignedbitfields.2017746423" name="'bitfield' is unsigned (-funsigned-bitfields)" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.unsignedbitfields" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.abi.2098809785" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.abi" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.abi.hard" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.unit.913629225" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.unit" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.nocommon.766518662" name="No common uninitialized (-fno-common)" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.nocommon" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+								<option id="gnu.c.compiler.option.optimization.flags.1540307771" name="Other optimization flags" superClass="gnu.c.compiler.option.optimization.flags" useByScannerDiscovery="false" value="-funsigned-char -fomit-frame-pointer" valueType="string"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.warnings.other.1228212115" name="Other warning flags" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.warnings.other" useByScannerDiscovery="true" value="-Wstrict-prototypes -Wsign-compare -Werror=implicit-function-declaration -Wundef -Wdouble-promotion" valueType="string"/>
+								<option id="gnu.c.compiler.option.misc.other.23267240" name="Other flags" superClass="gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-c -fno-short-enums" valueType="string"/>
+								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1002032895" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.cpp.compiler.955042128" name="Standard S32DS C++ Compiler" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.cpp.compiler">
+								<option id="gnu.cpp.compiler.option.optimization.level.1073252812" name="Optimization Level" superClass="gnu.cpp.compiler.option.optimization.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
+								<option defaultValue="gnu.cpp.compiler.debugging.level.max" id="gnu.cpp.compiler.option.debugging.level.171107596" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" useByScannerDiscovery="false" valueType="enumerated"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.optimization.functionsections.1428389585" name="Function sections (-ffunction-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.optimization.functionsections" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.optimization.datasections.1803752667" name="Data sections (-fdata-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.optimization.datasections" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.debugging.format.1178120696" name="Debug format" superClass="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.debugging.format" useByScannerDiscovery="true"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.libraries.1455517626" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.libraries" useByScannerDiscovery="false" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.1787756856" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${BASE_PLATFORMSDK_S32K3}/header/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${BASE_PLATFORMSDK_S32K3}/include/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${PLATFORM_PLATFORMSDK_S32K3}/include/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${PLATFORM_PLATFORMSDK_S32K3}/startup/include/&quot;"/>
+								</option>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.mcpu.515793013" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.mcpu" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.instructionset.202893336" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.instructionset" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.instructionset.thumb" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.sysroot.1231971243" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.sysroot" useByScannerDiscovery="false" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.endianness.1955536063" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.endianness" useByScannerDiscovery="false" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.endianness.little" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.abi.35318529" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.abi" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.abi.hard" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.unit.1109620549" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.unit" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.preprocessor.def.2111637862" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="CPU_S32K312"/>
+									<listOptionValue builtIn="false" value="CPU_CORTEX_M7"/>
+								</option>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.linker.1100209759" name="Standard S32DS C Linker" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.linker">
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.linker.option.gcsections.1189081480" name="Remove unused sections (-Xlinker --gc-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.c.linker.option.gcsections" value="false" valueType="boolean"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.libraries.1330978072" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.libraries" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.mcpu.554630265" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.mcpu" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.freescale.s32ds.cross.gnu.tool.c.linker.option.scriptfile.1463903970" name="Script files (-T)" superClass="com.freescale.s32ds.cross.gnu.tool.c.linker.option.scriptfile" valueType="stringList">
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/Project_Settings/Linker_Files/linker_flash_s32k312.ld&quot;"/>
+								</option>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.off_page_align.2058171256" name="Turn off page alignment of sections (-n)" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.off_page_align" value="false" valueType="boolean"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.instructionset.1736133131" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.instructionset" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.instructionset.thumb" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.sysroot.270906166" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.sysroot" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.endianness.1757595360" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.endianness" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.endianness.little" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.abi.496627643" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.abi" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.abi.hard" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.unit.1523182872" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.unit" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+								<option id="gnu.c.link.option.ldflags.1478534613" name="Linker flags" superClass="gnu.c.link.option.ldflags" value="--entry=Reset_Handler -ggdb3" valueType="string"/>
+								<option id="gnu.c.link.option.nostart.1755188400" name="Do not use standard start files (-nostartfiles)" superClass="gnu.c.link.option.nostart" value="true" valueType="boolean"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.link.option.libs.252617236" name="Libraries (-l)" superClass="gnu.c.link.option.libs" valueType="libs">
+									<listOptionValue builtIn="false" value="c"/>
+									<listOptionValue builtIn="false" value="m"/>
+									<listOptionValue builtIn="false" value="gcc"/>
+								</option>
+								<inputType id="com.freescale.s32ds.cross.gnu.tool.c.linker.inputType.scriptfile.1603764108" superClass="com.freescale.s32ds.cross.gnu.tool.c.linker.inputType.scriptfile"/>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.cpp.linker.683836057" name="Standard S32DS C++ Linker" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.cpp.linker">
+								<option id="com.freescale.s32ds.cross.gnu.tool.cpp.linker.option.gcsections.382627882" name="Remove unused sections (-Xlinker --gc-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.cpp.linker.option.gcsections" value="true" valueType="boolean"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.libraries.1334012974" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.libraries" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.mcpu.172040802" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.mcpu" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.instructionset.826447535" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.instructionset" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.instructionset.thumb" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.sysroot.1018935378" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.sysroot" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.endianness.275608094" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.endianness" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.endianness.little" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.abi.772732553" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.abi" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.abi.hard" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.unit.322940498" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.unit" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.archiver.1285154616" name="Standard S32DS Archiver" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.archiver"/>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.1637191612" name="Standard S32DS Assembler" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler">
+								<option id="com.freescale.s32ds.cross.gnu.tool.assembler.usepreprocessor.384622696" name="Use preprocessor" superClass="com.freescale.s32ds.cross.gnu.tool.assembler.usepreprocessor" value="true" valueType="boolean"/>
+								<option defaultValue="gnu.c.debugging.level.max" id="com.freescale.s32ds.cross.gnu.tool.assembler.option.debugging.level.37135777" name="Debug Level" superClass="com.freescale.s32ds.cross.gnu.tool.assembler.option.debugging.level" value="gnu.c.debugging.level.none" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.libraries.1317396072" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.libraries" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.904274498" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="../RTD/include"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/board&quot;"/>
+								</option>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.mcpu.1808073441" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.mcpu" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.instructionset.1741410587" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.instructionset" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.instructionset.thumb" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.sysroot.783197759" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.sysroot" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.endianness.489714189" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.endianness" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.endianness.little" valueType="enumerated"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.assembler.option.debugging.other.77494642" name="Other debugging flags" superClass="com.freescale.s32ds.cross.gnu.tool.assembler.option.debugging.other" value="-ggdb3" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.abi.395539584" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.abi" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.abi.hard" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.unit.1448104887" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.unit" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.799520625" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+								<inputType id="com.freescale.s32ds.cross.gnu.tool.assembler.inputType.asmfile.2093237172" superClass="com.freescale.s32ds.cross.gnu.tool.assembler.inputType.asmfile"/>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.createflash.1505669971" name="Standard S32DS Create Flash Image" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.createflash"/>
+							<tool id="com.freescale.s32ds.cross.gnu.tool.createlisting.2089511954" name="Standard S32DS Create Listing" superClass="com.freescale.s32ds.cross.gnu.tool.createlisting">
+								<option id="com.freescale.s32ds.cross.gnu.option.createlisting.source.844937781" name="Display source (--source|-S)" superClass="com.freescale.s32ds.cross.gnu.option.createlisting.source" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.option.createlisting.allheaders.1614930246" name="Display all headers (--all-headers|-x)" superClass="com.freescale.s32ds.cross.gnu.option.createlisting.allheaders" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.option.createlisting.demangle.2060569627" name="Demangle names (--demangle|-C)" superClass="com.freescale.s32ds.cross.gnu.option.createlisting.demangle" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.option.createlisting.linenumbers.1573958097" name="Display line numbers (--line-numbers|-l)" superClass="com.freescale.s32ds.cross.gnu.option.createlisting.linenumbers" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.option.createlisting.wide.741347644" name="Wide lines (--wide|-w)" superClass="com.freescale.s32ds.cross.gnu.option.createlisting.wide" value="true" valueType="boolean"/>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.printsize.881518970" name="Standard S32DS Print Size" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.printsize">
+								<option id="com.freescale.s32ds.cross.gnu.option.printsize.format.2015167159" name="Size format" superClass="com.freescale.s32ds.cross.gnu.option.printsize.format"/>
+							</tool>
+							<tool id="com.freescale.s32ds.cross.gnu.c.preprocessor.1849004453" name="Standard S32DS C Preprocessor" superClass="com.freescale.s32ds.cross.gnu.c.preprocessor"/>
+							<tool id="com.freescale.s32ds.cross.gnu.cpp.preprocessor.1155392720" name="Standard S32DS C++ Preprocessor" superClass="com.freescale.s32ds.cross.gnu.cpp.preprocessor"/>
+							<tool id="com.freescale.s32ds.cross.gnu.disassembler.1691891586" name="Standard S32DS Disassembler" superClass="com.freescale.s32ds.cross.gnu.disassembler"/>
+						</toolChain>
+					</folderInfo>
+					<sourceEntries>
+						<entry excluding="Linker_Files|Debugger" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Project_Settings"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="RTD"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="board"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="generate"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+					</sourceEntries>
+				</configuration>
+			</storageModule>
+			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+		</cconfiguration>
+		<cconfiguration id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.release.681063996">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.release.681063996" moduleId="org.eclipse.cdt.core.settings" name="Release_FLASH">
+				<externalSettings/>
+				<extensions>
+					<extension id="org.eclipse.cdt.core.GNU_ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="com.freescale.s32ds.cdt.core.errorParsers.S32DSGNULinkerErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+				</extensions>
+			</storageModule>
+			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+				<configuration artifactExtension="elf" artifactName="${ProjName}" buildArtefactType="com.nxp.s32ds.cle.arm.mbs.arm32.bare.buildArtefact.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=com.nxp.s32ds.cle.arm.mbs.arm32.bare.buildArtefact.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.release" description="" id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.release.681063996" name="Release_FLASH" parent="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.release">
+					<folderInfo id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.release.681063996." name="/" resourcePath="">
+						<toolChain id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.toolchain.release.1623921967" name="NXP GCC 10.2 for Arm 32-bit Bare-Metal" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.toolchain.release">
+							<option defaultValue="true" id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.addtools.printsize.1725443328" name="Print size" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.addtools.printsize" valueType="boolean"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.option.compiler.path.137494351" name="Path" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.option.compiler.path" value="${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}" valueType="string"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.option.target.libraries.1670294499" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.option.target.libraries" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.mcpu.1225653821" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.mcpu" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.instructionset.447081356" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.instructionset" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.instructionset.thumb" valueType="enumerated"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.sysroot.1785253395" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.sysroot" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.endianness.1376469332" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.endianness" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.endianness.little" valueType="enumerated"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.abi.1165363763" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.abi" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.abi.hard" valueType="enumerated"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.unit.1610045908" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.unit" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.addtools.createflash.629485634" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.addtools.createflash" value="true" valueType="boolean"/>
+							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.GNU_ELF" id="cdt.managedbuild.targetPlatform.gnu.cross.2015827794" isAbstract="false" osList="all" superClass="cdt.managedbuild.targetPlatform.gnu.cross"/>
+							<builder buildPath="${workspace_loc:/s32k312_led}/Release_FLASH" id="com.freescale.s32ds.cross.gnu.builder.1118595099" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="FSL Make Builder" superClass="com.freescale.s32ds.cross.gnu.builder"/>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler.1343125904" name="Standard S32DS C Compiler" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler">
+								<option defaultValue="gnu.c.optimization.level.most" id="gnu.c.compiler.option.optimization.level.330001995" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" useByScannerDiscovery="false" value="gnu.c.optimization.level.size" valueType="enumerated"/>
+								<option defaultValue="gnu.c.debugging.level.none" id="gnu.c.compiler.option.debugging.level.626250100" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" useByScannerDiscovery="false" valueType="enumerated"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.functionsections.657403962" name="Function sections (-ffunction-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.functionsections" useByScannerDiscovery="true" value="false" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.datasections.933889858" name="Data sections (-fdata-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.datasections" useByScannerDiscovery="true" value="false" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.debugging.format.477989919" name="Debug format" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.debugging.format" useByScannerDiscovery="true"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.libraries.1711480464" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.libraries" useByScannerDiscovery="false" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.1411922650" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="../RTD/include"/>
+									<listOptionValue builtIn="false" value="${ProjDirPath}/generate/include"/>
+									<listOptionValue builtIn="false" value="${ProjDirPath}/RTD/include"/>
+									<listOptionValue builtIn="false" value="&quot;${BASE_PLATFORMSDK_S32K3}/header/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${BASE_PLATFORMSDK_S32K3}/include/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${PLATFORM_PLATFORMSDK_S32K3}/include/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${PLATFORM_PLATFORMSDK_S32K3}/startup/include/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/board&quot;"/>
+								</option>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.mcpu.995765741" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.mcpu" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.preprocessor.def.symbols.799748184" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="D_CACHE_ENABLE"/>
+									<listOptionValue builtIn="false" value="I_CACHE_ENABLE"/>
+									<listOptionValue builtIn="false" value="ENABLE_FPU"/>
+									<listOptionValue builtIn="false" value="MPU_ENABLE"/>
+									<listOptionValue builtIn="false" value="GCC"/>
+									<listOptionValue builtIn="false" value="CPU_S32K312"/>
+									<listOptionValue builtIn="false" value="CPU_CORTEX_M7"/>
+								</option>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.instructionset.1037313543" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.instructionset" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.instructionset.thumb" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.sysroot.2021284010" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.sysroot" useByScannerDiscovery="false" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler.option.dialect.std.1025838428" name="Language standard" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler.option.dialect.std" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler.option.dialect.std.c99" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.endianness.108774481" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.endianness" useByScannerDiscovery="false" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.endianness.little" valueType="enumerated"/>
+								<option id="gnu.c.compiler.option.debugging.other.265599671" name="Other debugging flags" superClass="gnu.c.compiler.option.debugging.other" useByScannerDiscovery="false" value="-ggdb3" valueType="string"/>
+								<option id="gnu.c.compiler.option.warnings.pedantic.402055858" name="Pedantic (-pedantic)" superClass="gnu.c.compiler.option.warnings.pedantic" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+								<option id="gnu.c.compiler.option.warnings.extrawarn.580369235" name="Extra warnings (-Wextra)" superClass="gnu.c.compiler.option.warnings.extrawarn" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.warnings.unused.1143162399" name="Warn on various unused elements (-Wunused)" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.warnings.unused" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.unsignedbitfields.1895574235" name="'bitfield' is unsigned (-funsigned-bitfields)" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.unsignedbitfields" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.abi.1951242811" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.abi" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.abi.hard" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.unit.104959748" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.unit" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.nocommon.1331169761" name="No common uninitialized (-fno-common)" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.nocommon" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+								<option id="gnu.c.compiler.option.optimization.flags.1726093517" name="Other optimization flags" superClass="gnu.c.compiler.option.optimization.flags" useByScannerDiscovery="false" value="-funsigned-char -fomit-frame-pointer" valueType="string"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.warnings.other.741673448" name="Other warning flags" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.warnings.other" useByScannerDiscovery="true" value="-Wstrict-prototypes -Wsign-compare -Werror=implicit-function-declaration -Wundef -Wdouble-promotion" valueType="string"/>
+								<option id="gnu.c.compiler.option.misc.other.431891131" name="Other flags" superClass="gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-c -fno-short-enums" valueType="string"/>
+								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.229299817" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.cpp.compiler.734288990" name="Standard S32DS C++ Compiler" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.cpp.compiler">
+								<option id="gnu.cpp.compiler.option.optimization.level.1273187445" name="Optimization Level" superClass="gnu.cpp.compiler.option.optimization.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.optimization.level.most" valueType="enumerated"/>
+								<option defaultValue="gnu.cpp.compiler.debugging.level.none" id="gnu.cpp.compiler.option.debugging.level.849162948" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" useByScannerDiscovery="false" valueType="enumerated"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.optimization.functionsections.1743592043" name="Function sections (-ffunction-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.optimization.functionsections" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.optimization.datasections.521184330" name="Data sections (-fdata-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.optimization.datasections" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.debugging.format.851812490" name="Debug format" superClass="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.debugging.format" useByScannerDiscovery="true"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.libraries.813133455" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.libraries" useByScannerDiscovery="false" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.1831792576" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${BASE_PLATFORMSDK_S32K3}/header/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${BASE_PLATFORMSDK_S32K3}/include/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${PLATFORM_PLATFORMSDK_S32K3}/include/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${PLATFORM_PLATFORMSDK_S32K3}/startup/include/&quot;"/>
+								</option>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.mcpu.1071031033" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.mcpu" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.instructionset.757887661" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.instructionset" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.instructionset.thumb" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.sysroot.1573939323" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.sysroot" useByScannerDiscovery="false" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.endianness.1928850492" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.endianness" useByScannerDiscovery="false" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.endianness.little" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.abi.311134515" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.abi" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.abi.hard" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.unit.249110050" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.unit" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.preprocessor.def.1023104188" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="CPU_S32K312"/>
+									<listOptionValue builtIn="false" value="CPU_CORTEX_M7"/>
+								</option>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.linker.695664445" name="Standard S32DS C Linker" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.linker">
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.linker.option.gcsections.285240508" name="Remove unused sections (-Xlinker --gc-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.c.linker.option.gcsections" value="false" valueType="boolean"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.libraries.1315547473" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.libraries" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.mcpu.1556843552" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.mcpu" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.freescale.s32ds.cross.gnu.tool.c.linker.option.scriptfile.708039872" name="Script files (-T)" superClass="com.freescale.s32ds.cross.gnu.tool.c.linker.option.scriptfile" valueType="stringList">
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/Project_Settings/Linker_Files/linker_flash_s32k312.ld&quot;"/>
+								</option>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.off_page_align.1419397212" name="Turn off page alignment of sections (-n)" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.off_page_align" value="false" valueType="boolean"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.instructionset.1686559625" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.instructionset" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.instructionset.thumb" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.sysroot.32330352" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.sysroot" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.endianness.753826309" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.endianness" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.endianness.little" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.abi.2025818711" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.abi" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.abi.hard" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.unit.807169372" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.unit" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+								<option id="gnu.c.link.option.ldflags.651131596" name="Linker flags" superClass="gnu.c.link.option.ldflags" value="--entry=Reset_Handler -ggdb3" valueType="string"/>
+								<option id="gnu.c.link.option.nostart.1363409935" name="Do not use standard start files (-nostartfiles)" superClass="gnu.c.link.option.nostart" value="true" valueType="boolean"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.link.option.libs.283380908" name="Libraries (-l)" superClass="gnu.c.link.option.libs" valueType="libs">
+									<listOptionValue builtIn="false" value="c"/>
+									<listOptionValue builtIn="false" value="m"/>
+									<listOptionValue builtIn="false" value="gcc"/>
+								</option>
+								<inputType id="com.freescale.s32ds.cross.gnu.tool.c.linker.inputType.scriptfile.1143605092" superClass="com.freescale.s32ds.cross.gnu.tool.c.linker.inputType.scriptfile"/>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.cpp.linker.1354895996" name="Standard S32DS C++ Linker" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.cpp.linker">
+								<option id="com.freescale.s32ds.cross.gnu.tool.cpp.linker.option.gcsections.849047641" name="Remove unused sections (-Xlinker --gc-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.cpp.linker.option.gcsections" value="true" valueType="boolean"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.libraries.1089234930" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.libraries" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.mcpu.1478188251" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.mcpu" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.instructionset.694537164" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.instructionset" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.instructionset.thumb" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.sysroot.230963003" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.sysroot" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.endianness.639429753" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.endianness" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.endianness.little" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.abi.968004759" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.abi" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.abi.hard" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.unit.2114853" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.unit" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.archiver.882613843" name="Standard S32DS Archiver" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.archiver"/>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.184888845" name="Standard S32DS Assembler" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler">
+								<option id="com.freescale.s32ds.cross.gnu.tool.assembler.usepreprocessor.843685998" name="Use preprocessor" superClass="com.freescale.s32ds.cross.gnu.tool.assembler.usepreprocessor" value="true" valueType="boolean"/>
+								<option defaultValue="gnu.c.debugging.level.none" id="com.freescale.s32ds.cross.gnu.tool.assembler.option.debugging.level.1598121616" name="Debug Level" superClass="com.freescale.s32ds.cross.gnu.tool.assembler.option.debugging.level" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.libraries.853727731" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.libraries" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.219004613" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="../RTD/include"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/board&quot;"/>
+								</option>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.mcpu.39429293" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.mcpu" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.instructionset.1426551075" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.instructionset" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.instructionset.thumb" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.sysroot.469887467" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.sysroot" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.endianness.622395643" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.endianness" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.endianness.little" valueType="enumerated"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.assembler.option.debugging.other.1595031696" name="Other debugging flags" superClass="com.freescale.s32ds.cross.gnu.tool.assembler.option.debugging.other" value="-ggdb3" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.abi.1505227601" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.abi" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.abi.hard" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.unit.1948127431" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.unit" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.393906268" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+								<inputType id="com.freescale.s32ds.cross.gnu.tool.assembler.inputType.asmfile.1557019492" superClass="com.freescale.s32ds.cross.gnu.tool.assembler.inputType.asmfile"/>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.createflash.180339819" name="Standard S32DS Create Flash Image" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.createflash">
+								<option id="com.freescale.s32ds.cross.gnu.option.createflash.choice.1675570820" superClass="com.freescale.s32ds.cross.gnu.option.createflash.choice" value="com.freescale.s32ds.cross.gnu.option.createflash.choice.ihex" valueType="enumerated"/>
+							</tool>
+							<tool id="com.freescale.s32ds.cross.gnu.tool.createlisting.330876532" name="Standard S32DS Create Listing" superClass="com.freescale.s32ds.cross.gnu.tool.createlisting">
+								<option id="com.freescale.s32ds.cross.gnu.option.createlisting.source.203596007" name="Display source (--source|-S)" superClass="com.freescale.s32ds.cross.gnu.option.createlisting.source" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.option.createlisting.allheaders.1611031971" name="Display all headers (--all-headers|-x)" superClass="com.freescale.s32ds.cross.gnu.option.createlisting.allheaders" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.option.createlisting.demangle.848225848" name="Demangle names (--demangle|-C)" superClass="com.freescale.s32ds.cross.gnu.option.createlisting.demangle" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.option.createlisting.linenumbers.84660483" name="Display line numbers (--line-numbers|-l)" superClass="com.freescale.s32ds.cross.gnu.option.createlisting.linenumbers" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.option.createlisting.wide.943709574" name="Wide lines (--wide|-w)" superClass="com.freescale.s32ds.cross.gnu.option.createlisting.wide" value="true" valueType="boolean"/>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.printsize.1061260662" name="Standard S32DS Print Size" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.printsize">
+								<option id="com.freescale.s32ds.cross.gnu.option.printsize.format.794749219" name="Size format" superClass="com.freescale.s32ds.cross.gnu.option.printsize.format"/>
+							</tool>
+							<tool id="com.freescale.s32ds.cross.gnu.c.preprocessor.2119332170" name="Standard S32DS C Preprocessor" superClass="com.freescale.s32ds.cross.gnu.c.preprocessor"/>
+							<tool id="com.freescale.s32ds.cross.gnu.cpp.preprocessor.658898304" name="Standard S32DS C++ Preprocessor" superClass="com.freescale.s32ds.cross.gnu.cpp.preprocessor"/>
+							<tool id="com.freescale.s32ds.cross.gnu.disassembler.1564741274" name="Standard S32DS Disassembler" superClass="com.freescale.s32ds.cross.gnu.disassembler"/>
+						</toolChain>
+					</folderInfo>
+					<sourceEntries>
+						<entry excluding="Linker_Files|Debugger" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Project_Settings"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="RTD"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="board"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="generate"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+					</sourceEntries>
+				</configuration>
+			</storageModule>
+			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+		</cconfiguration>
+		<cconfiguration id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.debug.ram.1409361593">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.debug.ram.1409361593" moduleId="org.eclipse.cdt.core.settings" name="Debug_RAM">
+				<externalSettings/>
+				<extensions>
+					<extension id="org.eclipse.cdt.core.GNU_ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="com.freescale.s32ds.cdt.core.errorParsers.S32DSGNULinkerErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+				</extensions>
+			</storageModule>
+			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+				<configuration artifactExtension="elf" artifactName="${ProjName}" buildArtefactType="com.nxp.s32ds.cle.arm.mbs.arm32.bare.buildArtefact.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=com.nxp.s32ds.cle.arm.mbs.arm32.bare.buildArtefact.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug" description="" id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.debug.ram.1409361593" name="Debug_RAM" parent="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.debug.ram">
+					<folderInfo id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.debug.ram.1409361593." name="/" resourcePath="">
+						<toolChain id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.toolchain.debug.ram.1091396616" name="NXP GCC 10.2 for Arm 32-bit Bare-Metal" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.toolchain.debug.ram">
+							<option defaultValue="true" id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.addtools.printsize.5469969" name="Print size" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.addtools.printsize" valueType="boolean"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.option.compiler.path.703144705" name="Path" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.option.compiler.path" value="${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}" valueType="string"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.option.target.libraries.1404281549" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.option.target.libraries" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.mcpu.892855904" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.mcpu" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.instructionset.451923777" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.instructionset" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.instructionset.thumb" valueType="enumerated"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.sysroot.868627399" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.sysroot" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.endianness.214959519" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.endianness" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.endianness.little" valueType="enumerated"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.abi.1560022753" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.abi" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.abi.hard" valueType="enumerated"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.unit.942390139" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.unit" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.GNU_ELF" id="cdt.managedbuild.targetPlatform.gnu.cross.1940940508" isAbstract="false" osList="all" superClass="cdt.managedbuild.targetPlatform.gnu.cross"/>
+							<builder buildPath="${workspace_loc:/s32k312_led}/Debug_RAM" id="com.freescale.s32ds.cross.gnu.builder.833169424" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="FSL Make Builder" superClass="com.freescale.s32ds.cross.gnu.builder"/>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler.134530887" name="Standard S32DS C Compiler" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler">
+								<option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.option.optimization.level.2045306831" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" useByScannerDiscovery="false" value="gnu.c.optimization.level.size" valueType="enumerated"/>
+								<option defaultValue="gnu.c.debugging.level.max" id="gnu.c.compiler.option.debugging.level.1751961353" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.c.debugging.level.none" valueType="enumerated"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.functionsections.1715805260" name="Function sections (-ffunction-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.functionsections" useByScannerDiscovery="true" value="false" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.datasections.2073050307" name="Data sections (-fdata-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.datasections" useByScannerDiscovery="true" value="false" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.debugging.format.791129079" name="Debug format" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.debugging.format" useByScannerDiscovery="true"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.libraries.25015797" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.libraries" useByScannerDiscovery="false" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.47310721" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="../RTD/include"/>
+									<listOptionValue builtIn="false" value="${ProjDirPath}/generate/include"/>
+									<listOptionValue builtIn="false" value="${ProjDirPath}/RTD/include"/>
+									<listOptionValue builtIn="false" value="&quot;${BASE_PLATFORMSDK_S32K3}/header/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${BASE_PLATFORMSDK_S32K3}/include/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${PLATFORM_PLATFORMSDK_S32K3}/include/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${PLATFORM_PLATFORMSDK_S32K3}/startup/include/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/board&quot;"/>
+								</option>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.mcpu.891954373" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.mcpu" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.preprocessor.def.symbols.1689921981" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="D_CACHE_ENABLE"/>
+									<listOptionValue builtIn="false" value="I_CACHE_ENABLE"/>
+									<listOptionValue builtIn="false" value="ENABLE_FPU"/>
+									<listOptionValue builtIn="false" value="MPU_ENABLE"/>
+									<listOptionValue builtIn="false" value="GCC"/>
+									<listOptionValue builtIn="false" value="CPU_S32K312"/>
+									<listOptionValue builtIn="false" value="CPU_CORTEX_M7"/>
+								</option>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.instructionset.751604600" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.instructionset" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.instructionset.thumb" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.sysroot.1766237608" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.sysroot" useByScannerDiscovery="false" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler.option.dialect.std.1449410584" name="Language standard" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler.option.dialect.std" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler.option.dialect.std.c99" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.endianness.1138458447" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.endianness" useByScannerDiscovery="false" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.endianness.little" valueType="enumerated"/>
+								<option id="gnu.c.compiler.option.debugging.other.2002876092" name="Other debugging flags" superClass="gnu.c.compiler.option.debugging.other" useByScannerDiscovery="false" value="-ggdb3" valueType="string"/>
+								<option id="gnu.c.compiler.option.warnings.pedantic.1232332117" name="Pedantic (-pedantic)" superClass="gnu.c.compiler.option.warnings.pedantic" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+								<option id="gnu.c.compiler.option.warnings.extrawarn.506194828" name="Extra warnings (-Wextra)" superClass="gnu.c.compiler.option.warnings.extrawarn" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.warnings.unused.2842423" name="Warn on various unused elements (-Wunused)" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.warnings.unused" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.unsignedbitfields.350977497" name="'bitfield' is unsigned (-funsigned-bitfields)" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.unsignedbitfields" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.abi.652347969" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.abi" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.abi.hard" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.unit.1542372594" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.unit" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.nocommon.1783432908" name="No common uninitialized (-fno-common)" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.nocommon" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+								<option id="gnu.c.compiler.option.optimization.flags.891114663" name="Other optimization flags" superClass="gnu.c.compiler.option.optimization.flags" useByScannerDiscovery="false" value="-funsigned-char -fomit-frame-pointer" valueType="string"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.warnings.other.1543937912" name="Other warning flags" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.warnings.other" useByScannerDiscovery="true" value="-Wstrict-prototypes -Wsign-compare -Werror=implicit-function-declaration -Wundef -Wdouble-promotion" valueType="string"/>
+								<option id="gnu.c.compiler.option.misc.other.97202197" name="Other flags" superClass="gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-c -fno-short-enums" valueType="string"/>
+								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.921721377" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.cpp.compiler.688173586" name="Standard S32DS C++ Compiler" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.cpp.compiler">
+								<option id="gnu.cpp.compiler.option.optimization.level.1578698519" name="Optimization Level" superClass="gnu.cpp.compiler.option.optimization.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
+								<option defaultValue="gnu.cpp.compiler.debugging.level.max" id="gnu.cpp.compiler.option.debugging.level.639837416" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" useByScannerDiscovery="false" valueType="enumerated"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.optimization.functionsections.909388824" name="Function sections (-ffunction-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.optimization.functionsections" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.optimization.datasections.957027753" name="Data sections (-fdata-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.optimization.datasections" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.debugging.format.1897867786" name="Debug format" superClass="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.debugging.format" useByScannerDiscovery="true"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.libraries.768040754" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.libraries" useByScannerDiscovery="false" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.1861575022" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${BASE_PLATFORMSDK_S32K3}/header/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${BASE_PLATFORMSDK_S32K3}/include/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${PLATFORM_PLATFORMSDK_S32K3}/include/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${PLATFORM_PLATFORMSDK_S32K3}/startup/include/&quot;"/>
+								</option>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.mcpu.279915584" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.mcpu" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.instructionset.323346047" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.instructionset" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.instructionset.thumb" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.sysroot.1958432841" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.sysroot" useByScannerDiscovery="false" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.endianness.1345750240" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.endianness" useByScannerDiscovery="false" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.endianness.little" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.abi.838991076" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.abi" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.abi.hard" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.unit.1632215177" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.unit" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.preprocessor.def.1749739687" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="CPU_S32K312"/>
+									<listOptionValue builtIn="false" value="CPU_CORTEX_M7"/>
+								</option>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.linker.760689137" name="Standard S32DS C Linker" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.linker">
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.linker.option.gcsections.1831192356" name="Remove unused sections (-Xlinker --gc-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.c.linker.option.gcsections" value="false" valueType="boolean"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.libraries.1151365869" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.libraries" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.mcpu.130151668" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.mcpu" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.freescale.s32ds.cross.gnu.tool.c.linker.option.scriptfile.635326886" name="Script files (-T)" superClass="com.freescale.s32ds.cross.gnu.tool.c.linker.option.scriptfile" valueType="stringList">
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/Project_Settings/Linker_Files/linker_ram_s32k312.ld&quot;"/>
+								</option>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.off_page_align.179382279" name="Turn off page alignment of sections (-n)" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.off_page_align" value="false" valueType="boolean"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.instructionset.1906394155" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.instructionset" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.instructionset.thumb" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.sysroot.1684403879" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.sysroot" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.endianness.31363527" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.endianness" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.endianness.little" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.abi.850134093" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.abi" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.abi.hard" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.unit.1712901731" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.unit" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+								<option id="gnu.c.link.option.ldflags.1260058812" name="Linker flags" superClass="gnu.c.link.option.ldflags" value="--entry=Reset_Handler -ggdb3" valueType="string"/>
+								<option id="gnu.c.link.option.nostart.870618774" name="Do not use standard start files (-nostartfiles)" superClass="gnu.c.link.option.nostart" value="true" valueType="boolean"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.link.option.libs.335666246" name="Libraries (-l)" superClass="gnu.c.link.option.libs" valueType="libs">
+									<listOptionValue builtIn="false" value="c"/>
+									<listOptionValue builtIn="false" value="m"/>
+									<listOptionValue builtIn="false" value="gcc"/>
+								</option>
+								<inputType id="com.freescale.s32ds.cross.gnu.tool.c.linker.inputType.scriptfile.463792797" superClass="com.freescale.s32ds.cross.gnu.tool.c.linker.inputType.scriptfile"/>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.cpp.linker.1909961937" name="Standard S32DS C++ Linker" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.cpp.linker">
+								<option id="com.freescale.s32ds.cross.gnu.tool.cpp.linker.option.gcsections.1491558901" name="Remove unused sections (-Xlinker --gc-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.cpp.linker.option.gcsections" value="true" valueType="boolean"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.libraries.1235188380" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.libraries" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.mcpu.669129740" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.mcpu" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.instructionset.702269664" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.instructionset" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.instructionset.thumb" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.sysroot.1693838103" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.sysroot" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.endianness.880150744" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.endianness" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.endianness.little" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.abi.125534481" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.abi" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.abi.hard" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.unit.1128523741" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.unit" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.archiver.501377459" name="Standard S32DS Archiver" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.archiver"/>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.696836702" name="Standard S32DS Assembler" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler">
+								<option id="com.freescale.s32ds.cross.gnu.tool.assembler.usepreprocessor.908949099" name="Use preprocessor" superClass="com.freescale.s32ds.cross.gnu.tool.assembler.usepreprocessor" value="true" valueType="boolean"/>
+								<option defaultValue="gnu.c.debugging.level.max" id="com.freescale.s32ds.cross.gnu.tool.assembler.option.debugging.level.1288844590" name="Debug Level" superClass="com.freescale.s32ds.cross.gnu.tool.assembler.option.debugging.level" value="gnu.c.debugging.level.none" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.libraries.620028781" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.libraries" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.258900339" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="../RTD/include"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/board&quot;"/>
+								</option>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.mcpu.1867280853" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.mcpu" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.instructionset.868663018" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.instructionset" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.instructionset.thumb" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.sysroot.95775351" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.sysroot" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.endianness.1955440261" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.endianness" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.endianness.little" valueType="enumerated"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.assembler.option.debugging.other.1086115167" name="Other debugging flags" superClass="com.freescale.s32ds.cross.gnu.tool.assembler.option.debugging.other" value="-ggdb3" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.abi.312993693" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.abi" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.abi.hard" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.unit.1244174423" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.unit" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.607485427" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+								<inputType id="com.freescale.s32ds.cross.gnu.tool.assembler.inputType.asmfile.1335391576" superClass="com.freescale.s32ds.cross.gnu.tool.assembler.inputType.asmfile"/>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.createflash.609606810" name="Standard S32DS Create Flash Image" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.createflash"/>
+							<tool id="com.freescale.s32ds.cross.gnu.tool.createlisting.1144441506" name="Standard S32DS Create Listing" superClass="com.freescale.s32ds.cross.gnu.tool.createlisting">
+								<option id="com.freescale.s32ds.cross.gnu.option.createlisting.source.1987418305" name="Display source (--source|-S)" superClass="com.freescale.s32ds.cross.gnu.option.createlisting.source" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.option.createlisting.allheaders.331224451" name="Display all headers (--all-headers|-x)" superClass="com.freescale.s32ds.cross.gnu.option.createlisting.allheaders" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.option.createlisting.demangle.409074049" name="Demangle names (--demangle|-C)" superClass="com.freescale.s32ds.cross.gnu.option.createlisting.demangle" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.option.createlisting.linenumbers.725410993" name="Display line numbers (--line-numbers|-l)" superClass="com.freescale.s32ds.cross.gnu.option.createlisting.linenumbers" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.option.createlisting.wide.1702413944" name="Wide lines (--wide|-w)" superClass="com.freescale.s32ds.cross.gnu.option.createlisting.wide" value="true" valueType="boolean"/>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.printsize.1826192095" name="Standard S32DS Print Size" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.printsize">
+								<option id="com.freescale.s32ds.cross.gnu.option.printsize.format.1233515904" name="Size format" superClass="com.freescale.s32ds.cross.gnu.option.printsize.format"/>
+							</tool>
+							<tool id="com.freescale.s32ds.cross.gnu.c.preprocessor.1462898177" name="Standard S32DS C Preprocessor" superClass="com.freescale.s32ds.cross.gnu.c.preprocessor"/>
+							<tool id="com.freescale.s32ds.cross.gnu.cpp.preprocessor.147540100" name="Standard S32DS C++ Preprocessor" superClass="com.freescale.s32ds.cross.gnu.cpp.preprocessor"/>
+							<tool id="com.freescale.s32ds.cross.gnu.disassembler.1263238833" name="Standard S32DS Disassembler" superClass="com.freescale.s32ds.cross.gnu.disassembler"/>
+						</toolChain>
+					</folderInfo>
+					<sourceEntries>
+						<entry excluding="Linker_Files|Debugger" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Project_Settings"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="RTD"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="board"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="generate"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+					</sourceEntries>
+				</configuration>
+			</storageModule>
+			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+		</cconfiguration>
+		<cconfiguration id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.release.ram.2030286317">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.release.ram.2030286317" moduleId="org.eclipse.cdt.core.settings" name="Release_RAM">
+				<externalSettings/>
+				<extensions>
+					<extension id="org.eclipse.cdt.core.GNU_ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="com.freescale.s32ds.cdt.core.errorParsers.S32DSGNULinkerErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+				</extensions>
+			</storageModule>
+			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+				<configuration artifactExtension="elf" artifactName="${ProjName}" buildArtefactType="com.nxp.s32ds.cle.arm.mbs.arm32.bare.buildArtefact.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=com.nxp.s32ds.cle.arm.mbs.arm32.bare.buildArtefact.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.release" description="" id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.release.ram.2030286317" name="Release_RAM" parent="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.release.ram">
+					<folderInfo id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.release.ram.2030286317." name="/" resourcePath="">
+						<toolChain id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.toolchain.release.ram.2063745178" name="NXP GCC 10.2 for Arm 32-bit Bare-Metal" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.toolchain.release.ram">
+							<option defaultValue="true" id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.addtools.printsize.1748352955" name="Print size" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.addtools.printsize" valueType="boolean"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.option.compiler.path.1491809821" name="Path" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.option.compiler.path" value="${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}" valueType="string"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.option.target.libraries.231895501" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.option.target.libraries" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.mcpu.572522894" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.mcpu" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.instructionset.1810330859" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.instructionset" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.instructionset.thumb" valueType="enumerated"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.sysroot.838022178" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.sysroot" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.endianness.1732239340" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.endianness" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.endianness.little" valueType="enumerated"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.abi.184265643" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.abi" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.abi.hard" valueType="enumerated"/>
+							<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.unit.1594345841" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.unit" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.GNU_ELF" id="cdt.managedbuild.targetPlatform.gnu.cross.194005855" isAbstract="false" osList="all" superClass="cdt.managedbuild.targetPlatform.gnu.cross"/>
+							<builder buildPath="${workspace_loc:/s32k312_led}/Release_RAM" id="com.freescale.s32ds.cross.gnu.builder.174099958" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="FSL Make Builder" superClass="com.freescale.s32ds.cross.gnu.builder"/>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler.242416745" name="Standard S32DS C Compiler" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler">
+								<option defaultValue="gnu.c.optimization.level.most" id="gnu.c.compiler.option.optimization.level.1329038818" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" useByScannerDiscovery="false" value="gnu.c.optimization.level.size" valueType="enumerated"/>
+								<option defaultValue="gnu.c.debugging.level.none" id="gnu.c.compiler.option.debugging.level.1412078612" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" useByScannerDiscovery="false" valueType="enumerated"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.functionsections.1762759322" name="Function sections (-ffunction-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.functionsections" useByScannerDiscovery="true" value="false" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.datasections.1664853174" name="Data sections (-fdata-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.datasections" useByScannerDiscovery="true" value="false" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.debugging.format.1015054496" name="Debug format" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.debugging.format" useByScannerDiscovery="true"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.libraries.1994867641" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.libraries" useByScannerDiscovery="false" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.1224551909" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="../RTD/include"/>
+									<listOptionValue builtIn="false" value="${ProjDirPath}/generate/include"/>
+									<listOptionValue builtIn="false" value="${ProjDirPath}/RTD/include"/>
+									<listOptionValue builtIn="false" value="&quot;${BASE_PLATFORMSDK_S32K3}/header/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${BASE_PLATFORMSDK_S32K3}/include/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${PLATFORM_PLATFORMSDK_S32K3}/include/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${PLATFORM_PLATFORMSDK_S32K3}/startup/include/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/board&quot;"/>
+								</option>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.mcpu.1435118430" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.mcpu" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.preprocessor.def.symbols.1502037984" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="D_CACHE_ENABLE"/>
+									<listOptionValue builtIn="false" value="I_CACHE_ENABLE"/>
+									<listOptionValue builtIn="false" value="ENABLE_FPU"/>
+									<listOptionValue builtIn="false" value="MPU_ENABLE"/>
+									<listOptionValue builtIn="false" value="GCC"/>
+									<listOptionValue builtIn="false" value="CPU_S32K312"/>
+									<listOptionValue builtIn="false" value="CPU_CORTEX_M7"/>
+								</option>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.instructionset.201652842" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.instructionset" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.instructionset.thumb" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.sysroot.396972341" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.sysroot" useByScannerDiscovery="false" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler.option.dialect.std.758416683" name="Language standard" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler.option.dialect.std" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler.option.dialect.std.c99" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.endianness.982755728" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.endianness" useByScannerDiscovery="false" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.endianness.little" valueType="enumerated"/>
+								<option id="gnu.c.compiler.option.debugging.other.2018219732" name="Other debugging flags" superClass="gnu.c.compiler.option.debugging.other" useByScannerDiscovery="false" value="-ggdb3" valueType="string"/>
+								<option id="gnu.c.compiler.option.warnings.pedantic.133109879" name="Pedantic (-pedantic)" superClass="gnu.c.compiler.option.warnings.pedantic" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+								<option id="gnu.c.compiler.option.warnings.extrawarn.540790542" name="Extra warnings (-Wextra)" superClass="gnu.c.compiler.option.warnings.extrawarn" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.warnings.unused.1171431446" name="Warn on various unused elements (-Wunused)" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.warnings.unused" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.unsignedbitfields.1317012406" name="'bitfield' is unsigned (-funsigned-bitfields)" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.unsignedbitfields" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.abi.493507623" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.abi" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.abi.hard" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.unit.1944155373" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.unit" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.compiler.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.nocommon.69501836" name="No common uninitialized (-fno-common)" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.optimization.nocommon" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+								<option id="gnu.c.compiler.option.optimization.flags.1725653423" name="Other optimization flags" superClass="gnu.c.compiler.option.optimization.flags" useByScannerDiscovery="false" value="-funsigned-char -fomit-frame-pointer" valueType="string"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.warnings.other.1180234674" name="Other warning flags" superClass="com.freescale.s32ds.cross.gnu.tool.c.compiler.option.warnings.other" useByScannerDiscovery="true" value="-Wstrict-prototypes -Wsign-compare -Werror=implicit-function-declaration -Wundef -Wdouble-promotion" valueType="string"/>
+								<option id="gnu.c.compiler.option.misc.other.1914146472" name="Other flags" superClass="gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-c -fno-short-enums" valueType="string"/>
+								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.127394640" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.cpp.compiler.1264956135" name="Standard S32DS C++ Compiler" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.cpp.compiler">
+								<option id="gnu.cpp.compiler.option.optimization.level.511121333" name="Optimization Level" superClass="gnu.cpp.compiler.option.optimization.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.optimization.level.most" valueType="enumerated"/>
+								<option defaultValue="gnu.cpp.compiler.debugging.level.none" id="gnu.cpp.compiler.option.debugging.level.211630841" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" useByScannerDiscovery="false" valueType="enumerated"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.optimization.functionsections.1656235062" name="Function sections (-ffunction-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.optimization.functionsections" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.optimization.datasections.2062480865" name="Data sections (-fdata-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.optimization.datasections" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.debugging.format.373725929" name="Debug format" superClass="com.freescale.s32ds.cross.gnu.tool.cpp.compiler.option.debugging.format" useByScannerDiscovery="true"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.libraries.1406248991" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.libraries" useByScannerDiscovery="false" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.447097474" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${BASE_PLATFORMSDK_S32K3}/header/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${BASE_PLATFORMSDK_S32K3}/include/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${PLATFORM_PLATFORMSDK_S32K3}/include/&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${PLATFORM_PLATFORMSDK_S32K3}/startup/include/&quot;"/>
+								</option>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.mcpu.730764411" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.mcpu" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.instructionset.1191714890" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.instructionset" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.instructionset.thumb" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.sysroot.197244388" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.sysroot" useByScannerDiscovery="false" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.endianness.1131661018" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.endianness" useByScannerDiscovery="false" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.endianness.little" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.abi.1160900288" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.abi" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.abi.hard" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.unit.542042165" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.unit" useByScannerDiscovery="true" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.compiler.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.preprocessor.def.109296155" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="CPU_S32K312"/>
+									<listOptionValue builtIn="false" value="CPU_CORTEX_M7"/>
+								</option>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.linker.1261928250" name="Standard S32DS C Linker" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.linker">
+								<option id="com.freescale.s32ds.cross.gnu.tool.c.linker.option.gcsections.271428399" name="Remove unused sections (-Xlinker --gc-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.c.linker.option.gcsections" value="false" valueType="boolean"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.libraries.1640125961" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.libraries" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.mcpu.85511677" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.mcpu" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.freescale.s32ds.cross.gnu.tool.c.linker.option.scriptfile.779718399" name="Script files (-T)" superClass="com.freescale.s32ds.cross.gnu.tool.c.linker.option.scriptfile" valueType="stringList">
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/Project_Settings/Linker_Files/linker_ram_s32k312.ld&quot;"/>
+								</option>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.off_page_align.208530604" name="Turn off page alignment of sections (-n)" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.off_page_align" value="false" valueType="boolean"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.instructionset.1163345651" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.instructionset" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.instructionset.thumb" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.sysroot.1478567852" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.sysroot" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.endianness.1662385056" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.endianness" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.endianness.little" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.abi.1215253790" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.abi" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.abi.hard" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.unit.2082544768" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.unit" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.c.linker.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+								<option id="gnu.c.link.option.ldflags.1538024565" name="Linker flags" superClass="gnu.c.link.option.ldflags" value="--entry=Reset_Handler -ggdb3" valueType="string"/>
+								<option id="gnu.c.link.option.nostart.1378171741" name="Do not use standard start files (-nostartfiles)" superClass="gnu.c.link.option.nostart" value="true" valueType="boolean"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.link.option.libs.2145559272" name="Libraries (-l)" superClass="gnu.c.link.option.libs" valueType="libs">
+									<listOptionValue builtIn="false" value="c"/>
+									<listOptionValue builtIn="false" value="m"/>
+									<listOptionValue builtIn="false" value="gcc"/>
+								</option>
+								<inputType id="com.freescale.s32ds.cross.gnu.tool.c.linker.inputType.scriptfile.1118277275" superClass="com.freescale.s32ds.cross.gnu.tool.c.linker.inputType.scriptfile"/>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.cpp.linker.1831138097" name="Standard S32DS C++ Linker" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.cpp.linker">
+								<option id="com.freescale.s32ds.cross.gnu.tool.cpp.linker.option.gcsections.1745523580" name="Remove unused sections (-Xlinker --gc-sections)" superClass="com.freescale.s32ds.cross.gnu.tool.cpp.linker.option.gcsections" value="true" valueType="boolean"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.libraries.636967041" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.libraries" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.mcpu.364095571" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.mcpu" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.instructionset.900959337" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.instructionset" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.instructionset.thumb" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.sysroot.6519241" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.sysroot" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.endianness.1119457703" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.endianness" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.endianness.little" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.abi.390872911" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.abi" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.abi.hard" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.unit.1432567169" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.unit" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.cpp.linker.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.archiver.815295869" name="Standard S32DS Archiver" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.archiver"/>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.1242771325" name="Standard S32DS Assembler" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler">
+								<option id="com.freescale.s32ds.cross.gnu.tool.assembler.usepreprocessor.1769192494" name="Use preprocessor" superClass="com.freescale.s32ds.cross.gnu.tool.assembler.usepreprocessor" value="true" valueType="boolean"/>
+								<option defaultValue="gnu.c.debugging.level.none" id="com.freescale.s32ds.cross.gnu.tool.assembler.option.debugging.level.1946404529" name="Debug Level" superClass="com.freescale.s32ds.cross.gnu.tool.assembler.option.debugging.level" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.libraries.1160195493" name="Libraries support" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.libraries" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.libraries.newlib_nano_noio" valueType="enumerated"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.1168836964" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="../RTD/include"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/board&quot;"/>
+								</option>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.mcpu.1777056490" name="Arm family" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.mcpu" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.mcpu.cortex-m7" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.instructionset.267295792" name="Instruction set" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.instructionset" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.instructionset.thumb" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.sysroot.1336484244" name="Sysroot" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.sysroot" value="--sysroot=&quot;${S32DS_K3_ARM32_GNU_10_2_TOOLCHAIN_DIR}/arm-none-eabi/lib&quot;" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.endianness.797334790" name="Endianness" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.endianness" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.endianness.little" valueType="enumerated"/>
+								<option id="com.freescale.s32ds.cross.gnu.tool.assembler.option.debugging.other.711097620" name="Other debugging flags" superClass="com.freescale.s32ds.cross.gnu.tool.assembler.option.debugging.other" value="-ggdb3" valueType="string"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.abi.1363852322" name="Float ABI" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.abi" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.abi.hard" valueType="enumerated"/>
+								<option id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.unit.1248187387" name="FPU Type" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.unit" value="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.assembler.option.target.fpu.unit.fpv5-sp-d16" valueType="enumerated"/>
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1994631774" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+								<inputType id="com.freescale.s32ds.cross.gnu.tool.assembler.inputType.asmfile.260718000" superClass="com.freescale.s32ds.cross.gnu.tool.assembler.inputType.asmfile"/>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.createflash.846354214" name="Standard S32DS Create Flash Image" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.createflash"/>
+							<tool id="com.freescale.s32ds.cross.gnu.tool.createlisting.1153166496" name="Standard S32DS Create Listing" superClass="com.freescale.s32ds.cross.gnu.tool.createlisting">
+								<option id="com.freescale.s32ds.cross.gnu.option.createlisting.source.1519495662" name="Display source (--source|-S)" superClass="com.freescale.s32ds.cross.gnu.option.createlisting.source" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.option.createlisting.allheaders.2125346751" name="Display all headers (--all-headers|-x)" superClass="com.freescale.s32ds.cross.gnu.option.createlisting.allheaders" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.option.createlisting.demangle.1972597590" name="Demangle names (--demangle|-C)" superClass="com.freescale.s32ds.cross.gnu.option.createlisting.demangle" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.option.createlisting.linenumbers.1414653054" name="Display line numbers (--line-numbers|-l)" superClass="com.freescale.s32ds.cross.gnu.option.createlisting.linenumbers" value="true" valueType="boolean"/>
+								<option id="com.freescale.s32ds.cross.gnu.option.createlisting.wide.497515092" name="Wide lines (--wide|-w)" superClass="com.freescale.s32ds.cross.gnu.option.createlisting.wide" value="true" valueType="boolean"/>
+							</tool>
+							<tool id="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.printsize.1614593810" name="Standard S32DS Print Size" superClass="com.nxp.s32ds.cle.arm.mbs.arm32.bare.tool.printsize">
+								<option id="com.freescale.s32ds.cross.gnu.option.printsize.format.1819882295" name="Size format" superClass="com.freescale.s32ds.cross.gnu.option.printsize.format"/>
+							</tool>
+							<tool id="com.freescale.s32ds.cross.gnu.c.preprocessor.983191003" name="Standard S32DS C Preprocessor" superClass="com.freescale.s32ds.cross.gnu.c.preprocessor"/>
+							<tool id="com.freescale.s32ds.cross.gnu.cpp.preprocessor.287883978" name="Standard S32DS C++ Preprocessor" superClass="com.freescale.s32ds.cross.gnu.cpp.preprocessor"/>
+							<tool id="com.freescale.s32ds.cross.gnu.disassembler.2113593335" name="Standard S32DS Disassembler" superClass="com.freescale.s32ds.cross.gnu.disassembler"/>
+						</toolChain>
+					</folderInfo>
+					<sourceEntries>
+						<entry excluding="Linker_Files|Debugger" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Project_Settings"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="RTD"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="board"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="generate"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+					</sourceEntries>
+				</configuration>
+			</storageModule>
+			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+		</cconfiguration>
+	</storageModule>
+	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+		<project id="s32k312_led.com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.8619776" name="Arm32 Executable" projectType="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe"/>
+	</storageModule>
+	<storageModule moduleId="scannerConfiguration">
+		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		<scannerConfigBuildInfo instanceId="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.debug.ram.1409361593;com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.debug.ram.1409361593.;com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler.134530887;cdt.managedbuild.tool.gnu.c.compiler.input.921721377">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.release.681063996;com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.release.681063996.;com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler.1343125904;cdt.managedbuild.tool.gnu.c.compiler.input.229299817">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.debug.2043426166;com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.debug.2043426166.;com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler.227045590;cdt.managedbuild.tool.gnu.c.compiler.input.1002032895">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.release.ram.2030286317;com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.10.2.exe.release.ram.2030286317.;com.nxp.s32ds.cle.arm.mbs.arm32.bare.gnu.9.2.tool.c.compiler.242416745;cdt.managedbuild.tool.gnu.c.compiler.input.127394640">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
+	<storageModule moduleId="org.eclipse.embsys" parent_project="true" register_architecture="" register_board="---  none ---" register_chip="" register_core="" register_vendor=""/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Release_FLASH">
+			<resource resourceType="PROJECT" workspacePath="/s32k312_led"/>
+		</configuration>
+		<configuration configurationName="Release_RAM">
+			<resource resourceType="PROJECT" workspacePath="/s32k312_led"/>
+		</configuration>
+		<configuration configurationName="Debug_FLASH">
+			<resource resourceType="PROJECT" workspacePath="/s32k312_led"/>
+		</configuration>
+		<configuration configurationName="Debug_RAM">
+			<resource resourceType="PROJECT" workspacePath="/s32k312_led"/>
+		</configuration>
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
+	<storageModule moduleId="com.nxp.s32ds.cle.uct.core">
+		<sdkComponents>platform.driver.siul2_dio;platform.driver.rte_dio;platform.driver.clock;platform.driver.rte_mcu;platform.driver.det;platform.driver.osif;platform.driver.rte_osif;platform.driver.siul2_port;platform.driver.rte_port</sdkComponents>
+	</storageModule>
+	<storageModule moduleId="com.nxp.s32ds.cle.uct.internal.core.toolchainSettings">
+		<COND_TOOLCHAIN_LIBRARIES/>
+		<COND_TOOLCHAIN_LIBRARIES_PATHS/>
+		<COND_TOOLCHAIN_DEFINES/>
+		<COND_TOOLCHAIN_ASM_DEFINES/>
+		<COND_TOOLCHAIN_CUSTOM_OPTION/>
+	</storageModule>
+	<storageModule moduleId="com.nxp.s32ds.cle.uct.internal.core.toolchainScriptProfile">
+		<COND_TOOLCHAIN_COMPONENTS_OPTION>COPY=platform.driver.siul2_dio;platform.driver.clock;platform.driver.osif;platform.driver.siul2_port</COND_TOOLCHAIN_COMPONENTS_OPTION>
+	</storageModule>
+</cproject>

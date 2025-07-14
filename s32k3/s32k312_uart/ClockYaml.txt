@@ -1,0 +1,119 @@
+/* TEXT BELOW IS USED AS SETTING FOR TOOLS *************************************
+!!Configuration
+name: ClockConfig0
+called_from_default_init: true
+outputs:
+- {id: ADC0_CLK.outFreq, value: 120 MHz}
+- {id: ADC1_CLK.outFreq, value: 120 MHz}
+- {id: AIPS_PLAT_CLK.outFreq, value: 60 MHz}
+- {id: AIPS_SLOW_CLK.outFreq, value: 30 MHz}
+- {id: BCTU0_CLK.outFreq, value: 120 MHz}
+- {id: CLKOUT_RUN_CLK.outFreq, value: 8 MHz}
+- {id: CLKOUT_STANDBY_CLK.outFreq, value: 24 MHz}
+- {id: CMP0_CLK.outFreq, value: 30 MHz}
+- {id: CMP1_CLK.outFreq, value: 30 MHz}
+- {id: CORE_CLK.outFreq, value: 120 MHz}
+- {id: CRC0_CLK.outFreq, value: 60 MHz}
+- {id: DCM0_CLK.outFreq, value: 30 MHz}
+- {id: DCM_CLK.outFreq, value: 30 MHz}
+- {id: DMAMUX0_CLK.outFreq, value: 120 MHz}
+- {id: DMAMUX1_CLK.outFreq, value: 120 MHz}
+- {id: EDMA0_CLK.outFreq, value: 120 MHz}
+- {id: EDMA0_TCD0_CLK.outFreq, value: 120 MHz}
+- {id: EDMA0_TCD10_CLK.outFreq, value: 120 MHz}
+- {id: EDMA0_TCD11_CLK.outFreq, value: 120 MHz}
+- {id: EDMA0_TCD1_CLK.outFreq, value: 120 MHz}
+- {id: EDMA0_TCD2_CLK.outFreq, value: 120 MHz}
+- {id: EDMA0_TCD3_CLK.outFreq, value: 120 MHz}
+- {id: EDMA0_TCD4_CLK.outFreq, value: 120 MHz}
+- {id: EDMA0_TCD5_CLK.outFreq, value: 120 MHz}
+- {id: EDMA0_TCD6_CLK.outFreq, value: 120 MHz}
+- {id: EDMA0_TCD7_CLK.outFreq, value: 120 MHz}
+- {id: EDMA0_TCD8_CLK.outFreq, value: 120 MHz}
+- {id: EDMA0_TCD9_CLK.outFreq, value: 120 MHz}
+- {id: EIM0_CLK.outFreq, value: 60 MHz}
+- {id: EMIOS0_CLK.outFreq, value: 120 MHz}
+- {id: EMIOS1_CLK.outFreq, value: 120 MHz}
+- {id: ERM0_CLK.outFreq, value: 30 MHz}
+- {id: FIRCOUT.outFreq, value: 48 MHz}
+- {id: FLASH0_CLK.outFreq, value: 30 MHz}
+- {id: FLEXCAN0_CLK.outFreq, value: 24 MHz}
+- {id: FLEXCAN1_CLK.outFreq, value: 24 MHz}
+- {id: FLEXCAN2_CLK.outFreq, value: 24 MHz}
+- {id: FLEXCAN3_CLK.outFreq, value: 24 MHz}
+- {id: FLEXCAN4_CLK.outFreq, value: 24 MHz}
+- {id: FLEXCAN5_CLK.outFreq, value: 24 MHz}
+- {id: FLEXCANA_CLK.outFreq, value: 24 MHz}
+- {id: FLEXCANB_CLK.outFreq, value: 24 MHz}
+- {id: FLEXIO0_CLK.outFreq, value: 120 MHz}
+- {id: FXOSCOUT.outFreq, value: 16 MHz}
+- {id: HSE_CLK.outFreq, value: 60 MHz}
+- {id: INTM_CLK.outFreq, value: 60 MHz}
+- {id: LCU0_CLK.outFreq, value: 120 MHz}
+- {id: LCU1_CLK.outFreq, value: 120 MHz}
+- {id: LPI2C0_CLK.outFreq, value: 30 MHz}
+- {id: LPI2C1_CLK.outFreq, value: 30 MHz}
+- {id: LPSPI0_CLK.outFreq, value: 60 MHz}
+- {id: LPSPI1_CLK.outFreq, value: 30 MHz}
+- {id: LPSPI2_CLK.outFreq, value: 30 MHz}
+- {id: LPSPI3_CLK.outFreq, value: 30 MHz}
+- {id: LPUART0_CLK.outFreq, value: 60 MHz}
+- {id: LPUART1_CLK.outFreq, value: 30 MHz}
+- {id: LPUART2_CLK.outFreq, value: 30 MHz}
+- {id: LPUART3_CLK.outFreq, value: 30 MHz}
+- {id: LPUART4_CLK.outFreq, value: 30 MHz}
+- {id: LPUART5_CLK.outFreq, value: 30 MHz}
+- {id: LPUART6_CLK.outFreq, value: 30 MHz}
+- {id: LPUART7_CLK.outFreq, value: 30 MHz}
+- {id: MSCM_CLK.outFreq, value: 60 MHz}
+- {id: PIT0_CLK.outFreq, value: 30 MHz}
+- {id: PIT1_CLK.outFreq, value: 30 MHz}
+- {id: PLL_PHI0.outFreq, value: 120 MHz}
+- {id: PLL_PHI1.outFreq, value: 48 MHz}
+- {id: RTC0_CLK.outFreq, value: 32.768 kHz}
+- {id: RTC_CLK.outFreq, value: 32.768 kHz}
+- {id: SCS_CLK.outFreq, value: 120 MHz}
+- {id: SIRCOUT.outFreq, value: 32 kHz}
+- {id: SIUL2_CLK.outFreq, value: 30 MHz}
+- {id: STCU0_CLK.outFreq, value: 30 MHz}
+- {id: STM0_CLK.outFreq, value: 48 MHz}
+- {id: STMA_CLK.outFreq, value: 48 MHz}
+- {id: SWT0_CLK.outFreq, value: 32 kHz}
+- {id: SXOSCOUT.outFreq, value: 32.768 kHz}
+- {id: TEMPSENSE_CLK.outFreq, value: 120 MHz}
+- {id: TRACE_CLK.outFreq, value: 48 MHz}
+- {id: TRGMUX0_CLK.outFreq, value: 30 MHz}
+- {id: TSENSE0_CLK.outFreq, value: 30 MHz}
+- {id: WKPU0_CLK.outFreq, value: 30 MHz}
+settings:
+- {id: CORE_MFD.scale, value: '120', locked: true}
+- {id: CORE_PLLODIV_0_DE, value: Enabled}
+- {id: CORE_PLLODIV_1_DE, value: Enabled}
+- {id: CORE_PLL_PD, value: Power_up}
+- {id: FXOSC_PM, value: Crystal_mode}
+- {id: MC_CGM_MUX_0.sel, value: PHI0}
+- {id: MC_CGM_MUX_0_DIV0.scale, value: '1', locked: true}
+- {id: MC_CGM_MUX_0_DIV0_Trigger, value: Common}
+- {id: MC_CGM_MUX_0_DIV1.scale, value: '2', locked: true}
+- {id: MC_CGM_MUX_0_DIV1_Trigger, value: Common}
+- {id: MC_CGM_MUX_0_DIV2.scale, value: '4', locked: true}
+- {id: MC_CGM_MUX_0_DIV2_Trigger, value: Common}
+- {id: MC_CGM_MUX_0_DIV3.scale, value: '2', locked: true}
+- {id: MC_CGM_MUX_0_DIV3_Trigger, value: Common}
+- {id: MC_CGM_MUX_0_DIV4.scale, value: '4', locked: true}
+- {id: MC_CGM_MUX_0_DIV4_Trigger, value: Common}
+- {id: MC_CGM_MUX_6.sel, value: N/A}
+- {id: MC_CGM_MUX_6_DE0, value: Enabled}
+- {id: MC_CGM_MUX_6_DIV0.scale, value: '2', locked: true}
+- {id: MODULE_CLOCKS.MC_CGM_AUX3_DIV0.scale, value: '2', locked: true}
+- {id: MODULE_CLOCKS.MC_CGM_AUX4_DIV0.scale, value: '2', locked: true}
+- {id: PHI0.scale, value: '2', locked: true}
+- {id: PHI1.scale, value: '5', locked: true}
+- {id: PLL_PREDIV.scale, value: '2', locked: true}
+- {id: POSTDIV.scale, value: '4', locked: true}
+- {id: SXOSC_PM, value: Crystal_mode}
+sources:
+- {id: FXOSC_CLK.FXOSC_CLK.outFreq, value: 16 MHz, enabled: true}
+- {id: SXOSC_CLK.SXOSC_CLK.outFreq, value: 32.768 kHz, enabled: true}
+ * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS **********/
+   
