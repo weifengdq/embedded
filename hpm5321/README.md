@@ -1,0 +1,5 @@
+HPM5321IEG1 基本信息:
+
+- CPU RV32-IMAFDCBP, 主频 480MHz, 288KB RAM, 1MB Flash
+- 封装 6*6 QFN48 P0.4, 价格备忘 ￥13
+- 
