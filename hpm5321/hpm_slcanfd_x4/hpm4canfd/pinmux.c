@@ -25,15 +25,61 @@
 
 void init_pins(void)
 {
-    HPM_IOC->PAD[IOC_PAD_PA10].FUNC_CTL = IOC_PA10_FUNC_CTL_GPIO_A_10;
+    // LED0
+    HPM_IOC->PAD[IOC_PAD_PA02].FUNC_CTL = IOC_PA02_FUNC_CTL_GPIO_A_02;
+    gpiom_set_pin_controller(HPM_GPIOM, GPIOM_ASSIGN_GPIOA, 2, gpiom_soc_gpio0);
+    gpio_set_pin_output(HPM_GPIO0, GPIO_OE_GPIOA, 2);
+    gpio_write_pin(HPM_GPIO0, GPIO_DO_GPIOA, 2, 0);
 
+    // LED1
+    HPM_IOC->PAD[IOC_PAD_PA26].FUNC_CTL = IOC_PA26_FUNC_CTL_GPIO_A_26;
+    gpiom_set_pin_controller(HPM_GPIOM, GPIOM_ASSIGN_GPIOA, 26, gpiom_soc_gpio0);
+    gpio_set_pin_output(HPM_GPIO0, GPIO_OE_GPIOA, 26);
+    gpio_write_pin(HPM_GPIO0, GPIO_DO_GPIOA, 26, 1);
+
+    // LED2
+    HPM_IOC->PAD[IOC_PAD_PA27].FUNC_CTL = IOC_PA27_FUNC_CTL_GPIO_A_27;
+    gpiom_set_pin_controller(HPM_GPIOM, GPIOM_ASSIGN_GPIOA, 27, gpiom_soc_gpio0);
+    gpio_set_pin_output(HPM_GPIO0, GPIO_OE_GPIOA, 27);
+    gpio_write_pin(HPM_GPIO0, GPIO_DO_GPIOA, 27, 0);
+
+    // LED3
+    HPM_IOC->PAD[IOC_PAD_PA28].FUNC_CTL = IOC_PA28_FUNC_CTL_GPIO_A_28;
+    gpiom_set_pin_controller(HPM_GPIOM, GPIOM_ASSIGN_GPIOA, 28, gpiom_soc_gpio0);
+    gpio_set_pin_output(HPM_GPIO0, GPIO_OE_GPIOA, 28);
+    gpio_write_pin(HPM_GPIO0, GPIO_DO_GPIOA, 28, 1);
+
+    // LED4
+    HPM_IOC->PAD[IOC_PAD_PA10].FUNC_CTL = IOC_PA10_FUNC_CTL_GPIO_A_10;
     gpiom_set_pin_controller(HPM_GPIOM, GPIOM_ASSIGN_GPIOA, 10, gpiom_soc_gpio0);
     gpio_set_pin_output(HPM_GPIO0, GPIO_OE_GPIOA, 10);
     gpio_write_pin(HPM_GPIO0, GPIO_DO_GPIOA, 10, 0);
 
+    // LED5
+    HPM_IOC->PAD[IOC_PAD_PB10].FUNC_CTL = IOC_PB10_FUNC_CTL_GPIO_B_10;
+    gpiom_set_pin_controller(HPM_GPIOM, GPIOM_ASSIGN_GPIOB, 10, gpiom_soc_gpio0);
+    gpio_set_pin_output(HPM_GPIO0, GPIO_OE_GPIOB, 10);
+    gpio_write_pin(HPM_GPIO0, GPIO_DO_GPIOB, 10, 1);
+
+    // LED6
+    HPM_IOC->PAD[IOC_PAD_PB09].FUNC_CTL = IOC_PB09_FUNC_CTL_GPIO_B_09;
+    gpiom_set_pin_controller(HPM_GPIOM, GPIOM_ASSIGN_GPIOB, 9, gpiom_soc_gpio0);
+    gpio_set_pin_output(HPM_GPIO0, GPIO_OE_GPIOB, 9);
+    gpio_write_pin(HPM_GPIO0, GPIO_DO_GPIOB, 9, 0);
+
+    // LED7
+    HPM_IOC->PAD[IOC_PAD_PB08].FUNC_CTL = IOC_PB08_FUNC_CTL_GPIO_B_08;
+    gpiom_set_pin_controller(HPM_GPIOM, GPIOM_ASSIGN_GPIOB, 8, gpiom_soc_gpio0);
+    gpio_set_pin_output(HPM_GPIO0, GPIO_OE_GPIOB, 8);
+    gpio_write_pin(HPM_GPIO0, GPIO_DO_GPIOB, 8, 1);
+
+    // UART0
     HPM_PIOC->PAD[IOC_PAD_PY00].FUNC_CTL = PIOC_PY00_FUNC_CTL_SOC_GPIO_Y_00;
     HPM_IOC->PAD[IOC_PAD_PY00].FUNC_CTL = IOC_PY00_FUNC_CTL_UART0_TXD;
-
     HPM_PIOC->PAD[IOC_PAD_PY01].FUNC_CTL = PIOC_PY01_FUNC_CTL_SOC_GPIO_Y_01;
     HPM_IOC->PAD[IOC_PAD_PY01].FUNC_CTL = IOC_PY01_FUNC_CTL_UART0_RXD;
+
+    // USB0
+    HPM_IOC->PAD[IOC_PAD_PA25].FUNC_CTL = IOC_PAD_FUNC_CTL_ANALOG_MASK;
+    HPM_IOC->PAD[IOC_PAD_PA24].FUNC_CTL = IOC_PAD_FUNC_CTL_ANALOG_MASK;
 }
