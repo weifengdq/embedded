@@ -16,7 +16,11 @@ param(
     [string]$BuildType = "flash_xip",
     
     [Parameter()]
-    [string]$ConfigType = "debug"
+    [string]$ConfigType = "debug",
+
+    [Parameter()]
+    [Alias("h")]
+    [switch]$Help
 )
 
 # 配置常量
@@ -158,6 +162,7 @@ function Invoke-Configure {
     # CMake 配置命令
     $cmake_args = @(
         "-GNinja"
+        "-DCMAKE_MAKE_PROGRAM=$($Config.NINJA_EXE)"
         "-DBOARD=$($Config.BOARD)"
         "-DHPM_BUILD_TYPE=$($Config.BUILD_TYPE)"
         "-DCMAKE_BUILD_TYPE=$($Config.CONFIG_TYPE)"
@@ -358,6 +363,7 @@ function Show-Help {
     Write-Host "  -Board <板型>       - 指定开发板 (默认: hpm4canfd)"
     Write-Host "  -BuildType <类型>   - 指定构建类型 (默认: flash_xip)"
     Write-Host "  -ConfigType <类型>  - 指定配置类型 (默认: debug)"
+    Write-Host "  -Help, -h           - 显示帮助信息"
     Write-Host ""
     Write-ColorText "示例:" -Color Yellow
     Write-Host "  .\win.ps1 check"
@@ -383,6 +389,12 @@ function Show-Help {
 Write-ColorText "HPM5321 项目构建脚本" -Color Magenta
 Write-ColorText "=============================" -Color Magenta
 Write-Host ""
+
+# 检查是否使用了 -Help 参数
+if ($Help) {
+    Show-Help
+    exit 0
+}
 
 switch ($Action) {
     "check" { Test-Environment }

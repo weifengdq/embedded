@@ -158,6 +158,7 @@ function Invoke-Configure {
     # CMake 配置命令
     $cmake_args = @(
         "-GNinja"
+        "-DCMAKE_MAKE_PROGRAM=$($Config.NINJA_EXE)"
         "-DBOARD=$($Config.BOARD)"
         "-DHPM_BUILD_TYPE=$($Config.BUILD_TYPE)"
         "-DCMAKE_BUILD_TYPE=$($Config.CONFIG_TYPE)"

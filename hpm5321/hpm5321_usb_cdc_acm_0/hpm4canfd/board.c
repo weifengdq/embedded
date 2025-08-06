@@ -8,10 +8,13 @@
 
 #include "hpm_clock_drv.h"
 #include "hpm_gpio_drv.h"
-#include "hpm_pcfg_drv.h" /* 添加缺少的头文件 */
+#include "hpm_gptmr_drv.h"
+#include "hpm_mchtmr_drv.h" /* Timer driver for LED flash */
+#include "hpm_pcfg_drv.h"   /* 添加缺少的头文件 */
 #include "hpm_pllctlv2_drv.h"
 #include "hpm_sdk_version.h"
 #include "hpm_uart_drv.h"
+#include "hpm_usb_drv.h" /* USB driver header */
 
 
 /**
@@ -176,4 +179,85 @@ uint32_t board_init_uart_clock(UART_Type *ptr)
     }
 
     return freq;
+}
+
+void board_init_usb(USB_Type *ptr)
+{
+    // (void) ptr; /* Suppress unused parameter warning */
+
+    /* Add USB clock to group 0 */
+    // clock_add_to_group(clock_usb0, 0);
+
+    /* Initialize USB controller - pins already configured in pinmux.c */
+    /* USB PHY will be initialized by the USB stack */
+
+    if (ptr == HPM_USB0) {
+        printf("Initializing USB controller at %p\n", ptr);
+        // init_usb_pins(ptr);
+        clock_add_to_group(clock_usb0, 0);
+
+        usb_hcd_set_power_ctrl_polarity(ptr, true);
+        /* Wait USB_PWR pin control vbus power stable. Time depend on decoupling capacitor, you can decrease or increase this time */
+        board_delay_ms(100);
+
+        /* As QFN48 and LQFP64 has no vbus pin, so should be call usb_phy_using_internal_vbus() API to use internal vbus. */
+        usb_phy_using_internal_vbus(ptr);
+    }
+}
+
+/* Timer callback function pointer */
+// static void (*timer_callback)(void) = NULL;
+
+#if !defined(NO_BOARD_TIMER_SUPPORT) || !NO_BOARD_TIMER_SUPPORT
+typedef void (*board_timer_cb)(void);
+static board_timer_cb timer_cb;
+SDK_DECLARE_EXT_ISR_M(BOARD_CALLBACK_TIMER_IRQ, board_timer_isr)
+void board_timer_isr(void)
+{
+    if (gptmr_check_status(BOARD_CALLBACK_TIMER, GPTMR_CH_RLD_STAT_MASK(BOARD_CALLBACK_TIMER_CH))) {
+        gptmr_clear_status(BOARD_CALLBACK_TIMER, GPTMR_CH_RLD_STAT_MASK(BOARD_CALLBACK_TIMER_CH));
+        timer_cb();
+    }
+}
+#endif
+
+/* Simple timer implementation using delay */
+void board_timer_create(uint32_t ms, board_timer_cb cb)
+{
+    // (void)ms; /* For now, ignore the specified period */
+
+    uint32_t gptmr_freq;
+    gptmr_channel_config_t config;
+
+    timer_cb = cb;
+    gptmr_channel_get_default_config(BOARD_CALLBACK_TIMER, &config);
+
+    clock_add_to_group(BOARD_CALLBACK_TIMER_CLK_NAME, 0);
+    gptmr_freq = clock_get_frequency(BOARD_CALLBACK_TIMER_CLK_NAME);
+
+    config.reload = gptmr_freq / 1000 * ms;
+    gptmr_channel_config(BOARD_CALLBACK_TIMER, BOARD_CALLBACK_TIMER_CH, &config, false);
+    gptmr_enable_irq(BOARD_CALLBACK_TIMER, GPTMR_CH_RLD_IRQ_MASK(BOARD_CALLBACK_TIMER_CH));
+    intc_m_enable_irq_with_priority(BOARD_CALLBACK_TIMER_IRQ, 1);
+
+    gptmr_start_counter(BOARD_CALLBACK_TIMER, BOARD_CALLBACK_TIMER_CH);
+
+
+    // timer_callback = callback;
+
+    /* In a real implementation, this would set up a hardware timer */
+    /* For this demo, we'll call the callback from the main loop */
+}
+
+/* Call this from main loop to simulate timer */
+void board_timer_tick(void)
+{
+    static uint32_t counter = 0;
+    counter++;
+
+    /* Flash LED every ~300ms (assuming this is called every 10ms from main loop) */
+    if (counter >= 30 && timer_cb != NULL) {
+        counter = 0;
+        timer_cb();
+    }
 }
