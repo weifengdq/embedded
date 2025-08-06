@@ -1,5 +1,6 @@
 sdk_env_*/
 build/
+bak/
 .cache/
 .vscode/
 .vector/

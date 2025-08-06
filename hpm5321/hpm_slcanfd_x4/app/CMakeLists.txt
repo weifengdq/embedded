@@ -14,5 +14,6 @@ project(hpm_slcanfd_x4)
 
 sdk_app_inc(inc)
 sdk_app_src(src/main.c)
+sdk_app_src(src/bsp_gpio.c)
 
 generate_ide_projects()
