@@ -45,7 +45,7 @@ $ProjectConfig = @{
     OutputExtension = "elf"
 }
 
-# 导出配置供 build.ps1 使用
+# 导出配置供 win.ps1 使用
 return @{
     BuildConfig = $BuildConfig
     AdvancedConfig = $AdvancedConfig

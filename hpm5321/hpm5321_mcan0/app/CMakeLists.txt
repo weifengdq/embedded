@@ -15,4 +15,7 @@ project(hpm5321_mcan0)
 sdk_app_inc(inc)
 sdk_app_src(src/main.c)
 
+# 添加 MCAN 驱动依赖
+sdk_compile_definitions(-DCANFD_ENABLE_TRANSMITTER_DELAY_COMPENSATION=1)
+
 generate_ide_projects()

@@ -14,7 +14,7 @@
 
 ### 命令格式
 ```powershell
-.\build.ps1 <操作> [参数]
+.\win.ps1 <操作> [参数]
 ```
 
 ### 可用操作
@@ -38,53 +38,53 @@
 ### 基本操作
 ```powershell
 # 检查环境
-.\build.ps1 check
+.\win.ps1 check
 
 # 编译项目
-.\build.ps1 build
+.\win.ps1 build
 
 # 烧写固件
-.\build.ps1 flash
+.\win.ps1 flash
 
 # 复位目标板
-.\build.ps1 reset
+.\win.ps1 reset
 ```
 
 ### 使用自定义参数
 ```powershell
 # 使用不同的开发板
-.\build.ps1 build -Board hpm5300evk
+.\win.ps1 build -Board hpm5300evk
 
 # 使用自定义 SDK 路径
-.\build.ps1 build -SdkPath "C:/my_hpm_sdk"
+.\win.ps1 build -SdkPath "C:/my_hpm_sdk"
 
 # 编译 release 版本
-.\build.ps1 build -ConfigType release
+.\win.ps1 build -ConfigType release
 
 # 组合多个参数
-.\build.ps1 build -Board hpm6750evk -ConfigType release -SdkPath "D:/hpm_v2.0"
+.\win.ps1 build -Board hpm6750evk -ConfigType release -SdkPath "D:/hpm_v2.0"
 ```
 
 ### 完整工作流
 ```powershell
 # 1. 检查环境
-.\build.ps1 check
+.\win.ps1 check
 
 # 2. 清理并重新编译
-.\build.ps1 rebuild
+.\win.ps1 rebuild
 
 # 3. 烧写固件
-.\build.ps1 flash
+.\win.ps1 flash
 
 # 或者一步到位
-.\build.ps1 build && .\build.ps1 flash
+.\win.ps1 build && .\win.ps1 flash
 ```
 
 ## 🔧 项目迁移
 
 要将此脚本迁移到其他 HPM SDK 项目：
 
-1. **复制脚本**：将 `build.ps1` 复制到新项目根目录
+1. **复制脚本**：将 `win.ps1` 复制到新项目根目录
 
 2. **检查项目结构**：确保项目结构符合 HPM SDK 标准：
    ```
@@ -96,13 +96,13 @@
    ├── <board_name>/
    │   ├── board.h
    │   └── <board_name>.cfg
-   └── build.ps1
+   └── win.ps1
    ```
 
 3. **调整参数**：根据新项目需要调整默认参数：
    ```powershell
    # 示例：迁移到 HPM6750EVK 项目
-   .\build.ps1 build -Board hpm6750evk
+   .\win.ps1 build -Board hpm6750evk
    ```
 
 ## 🛠️ 支持的开发板
@@ -150,7 +150,7 @@
 ### 环境检查
 使用 `check` 命令可以快速诊断环境问题：
 ```powershell
-.\build.ps1 check
+.\win.ps1 check
 ```
 
 ## 🎯 高级用法
@@ -171,7 +171,7 @@ cp build.config.example.ps1 build.config.ps1
 ## 📞 支持
 
 如遇问题，请：
-1. 使用 `.\build.ps1 check` 检查环境
+1. 使用 `.\win.ps1 check` 检查环境
 2. 查看错误信息和建议
 3. 确认参数设置是否正确
 4. 检查项目结构是否符合要求

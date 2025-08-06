@@ -1,4 +1,4 @@
-# HPM5321 LED 项目构建脚本
+# HPM5321 项目构建脚本
 # 用于环境检查、生成、编译和清理操作
 
 param(
@@ -338,10 +338,10 @@ function Invoke-Reset {
 
 # 显示帮助
 function Show-Help {
-    Write-ColorText "HPM5321 LED 项目构建脚本" -Color Cyan
+    Write-ColorText "HPM5321 项目构建脚本" -Color Cyan
     Write-Host ""
     Write-ColorText "用法:" -Color Yellow
-    Write-Host "  .\build.ps1 <action> [参数]"
+    Write-Host "  .\win.ps1 <action> [参数]"
     Write-Host ""
     Write-ColorText "可用操作:" -Color Yellow
     Write-Host "  check      - 检查环境和依赖"
@@ -360,18 +360,18 @@ function Show-Help {
     Write-Host "  -ConfigType <类型>  - 指定配置类型 (默认: debug)"
     Write-Host ""
     Write-ColorText "示例:" -Color Yellow
-    Write-Host "  .\build.ps1 check"
-    Write-Host "  .\build.ps1 build"
-    Write-Host "  .\build.ps1 build -Board hpm5300evk"
-    Write-Host "  .\build.ps1 build -SdkPath 'C:/hpm_sdk'"
-    Write-Host "  .\build.ps1 flash -ConfigType release"
-    Write-Host "  .\build.ps1 reset"
+    Write-Host "  .\win.ps1 check"
+    Write-Host "  .\win.ps1 build"
+    Write-Host "  .\win.ps1 build -Board hpm5300evk"
+    Write-Host "  .\win.ps1 build -SdkPath 'C:/hpm_sdk'"
+    Write-Host "  .\win.ps1 flash -ConfigType release"
+    Write-Host "  .\win.ps1 reset"
     Write-Host ""
     Write-ColorText "组合使用:" -Color Yellow
-    Write-Host "  .\build.ps1 build && .\build.ps1 flash   # 编译并烧写"
+    Write-Host "  .\win.ps1 build && .\win.ps1 flash   # 编译并烧写"
     Write-Host ""
     Write-ColorText "迁移到其他项目:" -Color Yellow
-    Write-Host "  1. 复制 build.ps1 到新项目根目录"
+    Write-Host "  1. 复制 win.ps1 到新项目根目录"
     Write-Host "  2. 根据需要调整 -Board 参数"
     Write-Host "  3. 确保项目结构符合 HPM SDK 标准"
     Write-Host ""
@@ -380,7 +380,7 @@ function Show-Help {
 }
 
 # 主逻辑
-Write-ColorText "HPM5321 LED 项目构建脚本" -Color Magenta
+Write-ColorText "HPM5321 项目构建脚本" -Color Magenta
 Write-ColorText "=============================" -Color Magenta
 Write-Host ""
 
