@@ -2,7 +2,7 @@
 # 基于 hpm5321_led 模板创建新工程
 
 param(
-    [Parameter(Mandatory=$true, Position=0)]
+    [Parameter(Mandatory=$false, Position=0)]
     [string]$ProjectName,
     
     [Parameter(Position=1)]
@@ -12,7 +12,11 @@ param(
     [string]$TemplatePath = "hpm5321_led",
     
     [Parameter()]
-    [switch]$Force
+    [switch]$Force,
+
+    [Parameter()]
+    [Alias("h")]
+    [switch]$Help
 )
 
 # 脚本配置
@@ -48,14 +52,17 @@ function Show-Help {
     Write-ColorText "HPM5321 新工程生成脚本" -Color Green
     Write-Host ""
     Write-Host "用法:"
-    Write-Host "  .\generate_new_pj.ps1 <工程名> [板子名] [-Force]"
+    Write-Host "  .\generate_new_pj.ps1 <工程名> [板子名] [-Force] [-Help|-h]"
     Write-Host ""
     Write-Host "参数:"
-    Write-Host "  工程名    : 新工程的名称（必填）"
+    Write-Host "  工程名    : 新工程的名称（必填，除非使用 -Help）"
     Write-Host "  板子名    : 目标板子名称（默认: hpm4canfd）"
     Write-Host "  -Force    : 强制覆盖已存在的工程目录"
+    Write-Host "  -Help|-h  : 显示此帮助信息"
     Write-Host ""
     Write-Host "示例:"
+    Write-Host "  .\generate_new_pj.ps1 -h"
+    Write-Host "  .\generate_new_pj.ps1 -Help"
     Write-Host "  .\generate_new_pj.ps1 hpm5321_uart"
     Write-Host "  .\generate_new_pj.ps1 hpm5321_can hpm5300evk"
     Write-Host "  .\generate_new_pj.ps1 hpm5321_spi hpm6750evk -Force"
@@ -216,7 +223,7 @@ function New-BuildConfig {
 # 主函数
 function Main {
     # 显示帮助
-    if (-not $ProjectName -or $ProjectName -eq "help" -or $ProjectName -eq "-h") {
+    if ($Help -or (-not $ProjectName) -or $ProjectName -eq "help" -or $ProjectName -eq "-h") {
         Show-Help
         return
     }
