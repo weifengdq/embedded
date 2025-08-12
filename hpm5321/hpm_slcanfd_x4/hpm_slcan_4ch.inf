@@ -1,0 +1,42 @@
+; hpm_slcan_4ch.inf
+; HPM5321 4-Channel SLCAN FD Bridge USB Serial Port Driver
+; For VID_16D0&PID_117E (SLCAN)
+
+[Version]
+Signature = "$Windows NT$"
+Class = Ports
+ClassGuid = {4D36E978-E325-11CE-BFC1-08002BE10318}
+Provider = %ManufacturerName%
+DriverVer = 01/08/2025,1.0.0.0
+
+[Manufacturer]
+%ManufacturerName% = Standard,NTamd64
+
+[Standard.NTamd64]
+%DeviceName% = DriverInstall, USB\VID_16D0&PID_117E
+%DeviceName0% = DriverInstall, USB\VID_16D0&PID_117E&MI_00
+%DeviceName1% = DriverInstall, USB\VID_16D0&PID_117E&MI_02
+%DeviceName2% = DriverInstall, USB\VID_16D0&PID_117E&MI_04
+%DeviceName3% = DriverInstall, USB\VID_16D0&PID_117E&MI_06
+
+[DriverInstall]
+Include = mdmcpq.inf
+CopyFiles = FakeModemCopyFileSection
+AddReg = DriverInstall.AddReg
+
+[DriverInstall.Services]
+Include = mdmcpq.inf
+AddService = usbser, 0x00000002, LowerFilter_Service_Inst
+
+[DriverInstall.AddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,usbser.sys
+HKR,,EnumPropPages32,,"MsPorts.dll,SerialPortPropPageProvider"
+
+[Strings]
+ManufacturerName = "HPMicro"
+DeviceName = "HPM SLCAN FD Bridge"
+DeviceName0 = "HPM SLCAN FD Bridge - Port 0"
+DeviceName1 = "HPM SLCAN FD Bridge - Port 1"
+DeviceName2 = "HPM SLCAN FD Bridge - Port 2"
+DeviceName3 = "HPM SLCAN FD Bridge - Port 3"

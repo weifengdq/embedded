@@ -1,0 +1,88 @@
+; hpm4canfd.inf
+; HPM5321 4-Channel SLCAN FD Bridge USB Serial Port Driver
+; Based on CANable2 INF file by Pete Batard <pete@akeo.ie> (GNU LGPL)
+; Modified to support 4-channel composite CDC ACM device
+
+[Strings]
+DeviceName0 = "HPM SLCAN FD Bridge - Port 0"
+DeviceName1 = "HPM SLCAN FD Bridge - Port 1"
+DeviceName2 = "HPM SLCAN FD Bridge - Port 2"
+DeviceName3 = "HPM SLCAN FD Bridge - Port 3"
+CompositeDeviceName = "HPM SLCAN FD 4-Channel Bridge"
+VendorName = "HPMicro"
+SourceName = "HPM SLCAN FD Bridge Install Disk"
+DeviceID   = "VID_16D0&PID_117E"
+; Composite device interface IDs for 4 CDC interfaces
+DeviceID0  = "VID_16D0&PID_117E&MI_00"
+DeviceID1  = "VID_16D0&PID_117E&MI_02"
+DeviceID2  = "VID_16D0&PID_117E&MI_04"
+DeviceID3  = "VID_16D0&PID_117E&MI_06"
+DeviceGUID = "{98CE3EB4-3F9E-4711-B1EA-1278AA1E3C49}"
+Service    = "USB COM Port"
+
+[Version]
+Signature   = "$Windows NT$"
+Class       = Ports
+ClassGuid   = {4D36E978-E325-11CE-BFC1-08002BE10318}
+Provider    = "HPMicro"
+CatalogFile = hpm4canfd.cat
+DriverVer   = 01/08/2025, 1.0.0.0
+
+[Manufacturer]
+%VendorName% = DeviceList,NTx86,NTamd64,NTarm64
+
+; Device lists for different architectures
+[DeviceList.NTx86]
+%DeviceName0% = UsbSer_Install, USB\%DeviceID0%
+%DeviceName1% = UsbSer_Install, USB\%DeviceID1%
+%DeviceName2% = UsbSer_Install, USB\%DeviceID2%
+%DeviceName3% = UsbSer_Install, USB\%DeviceID3%
+%CompositeDeviceName% = UsbSer_Install, USB\%DeviceID%
+
+[DeviceList.NTamd64]
+%DeviceName0% = UsbSer_Install, USB\%DeviceID0%
+%DeviceName1% = UsbSer_Install, USB\%DeviceID1%
+%DeviceName2% = UsbSer_Install, USB\%DeviceID2%
+%DeviceName3% = UsbSer_Install, USB\%DeviceID3%
+%CompositeDeviceName% = UsbSer_Install, USB\%DeviceID%
+
+[DeviceList.NTarm64]
+%DeviceName0% = UsbSer_Install, USB\%DeviceID0%
+%DeviceName1% = UsbSer_Install, USB\%DeviceID1%
+%DeviceName2% = UsbSer_Install, USB\%DeviceID2%
+%DeviceName3% = UsbSer_Install, USB\%DeviceID3%
+%CompositeDeviceName% = UsbSer_Install, USB\%DeviceID%
+
+[UsbSer_Install]
+; Standard USB Serial installation
+; See https://support.microsoft.com/en-us/kb/837637
+include     = mdmcpq.inf
+CopyFiles   = FakeModemCopyFileSection ; defined in mdmcpq.inf
+AddReg      = UsbSer_Install.AddReg
+AddProperty = UsbSer_AddProperty
+
+[UsbSer_Install.AddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,usbser.sys
+HKR,,EnumPropPages32,,"MsPorts.dll,SerialPortPropPageProvider"
+
+[UsbSer_Install.Services]
+AddService = usbser,0x00000002,UsbSer_Service
+
+[UsbSer_Service]
+DisplayName   = %Service%
+ServiceType   = 1          ; SERVICE_KERNEL_DRIVER
+StartType     = 3          ; SERVICE_DEMAND_START
+ErrorControl  = 1          ; SERVICE_ERROR_NORMAL
+ServiceBinary = %12%\usbser.sys
+
+[UsbSer_AddProperty]
+GenericDriverInstalled,,,,1
+
+[DestinationDirs]
+DefaultDestDir = 12
+
+[SourceDisksNames]
+1 = %SourceName%
+
+[SourceDisksFiles]

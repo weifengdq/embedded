@@ -1,0 +1,76 @@
+# clangd configuration for HPM SDK RISC-V project
+CompileFlags:
+  # Use the compile_commands.json from build directory
+  CompilationDatabase: build/
+  
+  # Add additional flags if needed
+  Add:
+    # RISC-V target specification
+    - --target=riscv32-unknown-elf
+    # Architecture specific flags
+    - -march=rv32imac_zicsr_zifencei_zba_zbb_zbc_zbs
+    - -mabi=ilp32
+    # Disable some noisy warnings for embedded projects
+    - -Wno-unused-parameter
+    - -Wno-sign-conversion
+    - -Wno-conversion
+    - -Wno-format
+    - -Wno-gnu-statement-expression
+
+  # Remove problematic flags that clangd doesn't understand
+  Remove:
+    - -fomit-frame-pointer
+    - -fno-builtin
+    - -ffunction-sections
+    - -fdata-sections
+    - --specs=nano.specs
+    - -nostartfiles
+    - -Wl,*
+
+# Index configuration
+Index:
+  Background: Build
+  StandardLibrary: No
+
+# Hover information
+Hover:
+  ShowAKA: Yes
+
+# Inlay hints
+InlayHints:
+  Enabled: Yes
+  ParameterNames: Yes
+  DeducedTypes: Yes
+  Designators: Yes
+
+# Semantic highlighting
+SemanticTokens:
+  DisabledKinds: []
+  DisabledModifiers: []
+
+# Diagnostics configuration
+Diagnostics:
+  # Suppress some embedded-specific warnings
+  Suppress:
+    - unused-but-set-variable
+    - unused-variable
+    - missing-prototypes
+  # Enable useful clang-tidy checks for embedded C
+  ClangTidy:
+    Add:
+      - readability-identifier-naming
+      - readability-function-size
+      - bugprone-*
+      - cert-*
+      - clang-analyzer-*
+      - performance-*
+    Remove:
+      - readability-magic-numbers
+      - readability-avoid-const-params-in-decls
+      - bugprone-easily-swappable-parameters
+      - cert-dcl03-c
+      - cert-dcl37-c
+
+# Completion settings
+Completion:
+  AllScopes: Yes

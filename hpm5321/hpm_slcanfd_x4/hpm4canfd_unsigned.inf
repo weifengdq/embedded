@@ -1,0 +1,55 @@
+; hpm4canfd_unsigned.inf
+; HPM5321 4-Channel SLCAN FD Bridge USB Serial Port Driver (Unsigned Version)
+
+[Version]
+Signature = "$Windows NT$"
+Class = Ports
+ClassGuid = {4D36E978-E325-11CE-BFC1-08002BE10318}
+Provider = %VendorName%
+DriverVer = 01/08/2025,1.0.0.0
+
+[Manufacturer]
+%VendorName% = HPMDevices,NTamd64,NTx86,NTarm64
+
+[HPMDevices.NTamd64]
+%DeviceName0% = HPMInstall,USB\%DeviceID0%
+%DeviceName1% = HPMInstall,USB\%DeviceID1%
+%DeviceName2% = HPMInstall,USB\%DeviceID2%
+%DeviceName3% = HPMInstall,USB\%DeviceID3%
+
+[HPMDevices.NTx86]
+%DeviceName0% = HPMInstall,USB\%DeviceID0%
+%DeviceName1% = HPMInstall,USB\%DeviceID1%
+%DeviceName2% = HPMInstall,USB\%DeviceID2%
+%DeviceName3% = HPMInstall,USB\%DeviceID3%
+
+[HPMDevices.NTarm64]
+%DeviceName0% = HPMInstall,USB\%DeviceID0%
+%DeviceName1% = HPMInstall,USB\%DeviceID1%
+%DeviceName2% = HPMInstall,USB\%DeviceID2%
+%DeviceName3% = HPMInstall,USB\%DeviceID3%
+
+[HPMInstall]
+Include = mdmcpq.inf
+CopyFiles = FakeModemCopyFileSection
+AddReg = HPMInstall.AddReg
+
+[HPMInstall.Services]
+Include = mdmcpq.inf
+AddService = usbser, 0x00000002, LowerFilter_Service_Inst
+
+[HPMInstall.AddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,usbser.sys
+HKR,,EnumPropPages32,,"MsPorts.dll,SerialPortPropPageProvider"
+
+[Strings]
+VendorName = "HPMicro"
+DeviceName0 = "HPM SLCAN FD Bridge - Port 0"
+DeviceName1 = "HPM SLCAN FD Bridge - Port 1"
+DeviceName2 = "HPM SLCAN FD Bridge - Port 2"
+DeviceName3 = "HPM SLCAN FD Bridge - Port 3"
+DeviceID0  = "VID_16D0&PID_117E&MI_00"
+DeviceID1  = "VID_16D0&PID_117E&MI_02"
+DeviceID2  = "VID_16D0&PID_117E&MI_04"
+DeviceID3  = "VID_16D0&PID_117E&MI_06"

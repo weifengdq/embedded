@@ -9,7 +9,6 @@
 #define _HPM_BOARD_H
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdint.h>
 
 #include "hpm_clock_drv.h"
 #include "hpm_common.h"
@@ -51,12 +50,6 @@
 #endif
 #endif
 
-/* CALLBACK TIMER section */
-#define BOARD_CALLBACK_TIMER          (HPM_GPTMR3)
-#define BOARD_CALLBACK_TIMER_CH       1
-#define BOARD_CALLBACK_TIMER_IRQ      IRQn_GPTMR3
-#define BOARD_CALLBACK_TIMER_CLK_NAME (clock_gptmr3)
-
 /* User LED */
 #define BOARD_LED_GPIO_CTRL HPM_GPIO0 /* 修改为 HPM_GPIO0 而不是 HPM_GPIOM */
 #define BOARD_LED_GPIO_INDEX GPIO_DO_GPIOA
@@ -79,17 +72,13 @@ extern "C" {
 void board_init(void);
 void board_init_console(void);
 void board_init_clock(void);
-uint32_t board_init_can_clock(MCAN_Type *ptr);
 void board_delay_us(uint32_t us);
 void board_delay_ms(uint32_t ms);
 void board_led_write(uint8_t state);
 void board_led_toggle(void);
 uint32_t board_init_uart_clock(UART_Type *ptr);
 
-/* USB related functions */
 void board_init_usb(USB_Type *ptr);
-void board_timer_create(uint32_t ms, void (*callback)(void));
-void board_timer_tick(void);
 
 #if defined(__cplusplus)
 }

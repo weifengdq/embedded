@@ -1,0 +1,34 @@
+; hpm4canfd_win10.inf
+; HPM5321 4-Channel SLCAN FD Bridge USB Serial Port Driver for Windows 10/11
+; Uses standard Windows usbser.sys driver
+
+[Version]
+Signature = "$Windows NT$"
+Class = Ports
+ClassGuid = {4D36E978-E325-11CE-BFC1-08002BE10318}
+Provider = %ManufacturerName%
+DriverVer = 01/08/2025,1.0.0.0
+
+[Manufacturer]
+%ManufacturerName% = Standard,NTamd64
+
+[Standard.NTamd64]
+%DeviceName% = DriverInstall, USB\VID_16D0&PID_117E
+
+[DriverInstall]
+Include = mdmcpq.inf
+CopyFiles = FakeModemCopyFileSection
+AddReg = DriverInstall.AddReg
+
+[DriverInstall.Services]
+Include = mdmcpq.inf
+AddService = usbser, 0x00000002, LowerFilter_Service_Inst
+
+[DriverInstall.AddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,usbser.sys
+HKR,,EnumPropPages32,,"MsPorts.dll,SerialPortPropPageProvider"
+
+[Strings]
+ManufacturerName = "HPMicro"
+DeviceName = "HPM SLCAN FD Bridge"
