@@ -145,6 +145,11 @@ void process_uart(slcan_channel_t channel, const char *data, int len)
     case 'D': // 扩展CANFD, // Diiiiiiilxxxx...
     case 'B': // 扩展CANFD+BRS, // Biiiiiiilxxxx...
     {
+        // print cmd_str
+        char str[SLCAN_MTU + 1] = {0};
+        memcpy(str, data, len);
+        str[len] = '\0'; // Null-terminate the string for printing
+        SLCAN_DEBUG("Received: %s\n", str);
         if (len < 5) {
             SLCAN_DEBUG("Invalid frame length: %d\n", len);
             return;
@@ -190,19 +195,18 @@ void process_uart(slcan_channel_t channel, const char *data, int len)
             index += 1;
 
             // 远程帧无数据
-            if (frame.can_id & CAN_RTR_FLAG) {
-                break;
+            if (!(frame.can_id & CAN_RTR_FLAG)) {
+                // 解析十六进制数据
+                if (len < index + frame.len * 2) {
+                    SLCAN_DEBUG("Invalid frame length: %d\n", len);
+                    return;
+                }
+                for (int i = index; i < index + frame.len * 2; i += 2) {
+                    uint8_t byte = (asc2nibble(data[i]) << 4) | asc2nibble(data[i + 1]);
+                    frame.data[i / 2 - index / 2] = byte;
+                }
             }
 
-            // 解析十六进制数据
-            if (len < index + frame.len * 2) {
-                SLCAN_DEBUG("Invalid frame length: %d\n", len);
-                return;
-            }
-            for (int i = index; i < index + frame.len * 2; i += 2) {
-                uint8_t byte = (asc2nibble(data[i]) << 4) | asc2nibble(data[i + 1]);
-                frame.data[i / 2 - index / 2] = byte;
-            }
             // 发送 CAN 帧
             if (mcan_send((mcan_channel_t) channel, &frame) < 0) {
                 SLCAN_DEBUG("Failed to send CAN frame on channel %d\n", (int) channel);
