@@ -207,19 +207,22 @@ void process_uart(slcan_channel_t channel, const char *data, int len)
                 }
             }
 
-            // 发送 CAN 帧
-            if (mcan_send((mcan_channel_t) channel, &frame) < 0) {
-                SLCAN_DEBUG("Failed to send CAN frame on channel %d\n", (int) channel);
-            } else {
-                SLCAN_DEBUG("SLCAN%d Sent frame: %c, ID: 0x%08X, DLC: %d, Data: ",
+            {
+                SLCAN_DEBUG("SLCAN%d Sent frame: %c, ID: 0x%08X, DLC: %d, flags: 0x%02X, Data: ",
                             (int) channel,
                             cmd,
                             frame.can_id,
-                            frame.len);
+                            frame.len,
+                            frame.flags);
                 for (int i = 0; i < frame.len; i++) {
                     SLCAN_DEBUG("%02X ", frame.data[i]);
                 }
                 SLCAN_DEBUG("\n");
+            }
+
+            // 发送 CAN 帧
+            if (mcan_send((mcan_channel_t) channel, &frame) < 0) {
+                SLCAN_DEBUG("Failed to send CAN frame on channel %d\n", (int) channel);
             }
         } else {
             SLCAN_DEBUG("SLCAN%d is not opened, cannot send frame\n", (int) channel);

@@ -26,12 +26,16 @@ static mcan_param_t mcan_param[] = {
     {100000, 20, 29, 10, 10}, // 100K
     {125000, 16, 29, 10, 10}, // 125K
     {250000, 8, 29, 10, 10},  // 250K
-    {500000, 4, 29, 10, 10},  // 500K
+    {500000, 4, 29, 10, 10},  // 500K, 0.75
+    // {500000, 4, 31, 8, 8},  // 500K, 0.8
     {800000, 10, 7, 2, 2},    // 800K
-    {1000000, 2, 29, 10, 10}, // 1M
-    {2000000, 1, 29, 10, 10}, // 2M
+    // {1000000, 2, 29, 10, 10}, // 1M
+    {1000000, 8, 7, 2, 2}, // 1M
+    // {2000000, 1, 29, 10, 10}, // 2M, 75%
+    {2000000, 2, 15, 4, 4}, // 2M, 80%
     {4000000, 1, 14, 5, 5},   // 4M
-    {5000000, 1, 11, 4, 4},   // 5M
+    // {5000000, 1, 11, 4, 4},   // 5M
+    {5000000, 2, 5, 2, 2},   // 5M
     {8000000, 1, 7, 2, 2},    // 8M
     {10000000, 1, 5, 2, 2}    // 10M
 };
@@ -134,6 +138,7 @@ int mcan_open(mcan_channel_t channel)
 
     mcan_config_t config;
     mcan_get_default_config(mcan[channel], &config);
+    // config.disable_auto_retransmission = true;
     config.enable_canfd = true;
     config.use_lowlevel_timing_setting = true;
     config.can_timing = ntiming_param;
@@ -190,45 +195,6 @@ void mcan3_isr(void)
     mcan_isr(HPM_MCAN3);
 }
 
-// typedef struct mcan_tx_message_struct {
-//     union {
-//         struct {
-//             uint32_t ext_id: 29;                        /*!< Extended CAN Identifier */
-//             uint32_t rtr: 1;                            /*!< Remote Transmission Request */
-//             uint32_t use_ext_id: 1;                     /*!< Extended Identifier */
-//             uint32_t error_state_indicator: 1;          /*!< Error State Indicator */
-//         };
-//         struct {
-//             uint32_t : 18;
-//             uint32_t std_id: 11;                        /*!< Standard CAN Identifier */
-//             uint32_t : 3;
-//         };
-//     };
-//     struct {
-//         uint32_t : 8;
-//         uint32_t message_marker_h: 8;                   /*!< Message Marker[15:8] */
-//         uint32_t dlc: 4;                                /*!< Data Length Code */
-//         uint32_t bitrate_switch: 1;                     /*!< Bit Rate Switch */
-//         uint32_t canfd_frame: 1;                        /*!< CANFD frame */
-//         uint32_t timestamp_capture_enable: 1;           /*!< Timestamp Capture Enable for TSU */
-//         uint32_t event_fifo_control: 1;                 /*!< Event FIFO control */
-//         uint32_t message_marker_l: 8;                   /*!< Message Marker[7:0] */
-//     };
-//     union {
-//         uint8_t data_8[64];                             /*!< Data buffer as byte array */
-//         uint32_t data_32[16];                           /*!< Data buffer as word array */
-//     };
-// } mcan_tx_frame_t;
-
-// struct canfd_frame {
-// 	canid_t can_id;  /* 32 bit CAN_ID + EFF/RTR/ERR flags */
-// 	uint8_t    len;     /* frame payload length in byte */
-// 	uint8_t    flags;   /* additional flags for CAN FD */
-// 	uint8_t    __res0;  /* reserved / padding */
-// 	uint8_t    __res1;  /* reserved / padding */
-// 	uint8_t    data[CANFD_MAX_DLEN];
-// };
-
 static uint32_t len2dlc(uint8_t len)
 {
     if (len <= 8) {
@@ -262,9 +228,17 @@ int mcan_send(mcan_channel_t channel, const struct canfd_frame *frame)
     memset(&tx_frame, 0, sizeof(tx_frame));
 
     // Set CAN ID and flags
-    tx_frame.ext_id = frame->can_id & 0x1FFFFFFF; // Mask to 29 bits
     tx_frame.rtr = (frame->can_id & CAN_RTR_FLAG) ? 1 : 0;
     tx_frame.use_ext_id = (frame->can_id & CAN_EFF_FLAG) ? 1 : 0;
+    if (tx_frame.use_ext_id) {
+        tx_frame.ext_id = frame->can_id & 0x1FFFFFFF; // Mask to 29 bits
+    } else {
+        tx_frame.std_id = frame->can_id & 0x7FF; // Mask to 11 bits
+    }
+
+    // fdf brs
+    tx_frame.bitrate_switch = (frame->flags & CANFD_BRS) ? 1 : 0;
+    tx_frame.canfd_frame = ((frame->flags & CANFD_FDF) || tx_frame.bitrate_switch) ? 1 : 0;
 
     // Set DLC and data
     tx_frame.dlc = len2dlc(frame->len);
@@ -273,7 +247,8 @@ int mcan_send(mcan_channel_t channel, const struct canfd_frame *frame)
         return -2; // Invalid Length
     }
 
-    memcpy(tx_frame.data_8, frame->data, frame->len);
+    uint32_t msg_len = mcan_get_message_size_from_dlc(tx_frame.dlc);
+    memcpy(tx_frame.data_8, frame->data, msg_len);
 
     // Send the frame
     hpm_stat_t status = mcan_transmit_blocking(mcan[channel], &tx_frame);
