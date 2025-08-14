@@ -6,7 +6,7 @@
 
 #include "linux_can.h"
 
-#define MCAN_USE_DEBUG
+// #define MCAN_USE_DEBUG
 
 typedef enum { M_CAN0 = 0, M_CAN1, M_CAN2, M_CAN3, M_CAN_NUM } mcan_channel_t;
 

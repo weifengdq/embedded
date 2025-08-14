@@ -7,7 +7,7 @@
 
 #include "linux_can.h"
 
-#define SLCAN_USE_DEBUG
+// #define SLCAN_USE_DEBUG
 
 #ifndef SLCAN_USE_DEBUG
 #define SLCAN_DEBUG(...)

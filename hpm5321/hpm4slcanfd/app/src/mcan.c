@@ -18,26 +18,24 @@ typedef struct mcan_baud {
     uint32_t dbaud;
 } mcan_baud_t;
 
-// 80M
+// 80M, 优先采样点 0.8, 次之 0.75
 static mcan_param_t mcan_param[] = {
-    {10000, 200, 29, 10, 10}, // 10K
-    {20000, 100, 29, 10, 10}, // 20K
-    {50000, 40, 29, 10, 10},  // 50K
-    {100000, 20, 29, 10, 10}, // 100K
-    {125000, 16, 29, 10, 10}, // 125K
-    {250000, 8, 29, 10, 10},  // 250K
-    {500000, 4, 29, 10, 10},  // 500K, 0.75
+    {10000, 200, 31, 8, 8}, // 10K, 0.8
+    {20000, 100, 31, 8, 8}, // 20K, 0.8
+    {50000, 40, 31, 8, 8},  // 50K, 0.8
+    {100000, 20, 31, 8, 8}, // 100K, 0.8
+    {125000, 16, 31, 8, 8}, // 125K, 0.8
+    {250000, 8, 31, 8, 8},  // 250K, 0.8
     // {500000, 4, 31, 8, 8},  // 500K, 0.8
-    {800000, 10, 7, 2, 2},    // 800K
-    // {1000000, 2, 29, 10, 10}, // 1M
-    {1000000, 8, 7, 2, 2}, // 1M
-    // {2000000, 1, 29, 10, 10}, // 2M, 75%
-    {2000000, 2, 15, 4, 4}, // 2M, 80%
-    {4000000, 1, 14, 5, 5},   // 4M
-    // {5000000, 1, 11, 4, 4},   // 5M
-    {5000000, 2, 5, 2, 2},   // 5M
-    {8000000, 1, 7, 2, 2},    // 8M
-    {10000000, 1, 5, 2, 2}    // 10M
+    {500000, 8, 15, 4, 4},  // 500K, 0.8
+    {800000, 5, 15, 4, 4},  // 800K, 0.8
+    {1000000, 2, 31, 8, 8}, // 1M, 0.8
+    // {2000000, 1, 31, 8, 8}, // 2M, 0.8
+    {2000000, 2, 15, 4, 4}, // 2M, 0.8
+    {4000000, 1, 15, 4, 4}, // 4M, 0.8
+    {5000000, 1, 11, 4, 4}, // 5M, 0.75
+    {8000000, 1, 7, 2, 2},  // 8M, 0.8
+    {10000000, 1, 5, 2, 2}  // 10M, 0.75
 };
 
 static mcan_baud_t mcan_baud[M_CAN_NUM] = {
@@ -51,7 +49,8 @@ static MCAN_Type *mcan[M_CAN_NUM] = {HPM_MCAN0, HPM_MCAN1, HPM_MCAN2, HPM_MCAN3}
 static int mcan_irq_num[M_CAN_NUM] = {IRQn_MCAN0, IRQn_MCAN1, IRQn_MCAN2, IRQn_MCAN3};
 static clock_name_t mcan_clock[M_CAN_NUM] = {clock_can0, clock_can1, clock_can2, clock_can3};
 
-ATTR_PLACE_AT(".ahb_sram") uint32_t mcan_msg_buf[M_CAN_NUM][MCAN_MSG_BUF_SIZE_IN_WORDS];
+#define MCAN_MSG_BUF_SIZE_IN_WORDS_CUSTOM (1024U)
+ATTR_PLACE_AT(".ahb_sram") uint32_t mcan_msg_buf[M_CAN_NUM][MCAN_MSG_BUF_SIZE_IN_WORDS_CUSTOM];
 
 static mcan_param_t *get_mcan_param(uint32_t baud)
 {
@@ -97,7 +96,7 @@ int mcan_open(mcan_channel_t channel)
     uint32_t freq = clock_get_frequency(mcan_clock[channel]);
     MCAN_DEBUG("MCAN%d clock frequency: %d Hz\n", channel, freq);
 
-    // RAM
+    // AHB MSG RAM
     mcan_msg_buf_attr_t attr = {.ram_base = (uint32_t) mcan_msg_buf[channel],
                                 .ram_size = sizeof(mcan_msg_buf[channel])};
     hpm_stat_t status = mcan_set_msg_buf_attr(mcan[channel], &attr);
@@ -146,12 +145,75 @@ int mcan_open(mcan_channel_t channel)
     config.enable_tdc = true;
     config.tdc_config = tdc_config;
     // TODO: Filter use default
-    config.interrupt_mask = MCAN_EVENT_RECEIVE | MCAN_EVENT_TRANSMIT | MCAN_EVENT_ERROR;
-    config.txbuf_trans_interrupt_mask = ~0UL;
+    config.interrupt_mask = MCAN_INT_RXFIFO0_NEW_MSG | MCAN_INT_RXFIFO0_WMK_REACHED |
+                            MCAN_EVENT_TRANSMIT | MCAN_EVENT_ERROR;
+    // config.txbuf_trans_interrupt_mask = ~0UL;
+    config.txbuf_trans_interrupt_mask = MCAN_EVENT_TRANSMIT;
 
     // TODO: msg ram split
-    mcan_get_default_ram_config(mcan[channel], &config.ram_config, true);
+    // mcan_get_default_ram_config(mcan[channel], &config.ram_config, true);
+    // MSG RAM SPLIT
+    const uint32_t std_filter_elem_count = 128U;
+    const uint32_t ext_filter_elem_count = 64U;
+    const uint32_t rxfifo0_elem_count = 10U;
+    const uint32_t txbuf_elem_count = 32U;
 
+    /* word counts */
+    const uint32_t words_std =
+        std_filter_elem_count * (MCAN_FILTER_ELEM_STD_ID_SIZE / 4U); /* 1 word each */
+    const uint32_t words_ext =
+        ext_filter_elem_count * (MCAN_FILTER_ELEM_EXT_ID_SIZE / 4U); /* 2 words each */
+    const uint32_t words_rxfifo0 =
+        rxfifo0_elem_count * 18U; /* 64B data+8B header = 72B = 18 words */
+    const uint32_t words_txbuf = txbuf_elem_count * 18U;
+
+    const uint32_t total_words = words_std + words_ext + words_rxfifo0 + words_txbuf;
+
+    if (total_words > MCAN_MSG_BUF_SIZE_IN_WORDS_CUSTOM) {
+        /* not enough per-instance RAM */
+        printf("MCAN MessageRAM per-instance words insufficient: need %u, have %u\n",
+               total_words,
+               MCAN_MSG_BUF_SIZE_IN_WORDS_CUSTOM);
+        return false;
+    }
+
+    mcan_ram_config_t *ram_cfg = &config.ram_config;
+
+    /* fill ram_cfg */
+    (void) memset(ram_cfg, 0, sizeof(*ram_cfg));
+    ram_cfg->enable_std_filter = true;
+    ram_cfg->std_filter_elem_count = (uint8_t) std_filter_elem_count;
+    ram_cfg->enable_ext_filter = true;
+    ram_cfg->ext_filter_elem_count = (uint8_t) ext_filter_elem_count;
+    // mcan_get_default_config 中已有:
+    //      1 std id filter id:mask=0:0x7FF
+    //      1 ext id filter id:mask=0:0x1FFFFFFF
+
+    /* RXFIFO0 */
+    ram_cfg->rxfifos[0].enable = 1U;
+    ram_cfg->rxfifos[0].elem_count = (uint32_t) rxfifo0_elem_count;
+    ram_cfg->rxfifos[0].watermark = 7U; /* half of 14 */
+    ram_cfg->rxfifos[0].operation_mode =
+        MCAN_FIFO_OPERATION_MODE_OVERWRITE; /* overwrite when full */
+    ram_cfg->rxfifos[0].data_field_size = MCAN_DATA_FIELD_SIZE_64BYTES;
+
+    /* RXFIFO1 disabled */
+    ram_cfg->rxfifos[1].enable = 0U;
+
+    /* RXBUF disabled */
+    ram_cfg->enable_rxbuf = false;
+
+    /* TXBUF */
+    ram_cfg->enable_txbuf = true;
+    ram_cfg->txbuf_data_field_size = MCAN_DATA_FIELD_SIZE_64BYTES;
+    ram_cfg->txbuf_dedicated_txbuf_elem_count = 0U; /* dedicated = 0 */
+    ram_cfg->txbuf_fifo_or_queue_elem_count = (uint8_t) txbuf_elem_count;
+    ram_cfg->txfifo_or_txqueue_mode = MCAN_TXBUF_OPERATION_MODE_FIFO;
+
+    /* TX Event FIFO disabled */
+    ram_cfg->enable_tx_evt_fifo = false;
+
+    // INIT
     status = mcan_init(mcan[channel], &config, freq);
     if (status != status_success) {
         MCAN_DEBUG("MCAN%d initialization failed, error code: %d\n", channel, status);
@@ -159,7 +221,7 @@ int mcan_open(mcan_channel_t channel)
     }
     mcan_enable_interrupts(mcan[channel], config.interrupt_mask);
     // TODO: priority
-    intc_m_enable_irq_with_priority(mcan_irq_num[channel], 1);
+    intc_m_enable_irq_with_priority(mcan_irq_num[channel], 1 + channel);
 
     return 0;
 }
@@ -250,12 +312,20 @@ int mcan_send(mcan_channel_t channel, const struct canfd_frame *frame)
     uint32_t msg_len = mcan_get_message_size_from_dlc(tx_frame.dlc);
     memcpy(tx_frame.data_8, frame->data, msg_len);
 
-    // Send the frame
-    hpm_stat_t status = mcan_transmit_blocking(mcan[channel], &tx_frame);
-    if (status != status_success) {
-        MCAN_DEBUG("Failed to send message on channel %d, error code: %d\n", channel, status);
+    // Send the frame, Blocking mode
+    // hpm_stat_t status = mcan_transmit_blocking(mcan[channel], &tx_frame);
+    // Send the frame, Non-blocking mode
+    if (mcan_is_txfifo_full(mcan[channel])) {
+        printf("TXFIFO full on channel %d\n", channel);
         return -3; // Send failed
     }
+    hpm_stat_t tx_ret = mcan_write_txfifo(mcan[channel], &tx_frame);
+    if (tx_ret != status_success) {
+        MCAN_DEBUG("Failed to send message on channel %d, error code: %d\n", channel, tx_ret);
+        return -4; // Write failed
+    }
+    uint32_t put_index = mcan_get_txfifo_put_index(mcan[channel]);
+    mcan_send_add_request(mcan[channel], put_index);
 
     return 0; // Success
 }
