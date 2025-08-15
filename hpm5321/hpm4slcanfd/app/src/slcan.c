@@ -116,6 +116,20 @@ int slcan_can_close(slcan_channel_t channel)
     return 0;
 }
 
+/* write a byte as two uppercase hex chars into buffer p
+ * returns number of chars written (2) or -1 on insufficient space
+ */
+static inline int write_hex_byte_to_buf(char *p, int remain, uint8_t val)
+{
+    const char hexmap[] = "0123456789ABCDEF";
+    if (remain < 2) {
+        return -1;
+    }
+    p[0] = hexmap[(val >> 4) & 0xF];
+    p[1] = hexmap[val & 0xF];
+    return 2;
+}
+
 static uint8_t asc2nibble(char c)
 {
     if (c >= '0' && c <= '9') {
@@ -126,6 +140,124 @@ static uint8_t asc2nibble(char c)
         return (c - 'a' + 10);
     }
     return 16; // Invalid nibble
+}
+
+/**
+ * Convert a CAN-FD frame to SLCAN ASCII string.
+ * - out must have enough space (recommend >= SLCAN_MTU)
+ * - returns number of bytes written to out (excluding NUL), or -1 on error
+ */
+int canfd_frame2slcan(slcan_channel_t channel,
+                      const struct canfd_frame *frame,
+                      char *out,
+                      int out_len)
+{
+    if (!frame || !out || out_len <= 0) {
+        return -1;
+    }
+
+    /* reverse DLC mapping used in process_uart */
+    // static const uint8_t len2dlc[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+    // const uint8_t dlc_table_len = sizeof(len2dlc) / sizeof(len2dlc[0]);
+    uint8_t dlc = 0xFF;
+    /* find dlc index by matching length to mapping used previously
+     * mapping in process_uart: index->len: {0,1,2,3,4,5,6,7,8,12,16,20,24,32,48,64}
+     */
+    static const uint8_t dlc2len[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64};
+    for (uint8_t i = 0; i < 16; i++) {
+        if (frame->len == dlc2len[i]) {
+            dlc = i;
+            break;
+        }
+    }
+    if (dlc == 0xFF) {
+        /* unsupported length */
+        return -1;
+    }
+
+    bool is_ext = (frame->can_id & CAN_EFF_FLAG) != 0;
+    bool is_rtr = (frame->can_id & CAN_RTR_FLAG) != 0;
+    bool is_fd = (frame->flags & CANFD_FDF) != 0;
+    bool is_brs = (frame->flags & CANFD_BRS) != 0;
+
+    char *p = out;
+    int remain = out_len;
+
+    /* select command letter */
+    char cmd = 0;
+    if (is_rtr) {
+        cmd = is_ext ? 'R' : 'r';
+    } else if (is_fd) {
+        if (is_ext) {
+            cmd = is_brs ? 'B' : 'D';
+        } else {
+            cmd = is_brs ? 'b' : 'd';
+        }
+    } else {
+        cmd = is_ext ? 'T' : 't';
+    }
+
+    /* write cmd */
+    if (remain < 2) { /* at least cmd + '\r' */
+        return -1;
+    }
+    *p++ = cmd;
+    remain--;
+
+    /* write id */
+    uint32_t id = frame->can_id & (is_ext ? 0x1FFFFFFFUL : 0x7FFU);
+    if (is_ext) {
+        /* 8 hex chars */
+        int needed = 8;
+        if (remain <= needed)
+            return -1;
+        int n = snprintf(p, remain, "%08X", id);
+        if (n <= 0 || n >= remain)
+            return -1;
+        p += n;
+        remain -= n;
+    } else {
+        /* 3 hex chars */
+        int needed = 3;
+        if (remain <= needed)
+            return -1;
+        int n = snprintf(p, remain, "%03X", id & 0x7FFU);
+        if (n <= 0 || n >= remain)
+            return -1;
+        p += n;
+        remain -= n;
+    }
+
+    /* write dlc nibble as single hex char */
+    if (remain < 2)
+        return -1;
+    const char hexmap[] = "0123456789ABCDEF";
+    *p++ = hexmap[dlc & 0xF];
+    remain--;
+
+    /* remote frames have no data bytes */
+    if (!is_rtr) {
+        /* write data bytes as hex */
+        for (uint8_t i = 0; i < frame->len; i++) {
+            if (remain < 3) {
+                return -1; /* two hex + maybe null later */
+            }
+            int n = write_hex_byte_to_buf(p, remain, frame->data[i]);
+            if (n != 2) {
+                return -1;
+            }
+            p += 2;
+            remain -= 2;
+        }
+    }
+
+    /* terminate with CR */
+    if (remain < 1)
+        return -1;
+    *p++ = '\r';
+    remain--;
+
+    return (int) (p - out);
 }
 
 
@@ -183,7 +315,7 @@ void process_uart(slcan_channel_t channel, const char *data, int len)
                 id |= asc2nibble(data[i]);
             }
             frame.can_id |= id;
-            index += id_len;
+            index += (int)id_len;
 
             // 解析 len
             uint8_t dlc = asc2nibble(data[index]);

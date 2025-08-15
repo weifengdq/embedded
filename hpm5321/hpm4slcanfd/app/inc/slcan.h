@@ -86,6 +86,10 @@ void process_uart(slcan_channel_t channel, const char *data, int len);
 // void process_can(slcan_channel_t channel, const struct canfd_frame *frame);
 
 void slcan_process_task(slcan_instance_t *instance);
+int canfd_frame2slcan(slcan_channel_t channel,
+                      const struct canfd_frame *frame,
+                      char *out,
+                      int out_len);
 
 #ifdef __cplusplus
 }

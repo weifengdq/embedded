@@ -23,4 +23,10 @@ int mcan_close(mcan_channel_t channel);
 
 int mcan_send(mcan_channel_t channel, const struct canfd_frame *frame);
 
+/* Poll MCAN RXFIFO and forward received frames to SLCAN/host
+ * This is a non-ISR helper that should be called from application main loop
+ * to avoid doing USB/serial work in interrupt context.
+ */
+void mcan_process_received_frames(void);
+
 #endif

@@ -5,6 +5,10 @@
 #include "hpm_clock_drv.h"
 #include "hpm_mcan_drv.h"
 
+#include "cdc_acm.h"
+#include "slcan.h"
+
+
 typedef struct mcan_param {
     uint32_t baud;
     uint16_t prescaler;
@@ -328,4 +332,68 @@ int mcan_send(mcan_channel_t channel, const struct canfd_frame *frame)
     mcan_send_add_request(mcan[channel], put_index);
 
     return 0; // Success
+}
+
+/* Poll all MCAN channels for received frames and forward to SLCAN host
+ * This function reads RXFIFO0 of each controller until empty and for each
+ * message converts it to struct canfd_frame and forwards using
+ * canfd_frame2slcan() + slcan_uart_write(). Called from main loop.
+ */
+void mcan_process_received_frames(void)
+{
+    for (int ch = 0; ch < M_CAN_NUM; ch++) {
+        MCAN_Type *base = mcan[ch];
+        while (1) {
+            mcan_rx_message_t rx;
+            hpm_stat_t ret = mcan_read_rxfifo(base, 0U, &rx);
+            if (ret == status_mcan_rxfifo_empty) {
+                break;
+            }
+            if (ret != status_success) {
+                // read error, stop processing this channel for now
+                break;
+            }
+
+            struct canfd_frame frame;
+            memset(&frame, 0, sizeof(frame));
+            if (rx.use_ext_id) {
+                frame.can_id = (rx.ext_id & CAN_EFF_MASK) | CAN_EFF_FLAG;
+            } else {
+                frame.can_id = (rx.std_id & CAN_SFF_MASK);
+            }
+            if (rx.rtr) {
+                frame.can_id |= CAN_RTR_FLAG;
+            }
+            frame.len = mcan_get_message_size_from_dlc(rx.dlc);
+            if (rx.canfd_frame || rx.bitrate_switch) {
+                frame.flags = 0;
+                if (rx.canfd_frame)
+                    frame.flags |= CANFD_FDF;
+                if (rx.bitrate_switch)
+                    frame.flags |= CANFD_BRS;
+            }
+            /* copy data up to frame.len */
+            if (frame.len > CANFD_MAX_DLEN)
+                frame.len = CANFD_MAX_DLEN;
+            for (uint32_t i = 0; i < frame.len; i++) {
+                frame.data[i] = rx.data_8[i];
+            }
+
+            /* convert to SLCAN ASCII and send via USB/CDC
+             * slcan channels map 1:1 to MCAN channels in this project
+             */
+            char out[SLCAN_MTU];
+            int out_len = canfd_frame2slcan((slcan_channel_t) ch, &frame, out, sizeof(out));
+            MCAN_DEBUG("MCAN%d RX: can_id=0x%08X, len=%d, flags=0x%02X, out_len=%d\n",
+                       ch,
+                       frame.can_id,
+                       frame.len,
+                       frame.flags,
+                       out_len);
+            MCAN_DEBUG("SLCAN Frame: %.*s\n", out_len, out);
+            if (out_len > 0) {
+                slcan_uart_write((uint8_t) ch, out, (uint32_t) out_len);
+            }
+        }
+    }
 }

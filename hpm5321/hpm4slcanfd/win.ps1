@@ -21,6 +21,14 @@ param(
     [Parameter()]
     [Alias("h")]
     [switch]$Help
+
+    ,[Parameter()]
+    [Alias('y')]
+    [switch]$Yes
+
+    ,[Parameter()]
+    [Alias('N')]
+    [switch]$No
 )
 
 # 配置常量
@@ -245,11 +253,21 @@ function Invoke-Clean {
         }
         
         # 完全清理选项
-        $response = Read-Host "是否完全删除 build 目录? [y/N]"
-        if ($response -eq 'y' -or $response -eq 'Y') {
-            Write-ColorText "删除构建目录: $($Config.BUILD_DIR)" -Color Yellow
+        if ($Yes) {
+            # 强制同意删除
+            Write-ColorText "删除构建目录: $($Config.BUILD_DIR) (自动确认 -y)" -Color Yellow
             Remove-Item $Config.BUILD_DIR -Recurse -Force
             Write-ColorText "✓ 完全清理完成！" -Color Green
+        } elseif ($No) {
+            # 明确不删除
+            Write-ColorText "跳过删除构建目录 (选项 -N)" -Color Yellow
+        } else {
+            $response = Read-Host "是否完全删除 build 目录? [y/N]"
+            if ($response -eq 'y' -or $response -eq 'Y') {
+                Write-ColorText "删除构建目录: $($Config.BUILD_DIR)" -Color Yellow
+                Remove-Item $Config.BUILD_DIR -Recurse -Force
+                Write-ColorText "✓ 完全清理完成！" -Color Green
+            }
         }
     } else {
         Write-ColorText "构建目录不存在，无需清理。" -Color Yellow
@@ -364,6 +382,8 @@ function Show-Help {
     Write-Host "  -BuildType <类型>   - 指定构建类型 (默认: flash_xip)"
     Write-Host "  -ConfigType <类型>  - 指定配置类型 (默认: debug)"
     Write-Host "  -Help, -h           - 显示帮助信息"
+    Write-Host "  -y                  - 在 clean 时自动同意删除 build 目录 (非交互)"
+    Write-Host "  -N                  - 在 clean 时自动跳过删除 build 目录 (非交互)"
     Write-Host ""
     Write-ColorText "示例:" -Color Yellow
     Write-Host "  .\win.ps1 check"

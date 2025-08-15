@@ -33,6 +33,8 @@ int main(void)
         slcan_process_task(&slcan[1]);
         slcan_process_task(&slcan[2]);
         slcan_process_task(&slcan[3]);
+        /* process any received CAN frames and forward to host as SLCAN */
+        mcan_process_received_frames();
     }
     return 0;
 }
