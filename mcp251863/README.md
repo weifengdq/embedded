@@ -7,7 +7,7 @@
   - [Arduino Pico2 测试](#arduino-pico2-测试)
     - [接线](#接线)
     - [ACAN2517FD 库](#acan2517fd-库)
-    - [收发测试](#收发测试)
+    - [收发测试 1M+5M](#收发测试-1m5m)
     - [自定义 预分频 TSEG SJW TDC](#自定义-预分频-tseg-sjw-tdc)
     - [自定义滤波器](#自定义滤波器)
   - [Github 链接](#github-链接)
@@ -89,7 +89,7 @@ Arduino 安装的图示
 
 ![image-20250818175216109](README.assets/image-20250818175216109.png)
 
-### 收发测试
+### 收发测试 1M+5M
 
 直接贴代码, 实现的是 1M+5M 的测试示例:
 
