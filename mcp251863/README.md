@@ -8,6 +8,8 @@
     - [接线](#接线)
     - [ACAN2517FD 库](#acan2517fd-库)
     - [收发测试](#收发测试)
+    - [自定义 预分频 TSEG SJW TDC](#自定义-预分频-tseg-sjw-tdc)
+    - [自定义滤波器](#自定义滤波器)
   - [Github 链接](#github-链接)
   - [QQ 交流群](#qq-交流群)
   - [评估板购买方式](#评估板购买方式)
@@ -55,6 +57,8 @@ MCP251863 的特性:
 
 ## Arduino Pico2 测试
 
+Arduino Uno, ESP32, Raspberry Pi Pico 等仅仅是 SPI 指定引脚初始化方式略有不同, 对于 MCP251863 的配置是几乎一样的, 此处仅以 树莓派Pico2 为例.
+
 ### 接线
 
 | 编号 | MCP251863 评估板 | 树莓派 Pico2 |
@@ -93,7 +97,7 @@ Arduino 安装的图示
 - 如果收到 CAN 帧, 通过串口打印出来, 格式为 `(时间戳) ID 标准/扩展(S/E) 2.0数据/2.0远程/FDF/BRS(D/R/F/B) [长度] 数据`
 - 滤波器不设置默认是全接收的
 - 主时钟40MHz, `预分频/Tseg1/Tseg2/SJW/TDC` 都是根据通信速率自动自己算的
-- ACAN2517FD 库中 SPI 默认首先配置频率为 800kbit/s 用于重置 MCP2517FD 并对 PLLEN 和 SCLKDIV 位进行编程, 然后将SPI时钟设置为 `sysClock * 2 / 5 =  16M`
+- ACAN2517FD 库中 SPI 默认首先配置频率为 800kbit/s 用于重置 MCP2517FD 并对 PLLEN 和 SCLKDIV 位进行编程, 然后将SPI时钟设置为 `sysClock * 2 / 5 =  16M`, 有些处理器硬件SPI达不到这么高的速率, 可能需要对接到 8M 等.
 
 ```c
 #include <ACAN2517FD.h>
@@ -240,6 +244,56 @@ CAN分析仪参数 (这里CANFD数据域采样点 75%, 但只要 TDC 是自动�
 从CAN分析仪发送数据到 MCP251863, 可以看到 Pico2 串口打印出收到的报文:
 
 ![image-20250819112358787](README.assets/image-20250819112358787.png)
+
+### 自定义 预分频 TSEG SJW TDC
+
+参考 [McpArduPico2_Custom_1M_5M.ino](McpArduPico2_Custom_1M_5M/McpArduPico2_Custom_1M_5M.ino) 的例子:
+
+```c
+  // 40MHz晶振, 1Mbps仲裁段, 5Mbps数据段
+  ACAN2517FDSettings settings(ACAN2517FDSettings::OSC_40MHz, 1000 * 1000,
+                              DataBitRateFactor::x5);
+
+  // 采样点: 仲裁段80%, 数据段75%
+  settings.mBitRatePrescaler = 1; // 预分频后还是40MHz, 仲裁段和数据段一样
+  settings.mArbitrationPhaseSegment1 = 31; // 仲裁段TSEG1
+  settings.mArbitrationPhaseSegment2 = 8;  // 仲裁段TSEG2
+  settings.mArbitrationSJW = settings.mArbitrationPhaseSegment2; // 仲裁段SJW
+  settings.mDataPhaseSegment1 = 5;                 // 数据段TSEG1
+  settings.mDataPhaseSegment2 = 2;                 // 数据段TSEG2
+  settings.mDataSJW = settings.mDataPhaseSegment2; // 数据段SJW
+  settings.mTDCO =
+      settings.mBitRatePrescaler * settings.mDataPhaseSegment1; // TDC
+```
+
+这在对接某些奇葩采样点时可能很有用, 比如 canable2 的 `15 / 17 ≈ 88.2353%` 采样点, MCP251863 仲裁段可以尝试`1-34-5-5`, 数据段可以尝试 `1-6-1-1`, 使采样点相对接近一些.
+
+### 自定义滤波器
+
+参考 [McpArduPico2_Custom_Filters.ino](McpArduPico2_Custom_Filters/McpArduPico2_Custom_Filters.ino) 的例子, 总计 32 个可以自己定义的滤波器, 支持 直接ID指定 或 经典的掩码方式
+
+```bash
+  // 40MHz晶振, 1Mbps仲裁段, 5Mbps数据段
+  ACAN2517FDSettings settings(ACAN2517FDSettings::OSC_40MHz, 1000 * 1000,
+                              DataBitRateFactor::x5);
+
+  // 自定义滤波器
+  ACAN2517FDFilters filters ;
+  // ID 方式
+  filters.appendFrameFilter (kStandard, 0x123, NULL) ;
+  filters.appendFrameFilter (kExtended, 0x12345678, NULL) ;
+  // 掩码方式, 456:7FF, 18765432:1FFFFFFF
+  filters.appendFilter (kStandard, 0x7FF, 0x456, NULL) ;
+  filters.appendFilter (kExtended, 0x1FFFFFFF, 0x18765432, NULL) ;
+  
+  ...
+
+  const uint32_t errorCode = can.begin(settings, [] { can.isr(); }, filters);
+```
+
+测试如下图, 只能收到上面滤波器允许接收的帧(只分标准/扩展+ID, 与CANFD/BRS等无关)
+
+![image-20250819133603098](README.assets/image-20250819133603098.png)
 
 ## Github 链接
 
