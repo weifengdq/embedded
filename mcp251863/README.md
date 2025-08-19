@@ -59,6 +59,8 @@ MCP251863 的特性:
 
 Arduino Uno, ESP32, Raspberry Pi Pico 等仅仅是 SPI 指定引脚初始化方式略有不同, 对于 MCP251863 的配置是几乎一样的, 此处仅以 树莓派Pico2 为例.
 
+![image-20250819160609610](README.assets/image-20250819160609610.png)
+
 ### 接线
 
 | 编号 | MCP251863 评估板 | 树莓派 Pico2 |
