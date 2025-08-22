@@ -1,0 +1,75 @@
+# clang-format configuration for HPM SDK project
+---
+Language: Cpp
+BasedOnStyle: LLVM
+
+# Indentation
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ContinuationIndentWidth: 4
+
+# Alignment
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignOperands: true
+AlignTrailingComments: true
+
+# Braces
+BreakBeforeBraces: Linux
+BraceWrapping:
+  AfterFunction: true
+  AfterControlStatement: false
+  AfterStruct: true
+  AfterUnion: true
+  AfterEnum: true
+  BeforeElse: false
+  BeforeWhile: false
+
+# Line breaks
+ColumnLimit: 100
+MaxEmptyLinesToKeep: 2
+KeepEmptyLinesAtTheStartOfBlocks: false
+
+# Spacing
+SpaceAfterCStyleCast: true
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+SpacesInAngles: false
+SpacesInContainerLiterals: false
+SpacesInCStyleCastParentheses: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+
+# Function formatting
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+
+# Include sorting
+SortIncludes: true
+IncludeBlocks: Regroup
+IncludeCategories:
+  # System headers first
+  - Regex: '<[[:alnum:]_]+\.h>'
+    Priority: 1
+  # HPM SDK headers
+  - Regex: '"hpm_.*\.h"'
+    Priority: 2
+  # Board specific headers
+  - Regex: '"board\.h"'
+    Priority: 3
+  # Project headers
+  - Regex: '".*\.h"'
+    Priority: 4
+
+# Pointer alignment
+PointerAlignment: Right
+DerivePointerAlignment: false
+
+# Other settings
+AllowAllParametersOfDeclarationOnNextLine: false
+BinPackParameters: false
+BinPackArguments: false
+ExperimentalAutoDetectBinPacking: false
