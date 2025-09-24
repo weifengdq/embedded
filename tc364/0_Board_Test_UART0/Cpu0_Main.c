@@ -28,25 +28,381 @@
 #include "IfxCpu.h"
 #include "IfxScuWdt.h"
 #include "Ifx_Cfg_Ssw.h"
+#include "Bsp.h"
+#include "IfxPort.h"
+#include "IfxAsclin_Asc.h"
+#include "IfxCpu_Irq.h"
+#include "IfxStm.h"
 
 IFX_ALIGN(4) IfxCpu_syncEvent cpuSyncEvent = 0;
+
+#define UART_TXBUF_SIZE 256
+#define UART_RXBUF_SIZE 256
+#define INTPRIO_ASCLIN0_TX 19
+#define INTPRIO_ASCLIN0_RX 18
+typedef struct
+{
+    uint8 txBuffer[UART_TXBUF_SIZE + sizeof(Ifx_Fifo) + 8];
+    uint8 rxBuffer[UART_RXBUF_SIZE + sizeof(Ifx_Fifo) + 8];
+    IfxAsclin_Asc ascHandle;
+} App_AsclinAsc;
+App_AsclinAsc uart0;
+Ifx_SizeT count = sizeof("Hello TC364!\r\n");
+uint8 txData[] = "Hello TC364!\r\n";
+// uint8 rxData[UART_RXBUF_SIZE] = {0};
+
+IFX_INTERRUPT(asclin0TxISR, 0, INTPRIO_ASCLIN0_TX);
+void asclin0TxISR(void)
+{
+    IfxAsclin_Asc_isrTransmit(&uart0.ascHandle);
+}
+
+IFX_INTERRUPT(asclin0RxISR, 0, INTPRIO_ASCLIN0_RX);
+void asclin0RxISR(void)
+{
+    IfxAsclin_Asc_isrReceive(&uart0.ascHandle);
+}
+
+void init_uart0(uint32 baud)
+{
+    /* Initialize an instance of IfxAsclin_Asc_Config with default values */
+    IfxAsclin_Asc_Config ascConfig;
+    IfxAsclin_Asc_initModuleConfig(&ascConfig, &MODULE_ASCLIN0);
+
+    /* Set the desired baud rate, 200MHz ASCLINF Freq */
+    ascConfig.baudrate.baudrate = baud;
+    ascConfig.baudrate.oversampling = IfxAsclin_OversamplingFactor_16;
+    ascConfig.bitTiming.medianFilter = IfxAsclin_SamplesPerBit_three;
+    ascConfig.bitTiming.samplePointPosition = IfxAsclin_SamplePointPosition_12;
+
+    /* ISR priorities and interrupt target */
+    ascConfig.interrupt.txPriority = INTPRIO_ASCLIN0_TX;
+    ascConfig.interrupt.rxPriority = INTPRIO_ASCLIN0_RX;
+    ascConfig.interrupt.typeOfService = IfxCpu_Irq_getTos(IfxCpu_getCoreIndex());
+
+    /* FIFO configuration */
+    ascConfig.txBuffer = &uart0.txBuffer;
+    ascConfig.txBufferSize = UART_TXBUF_SIZE;
+    ascConfig.rxBuffer = &uart0.rxBuffer;
+    ascConfig.rxBufferSize = UART_RXBUF_SIZE;
+
+    /* Pin configuration */
+    const IfxAsclin_Asc_Pins pins =
+    {
+        NULL_PTR,       IfxPort_InputMode_pullUp,     /* CTS pin not used */
+        &IfxAsclin0_RXA_P14_1_IN,   IfxPort_InputMode_pullUp,     /* RX pin           */
+        NULL_PTR,       IfxPort_OutputMode_pushPull,  /* RTS pin not used */
+        &IfxAsclin0_TX_P14_0_OUT,   IfxPort_OutputMode_pushPull,  /* TX pin           */
+        IfxPort_PadDriver_cmosAutomotiveSpeed4
+    };
+    ascConfig.pins = &pins;
+
+    IfxAsclin_Asc_initModule(&uart0.ascHandle, &ascConfig); /* Initialize module with above parameters */
+}
+
+static void uart0_echo_task(void)
+{
+    /* 累积一帧的缓冲 */
+    static uint8 frameBuf[UART_RXBUF_SIZE];
+    static Ifx_SizeT frameIndex = 0;
+
+    /* 把 FIFO 里目前所有已到的数据都取出来（一次循环取空，避免丢字节） */
+    while (IfxAsclin_Asc_getReadCount(&uart0.ascHandle) > 0)
+    {
+        uint8 ch = IfxAsclin_Asc_blockingRead(&uart0.ascHandle);
+
+        /* 追加到帧缓冲（留 1 个位置备用，可选） */
+        if (frameIndex < (UART_RXBUF_SIZE - 1))
+        {
+            frameBuf[frameIndex++] = ch;
+        }
+        else
+        {
+            /* 溢出：直接回显当前已满内容并重置，再把当前字节作为新开头 */
+            for (Ifx_SizeT i = 0; i < frameIndex; ++i)
+            {
+                IfxAsclin_Asc_blockingWrite(&uart0.ascHandle, frameBuf[i]);
+            }
+            frameIndex = 0;
+            frameBuf[frameIndex++] = ch;
+        }
+
+        /* 判断帧结束：遇到 '\n'（你也可改成 '\r' 或同时判断）*/
+        if (ch == '\n')
+        {
+            /* 可选：如果想过滤掉前面的 '\r'，可以在这里检查 frameBuf[frameIndex-2] 是否为 '\r' */
+
+            /* 回传整帧 */
+            for (Ifx_SizeT i = 0; i < frameIndex; ++i)
+            {
+                IfxAsclin_Asc_blockingWrite(&uart0.ascHandle, frameBuf[i]);
+            }
+
+            /* 如果想追加提示符，可在此追加比如 '>' */
+            // IfxAsclin_Asc_blockingWrite(&uart0.ascHandle, '>');
+
+            frameIndex = 0; /* 准备下一帧 */
+        }
+    }
+}
+
+/* 基于 IfxAsclin_Asc_read 的批量行回显任务
+ * 逻辑：
+ *  - 查询当前可读字节数 rCount
+ *  - 限制到临时缓冲大小（避免溢出）
+ *  - 使用 IfxAsclin_Asc_read 一次取走这些字节
+ *  - 在本地解析，按 '\n' 分帧；支持一批数据里多个换行
+ *  - 每行超过 frameBuf 容量则截断并在行尾补 "...\r\n"
+ */
+static void uart0_echo_task_batch(void)
+{
+    /* 行缓冲（单帧） */
+    static uint8 frameBuf[UART_RXBUF_SIZE];
+    static Ifx_SizeT frameLen = 0; /* 当前帧已累计长度 */
+
+    /* 临时批量读取缓冲 */
+    uint8 tempBuf[64]; /* 每次最多处理 64 字节，可根据性能需求调整 */
+
+    while (1)
+    {
+        sint32 avail = IfxAsclin_Asc_getReadCount(&uart0.ascHandle);
+        if (avail <= 0)
+        {
+            break; /* 没有更多数据 */
+        }
+
+        Ifx_SizeT want = (Ifx_SizeT)avail;
+        if (want > (Ifx_SizeT)sizeof(tempBuf))
+        {
+            want = sizeof(tempBuf);
+        }
+        Ifx_SizeT readCount = want;
+        /* TIME_INFINITE 若未定义，可换成 0 或合适 tick；这里假设宏存在 */
+        IfxAsclin_Asc_read(&uart0.ascHandle, tempBuf, &readCount, TIME_NULL);
+        /* readCount 现在是实际读取字节数 */
+        for (Ifx_SizeT i = 0; i < readCount; ++i)
+        {
+            uint8 ch = tempBuf[i];
+            /* 存入当前行，若未满 */
+            if (frameLen < (Ifx_SizeT)(sizeof(frameBuf) - 1)) /* 预留 1 个字节冗余（可选） */
+            {
+                frameBuf[frameLen++] = ch;
+            }
+            else
+            {
+                /* 溢出：发送截断提示并重置 */
+                const char truncMsg[] = "...\r\n";
+                for (Ifx_SizeT k = 0; k < frameLen; ++k)
+                {
+                    IfxAsclin_Asc_blockingWrite(&uart0.ascHandle, frameBuf[k]);
+                }
+                for (unsigned k = 0; k < sizeof(truncMsg) - 1; ++k)
+                {
+                    IfxAsclin_Asc_blockingWrite(&uart0.ascHandle, (uint8)truncMsg[k]);
+                }
+                frameLen = 0;
+                frameBuf[frameLen++] = ch; /* 重新开始累积 */
+            }
+
+            if (ch == '\n')
+            {
+                /* 一行结束：原样回显该行 */
+                for (Ifx_SizeT k = 0; k < frameLen; ++k)
+                {
+                    IfxAsclin_Asc_blockingWrite(&uart0.ascHandle, frameBuf[k]);
+                }
+                frameLen = 0; /* 准备下一行 */
+            }
+        }
+    }
+}
+
+#ifndef ECHO_LINE_TIMEOUT_MS
+#define ECHO_LINE_TIMEOUT_MS  100u   /* 行超时时间：若超过该毫秒未收到'\n'，则发送当前缓冲 */
+#endif
+
+/* 将毫秒转为Tick（假设使用CPU0 STM0） */
+static inline Ifx_TickTime msToTick(uint32 ms)
+{
+    return (Ifx_TickTime)((IfxStm_getFrequency(&MODULE_STM0) / 1000u) * ms);
+}
+
+/* 高级回显：
+ * 特性：
+ *  - 批量读取：IfxAsclin_Asc_read
+ *  - 行结束：'\n'；可选处理'\r' (过滤)
+ *  - 过滤 CR: 丢弃'\r'
+ *  - 行超时：超过 ECHO_LINE_TIMEOUT_MS 毫秒未收满(未遇到'\n')，自动回显已有数据并加 '\r\n'
+ *  - 非阻塞批量发送：聚合行后调用 IfxAsclin_Asc_write，一次写出（必要时分片）
+ */
+static void uart0_echo_task_advanced(void)
+{
+    static uint8  lineBuf[UART_RXBUF_SIZE];
+    static Ifx_SizeT lineLen = 0;
+    static Ifx_TickTime lineStartTick = 0; /* 记录当前行起始/最近刷新时间 */
+    static boolean lineActive = FALSE;
+
+    const Ifx_TickTime timeoutTick = msToTick(ECHO_LINE_TIMEOUT_MS);
+    Ifx_TickTime now = IfxStm_get(&MODULE_STM0);
+
+    /* 如果当前有活跃行且达到超时时间且缓冲内有数据，触发发送 */
+    if (lineActive && lineLen > 0 && (now - lineStartTick) > timeoutTick)
+    {
+        /* 追加行尾（若最后不是\n，则补一个\r\n） */
+        const uint8 trailer[] = {'\r','\n'};
+        uint8 tempOut[UART_RXBUF_SIZE + 2];
+        Ifx_SizeT outLen = 0;
+        for (Ifx_SizeT i = 0; i < lineLen && outLen < (Ifx_SizeT)sizeof(tempOut); ++i)
+        {
+            tempOut[outLen++] = lineBuf[i];
+        }
+        if (outLen < (Ifx_SizeT)(sizeof(tempOut) - 1))
+        {
+            tempOut[outLen++] = trailer[0];
+            tempOut[outLen++] = trailer[1];
+        }
+        /* 尝试一次写出；若写不完，分片 */
+        Ifx_SizeT remain = outLen;
+        Ifx_SizeT offset = 0;
+        while (remain > 0)
+        {
+            Ifx_SizeT chunk = remain;
+            IfxAsclin_Asc_write(&uart0.ascHandle, &tempOut[offset], &chunk, TIME_NULL); /* 非阻塞尝试 */
+            if (chunk == 0)
+            {
+                /* 无空间：可选择 break 或忙等，这里忙等简单处理 */
+                continue;
+            }
+            offset += chunk;
+            remain -= chunk;
+        }
+        lineLen = 0;
+        lineActive = FALSE;
+    }
+
+    /* 读取可用数据 */
+    while (1)
+    {
+        sint32 avail = IfxAsclin_Asc_getReadCount(&uart0.ascHandle);
+        if (avail <= 0)
+        {
+            break;
+        }
+        uint8 tempBuf[64];
+        Ifx_SizeT want = (Ifx_SizeT)avail;
+        if (want > (Ifx_SizeT)sizeof(tempBuf)) want = sizeof(tempBuf);
+        Ifx_SizeT readCount = want;
+        IfxAsclin_Asc_read(&uart0.ascHandle, tempBuf, &readCount, TIME_NULL);
+        if (readCount == 0)
+        {
+            break; /* 没有实际读到 */
+        }
+        now = IfxStm_get(&MODULE_STM0);
+        if (!lineActive)
+        {
+            lineStartTick = now;
+            lineActive = TRUE;
+        }
+        for (Ifx_SizeT i = 0; i < readCount; ++i)
+        {
+            uint8 ch = tempBuf[i];
+            if (ch == '\r')
+            {
+                /* 过滤 CR */
+                continue;
+            }
+            if (ch == '\n')
+            {
+                /* 行结束，发送当前缓冲 + '\n' (已经过滤CR) */
+                uint8 outBuf[UART_RXBUF_SIZE + 2];
+                Ifx_SizeT outLen = 0;
+                for (Ifx_SizeT k = 0; k < lineLen && outLen < (Ifx_SizeT)sizeof(outBuf); ++k)
+                {
+                    outBuf[outLen++] = lineBuf[k];
+                }
+                if (outLen < (Ifx_SizeT)sizeof(outBuf))
+                {
+                    outBuf[outLen++] = '\r';
+                    outBuf[outLen++] = '\n'; /* 仅回显 LF，若想统一改成 CRLF 可替换为 '\r','\n' */
+                }
+                /* 分片非阻塞写 */
+                Ifx_SizeT remain = outLen;
+                Ifx_SizeT offset = 0;
+                while (remain > 0)
+                {
+                    Ifx_SizeT chunk = remain;
+                    IfxAsclin_Asc_write(&uart0.ascHandle, &outBuf[offset], &chunk, TIME_NULL);
+                    if (chunk == 0)
+                    {
+                        continue; /* 等待Tx空闲 */
+                    }
+                    offset += chunk;
+                    remain -= chunk;
+                }
+                lineLen = 0;
+                lineActive = FALSE;
+                /* 下一行开始重新计时 */
+                lineStartTick = now;
+                continue; /* 处理下一个字节 */
+            }
+            /* 普通数据加入缓冲 */
+            if (lineLen < (Ifx_SizeT)sizeof(lineBuf))
+            {
+                lineBuf[lineLen++] = ch;
+            }
+            else
+            {
+                /* 缓冲满：立即发送(截断标记)并重置，然后继续把当前字节作为新行开头 */
+                const char truncMsg[] = "[TRUNC]\n";
+                Ifx_SizeT remain = lineLen;
+                Ifx_SizeT offset = 0;
+                while (remain > 0)
+                {
+                    Ifx_SizeT chunk = remain;
+                    IfxAsclin_Asc_write(&uart0.ascHandle, &lineBuf[offset], &chunk, TIME_NULL);
+                    if (chunk == 0) continue;
+                    offset += chunk;
+                    remain -= chunk;
+                }
+                /* 发送截断提示 */
+                Ifx_SizeT tRemain = (Ifx_SizeT)(sizeof(truncMsg) - 1);
+                offset = 0;
+                while (tRemain > 0)
+                {
+                    Ifx_SizeT chunk = tRemain;
+                    IfxAsclin_Asc_write(&uart0.ascHandle, (uint8*)&truncMsg[offset], &chunk, TIME_NULL);
+                    if (chunk == 0) continue;
+                    offset += chunk;
+                    tRemain -= chunk;
+                }
+                lineLen = 0;
+                lineBuf[lineLen++] = ch; /* 把当前字节作为新行第一个 */
+                lineStartTick = now;
+            }
+        }
+        /* 刚处理完一批数据，刷新行起始时间（表示活跃） */
+        lineStartTick = now;
+    }
+}
 
 void core0_main(void)
 {
     IfxCpu_enableInterrupts();
-    
-    /* !!WATCHDOG0 AND SAFETY WATCHDOG ARE DISABLED HERE!!
-     * Enable the watchdogs and service them periodically if it is required
-     */
     IfxScuWdt_disableCpuWatchdog(IfxScuWdt_getCpuWatchdogPassword());
     IfxScuWdt_disableSafetyWatchdog(IfxScuWdt_getSafetyWatchdogPassword());
-    
-    /* Wait for CPU sync event */
     IfxCpu_emitEvent(&cpuSyncEvent);
     IfxCpu_waitEvent(&cpuSyncEvent, 1);
 
-    
-    while(1)
+    init_uart0(4000000); /* 设置高波特率，示例 4Mbps，可按需要修改 */
+    const char welcome[] = "UART Echo Advanced Ready\r\n";
     {
+        Ifx_SizeT wlen = (Ifx_SizeT)(sizeof(welcome) - 1);
+        IfxAsclin_Asc_write(&uart0.ascHandle, (uint8*)welcome, &wlen, TIME_NULL);
+        /* 若一次未写完，可追加循环，这里假设缓冲足够 */
+    }
+
+    while (1)
+    {
+        uart0_echo_task_advanced();
     }
 }

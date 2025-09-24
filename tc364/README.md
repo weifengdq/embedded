@@ -19,6 +19,12 @@
 
 ![image-20250924170707292](README.assets/image-20250924170707292.png)
 
+## 0_Board_Test_UART0
+
+4M波特率打开CH343串口, 按下复位按钮后, 显示 `UART Echo Advanced Ready` 欢迎标语, 清空, 开始进行 1ms 周期定时发送, 每次 100 字节的回显, 一段时间后停止, 观察发送与接收计数:
+
+![image-20250924175752819](README.assets/image-20250924175752819.png)
+
 
 
 
