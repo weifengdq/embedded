@@ -13,7 +13,11 @@
 - [iLLD]([Releases · Infineon/illd_release_tc3x](https://github.com/Infineon/illd_release_tc3x/releases)) V1.20.1, 默认安装目录 `C:\Infineon\iLLD\TC3\v1.20.0`, API 文档 `"C:\Infineon\iLLD\TC3\v1.20.0\TC3-v1.20.0\Doc\TC3xx\iLLD_UM_TC3xx.chm"`
 - 
 
+## 设置 Release
 
+工程右键 Properties:
+
+![image-20250924170707292](README.assets/image-20250924170707292.png)
 
 
 

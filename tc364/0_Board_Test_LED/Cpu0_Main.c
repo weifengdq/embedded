@@ -28,6 +28,10 @@
 #include "IfxCpu.h"
 #include "IfxScuWdt.h"
 #include "Ifx_Cfg_Ssw.h"
+#include <Port/Io/IfxPort_Io.h>
+#include <_PinMap/IfxPort_PinMap.h>
+#include "IfxPort.h"
+#include "Bsp.h"
 
 IFX_ALIGN(4) IfxCpu_syncEvent cpuSyncEvent = 0;
 
@@ -44,9 +48,25 @@ void core0_main(void)
     /* Wait for CPU sync event */
     IfxCpu_emitEvent(&cpuSyncEvent);
     IfxCpu_waitEvent(&cpuSyncEvent, 1);
+
+    // LED
+    const IfxPort_Io_ConfigPin configLedPin[] = {
+        {&IfxPort_P13_3, IfxPort_Mode_outputPushPullGeneral, IfxPort_PadDriver_cmosAutomotiveSpeed1}, // LED0
+        {&IfxPort_P14_6, IfxPort_Mode_outputPushPullGeneral, IfxPort_PadDriver_cmosAutomotiveSpeed1}, // LED1
+    };
+    const IfxPort_Io_Config confLed = {
+        sizeof(configLedPin)/sizeof(IfxPort_Io_ConfigPin),
+        (IfxPort_Io_ConfigPin *)configLedPin
+    };
+    IfxPort_Io_initModule(&confLed);
+    IfxPort_setPinLow(&MODULE_P13, 3); // LED0 off
+    IfxPort_setPinLow(&MODULE_P14, 6); // LED1 off
     
     
     while(1)
     {
+        waitTime(IfxStm_getTicksFromMilliseconds(BSP_DEFAULT_TIMER, 500));  // wait 500ms
+        IfxPort_togglePin(&MODULE_P13, 3); // toggle LED0
+        IfxPort_togglePin(&MODULE_P14, 6); // toggle LED1
     }
 }
