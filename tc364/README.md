@@ -25,9 +25,44 @@
 
 ![image-20250924175752819](README.assets/image-20250924175752819.png)
 
+## 0_Board_Test_CAN0
 
+MCAN主时钟80MHz, 打开两路CAN节点:
 
+- CAN0, 500K_80% + 2M_80%
+- CAN1, 1M_80% + 5M_75%
 
+无论CAN0收到什么, 都透明转发到CAN1上去.
+
+两套 API 都是可以的:
+
+- init_can_simple, 设置波特率和采样点
+- init_can, 设置预分频, tseg1, tseg2
+
+```c
+  // void init_can_simple(mcmcanType *dev, canChannel channel, uint32 baudRate, float samplePoint, uint32 fastBaudRate, float fastSamplePoint)
+  init_can_simple(&can[0], CAN0, 500000, 0.8, 2000000, 0.8); // 500kbps 80%, 2Mbps 80%
+  init_can_simple(&can[1], CAN1, 1000000, 0.8, 5000000, 0.75); // 1000kbps 80%, 5Mbps 75%
+  
+  // void init_can(mcmcanType *dev, canChannel channel, uint16 npre, uint8 ntseg1,
+  //           uint8 ntseg2, uint16 dpre, uint8 dtseg1, uint8 dtseg2)
+  // init_can(&can[0], CAN0, 8, 15, 4, 2, 15, 4); // 500kbps 80%, 2Mbps 80%
+  // init_can(&can[1], CAN1, 4, 15, 4, 1, 11, 4); // 1000kbps 80%, 5Mbps 75%
+```
+
+Vector的两路CAN连接 TC364 板子的CAN0和CAN1, 打开CANoe, 设置速率:
+
+![image-20250925140014873](README.assets/image-20250925140014873.png)
+
+![image-20250925140041740](README.assets/image-20250925140041740.png)
+
+直接100%负载率, 用64字节开启BRS的帧测试:
+
+![image-20250925140533269](README.assets/image-20250925140533269.png)
+
+停止发送, 可以看到所有从Vector CAN1发出去的帧从CAN2 echo回来了, 无丢帧:
+
+![image-20250925140846319](README.assets/image-20250925140846319.png)
 
 
 
