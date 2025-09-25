@@ -92,13 +92,45 @@ Vector设置:
 
 依次测试8路CAN的echo即可.
 
+## 0_Board_Test_LwIP_Ping
 
+TC364板子的IP地址设为 `192.168.0.100`
 
+```c
+eth_addr_t ethAddr;
+ethAddr.addr[0] = 0xDE;
+ethAddr.addr[1] = 0xAD;
+ethAddr.addr[2] = 0xBE;
+ethAddr.addr[3] = 0xEF;
+ethAddr.addr[4] = 0xFE;
+ethAddr.addr[5] = 0xED;
 
+ip_addr_t ipAddr    = IPADDR4_INIT_BYTES(192, 168,   0, 100); 
+ip_addr_t netMask   = IPADDR4_INIT_BYTES(255, 255, 255,   0); 
+ip_addr_t gateway   = IPADDR4_INIT_BYTES(192, 168,   0,   1); 
 
+Ifx_Lwip_init_with_ip(ethAddr, ipAddr, netMask, gateway);    
+```
 
+电脑设置IP 192.168.0.2
 
+![image-20250925161809472](README.assets/image-20250925161809472.png)
 
+状态里面速度显示 100Mbps
+
+![image-20250925162041802](README.assets/image-20250925162041802.png)
+
+ping 测试:
+
+![image-20250925161907693](README.assets/image-20250925161907693.png)
+
+PowerShell 里面查看mac地址 `Get-NetNeighbor -IPAddress "192.168.0.100"`:
+
+![image-20250925162205217](README.assets/image-20250925162205217.png)
+
+调试串口显示:
+
+![image-20250925162541391](README.assets/image-20250925162541391.png)
 
 
 

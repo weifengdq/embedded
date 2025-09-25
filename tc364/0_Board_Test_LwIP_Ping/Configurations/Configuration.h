@@ -44,7 +44,7 @@
 #define ETH_TXEN_PIN                IfxGeth_TXEN_P11_6_OUT
 #define ETH_RXD0_PIN                IfxGeth_RXD0A_P11_10_IN
 #define ETH_RXD1_PIN                IfxGeth_RXD1A_P11_9_IN
-#define ETH_MDC_PIN                 IfxGeth_MDC_P21_2_OUT
+#define ETH_MDC_PIN                 IfxGeth_MDC_P02_8_OUT
 #define ETH_MDIO_PIN                IfxGeth_MDIO_P21_3_INOUT
 #define ETH_TXD0_PIN                IfxGeth_TXD0_P11_3_OUT
 #define ETH_TXD1_PIN                IfxGeth_TXD1_P11_2_OUT
