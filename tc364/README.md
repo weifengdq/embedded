@@ -32,7 +32,9 @@ MCAN主时钟80MHz, 打开两路CAN节点:
 - CAN0, 500K_80% + 2M_80%
 - CAN1, 1M_80% + 5M_75%
 
-无论CAN0收到什么, 都透明转发到CAN1上去.
+无论CAN0收到什么, 都透明转发到CAN1上去. 接线(板子背面的120Ω终端电阻没有贴, 外部总线上必须保证至少有一个终端电阻, 最好两端各接一个):
+
+![image-20250925153022376](README.assets/image-20250925153022376.png)
 
 两套 API 都是可以的:
 
@@ -64,11 +66,31 @@ Vector的两路CAN连接 TC364 板子的CAN0和CAN1, 打开CANoe, 设置速率:
 
 ![image-20250925140846319](README.assets/image-20250925140846319.png)
 
+## 0_Board_Test_CAN_x8
 
+8路CAN全部设置为 1M 80% + 8M 80%:
 
+```c
+  // 所有通道 1Mbps 80%, 8Mbps 80%
+  for (canChannel ch = CAN0; ch < CAN_NUM; ch++) {
+    init_can_simple(&can[ch], ch, 1000000, 0.8, 8000000, 0.8);
+    // init_can(&can[ch], ch, 4, 15, 4, 1, 7, 2);
+  }
+```
 
+每通道收到一帧CAN后echo回去, 注意发送频率不要太快, 以免同ID冲突. 接线:
 
+![image-20250925152837448](README.assets/image-20250925152837448.png)
 
+Vector设置:
+
+![image-20250925152033131](README.assets/image-20250925152033131.png)
+
+单路测试效果, 发送1000帧/s 加上echo回来的, 共计 2000帧/s
+
+![image-20250925152412832](README.assets/image-20250925152412832.png)
+
+依次测试8路CAN的echo即可.
 
 
 

@@ -108,6 +108,9 @@ typedef struct {
 
 mcmcanType can[2];
 
+/* 记录物理 CAN 模块是否已经初始化，避免重复调用 IfxCan_Can_initModule */
+static boolean g_canModuleInitialized[2] = {FALSE, FALSE};
+
 #define CAN_RX_ISR(x, tos, priority)                                           \
   IFX_INTERRUPT(isr_canrx_##x, tos, priority);                                 \
   void isr_canrx_##x(void) {                                                   \
@@ -173,10 +176,20 @@ void can0_rx_callback(canChannel channel, IfxCan_Message *msg) {
 
 void init_can(mcmcanType *dev, canChannel channel, uint16 npre, uint8 ntseg1,
               uint8 ntseg2, uint16 dpre, uint8 dtseg1, uint8 dtseg2) {
-  /* Select CAN module group by channel (0-3 use CAN0, 4-7 use CAN1) */
-  IfxCan_Can_initModuleConfig(&dev->config,
-                              (channel < CAN4) ? &MODULE_CAN0 : &MODULE_CAN1);
-  IfxCan_Can_initModule(&dev->module, &dev->config);
+  /* 根据 channel 选择物理模块: 0-3 -> MODULE_CAN0, 4-7 -> MODULE_CAN1 */
+  uint8 group = (channel < CAN4) ? 0 : 1;
+  Ifx_CAN *modulePtr = (group == 0) ? &MODULE_CAN0 : &MODULE_CAN1;
+
+  /* 只对同一物理 CAN 模块初始化一次，防止后续节点重复 initModule 影响已配置节点 */
+  if (!g_canModuleInitialized[group]) {
+    IfxCan_Can_initModuleConfig(&dev->config, modulePtr);
+    IfxCan_Can_initModule(&dev->module, &dev->config);
+    g_canModuleInitialized[group] = TRUE;
+  } else {
+    /* 复用已初始化模块句柄（使用组内第一个节点的 module 结构体） */
+    dev->module = can[(group == 0) ? CAN0 : CAN4].module;
+  }
+
   IfxCan_Can_initNodeConfig(&dev->nodeConfig, &dev->module);
 
   // clang-format off
@@ -255,7 +268,7 @@ void init_can(mcmcanType *dev, canChannel channel, uint16 npre, uint8 ntseg1,
                                  ntseg1 - 1, npre - 1);
   IfxCan_Node_setFastBitTimingValues(dev->node.node, dtseg2 - 1, dtseg2 - 1,
                                      dtseg1 - 1, dpre - 1);
-  IfxCan_Node_setTransceiverDelayCompensationOffset(dev->node.node, dtseg2);
+  IfxCan_Node_setTransceiverDelayCompensationOffset(dev->node.node, dtseg1 + 1);
   IfxCan_Node_disableConfigurationChange(dev->node.node);
 
   /* Initialize CAN filter */
@@ -284,10 +297,17 @@ void init_can(mcmcanType *dev, canChannel channel, uint16 npre, uint8 ntseg1,
 void init_can_simple(mcmcanType *dev, canChannel channel, uint32 baudRate,
                      float samplePoint, uint32 fastBaudRate,
                      float fastSamplePoint) {
-  /* Select CAN module group by channel (0-3 use CAN0, 4-7 use CAN1) */
-  IfxCan_Can_initModuleConfig(&dev->config,
-                              (channel < CAN4) ? &MODULE_CAN0 : &MODULE_CAN1);
-  IfxCan_Can_initModule(&dev->module, &dev->config);
+  uint8 group = (channel < CAN4) ? 0 : 1;
+  Ifx_CAN *modulePtr = (group == 0) ? &MODULE_CAN0 : &MODULE_CAN1;
+
+  if (!g_canModuleInitialized[group]) {
+    IfxCan_Can_initModuleConfig(&dev->config, modulePtr);
+    IfxCan_Can_initModule(&dev->module, &dev->config);
+    g_canModuleInitialized[group] = TRUE;
+  } else {
+    dev->module = can[(group == 0) ? CAN0 : CAN4].module;
+  }
+
   IfxCan_Can_initNodeConfig(&dev->nodeConfig, &dev->module);
 
   // clang-format off
@@ -371,7 +391,7 @@ void init_can_simple(mcmcanType *dev, canChannel channel, uint32 baudRate,
   // TDC
   IfxCan_Node_enableConfigurationChange(dev->node.node);
   IfxCan_Node_setTransceiverDelayCompensationOffset(
-      dev->node.node, dev->node.node->DBTP.B.DTSEG2 + 1);
+    dev->node.node, dev->node.node->DBTP.B.DTSEG1 + 2);
   IfxCan_Node_disableConfigurationChange(dev->node.node);
 
   /* Initialize CAN filter */
