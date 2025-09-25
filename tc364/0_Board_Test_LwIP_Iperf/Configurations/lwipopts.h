@@ -43,6 +43,9 @@
 #define LWIP_SOCKET             0                   /* Disable the Socket API                                               */
 #define SYS_LIGHTWEIGHT_PROT    0                   /* Disable inter-task protection                                        */
 
+// iperf tcp optimizations
+#define TCP_MSS                 1460                /* Set Maximum Segment Size to 1460 bytes (Ethernet)                       */
+// #define TCP_SND_BUF             (4 * TCP_MSS)  /* Set TCP sender buffer space to 4 times MSS                          */
 
 #define ETH_PAD_SIZE            2                   /* Add 2 bytes before the Ethernet header to ensure payload alignment   */
 

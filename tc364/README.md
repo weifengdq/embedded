@@ -132,17 +132,29 @@ PowerShell 里面查看mac地址 `Get-NetNeighbor -IPAddress "192.168.0.100"`:
 
 ![image-20250925162541391](README.assets/image-20250925162541391.png)
 
+## 0_Board_Test_LwIP_Iperf
 
+添加 `tc364\0_Board_Test_LwIP_Iperf\Libraries\Ethernet\lwip\src\apps\lwiperf\lwiperf.c` 文件, 
 
+Cpu0_Main.c 中开启 Iperf, 宏 LWIP_TCP 默认已在文件 opt.h 中开启, 打开 jperf, 填入 IP, 默认的 5001 端口不改, 进行测试:
 
+![image-20250925165754030](README.assets/image-20250925165754030.png)
 
+串口也打印出结果, 约 52Mbits/s:
 
+![image-20250925165831709](README.assets/image-20250925165831709.png)
 
+接下来对 TCP 配置进行优化, 仅在 lwipopts.h 添加
 
+```c
+#define TCP_MSS                 1460
+```
 
+从原来默认的 536 修改为 1460, 即可接近百兆网速, 到接近 90Mbits/s:
 
+![image-20250925170535096](README.assets/image-20250925170535096.png)
 
-
+串口打印 `IPERF report: type=0, remote: 192.168.0.2:7104, total bytes: 112394264, duration in ms: 10004, kbits/s: 89872`
 
 
 
