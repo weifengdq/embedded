@@ -1,6 +1,25 @@
 # TC364
 
-[TOC]
+- [TC364](#tc364)
+  - [板子简介](#板子简介)
+  - [20P接口](#20p接口)
+  - [调试连接](#调试连接)
+  - [版本说明](#版本说明)
+  - [0\_Board\_Test\_LED](#0_board_test_led)
+  - [0\_Board\_Test\_UART0](#0_board_test_uart0)
+  - [0\_Board\_Test\_CAN0](#0_board_test_can0)
+  - [0\_Board\_Test\_CAN\_x8](#0_board_test_can_x8)
+  - [0\_Board\_Test\_LwIP\_Ping](#0_board_test_lwip_ping)
+  - [0\_Board\_Test\_LwIP\_Iperf](#0_board_test_lwip_iperf)
+  - [Tips](#tips)
+    - [设置 Release](#设置-release)
+  - [注意事项](#注意事项)
+    - [百兆以太网](#百兆以太网)
+    - [终端电阻](#终端电阻)
+    - [背面开窗](#背面开窗)
+    - [免责声明](#免责声明)
+  - [购买链接与交流群](#购买链接与交流群)
+
 
 
 
