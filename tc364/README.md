@@ -1,27 +1,78 @@
 # TC364
 
-## 板子图片
+## 板子简介
 
 ![image-20250924163350319](README.assets/image-20250924163350319.png)
 
 ![image-20250924163259415](README.assets/image-20250924163259415.png)
+
+英飞凌 AURIX TC364 评估板:
+
+- 板载 SAK-TC364DP-64F300F AA, TQFP-144封装
+- 引出8路支持8Mbits/s的车规级CANFD收发器TCAN1044A
+- 百兆以太网, PHY为DP83825I
+- CH343串口USB
+- 电源LED, 双用户LED, 复位按键, 1.27_2x5P调试口
+- 其余IO引出
+
+## 20P接口
+
+DC3-2.54mm 2x10P:
+
+![image-20250926154359045](README.assets/image-20250926154359045.png)
+
+可用杜邦线或灰排线连接. 供电可单USB, 也可单外部8~28V直流电源, 也可同时接.
+
+## 调试连接
+
+![image-20250926154609379](README.assets/image-20250926154609379.png)
+
+1.27_2x5P调试口原理图:
+
+![image-20250926151823293](README.assets/image-20250926151823293.png)
+
+注意:
+
+- 板子上调试口 7 9 脚是悬空的, 所以不论是调试器这两个引脚是串口还是GND, 都可以正常连接, 只要是有 1.27 10P 口的 DAP MiniWiggler, 应该都是可以用的.
+- 6 DAP2 在其它家调试器可能写作 USR0, 是通用的
+- 8 NTRST 在其它家调试器可能写作 USR1, 是通用的
+- 10 NPORST 在其它家调试器可能写作 RST, 是通用的
+
+调试器连接, 注意图中灰排线最左边**红紫色线对应1.27_2x5P调试口1脚**VREF(3V3)的位置:
+
+![image-20250926151645329](README.assets/image-20250926151645329.png)
 
 ## 版本说明
 
 - [Aurix Development Studio](https://www.infineon.cn/design-resources/platforms/aurix-software-tools/aurix-tools/aurix-development-studio) 1.10.16, 以下简称 ADS
 - [Memtool](https://softwaretools.infineon.com/tools/com.ifx.tb.tool.infineonmemtool) 2025.02b
 - [iLLD]([Releases · Infineon/illd_release_tc3x](https://github.com/Infineon/illd_release_tc3x/releases)) V1.20.1, 默认安装目录 `C:\Infineon\iLLD\TC3\v1.20.0`, API 文档 `"C:\Infineon\iLLD\TC3\v1.20.0\TC3-v1.20.0\Doc\TC3xx\iLLD_UM_TC3xx.chm"`
-- 
 
-## 设置 Release
+## 0_Board_Test_LED
 
-工程右键 Properties:
+工程右键 -> Set Active Project
 
-![image-20250924170707292](README.assets/image-20250924170707292.png)
+![image-20250926150245938](README.assets/image-20250926150245938.png)
+
+一键编译下载, 自动复位运行:
+
+![image-20250926150332926](README.assets/image-20250926150332926.png)
+
+或者 Memtool 烧录 HEX 文件, 首次打开选择TC36x的目标配置, Target -> Change -> Default:
+
+![image-20250926151404532](README.assets/image-20250926151404532.png)
+
+点击 Connect, 打开HEX文件, 选择全部, 添加选择到PFLASH, 烧录:
+
+![image-20250926152309136](README.assets/image-20250926152309136.png)
+
+注意 UCBs出厂烧录过一次, 后面新手暂不建议再次改动或烧入.
+
+烧录后, 手动按下板子上的复位按键或者重启电源, 可以看到板子上的一红一白两个LED以1s周期闪烁.
 
 ## 0_Board_Test_UART0
 
-4M波特率打开CH343串口, 按下复位按钮后, 显示 `UART Echo Advanced Ready` 欢迎标语, 清空, 开始进行 1ms 周期定时发送, 每次 100 字节的回显, 一段时间后停止, 观察发送与接收计数:
+4M波特率打开CH343串口, 按下复位按钮后, 显示 `UART Echo Advanced Ready` 欢迎标语, 点击清除窗口, 然后开始进行 1ms 周期定时发送, 每次 100 字节(98发送区+2字符的回车换行)的回显, 一段时间后停止, 观察发送与接收计数:
 
 ![image-20250924175752819](README.assets/image-20250924175752819.png)
 
@@ -156,5 +207,32 @@ Cpu0_Main.c 中开启 Iperf, 宏 LWIP_TCP 默认已在文件 opt.h 中开启, �
 
 串口打印 `IPERF report: type=0, remote: 192.168.0.2:7104, total bytes: 112394264, duration in ms: 10004, kbits/s: 89872`
 
+## Tips
 
+### 设置 Release
 
+工程右键 Properties:
+
+![image-20250924170707292](README.assets/image-20250924170707292.png)
+
+## 
+
+## 注意事项
+
+### 百兆以太网
+
+以太网可能会有自动重连, Iperf 测试中断的问题, 这是板子便宜出售的原因, 基本不影响学习使用, 介意勿拍.
+
+### 终端电阻
+
+板子背面 8 路CAN的终端电阻默认没有焊接, 有需要启用板载终端电阻的的可以手动焊接 0603 封装的 120Ω 电阻:
+
+![image-20250926160012576](README.assets/image-20250926160012576.png)
+
+### 背面开窗
+
+MCU背面的开窗开的有些大, 开出了一条 1.25V 的走线, 注意不要和地相连, 如上图黑色箭头
+
+### 免责声明
+
+本印刷电路板（PCB）设计、相关原理图、固件及任何配套文件（以下统称“本项目”）**仅限用于教育、学习、评估目的**。本项目以“按原样”和“当前状态”提供。设计者、贡献者及发布方（以下统称“提供方”）**明示或不暗示地不作任何形式的担保**，包括但不限于对项目的适销性、特定用途适用性、不侵犯第三方权利、稳定性、安全性及可靠性的任何担保。提供方不保证本项目功能的完整性或准确性。设计可能存在错误或不完善之处。元件参数、封装、固件等可能随时调整，恕不另行通知。您应自行承担因设计、焊接、调试或使用本项目而产生的一切风险和责任。
