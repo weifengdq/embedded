@@ -1,0 +1,4 @@
+*.log
+mtb_shared
+.cache
+.mtbqueryapi
