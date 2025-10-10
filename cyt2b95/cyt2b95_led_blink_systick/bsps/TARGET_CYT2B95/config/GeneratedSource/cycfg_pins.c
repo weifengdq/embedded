@@ -54,6 +54,58 @@ const cyhal_resource_inst_t ioss_0_port_18_pin_5_obj =
 };
 #endif /* defined (CY_USING_HAL) || (CY_USING_HAL_LITE) */
 
+const cy_stc_gpio_pin_config_t ioss_0_port_21_pin_2_config =
+{
+    .outVal = 1,
+    .driveMode = CY_GPIO_DM_ANALOG,
+    .hsiom = ioss_0_port_21_pin_2_HSIOM,
+    .intEdge = CY_GPIO_INTR_DISABLE,
+    .intMask = 0UL,
+    .vtrip = CY_GPIO_VTRIP_CMOS,
+    .slewRate = CY_GPIO_SLEW_FAST,
+    .driveSel = CY_GPIO_DRIVE_1_2,
+    .vregEn = 0UL,
+    .ibufMode = 0UL,
+    .vtripSel = 0UL,
+    .vrefSel = 0UL,
+    .vohSel = 0UL,
+};
+
+#if defined (CY_USING_HAL) || (CY_USING_HAL_LITE)
+const cyhal_resource_inst_t ioss_0_port_21_pin_2_obj =
+{
+    .type = CYHAL_RSC_GPIO,
+    .block_num = ioss_0_port_21_pin_2_PORT_NUM,
+    .channel_num = ioss_0_port_21_pin_2_PIN,
+};
+#endif /* defined (CY_USING_HAL) || (CY_USING_HAL_LITE) */
+
+const cy_stc_gpio_pin_config_t ioss_0_port_21_pin_3_config =
+{
+    .outVal = 1,
+    .driveMode = CY_GPIO_DM_ANALOG,
+    .hsiom = ioss_0_port_21_pin_3_HSIOM,
+    .intEdge = CY_GPIO_INTR_DISABLE,
+    .intMask = 0UL,
+    .vtrip = CY_GPIO_VTRIP_CMOS,
+    .slewRate = CY_GPIO_SLEW_FAST,
+    .driveSel = CY_GPIO_DRIVE_1_2,
+    .vregEn = 0UL,
+    .ibufMode = 0UL,
+    .vtripSel = 0UL,
+    .vrefSel = 0UL,
+    .vohSel = 0UL,
+};
+
+#if defined (CY_USING_HAL) || (CY_USING_HAL_LITE)
+const cyhal_resource_inst_t ioss_0_port_21_pin_3_obj =
+{
+    .type = CYHAL_RSC_GPIO,
+    .block_num = ioss_0_port_21_pin_3_PORT_NUM,
+    .channel_num = ioss_0_port_21_pin_3_PIN,
+};
+#endif /* defined (CY_USING_HAL) || (CY_USING_HAL_LITE) */
+
 const cy_stc_gpio_pin_config_t ioss_0_port_23_pin_4_config =
 {
     .outVal = 1,
@@ -143,6 +195,8 @@ void reserve_cycfg_pins(void)
 {
 #if defined (CY_USING_HAL)
     cyhal_hwmgr_reserve(&ioss_0_port_18_pin_5_obj);
+    cyhal_hwmgr_reserve(&ioss_0_port_21_pin_2_obj);
+    cyhal_hwmgr_reserve(&ioss_0_port_21_pin_3_obj);
     cyhal_hwmgr_reserve(&ioss_0_port_23_pin_4_obj);
     cyhal_hwmgr_reserve(&ioss_0_port_23_pin_5_obj);
     cyhal_hwmgr_reserve(&ioss_0_port_23_pin_6_obj);

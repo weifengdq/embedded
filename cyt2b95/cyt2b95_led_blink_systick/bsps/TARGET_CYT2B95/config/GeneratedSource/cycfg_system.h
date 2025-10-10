@@ -33,6 +33,7 @@
 #include "cy_device.h"
 #include "cy_sysclk.h"
 #include "cy_wdt.h"
+#include "cy_gpio.h"
 #include "cy_syspm.h"
 
 #if defined (CY_USING_HAL)
@@ -46,11 +47,12 @@ extern "C" {
 #define cpuss_0_dap_0_ENABLED 1U
 #define srss_0_clock_0_ENABLED 1U
 #define srss_0_clock_0_bakclk_0_ENABLED 1U
+#define srss_0_clock_0_eco_0_ENABLED 1U
 #define srss_0_clock_0_fastclk_0_ENABLED 1U
 #define srss_0_clock_0_fll_0_ENABLED 1U
 #define srss_0_clock_0_hfclk_0_ENABLED 1U
 #define CY_CFG_SYSCLK_CLKHF0 0UL
-#define CY_CFG_SYSCLK_CLKHF0_CLKPATH_NUM 0UL
+#define CY_CFG_SYSCLK_CLKHF0_CLKPATH_NUM 1UL
 #define srss_0_clock_0_hfclk_1_ENABLED 1U
 #define CY_CFG_SYSCLK_CLKHF1 1UL
 #define CY_CFG_SYSCLK_CLKHF1_CLKPATH_NUM 0UL
@@ -70,6 +72,7 @@ extern "C" {
 #define srss_0_clock_0_periclk_0_ENABLED 1U
 #define CY_CFG_SYSCLK_CLKPERI_ENABLED 1
 #define CY_CFG_SYSCLK_CLKPERI_DIVIDER 1
+#define srss_0_clock_0_pll_0_ENABLED 1U
 #define srss_0_clock_0_timerclk_0_ENABLED 1U
 #define srss_0_power_0_ENABLED 1U
 #define CY_CFG_PWR_MODE_LP 0x01UL

@@ -35,6 +35,15 @@
 #define CY_CFG_SYSCLK_WCO_ERROR 5
 #define CY_CFG_SYSCLK_CLKBAK_ENABLED 1
 #define CY_CFG_SYSCLK_CLKBAK_SOURCE CY_SYSCLK_BAK_IN_CLKLF
+#define CY_CFG_SYSCLK_ECO_ENABLED 1
+#define CY_CFG_SYSCLK_ECO_FREQ 16000000UL
+#define CY_CFG_SYSCLK_ECO_GPIO_IN_PRT GPIO_PRT21
+#define CY_CFG_SYSCLK_ECO_GPIO_IN_PIN 2
+#define CY_CFG_SYSCLK_ECO_GPIO_OUT_PRT GPIO_PRT21
+#define CY_CFG_SYSCLK_ECO_GPIO_OUT_PIN 3
+#define CY_CFG_SYSCLK_ECO_CLOAD 18UL
+#define CY_CFG_SYSCLK_ECO_ESR 50UL
+#define CY_CFG_SYSCLK_ECO_DRIVE_LEVEL 100UL
 #define CY_CFG_SYSCLK_CLKFAST_ENABLED 1
 #define CY_CFG_SYSCLK_CLKFAST_DIVIDER 0
 #define CY_CFG_SYSCLK_FLL_ENABLED 1
@@ -51,8 +60,8 @@
 #define CY_CFG_SYSCLK_FLL_OUT_FREQ 100000000
 #define CY_CFG_SYSCLK_CLKHF0_ENABLED 1
 #define CY_CFG_SYSCLK_CLKHF0_DIVIDER CY_SYSCLK_CLKHF_NO_DIVIDE
-#define CY_CFG_SYSCLK_CLKHF0_FREQ_MHZ 100UL
-#define CY_CFG_SYSCLK_CLKHF0_CLKPATH CY_SYSCLK_CLKHF_IN_CLKPATH0
+#define CY_CFG_SYSCLK_CLKHF0_FREQ_MHZ 160UL
+#define CY_CFG_SYSCLK_CLKHF0_CLKPATH CY_SYSCLK_CLKHF_IN_CLKPATH1
 #define CY_CFG_SYSCLK_CLKHF1_ENABLED 1
 #define CY_CFG_SYSCLK_CLKHF1_DIVIDER CY_SYSCLK_CLKHF_NO_DIVIDE
 #define CY_CFG_SYSCLK_CLKHF1_FREQ_MHZ 100UL
@@ -75,6 +84,13 @@
 #define CY_CFG_SYSCLK_CLKPATH2_SOURCE CY_SYSCLK_CLKPATH_IN_IMO
 #define CY_CFG_SYSCLK_CLKPATH3_ENABLED 1
 #define CY_CFG_SYSCLK_CLKPATH3_SOURCE CY_SYSCLK_CLKPATH_IN_IMO
+#define CY_CFG_SYSCLK_PLL0_ENABLED 1
+#define CY_CFG_SYSCLK_PLL0_FEEDBACK_DIV 40
+#define CY_CFG_SYSCLK_PLL0_REFERENCE_DIV 1
+#define CY_CFG_SYSCLK_PLL0_OUTPUT_DIV 2
+#define CY_CFG_SYSCLK_PLL0_LF_MODE false
+#define CY_CFG_SYSCLK_PLL0_OUTPUT_MODE CY_SYSCLK_FLLPLL_OUTPUT_AUTO
+#define CY_CFG_SYSCLK_PLL0_OUTPUT_FREQ 160000000
 #define CY_CFG_PWR_ENABLED 1
 #define CY_CFG_PWR_INIT 1
 #define CY_CFG_PWR_VBACKUP_USING_VDDD 1
@@ -124,6 +140,17 @@ const cyhal_resource_inst_t srss_0_clock_0_pathmux_3_obj =
 };
 #endif /* defined (CY_USING_HAL) */
 
+#if (!defined(CY_DEVICE_SECURE))
+static const cy_stc_pll_manual_config_t srss_0_clock_0_pll_0_pllConfig =
+{
+    .feedbackDiv = 40,
+    .referenceDiv = 1,
+    .outputDiv = 2,
+    .lfMode = false,
+    .outputMode = CY_SYSCLK_FLLPLL_OUTPUT_AUTO,
+};
+#endif /* (!defined(CY_DEVICE_SECURE)) */
+
 __WEAK void cycfg_ClockStartupError(uint32_t error);
 
 #if !defined (CY_CFG_SYSCLK_ILO0_ENABLED)
@@ -140,6 +167,7 @@ __STATIC_INLINE void Cy_SysClk_FllDeInit(void);
 
 #if (!defined(CY_DEVICE_SECURE))
 __STATIC_INLINE void Cy_SysClk_ClkBakInit(void);
+__STATIC_INLINE void Cy_SysClk_EcoInit(void);
 __STATIC_INLINE void Cy_SysClk_ClkFastInit(void);
 __STATIC_INLINE void Cy_SysClk_FllInit(void);
 __STATIC_INLINE void Cy_SysClk_ClkHf0Init(void);
@@ -159,6 +187,7 @@ __STATIC_INLINE void Cy_SysClk_ClkPath3Init(void);
 __STATIC_INLINE void Cy_SysClk_ClkPeriInit(void);
 #endif /* (!defined(CY_DEVICE_SECURE)) */
 
+__STATIC_INLINE void Cy_SysClk_Pll0Init(void);
 __STATIC_INLINE void init_cycfg_power(void);
 
 __WEAK void cycfg_ClockStartupError(uint32_t error)
@@ -208,6 +237,19 @@ __STATIC_INLINE void Cy_SysClk_FllDeInit(void)
 __STATIC_INLINE void Cy_SysClk_ClkBakInit(void)
 {
     Cy_SysClk_ClkBakSetSource(CY_SYSCLK_BAK_IN_CLKLF);
+}
+__STATIC_INLINE void Cy_SysClk_EcoInit(void)
+{
+    (void)Cy_GPIO_Pin_FastInit(GPIO_PRT21, 2, CY_GPIO_DM_ANALOG, 0UL, HSIOM_SEL_GPIO);
+    (void)Cy_GPIO_Pin_FastInit(GPIO_PRT21, 3, CY_GPIO_DM_ANALOG, 0UL, HSIOM_SEL_GPIO);
+    if (CY_SYSCLK_BAD_PARAM == Cy_SysClk_EcoConfigure(CY_CFG_SYSCLK_ECO_FREQ, 18UL, 50UL, 100UL))
+    {
+        cycfg_ClockStartupError(CY_CFG_SYSCLK_ECO_ERROR);
+    }
+    if (CY_SYSCLK_TIMEOUT == Cy_SysClk_EcoEnable(3000UL))
+    {
+        cycfg_ClockStartupError(CY_CFG_SYSCLK_ECO_ERROR);
+    }
 }
 __STATIC_INLINE void Cy_SysClk_ClkFastInit(void)
 {
@@ -284,6 +326,19 @@ __STATIC_INLINE void Cy_SysClk_ClkPeriInit(void)
 }
 #endif /* (!defined(CY_DEVICE_SECURE)) */
 
+__STATIC_INLINE void Cy_SysClk_Pll0Init(void)
+{
+    Cy_SysClk_PllDisable(SRSS_PLL_200M_0_PATH_NUM);
+
+    if (CY_SYSCLK_SUCCESS != Cy_SysClk_PllManualConfigure(SRSS_PLL_200M_0_PATH_NUM, &srss_0_clock_0_pll_0_pllConfig))
+    {
+        cycfg_ClockStartupError(CY_CFG_SYSCLK_PLL_ERROR);
+    }
+    if (CY_SYSCLK_SUCCESS != Cy_SysClk_PllEnable(SRSS_PLL_200M_0_PATH_NUM, 10000u))
+    {
+        cycfg_ClockStartupError(CY_CFG_SYSCLK_PLL_ERROR);
+    }
+}
 __STATIC_INLINE void init_cycfg_power(void)
 {
     /* **Reset the Backup domain on POR, XRES, BOD only if Backup domain is supplied by VDDD** */
