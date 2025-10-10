@@ -2,3 +2,7 @@
 mtb_shared
 .cache
 .mtbqueryapi
+*_Objects
+JLinkLog.txt
+JLinkSettings.ini
+*.lock

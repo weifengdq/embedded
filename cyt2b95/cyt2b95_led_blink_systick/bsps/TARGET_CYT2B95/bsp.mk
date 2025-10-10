@@ -49,4 +49,3 @@ DEVICE_LIST:=CYT2B95CAE
 DEVICE_TOOL_IDS:=bsp-assistant device-configurator dfuh-tool library-manager project-creator smartio-configurator
 RECIPE_DIR:=$(SEARCH_recipe-make-cat1a)
 BSP_COMPONENTS:=CM0P_SLEEP
-BSP_DEFINES:=CY_USING_HAL

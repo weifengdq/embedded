@@ -39,7 +39,9 @@
 * of such system or application assumes all risk of such use and in doing
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
-
+// #if defined (CY_USING_HAL)
+// #include "cyhal.h"
+// #endif
 #include "cy_pdl.h"
 #include "cybsp.h"
 
@@ -57,7 +59,7 @@ static void toggle_led_on_systick_handler(void);
 /*******************************************************************************
 * Global Variables
 ********************************************************************************/
-uint32_t counterTick = 0;
+volatile uint32_t counterTick = 0;
 
 /*******************************************************************************
 * Function Name: main
@@ -83,7 +85,7 @@ int main(void)
     __enable_irq();
 
     /*Initialize the User LED*/
-    Cy_GPIO_Pin_FastInit(P5_0_PORT, P5_0_NUM, CY_GPIO_DM_STRONG, 1u, P5_0_GPIO);
+    Cy_GPIO_Pin_FastInit(P18_5_PORT, P18_5_NUM, CY_GPIO_DM_STRONG, 1u, P18_5_GPIO);
 
     /*Initialize the systick*/
     Cy_SysTick_Init(CY_SYSTICK_CLOCK_SOURCE_CLK_CPU, SYSTICK_RELOAD_VAL);
@@ -97,11 +99,13 @@ int main(void)
 
     for (;;)
     {
+        // Cy_GPIO_Inv(P18_5_PORT, P18_5_NUM);
+        // Cy_SysLib_Delay(500);
         /*toggle user led*/
-        if(counterTick > SYSTICK_PERIOD_TIMES)
+        if(counterTick > 10)
         {
             counterTick = 0;
-            Cy_GPIO_Inv(P5_0_PORT, P5_0_NUM);
+            Cy_GPIO_Inv(P18_5_PORT, P18_5_NUM);
         }
     }
 }
@@ -123,6 +127,7 @@ int main(void)
 void toggle_led_on_systick_handler(void)
 {
     counterTick++;
+    // Cy_GPIO_Inv(P18_5_PORT, P18_5_NUM);
 }
 
 /* [] END OF FILE */

@@ -11,6 +11,22 @@
                         <Param id="traceModeSerial" value="true"/>
                     </Parameters>
                 </Personality>
+                <Personality template="pin" version="3.0" instance="d3iv7Be5fpA">
+                    <Block location="ioss[0].port[18].pin[5]" locked="true"/>
+                    <Parameters>
+                        <Param id="DriveModes" value="CY_GPIO_DM_STRONG_IN_OFF"/>
+                        <Param id="driveStrength" value="CY_GPIO_DRIVE_1_2"/>
+                        <Param id="driveStrengthTrim" value="CY_GPIO_DRIVE_STRENGTH_DEFAULT"/>
+                        <Param id="inFlash" value="true"/>
+                        <Param id="initialState" value="1"/>
+                        <Param id="isrTrigger" value="CY_GPIO_INTR_DISABLE"/>
+                        <Param id="nonSec" value="1"/>
+                        <Param id="pullUpRes" value="CY_GPIO_PULLUP_RES_DISABLE"/>
+                        <Param id="sioOutputBuffer" value="true"/>
+                        <Param id="slewRate" value="CY_GPIO_SLEW_SLOW"/>
+                        <Param id="vtrip" value="CY_GPIO_VTRIP_CMOS"/>
+                    </Parameters>
+                </Personality>
                 <Personality template="pin" version="3.0" instance="Q7-lJiMcbWo">
                     <Block location="ioss[0].port[23].pin[4]" locked="true"/>
                     <Parameters>
