@@ -40,10 +40,12 @@ void cycfg_config_init(void)
     init_cycfg_system();
     init_cycfg_clocks();
     init_cycfg_routing();
+    init_cycfg_peripherals();
     init_cycfg_pins();
 }
 void cycfg_config_reservations(void)
 {
     reserve_cycfg_clocks();
+    reserve_cycfg_peripherals();
     reserve_cycfg_pins();
 }

@@ -29,6 +29,12 @@
 #include "cycfg_clocks.h"
 
 #if defined (CY_USING_HAL)
+const cyhal_resource_inst_t peri_0_div_24_5_0_obj =
+{
+    .type = CYHAL_RSC_CLOCK,
+    .block_num = peri_0_div_24_5_0_HW,
+    .channel_num = peri_0_div_24_5_0_NUM,
+};
 const cyhal_resource_inst_t peri_0_div_8_3_obj =
 {
     .type = CYHAL_RSC_CLOCK,
@@ -39,6 +45,9 @@ const cyhal_resource_inst_t peri_0_div_8_3_obj =
 
 void init_cycfg_clocks(void)
 {
+    Cy_SysClk_PeriphDisableDivider(CY_SYSCLK_DIV_24_5_BIT, 0U);
+    Cy_SysClk_PeriphSetFracDivider(CY_SYSCLK_DIV_24_5_BIT, 0U, 85U, 26U);
+    Cy_SysClk_PeriphEnableDivider(CY_SYSCLK_DIV_24_5_BIT, 0U);
     Cy_SysClk_PeriphDisableDivider(CY_SYSCLK_DIV_8_BIT, 3U);
     Cy_SysClk_PeriphSetDivider(CY_SYSCLK_DIV_8_BIT, 3U, 0U);
     Cy_SysClk_PeriphEnableDivider(CY_SYSCLK_DIV_8_BIT, 3U);
@@ -46,6 +55,7 @@ void init_cycfg_clocks(void)
 void reserve_cycfg_clocks(void)
 {
 #if defined (CY_USING_HAL)
+    cyhal_hwmgr_reserve(&peri_0_div_24_5_0_obj);
     cyhal_hwmgr_reserve(&peri_0_div_8_3_obj);
 #endif /* defined (CY_USING_HAL) */
 }

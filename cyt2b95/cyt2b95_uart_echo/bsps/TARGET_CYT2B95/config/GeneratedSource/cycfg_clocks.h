@@ -40,12 +40,17 @@
 extern "C" {
 #endif /* defined(__cplusplus) */
 
+#define peri_0_div_24_5_0_ENABLED 1U
+#define peri_0_div_24_5_0_HW CY_SYSCLK_DIV_24_5_BIT
+#define peri_0_div_24_5_0_NUM 0U
+#define peri_0_div_24_5_0_GRP_NUM PERI_PCLK_PERIPHERAL_GROUP_NUM
 #define peri_0_div_8_3_ENABLED 1U
 #define peri_0_div_8_3_HW CY_SYSCLK_DIV_8_BIT
 #define peri_0_div_8_3_NUM 3U
 #define peri_0_div_8_3_GRP_NUM PERI_PCLK_PERIPHERAL_GROUP_NUM
 
 #if defined (CY_USING_HAL)
+extern const cyhal_resource_inst_t peri_0_div_24_5_0_obj;
 extern const cyhal_resource_inst_t peri_0_div_8_3_obj;
 #endif /* defined (CY_USING_HAL) */
 

@@ -35,6 +35,8 @@
 extern "C" {
 #endif /* defined(__cplusplus) */
 
+#define ioss_0_port_0_pin_0_HSIOM P0_0_SCB0_UART_RX
+#define ioss_0_port_0_pin_1_HSIOM P0_1_SCB0_UART_TX
 #define ioss_0_port_21_pin_2_ANALOG P21_2_SRSS_ECO_IN
 #define ioss_0_port_21_pin_3_ANALOG P21_3_SRSS_ECO_OUT
 #define ioss_0_port_23_pin_4_HSIOM P23_4_CPUSS_SWJ_SWO_TDO
