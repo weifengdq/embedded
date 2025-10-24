@@ -210,6 +210,58 @@ const cyhal_resource_inst_t ioss_0_port_23_pin_6_obj =
 };
 #endif /* defined (CY_USING_HAL) || (CY_USING_HAL_LITE) */
 
+const cy_stc_gpio_pin_config_t ioss_0_port_2_pin_0_config =
+{
+    .outVal = 1,
+    .driveMode = CY_GPIO_DM_STRONG,
+    .hsiom = ioss_0_port_2_pin_0_HSIOM,
+    .intEdge = CY_GPIO_INTR_DISABLE,
+    .intMask = 0UL,
+    .vtrip = CY_GPIO_VTRIP_CMOS,
+    .slewRate = CY_GPIO_SLEW_FAST,
+    .driveSel = CY_GPIO_DRIVE_1_2,
+    .vregEn = 0UL,
+    .ibufMode = 0UL,
+    .vtripSel = 0UL,
+    .vrefSel = 0UL,
+    .vohSel = 0UL,
+};
+
+#if defined (CY_USING_HAL) || (CY_USING_HAL_LITE)
+const cyhal_resource_inst_t ioss_0_port_2_pin_0_obj =
+{
+    .type = CYHAL_RSC_GPIO,
+    .block_num = ioss_0_port_2_pin_0_PORT_NUM,
+    .channel_num = ioss_0_port_2_pin_0_PIN,
+};
+#endif /* defined (CY_USING_HAL) || (CY_USING_HAL_LITE) */
+
+const cy_stc_gpio_pin_config_t ioss_0_port_2_pin_1_config =
+{
+    .outVal = 1,
+    .driveMode = CY_GPIO_DM_HIGHZ,
+    .hsiom = ioss_0_port_2_pin_1_HSIOM,
+    .intEdge = CY_GPIO_INTR_DISABLE,
+    .intMask = 0UL,
+    .vtrip = CY_GPIO_VTRIP_CMOS,
+    .slewRate = CY_GPIO_SLEW_FAST,
+    .driveSel = CY_GPIO_DRIVE_1_2,
+    .vregEn = 0UL,
+    .ibufMode = 0UL,
+    .vtripSel = 0UL,
+    .vrefSel = 0UL,
+    .vohSel = 0UL,
+};
+
+#if defined (CY_USING_HAL) || (CY_USING_HAL_LITE)
+const cyhal_resource_inst_t ioss_0_port_2_pin_1_obj =
+{
+    .type = CYHAL_RSC_GPIO,
+    .block_num = ioss_0_port_2_pin_1_PORT_NUM,
+    .channel_num = ioss_0_port_2_pin_1_PIN,
+};
+#endif /* defined (CY_USING_HAL) || (CY_USING_HAL_LITE) */
+
 void init_cycfg_pins(void)
 {
     Cy_GPIO_Pin_Init(ioss_0_port_0_pin_0_PORT, ioss_0_port_0_pin_0_PIN, &ioss_0_port_0_pin_0_config);
@@ -217,6 +269,8 @@ void init_cycfg_pins(void)
     Cy_GPIO_Pin_Init(ioss_0_port_23_pin_4_PORT, ioss_0_port_23_pin_4_PIN, &ioss_0_port_23_pin_4_config);
     Cy_GPIO_Pin_Init(ioss_0_port_23_pin_5_PORT, ioss_0_port_23_pin_5_PIN, &ioss_0_port_23_pin_5_config);
     Cy_GPIO_Pin_Init(ioss_0_port_23_pin_6_PORT, ioss_0_port_23_pin_6_PIN, &ioss_0_port_23_pin_6_config);
+    Cy_GPIO_Pin_Init(ioss_0_port_2_pin_0_PORT, ioss_0_port_2_pin_0_PIN, &ioss_0_port_2_pin_0_config);
+    Cy_GPIO_Pin_Init(ioss_0_port_2_pin_1_PORT, ioss_0_port_2_pin_1_PIN, &ioss_0_port_2_pin_1_config);
 }
 void reserve_cycfg_pins(void)
 {
@@ -228,5 +282,7 @@ void reserve_cycfg_pins(void)
     cyhal_hwmgr_reserve(&ioss_0_port_23_pin_4_obj);
     cyhal_hwmgr_reserve(&ioss_0_port_23_pin_5_obj);
     cyhal_hwmgr_reserve(&ioss_0_port_23_pin_6_obj);
+    cyhal_hwmgr_reserve(&ioss_0_port_2_pin_0_obj);
+    cyhal_hwmgr_reserve(&ioss_0_port_2_pin_1_obj);
 #endif /* defined (CY_USING_HAL) */
 }

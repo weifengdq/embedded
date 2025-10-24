@@ -185,6 +185,46 @@ extern "C" {
 #define ioss_0_port_23_pin_6_HAL_DRIVEMODE CYHAL_GPIO_DRIVE_PULLUP
 #endif /* defined (CY_USING_HAL) || (CY_USING_HAL_LITE) */
 
+#define ioss_0_port_2_pin_0_ENABLED 1U
+#define ioss_0_port_2_pin_0_PORT GPIO_PRT2
+#define ioss_0_port_2_pin_0_PORT_NUM 2U
+#define ioss_0_port_2_pin_0_PIN 0U
+#define ioss_0_port_2_pin_0_NUM 0U
+#define ioss_0_port_2_pin_0_DRIVEMODE CY_GPIO_DM_STRONG
+#define ioss_0_port_2_pin_0_INIT_DRIVESTATE 1
+#ifndef ioss_0_port_2_pin_0_HSIOM
+    #define ioss_0_port_2_pin_0_HSIOM HSIOM_SEL_GPIO
+#endif
+#define ioss_0_port_2_pin_0_IRQ ioss_interrupts_gpio_2_IRQn
+
+#if defined (CY_USING_HAL) || (CY_USING_HAL_LITE)
+#define ioss_0_port_2_pin_0_HAL_PORT_PIN P2_0
+#define ioss_0_port_2_pin_0 P2_0
+#define ioss_0_port_2_pin_0_HAL_IRQ CYHAL_GPIO_IRQ_NONE
+#define ioss_0_port_2_pin_0_HAL_DIR CYHAL_GPIO_DIR_BIDIRECTIONAL 
+#define ioss_0_port_2_pin_0_HAL_DRIVEMODE CYHAL_GPIO_DRIVE_STRONG
+#endif /* defined (CY_USING_HAL) || (CY_USING_HAL_LITE) */
+
+#define ioss_0_port_2_pin_1_ENABLED 1U
+#define ioss_0_port_2_pin_1_PORT GPIO_PRT2
+#define ioss_0_port_2_pin_1_PORT_NUM 2U
+#define ioss_0_port_2_pin_1_PIN 1U
+#define ioss_0_port_2_pin_1_NUM 1U
+#define ioss_0_port_2_pin_1_DRIVEMODE CY_GPIO_DM_HIGHZ
+#define ioss_0_port_2_pin_1_INIT_DRIVESTATE 1
+#ifndef ioss_0_port_2_pin_1_HSIOM
+    #define ioss_0_port_2_pin_1_HSIOM HSIOM_SEL_GPIO
+#endif
+#define ioss_0_port_2_pin_1_IRQ ioss_interrupts_gpio_2_IRQn
+
+#if defined (CY_USING_HAL) || (CY_USING_HAL_LITE)
+#define ioss_0_port_2_pin_1_HAL_PORT_PIN P2_1
+#define ioss_0_port_2_pin_1 P2_1
+#define ioss_0_port_2_pin_1_HAL_IRQ CYHAL_GPIO_IRQ_NONE
+#define ioss_0_port_2_pin_1_HAL_DIR CYHAL_GPIO_DIR_INPUT 
+#define ioss_0_port_2_pin_1_HAL_DRIVEMODE CYHAL_GPIO_DRIVE_NONE
+#endif /* defined (CY_USING_HAL) || (CY_USING_HAL_LITE) */
+
 extern const cy_stc_gpio_pin_config_t ioss_0_port_0_pin_0_config;
 
 #if defined (CY_USING_HAL) || (CY_USING_HAL_LITE)
@@ -225,6 +265,18 @@ extern const cy_stc_gpio_pin_config_t ioss_0_port_23_pin_6_config;
 
 #if defined (CY_USING_HAL) || (CY_USING_HAL_LITE)
 extern const cyhal_resource_inst_t ioss_0_port_23_pin_6_obj;
+#endif /* defined (CY_USING_HAL) || (CY_USING_HAL_LITE) */
+
+extern const cy_stc_gpio_pin_config_t ioss_0_port_2_pin_0_config;
+
+#if defined (CY_USING_HAL) || (CY_USING_HAL_LITE)
+extern const cyhal_resource_inst_t ioss_0_port_2_pin_0_obj;
+#endif /* defined (CY_USING_HAL) || (CY_USING_HAL_LITE) */
+
+extern const cy_stc_gpio_pin_config_t ioss_0_port_2_pin_1_config;
+
+#if defined (CY_USING_HAL) || (CY_USING_HAL_LITE)
+extern const cyhal_resource_inst_t ioss_0_port_2_pin_1_obj;
 #endif /* defined (CY_USING_HAL) || (CY_USING_HAL_LITE) */
 
 void init_cycfg_pins(void);
