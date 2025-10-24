@@ -261,27 +261,27 @@
                 <Size>0x0</Size>
               </XRAM>
               <OCR_RVCT1>
-                <Type>0</Type>
+                <Type>1</Type>
                 <StartAddress>0x0</StartAddress>
                 <Size>0x0</Size>
               </OCR_RVCT1>
               <OCR_RVCT2>
-                <Type>0</Type>
+                <Type>1</Type>
                 <StartAddress>0x0</StartAddress>
                 <Size>0x0</Size>
               </OCR_RVCT2>
               <OCR_RVCT3>
-                <Type>0</Type>
+                <Type>1</Type>
                 <StartAddress>0x0</StartAddress>
                 <Size>0x0</Size>
               </OCR_RVCT3>
               <OCR_RVCT4>
-                <Type>0</Type>
+                <Type>1</Type>
                 <StartAddress>0x10000000</StartAddress>
                 <Size>0x210000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
-                <Type>0</Type>
+                <Type>1</Type>
                 <StartAddress>0x0</StartAddress>
                 <Size>0x0</Size>
               </OCR_RVCT5>
@@ -301,7 +301,7 @@
                 <Size>0x0</Size>
               </OCR_RVCT8>
               <OCR_RVCT9>
-                <Type>1</Type>
+                <Type>0</Type>
                 <StartAddress>0x8000000</StartAddress>
                 <Size>0x40000</Size>
               </OCR_RVCT9>

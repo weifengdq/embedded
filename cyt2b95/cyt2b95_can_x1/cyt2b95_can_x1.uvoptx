@@ -28,7 +28,7 @@
     <TargetOption>
       <CLKADS>12000000</CLKADS>
       <OPTTT>
-        <gFlags>0</gFlags>
+        <gFlags>1</gFlags>
         <BeepAtEnd>1</BeepAtEnd>
         <RunSim>0</RunSim>
         <RunTarget>1</RunTarget>
@@ -103,7 +103,7 @@
         <bEvRecOn>1</bEvRecOn>
         <bSchkAxf>0</bSchkAxf>
         <bTchkAxf>0</bTchkAxf>
-        <nTsel>0</nTsel>
+        <nTsel>4</nTsel>
         <sDll></sDll>
         <sDllPa></sDllPa>
         <sDlgDll></sDlgDll>
@@ -114,9 +114,14 @@
         <tDlgDll></tDlgDll>
         <tDlgPa></tDlgPa>
         <tIfile></tIfile>
-        <pMon>BIN\UL2CM3.DLL</pMon>
+        <pMon>Segger\JL2CM3.dll</pMon>
       </DebugOpt>
       <TargetDriverDllRegistry>
+        <SetRegEntry>
+          <Number>0</Number>
+          <Key>JL2CM3</Key>
+          <Name>-U24060502 -O78 -S2 -ZTIFSpeedSel5000 -A0 -C0 -JU1 -JI127.0.0.1 -JP0 -RST0 -N00("ARM CoreSight SW-DP") -D00(6BA02477) -L00(0) -TO18 -TC10000000 -TP21 -TDS8007 -TDT0 -TDC1F -TIEFFFFFFFF -TIP8 -TB1 -TFE0 -FO15 -FD8001000 -FCEFF0 -FN5 -FF0CYT2Bx_SFLASH_TOC2.FLM -FS017007C00 -FL0200 -FP0($$Device:CYT2B95CAE$Flash\CYT2Bx_SFLASH_TOC2.FLM) -FF1CYT2Bx_SFLASH_PKEY.FLM -FS117006400 -FL1C00 -FP1($$Device:CYT2B95CAE$Flash\CYT2Bx_SFLASH_PKEY.FLM) -FF2CYT2Bx_SFLASH_USER.FLM -FS217000800 -FL2800 -FP2($$Device:CYT2B95CAE$Flash\CYT2Bx_SFLASH_USER.FLM) -FF3CYT2Bx_WFLASH_128.FLM -FS314000000 -FL320000 -FP3($$Device:CYT2B95CAE$Flash\CYT2Bx_WFLASH_128.FLM) -FF4CYT2B9.FLM -FS410000000 -FL4210000 -FP4($$Device:CYT2B95CAE$Flash\CYT2B9.FLM)</Name>
+        </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
           <Key>UL2CM3</Key>
