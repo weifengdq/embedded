@@ -119,6 +119,25 @@
       <TargetDriverDllRegistry>
         <SetRegEntry>
           <Number>0</Number>
+          <Key>ARMRTXEVENTFLAGS</Key>
+          <Name>-L70 -Z18 -C0 -M0 -T1</Name>
+        </SetRegEntry>
+        <SetRegEntry>
+          <Number>0</Number>
+          <Key>DLGTARM</Key>
+          <Name>(1010=-1,-1,-1,-1,0)(1007=-1,-1,-1,-1,0)(1008=-1,-1,-1,-1,0)(1009=-1,-1,-1,-1,0)(1012=-1,-1,-1,-1,0)</Name>
+        </SetRegEntry>
+        <SetRegEntry>
+          <Number>0</Number>
+          <Key>ARMDBGFLAGS</Key>
+          <Name></Name>
+        </SetRegEntry>
+        <SetRegEntry>
+          <Number>0</Number>
+          <Key>DLGUARM</Key>
+        </SetRegEntry>
+        <SetRegEntry>
+          <Number>0</Number>
           <Key>JL2CM3</Key>
           <Name>-U24060502 -O78 -S2 -ZTIFSpeedSel5000 -A0 -C0 -JU1 -JI127.0.0.1 -JP0 -RST0 -N00("ARM CoreSight SW-DP") -D00(6BA02477) -L00(0) -TO18 -TC10000000 -TP21 -TDS8007 -TDT0 -TDC1F -TIEFFFFFFFF -TIP8 -TB1 -TFE0 -FO15 -FD8001000 -FCEFF0 -FN5 -FF0CYT2Bx_SFLASH_TOC2.FLM -FS017007C00 -FL0200 -FP0($$Device:CYT2B95CAE$Flash\CYT2Bx_SFLASH_TOC2.FLM) -FF1CYT2Bx_SFLASH_PKEY.FLM -FS117006400 -FL1C00 -FP1($$Device:CYT2B95CAE$Flash\CYT2Bx_SFLASH_PKEY.FLM) -FF2CYT2Bx_SFLASH_USER.FLM -FS217000800 -FL2800 -FP2($$Device:CYT2B95CAE$Flash\CYT2Bx_SFLASH_USER.FLM) -FF3CYT2Bx_WFLASH_128.FLM -FS314000000 -FL320000 -FP3($$Device:CYT2B95CAE$Flash\CYT2Bx_WFLASH_128.FLM) -FF4CYT2B9.FLM -FS410000000 -FL4210000 -FP4($$Device:CYT2B95CAE$Flash\CYT2B9.FLM)</Name>
         </SetRegEntry>
@@ -128,19 +147,68 @@
           <Name>UL2CM3(-S0 -C0 -P0 -FD08001000 -FCEFF0 -FN5 -FF0CYT2Bx_SFLASH_TOC2 -FS017007C00 -FL0200 -FF1CYT2Bx_SFLASH_PKEY -FS117006400 -FL1C00 -FF2CYT2Bx_SFLASH_USER -FS217000800 -FL2800 -FF3CYT2Bx_WFLASH_128 -FS314000000 -FL320000 -FF4CYT2B9 -FS410000000 -FL4210000 -FP0($$Device:CYT2B95CAE$Flash\CYT2Bx_SFLASH_TOC2.FLM) -FP1($$Device:CYT2B95CAE$Flash\CYT2Bx_SFLASH_PKEY.FLM) -FP2($$Device:CYT2B95CAE$Flash\CYT2Bx_SFLASH_USER.FLM) -FP3($$Device:CYT2B95CAE$Flash\CYT2Bx_WFLASH_128.FLM) -FP4($$Device:CYT2B95CAE$Flash\CYT2B9.FLM))</Name>
         </SetRegEntry>
       </TargetDriverDllRegistry>
-      <Breakpoint/>
+      <Breakpoint>
+        <Bp>
+          <Number>0</Number>
+          <Type>0</Type>
+          <LineNumber>55</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>268711042</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>.\main.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\cyt2b95_uart_echo\main.c\55</Expression>
+        </Bp>
+        <Bp>
+          <Number>1</Number>
+          <Type>0</Type>
+          <LineNumber>66</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>268711142</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>.\main.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\cyt2b95_uart_echo\main.c\66</Expression>
+        </Bp>
+        <Bp>
+          <Number>2</Number>
+          <Type>0</Type>
+          <LineNumber>51</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>268711032</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>.\main.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\cyt2b95_uart_echo\main.c\51</Expression>
+        </Bp>
+      </Breakpoint>
       <Tracepoint>
         <THDelay>0</THDelay>
       </Tracepoint>
       <DebugFlag>
         <trace>0</trace>
         <periodic>1</periodic>
-        <aLwin>0</aLwin>
+        <aLwin>1</aLwin>
         <aCover>0</aCover>
         <aSer1>0</aSer1>
         <aSer2>0</aSer2>
         <aPa>0</aPa>
-        <viewmode>0</viewmode>
+        <viewmode>1</viewmode>
         <vrSel>0</vrSel>
         <aSym>0</aSym>
         <aTbox>0</aTbox>
@@ -183,7 +251,7 @@
 
   <Group>
     <GroupName>sources</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -263,7 +331,7 @@
       <GroupNumber>1</GroupNumber>
       <FileNumber>7</FileNumber>
       <FileType>1</FileType>
-      <tvExp>1</tvExp>
+      <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
       <PathWithFileName>.\bsps\TARGET_CYT2B95\cybsp.c</PathWithFileName>
