@@ -11,6 +11,70 @@
                         <Param id="traceModeSerial" value="true"/>
                     </Parameters>
                 </Personality>
+                <Personality template="pin" version="3.0" instance="R8-1E-P1C8o">
+                    <Block location="ioss[0].port[0].pin[0]" locked="true"/>
+                    <Parameters>
+                        <Param id="DriveModes" value="CY_GPIO_DM_HIGHZ"/>
+                        <Param id="driveStrength" value="CY_GPIO_DRIVE_1_2"/>
+                        <Param id="driveStrengthTrim" value="CY_GPIO_DRIVE_STRENGTH_DEFAULT"/>
+                        <Param id="inFlash" value="true"/>
+                        <Param id="initialState" value="1"/>
+                        <Param id="isrTrigger" value="CY_GPIO_INTR_DISABLE"/>
+                        <Param id="nonSec" value="1"/>
+                        <Param id="pullUpRes" value="CY_GPIO_PULLUP_RES_DISABLE"/>
+                        <Param id="sioOutputBuffer" value="true"/>
+                        <Param id="slewRate" value="CY_GPIO_SLEW_FAST"/>
+                        <Param id="vtrip" value="CY_GPIO_VTRIP_CMOS"/>
+                    </Parameters>
+                </Personality>
+                <Personality template="pin" version="3.0" instance="DvGoSPbSDXc">
+                    <Block location="ioss[0].port[0].pin[1]" locked="true"/>
+                    <Parameters>
+                        <Param id="DriveModes" value="CY_GPIO_DM_STRONG_IN_OFF"/>
+                        <Param id="driveStrength" value="CY_GPIO_DRIVE_1_2"/>
+                        <Param id="driveStrengthTrim" value="CY_GPIO_DRIVE_STRENGTH_DEFAULT"/>
+                        <Param id="inFlash" value="true"/>
+                        <Param id="initialState" value="1"/>
+                        <Param id="isrTrigger" value="CY_GPIO_INTR_DISABLE"/>
+                        <Param id="nonSec" value="1"/>
+                        <Param id="pullUpRes" value="CY_GPIO_PULLUP_RES_DISABLE"/>
+                        <Param id="sioOutputBuffer" value="true"/>
+                        <Param id="slewRate" value="CY_GPIO_SLEW_FAST"/>
+                        <Param id="vtrip" value="CY_GPIO_VTRIP_CMOS"/>
+                    </Parameters>
+                </Personality>
+                <Personality template="pin" version="3.0" instance="JLpz2J6s9zc">
+                    <Block location="ioss[0].port[21].pin[2]" locked="true"/>
+                    <Parameters>
+                        <Param id="DriveModes" value="CY_GPIO_DM_ANALOG"/>
+                        <Param id="driveStrength" value="CY_GPIO_DRIVE_1_2"/>
+                        <Param id="driveStrengthTrim" value="CY_GPIO_DRIVE_STRENGTH_DEFAULT"/>
+                        <Param id="inFlash" value="true"/>
+                        <Param id="initialState" value="1"/>
+                        <Param id="isrTrigger" value="CY_GPIO_INTR_DISABLE"/>
+                        <Param id="nonSec" value="1"/>
+                        <Param id="pullUpRes" value="CY_GPIO_PULLUP_RES_DISABLE"/>
+                        <Param id="sioOutputBuffer" value="true"/>
+                        <Param id="slewRate" value="CY_GPIO_SLEW_FAST"/>
+                        <Param id="vtrip" value="CY_GPIO_VTRIP_CMOS"/>
+                    </Parameters>
+                </Personality>
+                <Personality template="pin" version="3.0" instance="hvigTKq8vr8">
+                    <Block location="ioss[0].port[21].pin[3]" locked="true"/>
+                    <Parameters>
+                        <Param id="DriveModes" value="CY_GPIO_DM_ANALOG"/>
+                        <Param id="driveStrength" value="CY_GPIO_DRIVE_1_2"/>
+                        <Param id="driveStrengthTrim" value="CY_GPIO_DRIVE_STRENGTH_DEFAULT"/>
+                        <Param id="inFlash" value="true"/>
+                        <Param id="initialState" value="1"/>
+                        <Param id="isrTrigger" value="CY_GPIO_INTR_DISABLE"/>
+                        <Param id="nonSec" value="1"/>
+                        <Param id="pullUpRes" value="CY_GPIO_PULLUP_RES_DISABLE"/>
+                        <Param id="sioOutputBuffer" value="true"/>
+                        <Param id="slewRate" value="CY_GPIO_SLEW_FAST"/>
+                        <Param id="vtrip" value="CY_GPIO_VTRIP_CMOS"/>
+                    </Parameters>
+                </Personality>
                 <Personality template="pin" version="3.0" instance="mS4uBD3Tz0k">
                     <Block location="ioss[0].port[23].pin[4]" locked="true"/>
                     <Parameters>
@@ -67,6 +131,64 @@
                         <Param id="startOnReset" value="true"/>
                     </Parameters>
                 </Personality>
+                <Personality template="pclk" version="3.0" instance="ijn0sxgs9NI">
+                    <Block location="peri[0].div_24_5[0]" locked="true"/>
+                    <Parameters>
+                        <Param id="fracDivider" value="26"/>
+                        <Param id="intDivider" value="86"/>
+                        <Param id="startOnReset" value="true"/>
+                    </Parameters>
+                </Personality>
+                <Personality template="uart" version="3.0" instance="mnCIkE6HhXw">
+                    <Block location="scb[0]" locked="true"/>
+                    <Parameters>
+                        <Param id="ApiMode" value="HIGH_LEVEL"/>
+                        <Param id="BaudRate" value="115200"/>
+                        <Param id="BitsOrder" value="CY_SCB_UART_LSB_FIRST"/>
+                        <Param id="BreakLevel" value="0"/>
+                        <Param id="BreakSignalBits" value="11"/>
+                        <Param id="ComMode" value="CY_SCB_UART_STANDARD"/>
+                        <Param id="CtsPolarity" value="CY_SCB_UART_ACTIVE_LOW"/>
+                        <Param id="DataWidth" value="8"/>
+                        <Param id="DropOnFrameErr" value="false"/>
+                        <Param id="DropOnParityErr" value="false"/>
+                        <Param id="EnableHalfDuplex" value="false"/>
+                        <Param id="EnableInputFilter" value="false"/>
+                        <Param id="EnableTxEn" value="false"/>
+                        <Param id="FlowControl" value="false"/>
+                        <Param id="IntrRxBreakDetected" value="false"/>
+                        <Param id="IntrRxFrameErr" value="false"/>
+                        <Param id="IntrRxFull" value="false"/>
+                        <Param id="IntrRxNotEmpty" value="false"/>
+                        <Param id="IntrRxOverflow" value="false"/>
+                        <Param id="IntrRxParityErr" value="false"/>
+                        <Param id="IntrRxTrigger" value="false"/>
+                        <Param id="IntrRxUnderflow" value="false"/>
+                        <Param id="IntrTxEmpty" value="false"/>
+                        <Param id="IntrTxNotFull" value="false"/>
+                        <Param id="IntrTxOverflow" value="false"/>
+                        <Param id="IntrTxTrigger" value="false"/>
+                        <Param id="IntrTxUartDone" value="false"/>
+                        <Param id="IntrTxUartLostArb" value="false"/>
+                        <Param id="IntrTxUartNack" value="false"/>
+                        <Param id="IntrTxUnderflow" value="false"/>
+                        <Param id="IrdaLowPower" value="false"/>
+                        <Param id="IrdaPolarity" value="NON_INVERTING"/>
+                        <Param id="MpRxAcceptAddress" value="false"/>
+                        <Param id="MpRxAddress" value="0"/>
+                        <Param id="MpRxAddressMask" value="255"/>
+                        <Param id="MultiProc" value="false"/>
+                        <Param id="Oversample" value="8"/>
+                        <Param id="ParityType" value="CY_SCB_UART_PARITY_NONE"/>
+                        <Param id="RtsPolarity" value="CY_SCB_UART_ACTIVE_LOW"/>
+                        <Param id="RtsTriggerLevel" value="63"/>
+                        <Param id="RxTriggerLevel" value="63"/>
+                        <Param id="SmCardRetryOnNack" value="false"/>
+                        <Param id="StopBits" value="CY_SCB_UART_STOP_BITS_1"/>
+                        <Param id="TxTriggerLevel" value="63"/>
+                        <Param id="inFlash" value="true"/>
+                    </Parameters>
+                </Personality>
                 <Personality template="sysclocks" version="3.0" instance="EI4rNZ2i_Co">
                     <Block location="srss[0].clock[0]" locked="true"/>
                 </Personality>
@@ -74,6 +196,17 @@
                     <Block location="srss[0].clock[0].bakclk[0]" locked="true"/>
                     <Parameters>
                         <Param id="sourceClock" value="lfclk"/>
+                    </Parameters>
+                </Personality>
+                <Personality template="eco" version="3.0" instance="eva23h7ZmoE">
+                    <Block location="srss[0].clock[0].eco[0]" locked="true"/>
+                    <Parameters>
+                        <Param id="accuracyPpm" value="10"/>
+                        <Param id="c0" value="0"/>
+                        <Param id="cLoad" value="18"/>
+                        <Param id="driveLevel" value="100"/>
+                        <Param id="ecoFrequency" value="16.0000"/>
+                        <Param id="esr" value="50"/>
                     </Parameters>
                 </Personality>
                 <Personality template="fastclk" version="2.0" instance="gyKBnENLfR4">
@@ -100,7 +233,7 @@
                         <Param id="actionCsv" value="FAULT"/>
                         <Param id="divider" value="1"/>
                         <Param id="sourceClockCsv" value="IMO"/>
-                        <Param id="sourceClockNumber" value="0"/>
+                        <Param id="sourceClockNumber" value="1"/>
                     </Parameters>
                 </Personality>
                 <Personality template="hfclk" version="3.0" instance="hq9ZTWzfMnA">
@@ -182,6 +315,15 @@
                         <Param id="divider" value="2"/>
                     </Parameters>
                 </Personality>
+                <Personality template="pll" version="3.0" instance="M63ieA8XEEc">
+                    <Block location="srss[0].clock[0].pll[0]" locked="true"/>
+                    <Parameters>
+                        <Param id="configuration" value="auto"/>
+                        <Param id="desiredFrequency" value="160.000"/>
+                        <Param id="lowFrequencyMode" value="false"/>
+                        <Param id="optimization" value="MinPower"/>
+                    </Parameters>
+                </Personality>
                 <Personality template="timerclk" version="3.0" instance="4lnsJiC6i5U">
                     <Block location="srss[0].clock[0].timerclk[0]" locked="true"/>
                 </Personality>
@@ -217,6 +359,26 @@
                 <Net>
                     <Port name="cpuss[0].dap[0].swj_swo_tdo[0]"/>
                     <Port name="ioss[0].port[23].pin[4].digital_out[0]"/>
+                </Net>
+                <Net>
+                    <Port name="ioss[0].port[0].pin[0].digital_inout[0]"/>
+                    <Port name="scb[0].uart_rx[0]"/>
+                </Net>
+                <Net>
+                    <Port name="ioss[0].port[0].pin[1].digital_inout[0]"/>
+                    <Port name="scb[0].uart_tx[0]"/>
+                </Net>
+                <Net>
+                    <Port name="ioss[0].port[21].pin[2].analog[0]"/>
+                    <Port name="srss[0].clock[0].eco[0].eco_in[0]"/>
+                </Net>
+                <Net>
+                    <Port name="ioss[0].port[21].pin[3].analog[0]"/>
+                    <Port name="srss[0].clock[0].eco[0].eco_out[0]"/>
+                </Net>
+                <Net>
+                    <Port name="peri[0].div_24_5[0].clk[0]"/>
+                    <Port name="scb[0].clock[0]"/>
                 </Net>
             </Netlist>
         </Device>

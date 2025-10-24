@@ -1,0 +1,29 @@
+// File: CYT2Bx.dbgconf 
+// Version: 1.0
+// <<< Use Configuration Wizard in Context Menu >>>
+// <h>Trace clock prescaler option
+//   <e> Enable TPIU clock setup
+__TPIU_clocksetup = 1;
+// <i> Enable setup of trace source clock
+//     <o> Prescaler value
+//       <0x0-0x3FF>
+__TPIU_clockdivval = 0;
+// <i> Clock divider value for trace clock
+// <i> As source clock the CM0+ core clock is used
+// <i> Actual output TRACECLK clock frequency is CM0+ core clock divided by sum of this divider value plus 2
+// <i> For example, if CM0+ core clock is 50 MHz and divider value is 0 then TRACECLK clock frequency will be 25MHz
+//   </e>
+// </h>
+// <h>Trace Pin Setup
+// <o> TPIU Pin Location
+//   <0=> Pin Location 0 (Do not configure)
+//   <1=> Pin Location 1 (KIT_T2G-B-E-LITE like)
+//   <2=> Pin Location 1 (P22 like)
+// <i> Select TPIU pin location for your board configuration:
+// <i> - Pin Location 0 (No one pin will be configured for trace purpose)
+// <i> - Pin Location 1 (TRACECLK: P18_3, TRACEDATA0: P18_4, TRACEDATA1: P18_5, TRACEDATA2: P18_6, TRACEDATA3: P18_7)
+// <i> - Pin Location 2 (TRACECLK: P22_4, TRACEDATA0: P22_0, TRACEDATA1: P22_1, TRACEDATA2: P22_2, TRACEDATA3: P22_3)
+// <i> Default: Pin Location 0
+__TPIU_pinlocation = 1;
+// </h>
+// <<< end of configuration section >>>
