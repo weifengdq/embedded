@@ -37,8 +37,22 @@ extern "C" {
 
 #define ioss_0_port_0_pin_0_HSIOM P0_0_SCB0_UART_RX
 #define ioss_0_port_0_pin_1_HSIOM P0_1_SCB0_UART_TX
+#define ioss_0_port_0_pin_2_HSIOM P0_2_CANFD0_TTCAN_TX1
+#define ioss_0_port_0_pin_3_HSIOM P0_3_CANFD0_TTCAN_RX1
 #define ioss_0_port_2_pin_0_HSIOM P2_0_CANFD0_TTCAN_TX0
 #define ioss_0_port_2_pin_1_HSIOM P2_1_CANFD0_TTCAN_RX0
+#define ioss_0_port_3_pin_0_HSIOM P3_0_CANFD0_TTCAN_TX3
+#define ioss_0_port_3_pin_1_HSIOM P3_1_CANFD0_TTCAN_RX3
+#define ioss_0_port_6_pin_2_HSIOM P6_2_CANFD0_TTCAN_TX2
+#define ioss_0_port_6_pin_3_HSIOM P6_3_CANFD0_TTCAN_RX2
+#define ioss_0_port_14_pin_0_HSIOM P14_0_CANFD1_TTCAN_TX0
+#define ioss_0_port_14_pin_1_HSIOM P14_1_CANFD1_TTCAN_RX0
+#define ioss_0_port_17_pin_0_HSIOM P17_0_CANFD1_TTCAN_TX1
+#define ioss_0_port_17_pin_1_HSIOM P17_1_CANFD1_TTCAN_RX1
+#define ioss_0_port_18_pin_6_HSIOM P18_6_CANFD1_TTCAN_TX2
+#define ioss_0_port_18_pin_7_HSIOM P18_7_CANFD1_TTCAN_RX2
+#define ioss_0_port_19_pin_0_HSIOM P19_0_CANFD1_TTCAN_TX3
+#define ioss_0_port_19_pin_1_HSIOM P19_1_CANFD1_TTCAN_RX3
 #define ioss_0_port_21_pin_2_ANALOG P21_2_SRSS_ECO_IN
 #define ioss_0_port_21_pin_3_ANALOG P21_3_SRSS_ECO_OUT
 #define ioss_0_port_23_pin_4_HSIOM P23_4_CPUSS_SWJ_SWO_TDO
