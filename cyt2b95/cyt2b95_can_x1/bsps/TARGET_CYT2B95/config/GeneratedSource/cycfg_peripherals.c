@@ -114,8 +114,8 @@ const cy_en_canfd_fifo_config_t canfd_0_chan_0_rxFifo0Config =
 {
     .mode = CY_CANFD_FIFO_MODE_OVERWRITE,
     .watermark = 0U,
-    .numberOfFIFOElements = 8U,
-    .topPointerLogicEnabled = false,
+    .numberOfFIFOElements = 16U,
+    .topPointerLogicEnabled = true,
 };
 const cy_en_canfd_fifo_config_t canfd_0_chan_0_rxFifo1Config =
 {

@@ -810,7 +810,7 @@
                         <Param id="efid2_10_9_XidFilter7" value="0"/>
                         <Param id="efid2_10_9_XidFilter8" value="0"/>
                         <Param id="efid2_10_9_XidFilter9" value="0"/>
-                        <Param id="efid2_5_0_XidFilter0" value="0"/>
+                        <Param id="efid2_5_0_XidFilter0" value="1"/>
                         <Param id="efid2_5_0_XidFilter1" value="0"/>
                         <Param id="efid2_5_0_XidFilter10" value="0"/>
                         <Param id="efid2_5_0_XidFilter11" value="0"/>
@@ -1147,7 +1147,7 @@
                         <Param id="nonMatchingFramesExtended" value="CY_CANFD_ACCEPT_IN_RXFIFO_0"/>
                         <Param id="nonMatchingFramesStandard" value="CY_CANFD_ACCEPT_IN_RXFIFO_0"/>
                         <Param id="numberOfEXTIDFilters" value="1"/>
-                        <Param id="numberOfFifo0Elements" value="8"/>
+                        <Param id="numberOfFifo0Elements" value="16"/>
                         <Param id="numberOfFifo1Elements" value="0"/>
                         <Param id="numberOfSIDFilters" value="1"/>
                         <Param id="rejectRemoteFramesExtended" value="false"/>
@@ -1959,7 +1959,7 @@
                         <Param id="tdcEnabled" value="true"/>
                         <Param id="tdcFilterWindow" value="6"/>
                         <Param id="tdcOffset" value="6"/>
-                        <Param id="topPointerLogicEnabledFifo0" value="false"/>
+                        <Param id="topPointerLogicEnabledFifo0" value="true"/>
                         <Param id="topPointerLogicEnabledFifo1" value="false"/>
                         <Param id="txBufferDataValue" value="64"/>
                         <Param id="txCallback" value="NULL"/>
