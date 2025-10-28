@@ -7,7 +7,6 @@
 
 cy_stc_scb_uart_context_t uart0;
 uint8_t g_uart_out_data[256];
-uint8_t g_uart_rx_ring[512] = {0};
 
 void uart0_callback(uint32_t event) {}
 
@@ -26,16 +25,12 @@ int main(void) {
   if (result != CY_RSLT_SUCCESS) {
     CY_ASSERT(0);
   }
-  __enable_irq();
 
   Cy_SCB_UART_DeInit(SCB0);
   Cy_SCB_UART_Init(SCB0, &scb_0_config, &uart0);
-  Cy_SCB_UART_RegisterCallback(
-      SCB0, (cy_cb_scb_uart_handle_events_t)uart0_callback, &uart0);
-  Cy_SCB_UART_StartRingBuffer(SCB0, g_uart_rx_ring, sizeof(g_uart_rx_ring),
-                              &uart0);
   Cy_SCB_UART_Enable(SCB0);
-  NVIC_EnableIRQ((IRQn_Type)NvicMux0_IRQn);
+
+  __enable_irq();
 
   print("CYT2B95 UART Echo Example\r\n");
   // 测试整数浮点数uint64_t打印
@@ -43,7 +38,14 @@ int main(void) {
         12345678901234ULL);
 
   while (1) {
-    // Your application code here
+    // Check if there is at least one character in the RX FIFO
+    if (Cy_SCB_UART_GetNumInRxFifo(SCB0) > 0) {
+      // Read the received character
+      uint8_t rx_data = Cy_SCB_UART_Get(SCB0);
+
+      // Send the same character back to the terminal (echo)
+      Cy_SCB_UART_Put(SCB0, rx_data);
+    }
   }
 
   return 0;

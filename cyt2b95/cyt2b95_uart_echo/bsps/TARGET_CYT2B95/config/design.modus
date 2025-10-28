@@ -158,7 +158,7 @@
                 <Personality template="uart" version="3.0" instance="MCXT5d12vnc">
                     <Block location="scb[0]" locked="true"/>
                     <Parameters>
-                        <Param id="ApiMode" value="HIGH_LEVEL"/>
+                        <Param id="ApiMode" value="LOW_LEVEL"/>
                         <Param id="BaudRate" value="115200"/>
                         <Param id="BitsOrder" value="CY_SCB_UART_LSB_FIRST"/>
                         <Param id="BreakLevel" value="0"/>
