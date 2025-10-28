@@ -115,7 +115,7 @@ int can_send(canfd_frame_t *frame) {
   // 组装 TX Buffer 结构体,指针指向实际对象
   cy_stc_canfd_tx_buffer_t txBuffer = {
       .t0_f = &t0_register, .t1_f = &t1_register, .data_area_f = data};
-
+  // MEMO: Cy_CANFD_GetTxBufferStatus
   cy_en_canfd_status_t status = Cy_CANFD_UpdateAndTransmitMsgBuffer(
       CANFD0, 0, &txBuffer, can0_tx_index, &can0_context);
   can0_tx_index = (can0_tx_index + 1) % canfd_0_chan_0_config.noOfTxBuffers;
@@ -153,9 +153,9 @@ void test_can_send(void) {
   }
 }
 
-void CanfdInterruptHandler(void) {
-  Cy_CANFD_IrqHandler(CANFD0, 0, &can0_context);
-}
+// void CanfdInterruptHandler(void) {
+//   Cy_CANFD_IrqHandler(CANFD0, 0, &can0_context);
+// }
 
 int main(void) {
   cy_rslt_t result = cybsp_init();
@@ -169,18 +169,18 @@ int main(void) {
   Cy_SCB_UART_Init(SCB0, &scb_0_config, &uart0_context);
   Cy_SCB_UART_Enable(SCB0);
 
-  Cy_CANFD_DeInit(CANFD0, 0UL, &can0_context);
-  {
-    cy_stc_sysint_t irq_cfg = {
-        .intrSrc =
-            (IRQn_Type)((NvicMux3_IRQn << CY_SYSINT_INTRSRC_MUXIRQ_SHIFT) |
-                        canfd_0_interrupts0_1_IRQn),
-        .intrPriority = 2UL,
-    };
-    (void)Cy_SysInt_Init(&irq_cfg, &CanfdInterruptHandler);
-    NVIC_ClearPendingIRQ(NvicMux3_IRQn);
-    NVIC_EnableIRQ((IRQn_Type)NvicMux3_IRQn);
-  }
+  // Cy_CANFD_DeInit(CANFD0, 0UL, &can0_context);
+  // {
+  //   cy_stc_sysint_t irq_cfg = {
+  //       .intrSrc =
+  //           (IRQn_Type)((NvicMux3_IRQn << CY_SYSINT_INTRSRC_MUXIRQ_SHIFT) |
+  //                       canfd_0_interrupts0_1_IRQn),
+  //       .intrPriority = 2UL,
+  //   };
+  //   (void)Cy_SysInt_Init(&irq_cfg, &CanfdInterruptHandler);
+  //   NVIC_ClearPendingIRQ(NvicMux3_IRQn);
+  //   NVIC_EnableIRQ((IRQn_Type)NvicMux3_IRQn);
+  // }
 
   if (CY_CANFD_SUCCESS !=
       Cy_CANFD_Init(CANFD0, 0, &canfd_0_chan_0_config, &can0_context)) {
@@ -191,7 +191,61 @@ int main(void) {
 
   test_can_send();
 
+  cy_stc_canfd_r0_t r0RxBuffer;
+  cy_stc_canfd_r1_t r1RxBuffer;
+  uint32_t rxData[CY_CANFD_DATA_ELEMENTS_MAX];
+  cy_stc_canfd_rx_buffer_t rxBuffer = {/* .r0_f         */ &r0RxBuffer,
+                                       /* .r1_f         */ &r1RxBuffer,
+                                       /* .data_area_f  */ rxData};
+
   while (1) {
+    /* Checks the Rx FIFO 0 fill level */
+    if (_FLD2VAL(CANFD_CH_M_TTCAN_RXF0S_F0FL, CANFD_RXF0S(CANFD0, 0UL)) ==
+        0UL) {
+      continue;
+    }
+    if (CY_CANFD_SUCCESS !=
+        (Cy_CANFD_ExtractMsgFromRXBuffer(CANFD0, 0UL, true, 0U, &rxBuffer,
+                                         &can0_context))) {
+      continue;
+    }
+    canfd_frame_t frame;
+    // 填充 canfd_frame 结构体
+    frame.can_id = rxBuffer.r0_f->id;
+    if (rxBuffer.r0_f->xtd == CY_CANFD_XTD_EXTENDED_ID) {
+      frame.can_id |= CAN_EFF_FLAG;
+    }
+    if (rxBuffer.r0_f->rtr == CY_CANFD_RTR_REMOTE_FRAME) {
+      frame.can_id |= CAN_RTR_FLAG;
+    }
+    frame.len = can_dlc2len[rxBuffer.r1_f->dlc];
+    frame.flags = 0;
+    if (rxBuffer.r1_f->fdf == CY_CANFD_FDF_CAN_FD_FRAME) {
+      frame.flags |= CANFD_FDF;
+    }
+    if (rxBuffer.r1_f->brs) {
+      frame.flags |= CANFD_BRS;
+    }
+    // 复制数据
+    uint32_t dataWords = (frame.len + 3) / 4; // Round up to nearest word
+    for (uint32_t i = 0; i < dataWords && i < CY_CANFD_MESSAGE_DATA_BUFFER_SIZE;
+         i++) {
+      ((uint32_t *)frame.data)[i] = rxBuffer.data_area_f[i];
+    }
+    print("rx can_id: 0x%X, len: %d, flags: %s ", frame.can_id, frame.len,
+          (frame.flags & CANFD_BRS)   ? "FDBRS"
+          : (frame.flags & CANFD_FDF) ? "FD "
+                                      : "");
+    // 远程帧不再打印数据, 直接显示 remote frame
+    if (frame.can_id & CAN_RTR_FLAG) {
+      print("remote frame\n");
+      continue;
+    }
+    print("data: ");
+    for (uint32_t i = 0; i < frame.len; i++) {
+      print("%02X ", frame.data[i]);
+    }
+    print("\n");
   }
 
   return 0;
