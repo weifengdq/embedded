@@ -18,7 +18,7 @@
 - SCB0 UART(P0.0 P0.1) 调试串口通过 CH343 引出到 USB TypeC
 - 外部16MHz无源晶振, 复位按键, 用户LED, 3.3V电源指示灯, SWD调试口, IO引出等
 
-详细原理图参见板子附送的资料包. 硬件设计也可参考官方文档: [Hardware design guide for the TRAVEO™ T2G family](https://www.infineon.com/row/public/documents/10/42/infineon-an220270-hardware-design-guide-for-the-traveo-t2g-family-applicationnotes-en.pdf)
+详细原理图和源码参见板子附送的资料包, 可QQ群 1040239879 群公告网盘链接免费下载(无需购买板子), 如需购买, 可 xian yu 搜索用户 weifengdq 主页中可找到板子链接. 硬件设计也可参考官方文档: [Hardware design guide for the TRAVEO™ T2G family](https://www.infineon.com/row/public/documents/10/42/infineon-an220270-hardware-design-guide-for-the-traveo-t2g-family-applicationnotes-en.pdf)
 
 ## 开发环境
 
@@ -352,7 +352,7 @@ cmsis 和 retarget-io 替换略.
 
 重新编译, 删掉之前无用的 cyt2b95_uart_echo_Listings 和 cyt2b95_uart_echo_Objects 文件夹
 
-## CAN x1 1M+5M
+## CAN x1 1M+5M CANFD
 
 用于测试 CAN0 (P2.0 P2.1)的发送与接收, 1M 80% + 5M 75%采样点
 
@@ -546,7 +546,7 @@ CAN分析仪设置为 1M + 5M:
 
 ![image-20251029150629095](README.assets/image-20251029150629095.png)
 
-## CAN x8
+## CAN x8 8路CANFD收发测试
 
 用于测试所有8路 CANFD 的 echo(把收到的帧原封不动的再发回去), 1M 80% + 5M 75%采样点, 8路的命名和注意事项:
 
