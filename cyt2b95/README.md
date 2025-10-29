@@ -700,6 +700,8 @@ QQ 群(`嵌入式_机器人_自动驾驶交流群`): 1040239879
 
 [weifengdq/embedded: https://github.com/weifengdq/embedded](https://github.com/weifengdq/embedded), 欢迎 Star
 
+[TRAVEO™ T2G CYT2B9系列 | Infineon英飞凌官网](https://www.infineon.cn/products/microcontroller/32-bit-traveo-t2g-arm-cortex/for-body/t2g-cyt2b9)
+
 [MTB CAT1 Peripheral driver library: Getting Started](https://infineon.github.io/mtb-pdl-cat1/pdl_api_reference_manual/html/page_getting_started.html)
 
 [TRAVEO™ T2G | Traveo Documentation](https://documentation.infineon.com/traveo/index.html?_gl=1*1w3ay67*_gcl_au*MjkzNDcwOTUzLjE3NTg2OTk2Mzc.*_ga*MTY5MTc0MTQ1MC4xNzUyNzM2NTMz*_ga_KVD0BL538B*czE3NjE3MjA2MTEkbzExJGcxJHQxNzYxNzIwNjU3JGoxNCRsMCRoMTU0OTIyMzQ2NA..)
