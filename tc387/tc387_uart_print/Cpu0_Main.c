@@ -28,12 +28,92 @@
 #include "IfxCpu.h"
 #include "IfxScuWdt.h"
 #include "Ifx_Cfg_Ssw.h"
-#include <Port/Io/IfxPort_Io.h>
-#include <_PinMap/IfxPort_PinMap.h>
-#include "IfxPort.h"
 #include "Bsp.h"
+#include "IfxPort.h"
+#include "IfxAsclin_Asc.h"
+#include "IfxCpu_Irq.h"
+#include <stdarg.h>
+#include <stdio.h>
+#include <inttypes.h>
 
 IFX_ALIGN(4) IfxCpu_syncEvent cpuSyncEvent = 0;
+
+#define UART_TXBUF_SIZE 256
+#define UART_RXBUF_SIZE 256
+#define INTPRIO_ASCLIN4_TX 29
+#define INTPRIO_ASCLIN4_RX 28
+
+typedef struct
+{
+    uint8 txBuffer[UART_TXBUF_SIZE + sizeof(Ifx_Fifo) + 8];
+    uint8 rxBuffer[UART_RXBUF_SIZE + sizeof(Ifx_Fifo) + 8];
+    IfxAsclin_Asc ascHandle;
+} App_AsclinAsc;
+App_AsclinAsc uart4;
+
+IFX_INTERRUPT(asclin4TxISR, 0, INTPRIO_ASCLIN4_TX);
+void asclin4TxISR(void)
+{
+    IfxAsclin_Asc_isrTransmit(&uart4.ascHandle);
+}
+
+IFX_INTERRUPT(asclin4RxISR, 0, INTPRIO_ASCLIN4_RX);
+void asclin4RxISR(void)
+{
+    IfxAsclin_Asc_isrReceive(&uart4.ascHandle);
+}
+
+void init_uart4(uint32 baud)
+{
+    /* Initialize an instance of IfxAsclin_Asc_Config with default values */
+    IfxAsclin_Asc_Config ascConfig;
+    IfxAsclin_Asc_initModuleConfig(&ascConfig, &MODULE_ASCLIN4);
+
+    /* Set the desired baud rate, 200MHz ASCLINF Freq */
+    ascConfig.baudrate.baudrate = (float32)baud; // explicit cast avoids loss when storing in float field
+    ascConfig.baudrate.oversampling = IfxAsclin_OversamplingFactor_16;
+    ascConfig.bitTiming.medianFilter = IfxAsclin_SamplesPerBit_three;
+    ascConfig.bitTiming.samplePointPosition = IfxAsclin_SamplePointPosition_12;
+
+    /* ISR priorities and interrupt target */
+    ascConfig.interrupt.txPriority = INTPRIO_ASCLIN4_TX;
+    ascConfig.interrupt.rxPriority = INTPRIO_ASCLIN4_RX;
+    ascConfig.interrupt.typeOfService = IfxCpu_Irq_getTos(IfxCpu_getCoreIndex());
+
+    /* FIFO configuration */
+    ascConfig.txBuffer = &uart4.txBuffer;
+    ascConfig.txBufferSize = UART_TXBUF_SIZE;
+    ascConfig.rxBuffer = &uart4.rxBuffer;
+    ascConfig.rxBufferSize = UART_RXBUF_SIZE;
+
+    /* Pin configuration */
+    const IfxAsclin_Asc_Pins pins =
+    {
+        NULL_PTR,       IfxPort_InputMode_pullUp,     /* CTS pin not used */
+        &IfxAsclin4_RXA_P00_12_IN,   IfxPort_InputMode_pullUp,     /* RX pin           */
+        NULL_PTR,       IfxPort_OutputMode_pushPull,  /* RTS pin not used */
+        &IfxAsclin4_TX_P00_9_OUT,   IfxPort_OutputMode_pushPull,  /* TX pin           */
+        IfxPort_PadDriver_cmosAutomotiveSpeed4
+    };
+    ascConfig.pins = &pins;
+
+    IfxAsclin_Asc_initModule(&uart4.ascHandle, &ascConfig); /* Initialize module with above parameters */
+}
+
+// print手动实现
+void print(const char* fmt, ...)
+{
+    char buffer[256];
+    va_list args;
+    va_start(args, fmt);
+    int len = vsnprintf(buffer, sizeof(buffer), fmt, args);
+    va_end(args);
+    if (len > 0)
+    {
+        Ifx_SizeT wlen = (Ifx_SizeT)len;
+        IfxAsclin_Asc_write(&uart4.ascHandle, (uint8*)buffer, &wlen, TIME_INFINITE);
+    }
+}
 
 void core0_main(void)
 {
@@ -49,23 +129,20 @@ void core0_main(void)
     IfxCpu_emitEvent(&cpuSyncEvent);
     IfxCpu_waitEvent(&cpuSyncEvent, 1);
 
-    // LED
-    const IfxPort_Io_ConfigPin configLedPin[] = {
-        {&IfxPort_P02_3, IfxPort_Mode_outputPushPullGeneral, IfxPort_PadDriver_cmosAutomotiveSpeed1}, // LED1
-        {&IfxPort_P02_2, IfxPort_Mode_outputPushPullGeneral, IfxPort_PadDriver_cmosAutomotiveSpeed1}, // LED2
-    };
-    const IfxPort_Io_Config confLed = {
-        sizeof(configLedPin)/sizeof(IfxPort_Io_ConfigPin),
-        (IfxPort_Io_ConfigPin *)configLedPin
-    };
-    IfxPort_Io_initModule(&confLed);
-    IfxPort_setPinLow(&MODULE_P02, 3); // LED1 off
-    IfxPort_setPinLow(&MODULE_P02, 2); // LED2 off
+    init_uart4(4000000); /* 设置高波特率，4Mbps，可按需要修改 */
+    const char welcome[] = "UART Echo Advanced Ready\r\n";
+    {
+        Ifx_SizeT wlen = (Ifx_SizeT)(sizeof(welcome) - 1);
+        IfxAsclin_Asc_write(&uart4.ascHandle, (uint8*)welcome, &wlen, TIME_NULL);
+    }
+
+    // print 测试, 字符串, 整数, 浮点数, uint64
+    print("Hello, UART4!\n");
+    print("Integer: %d\n", 123);
+    print("Float: %.2f\n", 3.14);
+    print("Unsigned 64-bit: %" PRIu64 "\n", (uint64)1234567890123456789ULL);
     
     while(1)
     {
-        waitTime(IfxStm_getTicksFromMilliseconds(BSP_DEFAULT_TIMER, 500));  // wait 500ms
-        IfxPort_togglePin(&MODULE_P02, 3); // toggle LED1
-        IfxPort_togglePin(&MODULE_P02, 2); // toggle LED2
     }
 }
