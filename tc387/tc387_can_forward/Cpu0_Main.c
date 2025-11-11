@@ -39,7 +39,7 @@ IFX_ALIGN(4) IfxCpu_syncEvent cpuSyncEvent = 0;
 #define STD_FILTER_NUM 1
 #define EXT_FILTER_NUM 1
 
-// channel 0~7
+// channel 0~11
 typedef enum {
   CAN0 = 0,
   CAN1,
@@ -110,7 +110,7 @@ typedef struct {
 mcmcanType can[2];
 
 /* 记录物理 CAN 模块是否已经初始化，避免重复调用 IfxCan_Can_initModule */
-static boolean g_canModuleInitialized[2] = {FALSE, FALSE};
+static boolean g_canModuleInitialized[3] = {FALSE, FALSE, FALSE};
 
 #define CAN_RX_ISR(x, tos, priority)                                           \
   IFX_INTERRUPT(isr_canrx_##x, tos, priority);                                 \
@@ -177,9 +177,9 @@ void can0_rx_callback(canChannel channel, IfxCan_Message *msg) {
 
 void init_can(mcmcanType *dev, canChannel channel, uint16 npre, uint8 ntseg1,
               uint8 ntseg2, uint16 dpre, uint8 dtseg1, uint8 dtseg2) {
-  /* 根据 channel 选择物理模块: 0-3 -> MODULE_CAN0, 4-7 -> MODULE_CAN1 */
-  uint8 group = (channel < CAN4) ? 0 : 1;
-  Ifx_CAN *modulePtr = (group == 0) ? &MODULE_CAN0 : &MODULE_CAN1;
+  /* 根据 channel 选择物理模块: 0-3 -> MODULE_CAN0, 4-7 -> MODULE_CAN1, 8-11 -> MODULE_CAN2 */
+  uint8 group = (channel < CAN4) ? 0 : (channel < CAN8) ? 1 : 2;
+  Ifx_CAN *modulePtr = (group == 0) ? &MODULE_CAN0 : (group == 1) ? &MODULE_CAN1 : &MODULE_CAN2;
 
   /* 只对同一物理 CAN 模块初始化一次，防止后续节点重复 initModule 影响已配置节点 */
   if (!g_canModuleInitialized[group]) {
@@ -188,7 +188,7 @@ void init_can(mcmcanType *dev, canChannel channel, uint16 npre, uint8 ntseg1,
     g_canModuleInitialized[group] = TRUE;
   } else {
     /* 复用已初始化模块句柄（使用组内第一个节点的 module 结构体） */
-    dev->module = can[(group == 0) ? CAN0 : CAN4].module;
+    dev->module = can[(group == 0) ? CAN0 : (group == 1) ? CAN4 : CAN8].module;
   }
 
   IfxCan_Can_initNodeConfig(&dev->nodeConfig, &dev->module);
@@ -273,8 +273,10 @@ void init_can(mcmcanType *dev, canChannel channel, uint16 npre, uint8 ntseg1,
   IfxCan_Node_disableConfigurationChange(dev->node.node);
 
   /* Initialize CAN filter */
-  IfxCan_Can_setStandardFilter(&dev->node, &can_std_default_filter[0][0]);
-  IfxCan_Can_setExtendedFilter(&dev->node, &can_ext_default_filter[0][0]);
+  can_std_default_filter[channel][0] = can_std_default_filter[0][0];
+  can_ext_default_filter[channel][0] = can_ext_default_filter[0][0];
+  IfxCan_Can_setStandardFilter(&dev->node, &can_std_default_filter[channel][0]);
+  IfxCan_Can_setExtendedFilter(&dev->node, &can_ext_default_filter[channel][0]);
 
   /* Initialize CAN message */
   IfxCan_Can_initMessage(&dev->txMsg);
@@ -298,15 +300,15 @@ void init_can(mcmcanType *dev, canChannel channel, uint16 npre, uint8 ntseg1,
 void init_can_simple(mcmcanType *dev, canChannel channel, uint32 baudRate,
                      float samplePoint, uint32 fastBaudRate,
                      float fastSamplePoint) {
-  uint8 group = (channel < CAN4) ? 0 : 1;
-  Ifx_CAN *modulePtr = (group == 0) ? &MODULE_CAN0 : &MODULE_CAN1;
+  uint8 group = (channel < CAN4) ? 0 : (channel < CAN8) ? 1 : 2;
+  Ifx_CAN *modulePtr = (group == 0) ? &MODULE_CAN0 : (group == 1) ? &MODULE_CAN1 : &MODULE_CAN2;
 
   if (!g_canModuleInitialized[group]) {
     IfxCan_Can_initModuleConfig(&dev->config, modulePtr);
     IfxCan_Can_initModule(&dev->module, &dev->config);
     g_canModuleInitialized[group] = TRUE;
   } else {
-    dev->module = can[(group == 0) ? CAN0 : CAN4].module;
+    dev->module = can[(group == 0) ? CAN0 : (group == 1) ? CAN4 : CAN8].module;
   }
 
   IfxCan_Can_initNodeConfig(&dev->nodeConfig, &dev->module);
@@ -396,8 +398,10 @@ void init_can_simple(mcmcanType *dev, canChannel channel, uint32 baudRate,
   IfxCan_Node_disableConfigurationChange(dev->node.node);
 
   /* Initialize CAN filter */
-  IfxCan_Can_setStandardFilter(&dev->node, &can_std_default_filter[0][0]);
-  IfxCan_Can_setExtendedFilter(&dev->node, &can_ext_default_filter[0][0]);
+  can_std_default_filter[channel][0] = can_std_default_filter[0][0];
+  can_ext_default_filter[channel][0] = can_ext_default_filter[0][0];
+  IfxCan_Can_setStandardFilter(&dev->node, &can_std_default_filter[channel][0]);
+  IfxCan_Can_setExtendedFilter(&dev->node, &can_ext_default_filter[channel][0]);
 
   /* Initialize CAN message */
   IfxCan_Can_initMessage(&dev->txMsg);
