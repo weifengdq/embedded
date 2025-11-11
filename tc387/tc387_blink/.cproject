@@ -18,7 +18,7 @@
 							<option id="com.tasking.ctc.cpu.243536286" name="Processor" superClass="com.tasking.ctc.cpu" value="tc38x" valueType="string"/>
 							<option id="com.tasking.ctc.package.1187343268" name="Device package" superClass="com.tasking.ctc.package" value="${taskingPackage}" valueType="string"/>
 							<targetPlatform archList="all" binaryParser="com.tasking.managedbuilder.TASKING_ELF" id="com.infineon.aurix.buildsystem.managed.tasking.targetPlatform.953930216" isAbstract="false" osList="all" superClass="com.infineon.aurix.buildsystem.managed.tasking.targetPlatform"/>
-							<builder buildPath="${workspace_loc:/tc387_blink}/TriCore Debug (TASKING)" id="com.infineon.aurix.buildsystem.managed.tasking.builder.1262890662" keepEnvironmentInBuildfile="false" name="Gnu Make Builder" superClass="com.infineon.aurix.buildsystem.managed.tasking.builder"/>
+							<builder buildPath="${workspace_loc:/tc387_can_forward}/TriCore Debug (TASKING)" id="com.infineon.aurix.buildsystem.managed.tasking.builder.1262890662" keepEnvironmentInBuildfile="false" name="Gnu Make Builder" superClass="com.infineon.aurix.buildsystem.managed.tasking.builder"/>
 							<tool id="com.infineon.aurix.buildsystem.managed.tool.c.compiler.tasking.debug.1066590283" name="TASKING C/C++ Compiler" superClass="com.infineon.aurix.buildsystem.managed.tool.c.compiler.tasking.debug">
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.infineon.aurix.buildsystem.managed.c.compiler.tasking.include.678428955" name="Include paths (-I)" superClass="com.infineon.aurix.buildsystem.managed.c.compiler.tasking.include" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/}&quot;"/>
