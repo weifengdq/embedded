@@ -38,7 +38,7 @@
 
 #define MEM_ALIGNMENT           4                   /* Set memory alignment to 4 byte (32-bit machine)                      */
 #define MEM_SIZE                (25 * 1024)         /* Size of the Heap                                                     */
-#define LWIP_DHCP               1                   /* Enable DHCP protocol                                                 */
+#define LWIP_DHCP               0                   /* Enable DHCP protocol                                                 */
 #define LWIP_NETCONN            0                   /* Disable Netconn API                                                  */
 #define LWIP_SOCKET             0                   /* Disable the Socket API                                               */
 #define SYS_LIGHTWEIGHT_PROT    0                   /* Disable inter-task protection                                        */
