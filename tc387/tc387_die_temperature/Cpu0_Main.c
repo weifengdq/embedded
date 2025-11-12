@@ -35,6 +35,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <inttypes.h>
+#include "IfxDts_Dts.h"
+#include "Bsp.h"
 
 IFX_ALIGN(4) IfxCpu_syncEvent cpuSyncEvent = 0;
 
@@ -115,6 +117,34 @@ void print(const char* fmt, ...)
     }
 }
 
+
+#define ISR_PRIORITY_DTS        4
+#define MIN_TEMP_LIMIT          -35     /* Lower temperature limit              */
+#define MAX_TEMP_LIMIT          150     /* Upper temperature limit              */
+volatile uint8 g_isMeasureAvailable = FALSE;     /* Variable to store availability of new measurements */
+
+IFX_INTERRUPT(DTS_ISR, 0, ISR_PRIORITY_DTS);
+void DTS_ISR(void)
+{
+    g_isMeasureAvailable = TRUE; /* Notify the system that a new measurement is ready */
+}
+
+/* Function to initialize the Die Temperature Sensor */
+void initDieTemperatureSensor(void)
+{
+    /* Get the default configuration */
+    IfxDts_Dts_Config dtsConf;
+    IfxDts_Dts_initModuleConfig(&dtsConf);              /* Initialize the structure with default values              */
+
+    dtsConf.lowerTemperatureLimit = MIN_TEMP_LIMIT;     /* Set the lower temperature limit                           */
+    dtsConf.upperTemperatureLimit = MAX_TEMP_LIMIT;     /* Set the upper temperature limit                           */
+    dtsConf.isrPriority = ISR_PRIORITY_DTS;             /* Set the interrupt priority for new measurement events     */
+    dtsConf.isrTypeOfService = IfxSrc_Tos_cpu0;         /* Set the service provider responsible for handling
+                                                         * the interrupts                                            */
+    IfxDts_Dts_initModule(&dtsConf);                    /* Initialize the DTS with the given configuration           */
+}
+
+
 void core0_main(void)
 {
     IfxCpu_enableInterrupts();
@@ -129,20 +159,19 @@ void core0_main(void)
     IfxCpu_emitEvent(&cpuSyncEvent);
     IfxCpu_waitEvent(&cpuSyncEvent, 1);
 
-    init_uart4(4000000); /* 设置高波特率，4Mbps，可按需要修改 */
-    const char welcome[] = "UART Echo Advanced Ready\r\n";
-    {
-        Ifx_SizeT wlen = (Ifx_SizeT)(sizeof(welcome) - 1);
-        IfxAsclin_Asc_write(&uart4.ascHandle, (uint8*)welcome, &wlen, TIME_NULL);
-    }
-
-    // print 测试, 字符串, 整数, 浮点数, uint64
-    print("Hello, UART4!\n");
-    print("Integer: %d\n", 123);
-    print("Float: %.2f\n", 3.14);
-    print("Unsigned 64-bit: %" PRIu64 "\n", (uint64)1234567890123456789ULL);
+    init_uart4(2000000); /* 设置高波特率，2Mbps，可按需要修改 */
+    initDieTemperatureSensor();
     
     while(1)
     {
+        if (g_isMeasureAvailable == TRUE)
+        {
+            // int16 temperatureValue = IfxDts_Dts_getTemperature(); /* Get the latest temperature measurement */
+            // print("Die Temperature: %" PRId16 " °C\r\n", temperatureValue);
+            float32 temperature = IfxDts_Dts_getTemperatureCelsius();
+            print("Die Temperature: %.2f degC\r\n", temperature);
+            g_isMeasureAvailable = FALSE; /* Reset the flag */
+        }
+        waitTime(IfxStm_getTicksFromMilliseconds(BSP_DEFAULT_TIMER, 500)); /* Wait for 500 milliseconds */
     }
 }
