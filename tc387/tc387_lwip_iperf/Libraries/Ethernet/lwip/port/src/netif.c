@@ -181,25 +181,31 @@ static void low_level_init(netif_t *netif)
         GethConfig.mac.macAddress[5] = netif->hwaddr[5];
 
         // MTL configuration
-        GethConfig.mtl.numOfTxQueues = 1;
-        GethConfig.mtl.numOfRxQueues = 1;
-        GethConfig.mtl.txQueue[0].txQueueSize = IfxGeth_QueueSize_2560Bytes;
-        GethConfig.mtl.txQueue[0].storeAndForward = TRUE;
-        GethConfig.mtl.rxQueue[0].rxQueueSize = IfxGeth_QueueSize_2560Bytes;
+    GethConfig.mtl.numOfTxQueues = 1;
+    GethConfig.mtl.numOfRxQueues = 1;
+    GethConfig.mtl.txQueue[0].txQueueSize = IfxGeth_QueueSize_8192Bytes;
+    GethConfig.mtl.txQueue[0].storeAndForward = TRUE;
+    GethConfig.mtl.rxQueue[0].rxQueueSize = IfxGeth_QueueSize_8192Bytes;
         GethConfig.mtl.rxQueue[0].rxDmaChannelMap = IfxGeth_RxDmaChannel_0;
         GethConfig.mtl.rxQueue[0].storeAndForward = TRUE;
 
         GethConfig.dma.numOfTxChannels = 1;
         GethConfig.dma.numOfRxChannels = 1;
+    GethConfig.dma.addressAlignedBeatsEnabled = TRUE;
+    GethConfig.dma.fixedBurstEnabled = FALSE;
+    GethConfig.dma.mixedBurstEnabled = TRUE;
         GethConfig.dma.txChannel[0].channelId = IfxGeth_TxDmaChannel_0;
         GethConfig.dma.txChannel[0].txDescrList = (IfxGeth_TxDescrList *)&IfxGeth_Eth_txDescrList[0];
         GethConfig.dma.txChannel[0].txBuffer1StartAddress = (uint32 *)&channel0TxBuffer1[0][0]; // user buffer
-        GethConfig.dma.txChannel[0].txBuffer1Size = IFXGETH_MAX_TX_BUFFER_SIZE; // used to calculate the next descriptor  buffer offset
+    GethConfig.dma.txChannel[0].txBuffer1Size = IFXGETH_MAX_TX_BUFFER_SIZE; // used to calculate the next descriptor  buffer offset
+    GethConfig.dma.txChannel[0].maxBurstLength = IfxGeth_DmaBurstLength_32;
+    GethConfig.dma.txChannel[0].enableOSF = TRUE;
 
         GethConfig.dma.rxChannel[0].channelId = IfxGeth_RxDmaChannel_0;
         GethConfig.dma.rxChannel[0].rxDescrList = (IfxGeth_RxDescrList *)&IfxGeth_Eth_rxDescrList[0];
         GethConfig.dma.rxChannel[0].rxBuffer1StartAddress = (uint32 *)&channel0RxBuffer1[0][0]; // user buffer
-        GethConfig.dma.rxChannel[0].rxBuffer1Size = IFXGETH_MAX_RX_BUFFER_SIZE; // user defined variable
+    GethConfig.dma.rxChannel[0].rxBuffer1Size = IFXGETH_MAX_RX_BUFFER_SIZE; // user defined variable
+    GethConfig.dma.rxChannel[0].maxBurstLength = IfxGeth_DmaBurstLength_32;
 
         IfxSrc_Tos gethIsrProvider;
 

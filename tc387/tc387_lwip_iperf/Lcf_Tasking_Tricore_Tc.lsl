@@ -26,9 +26,9 @@
  * IN THE SOFTWARE.
  *********************************************************************************************************************/
  
-#define LCF_CSA0_SIZE 8k
-#define LCF_USTACK0_SIZE 2k
-#define LCF_ISTACK0_SIZE 1k
+#define LCF_CSA0_SIZE 16k
+#define LCF_USTACK0_SIZE 8k
+#define LCF_ISTACK0_SIZE 4k
 
 #define LCF_CSA1_SIZE 8k
 #define LCF_USTACK1_SIZE 2k
@@ -42,7 +42,7 @@
 #define LCF_USTACK3_SIZE 2k
 #define LCF_ISTACK3_SIZE 1k
 
-#define LCF_HEAP_SIZE  4k
+#define LCF_HEAP_SIZE  16k
 
 #define LCF_CPU0 0
 #define LCF_CPU1 1

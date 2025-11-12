@@ -48,6 +48,14 @@
 //________________________________________________________________________________________
 // INCLUDES
 
+#ifndef IFXGETH_MAX_TX_DESCRIPTORS
+#define IFXGETH_MAX_TX_DESCRIPTORS 32
+#endif
+
+#ifndef IFXGETH_MAX_RX_DESCRIPTORS
+#define IFXGETH_MAX_RX_DESCRIPTORS 32
+#endif
+
 #include "lwip/opt.h"
 #include "lwip/def.h"
 #include "lwip/mem.h"
