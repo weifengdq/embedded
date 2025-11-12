@@ -130,7 +130,7 @@ void core0_main(void)
     IfxCpu_waitEvent(&cpuSyncEvent, 1);
 
     init_uart4(4000000); /* 设置高波特率，4Mbps，可按需要修改 */
-    const char welcome[] = "UART Echo Advanced Ready\r\n";
+    const char welcome[] = "UART Print Advanced Ready\r\n";
     {
         Ifx_SizeT wlen = (Ifx_SizeT)(sizeof(welcome) - 1);
         IfxAsclin_Asc_write(&uart4.ascHandle, (uint8*)welcome, &wlen, TIME_NULL);
