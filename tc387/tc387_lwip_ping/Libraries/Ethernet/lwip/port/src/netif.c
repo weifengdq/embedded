@@ -94,7 +94,7 @@
 #include "IfxGeth_Eth.h"
 #include "Ifx_Lwip.h"
 #include "Ifx_Netif.h"
-#include "IfxGeth_Phy_Dp83825i.h"
+#include "IfxGeth_Phy_Rtl8211f.h"
 #include "Configuration.h"
 #include <string.h>
 
@@ -114,17 +114,23 @@ struct ethernetif
     /* Add whatever per-interface state that is needed here. */
 };
 
-/* pin configuration DP83825I*/
-const IfxGeth_Eth_RmiiPins rmii_pins = {
-                                   .crsDiv = &ETH_CRSDIV_PIN,   /* CRSDIV */
-                                   .refClk = &ETH_REFCLK_PIN,   /* REFCLK */
-                                   .rxd0 = &ETH_RXD0_PIN,       /* RXD0 */
-                                   .rxd1 = &ETH_RXD1_PIN,       /* RXD1 */
-                                   .mdc = &ETH_MDC_PIN,         /* MDC */
-                                   .mdio = &ETH_MDIO_PIN,       /* MDIO */
+/* pin configuration RTL8211F */
+const IfxGeth_Eth_RgmiiPins rtl8211f_pins = {
+                                   .txClk = &ETH_TXCLK_PIN,     /* TXCLK */
                                    .txd0 = &ETH_TXD0_PIN,       /* TXD0 */
                                    .txd1 = &ETH_TXD1_PIN,       /* TXD1 */
-                                   .txEn = &ETH_TXEN_PIN        /* TXEN */
+                                   .txd2 = &ETH_TXD2_PIN,       /* TXD2 */
+                                   .txd3 = &ETH_TXD3_PIN,       /* TXD3 */
+		                           .txCtl = &ETH_TXCTL_PIN,     /* TXCTL */
+		                           .rxClk = &ETH_RXCLK_PIN,     /* RXCLK */
+                                   .rxd0 = &ETH_RXD0_PIN,       /* RXD0 */
+								   .rxd1 = &ETH_RXD1_PIN,       /* RXD1 */
+								   .rxd2 = &ETH_RXD2_PIN,       /* RXD2 */
+								   .rxd3 = &ETH_RXD3_PIN,       /* RXD3 */
+								   .rxCtl = &ETH_RXCTL_PIN,     /* RXCTL */
+                                   .mdc = &ETH_MDC_PIN,         /* MDC */
+                                   .mdio = &ETH_MDIO_PIN,       /* MDIO */
+		                           .grefClk = &ETH_GREFCLK_PIN  /* GREFCLK */
 };
 
 /**
@@ -161,10 +167,10 @@ static void low_level_init(netif_t *netif)
         IfxGeth_Eth_Config GethConfig;
 
         IfxGeth_Eth_initModuleConfig(&GethConfig, &MODULE_GETH);
-        // this is our DP83825I
-        GethConfig.phyInterfaceMode = IfxGeth_PhyInterfaceMode_rmii;
-        GethConfig.pins.rmiiPins = &rmii_pins;
-        GethConfig.mac.lineSpeed = IfxGeth_LineSpeed_100Mbps;
+        // this is our RTL8211F
+        GethConfig.phyInterfaceMode = IfxGeth_PhyInterfaceMode_rgmii;
+        GethConfig.pins.rgmiiPins = &rtl8211f_pins;
+        GethConfig.mac.lineSpeed = IfxGeth_LineSpeed_1000Mbps;
         // MAC core configuration
         GethConfig.mac.loopbackMode = IfxGeth_LoopbackMode_disable;
         GethConfig.mac.macAddress[0] = netif->hwaddr[0];
@@ -207,47 +213,64 @@ static void low_level_init(netif_t *netif)
         GethConfig.dma.rxInterrupt[0].priority = ISR_PRIORITY_GETH_RX;    // priority
         GethConfig.dma.rxInterrupt[0].provider = gethIsrProvider;
 
-        // initialize the module
-        // make sure that the connected phy is also in the selected mode
-        // important for PEF7071 on some boards waked up in RGMII mode
-        // our reset will not work in this case
-        // we was doing this in our main function where we get the ID's to detect the phy
-        IfxGeth_Eth_initModule(ethernetif, &GethConfig);
-
-        /* We get the ID of Ethernet Phy do determine the board version, also needed for SCR */
-        IfxPort_setPinModeOutput(ETH_MDC_PIN.pin.port, ETH_MDC_PIN.pin.pinIndex, IfxPort_OutputMode_pushPull, ETH_MDC_PIN.select);
-        GETH_GPCTL.B.ALTI0  = ETH_MDIO_PIN.inSelect;
-
-        // initialize the PHY
-        IfxGeth_Eth_Phy_Dp83825i_init();
-
-        // and enable transmitter/receiver
-        IfxGeth_Eth_startTransmitters(ethernetif, 1);
-        IfxGeth_Eth_startReceivers(ethernetif, 1);
-
-        // The ETH is ready for use now!
-        /* we set the LINK_UP flag if we have a valid link */
-        if (GETH_MAC_PHYIF_CONTROL_STATUS.B.LNKSTS == 1)
+    	/* first we reset our phy manually, to make sure that the phy is ready when we init our module */
         {
-            // we have a valid link
-            netif->flags |= NETIF_FLAG_LINK_UP;
-            // we set the correct duplexMode
-            if (GETH_MAC_PHYIF_CONTROL_STATUS.B.LNKMOD == 1)
-                IfxGeth_mac_setDuplexMode(ethernetif->gethSFR, IfxGeth_DuplexMode_fullDuplex);
-            else
-                IfxGeth_mac_setDuplexMode(ethernetif->gethSFR, IfxGeth_DuplexMode_halfDuplex);
-            // we set the correct speed
-            if (GETH_MAC_PHYIF_CONTROL_STATUS.B.LNKSPEED == 0)
-                // 10MBit speed
-                IfxGeth_mac_setLineSpeed(ethernetif->gethSFR, IfxGeth_LineSpeed_10Mbps);
-            else
-                if (GETH_MAC_PHYIF_CONTROL_STATUS.B.LNKSPEED == 1)
-                    // 100MBit speed
-                    IfxGeth_mac_setLineSpeed(ethernetif->gethSFR, IfxGeth_LineSpeed_100Mbps);
-                else
-                    // 1000MBit speed
-                    IfxGeth_mac_setLineSpeed(ethernetif->gethSFR, IfxGeth_LineSpeed_1000Mbps);
+        	IfxGeth_enableModule(&MODULE_GETH);
+        	IfxPort_setPinModeOutput(ETH_MDC_PIN.pin.port, ETH_MDC_PIN.pin.pinIndex, IfxPort_OutputMode_pushPull, ETH_MDC_PIN.select);
+            GETH_GPCTL.B.ALTI0  = ETH_MDIO_PIN.inSelect;
+
+            while (GETH_MAC_MDIO_ADDRESS.B.GB) {};
+            // first we wait that we are able to communicate with the Phy
+            do
+            {
+            	GETH_MAC_MDIO_ADDRESS.U = (0 << 21) | (0 << 16) | (0 << 8) | (3 << 2) | (1 << 0);
+                while (GETH_MAC_MDIO_ADDRESS.B.GB) {};
+            } while (GETH_MAC_MDIO_DATA.U & 0x8000);                                                      // wait for reset to finish
+            // reset PHY
+            // put data
+        	GETH_MAC_MDIO_DATA.U = 0x8000;
+            GETH_MAC_MDIO_ADDRESS.U = (0 << 21) | (0 << 16) | (0 << 8) |  (1 << 2) | (1 << 0);
+            while (GETH_MAC_MDIO_ADDRESS.B.GB) {};
+
+            do
+            {
+            	GETH_MAC_MDIO_ADDRESS.U = (0 << 21) | (0 << 16) | (0 << 8) | (3 << 2) | (1 << 0);
+                while (GETH_MAC_MDIO_ADDRESS.B.GB) {};
+            } while (GETH_MAC_MDIO_DATA.U & 0x8000);                                                      // wait for reset to finish
         }
+
+        // initialize the module
+    	IfxGeth_Eth_initModule(ethernetif, &GethConfig);
+
+   		IfxGeth_Eth_Phy_Rtl8211f_init();
+
+    	// and enable transmitter/receiver
+    	IfxGeth_Eth_startTransmitters(ethernetif, 1);
+    	IfxGeth_Eth_startReceivers(ethernetif, 1);
+
+    	// The ETH is ready for use now!
+        /* we set the LINK_UP flag if we have a valid link */
+    	if (GETH_MAC_PHYIF_CONTROL_STATUS.B.LNKSTS == 1)
+    	{
+    		// we have a valid link
+    		netif->flags |= NETIF_FLAG_LINK_UP;
+    		// we set the correct duplexMode
+    		if (GETH_MAC_PHYIF_CONTROL_STATUS.B.LNKMOD == 1)
+    			IfxGeth_mac_setDuplexMode(ethernetif->gethSFR, IfxGeth_DuplexMode_fullDuplex);
+    		else
+    			IfxGeth_mac_setDuplexMode(ethernetif->gethSFR, IfxGeth_DuplexMode_halfDuplex);
+    		// we set the correct speed
+    		if (GETH_MAC_PHYIF_CONTROL_STATUS.B.LNKSPEED == 0)
+    			// 10MBit speed
+    			IfxGeth_mac_setLineSpeed(ethernetif->gethSFR, IfxGeth_LineSpeed_10Mbps);
+    		else
+        		if (GETH_MAC_PHYIF_CONTROL_STATUS.B.LNKSPEED == 1)
+        			// 100MBit speed
+        			IfxGeth_mac_setLineSpeed(ethernetif->gethSFR, IfxGeth_LineSpeed_100Mbps);
+        		else
+        			// 1000MBit speed
+        			IfxGeth_mac_setLineSpeed(ethernetif->gethSFR, IfxGeth_LineSpeed_1000Mbps);
+    	}
     }
 }
 

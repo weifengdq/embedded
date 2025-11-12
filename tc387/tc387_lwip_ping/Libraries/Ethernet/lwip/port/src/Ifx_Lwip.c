@@ -51,7 +51,7 @@
 #include "Ifx_Lwip.h"
 #include "lwipopts.h"
 #include "Ifx_Netif.h"
-#include "IfxGeth_Phy_Dp83825i.h"
+#include "IfxGeth_Phy_Rtl8211f.h"
 #include "Configuration.h"
 #include <string.h>
 #include <stdarg.h>
@@ -280,66 +280,66 @@ void Ifx_Lwip_pollTimerFlags(void)
 #if LWIP_DHCP
     if (timerFlags & IFX_LWIP_FLAG_DHCP_COARSE)
     {
-    	/* only if we have a link we will check the dhcp */
-    	if (g_Lwip.netif.flags & NETIF_FLAG_LINK_UP)
-    		dhcp_coarse_tmr();
+        /* only if we have a link we will check the dhcp */
+        if (g_Lwip.netif.flags & NETIF_FLAG_LINK_UP)
+            dhcp_coarse_tmr();
     }
 
     if (timerFlags & IFX_LWIP_FLAG_DHCP_FINE)
     {
-    	/* only if we have a link we will check the dhcp */
-    	if (g_Lwip.netif.flags & NETIF_FLAG_LINK_UP)
-    		dhcp_fine_tmr();
+        /* only if we have a link we will check the dhcp */
+        if (g_Lwip.netif.flags & NETIF_FLAG_LINK_UP)
+            dhcp_fine_tmr();
     }
 #endif
 
     if (timerFlags & IFX_LWIP_FLAG_TCP_FAST)
     {
-    	/* only if we have a link we will check the tcp */
-    	if (g_Lwip.netif.flags & NETIF_FLAG_LINK_UP)
-    		tcp_fasttmr();
+        /* only if we have a link we will check the tcp */
+        if (g_Lwip.netif.flags & NETIF_FLAG_LINK_UP)
+            tcp_fasttmr();
     }
 
     if (timerFlags & IFX_LWIP_FLAG_TCP_SLOW)
     {
-    	/* only if we have a link we will check the tcp */
-    	if (g_Lwip.netif.flags & NETIF_FLAG_LINK_UP)
-    		tcp_slowtmr();
+        /* only if we have a link we will check the tcp */
+        if (g_Lwip.netif.flags & NETIF_FLAG_LINK_UP)
+            tcp_slowtmr();
     }
 
     if (timerFlags & IFX_LWIP_FLAG_ARP)
     {
-    	/* only if we have a link we will check the arp */
-    	if (g_Lwip.netif.flags & NETIF_FLAG_LINK_UP)
-    		etharp_tmr();
+        /* only if we have a link we will check the arp */
+        if (g_Lwip.netif.flags & NETIF_FLAG_LINK_UP)
+            etharp_tmr();
     }
 
     if (timerFlags & IFX_LWIP_FLAG_LINK)
     {
         Ifx_GETH_MAC_PHYIF_CONTROL_STATUS ctrl_status;
-		ctrl_status.U = IfxGeth_Eth_Phy_Dp83825i_link_status();
-    	if (ctrl_status.B.LNKSTS == 0)
-    		netif_set_link_down(&g_Lwip.netif);
-    	else {
-    		IfxGeth_Eth *ethernetif = g_Lwip.netif.state;
-    		// we set the correct duplexMode
-    		if (ctrl_status.B.LNKMOD == 1)
-    			IfxGeth_mac_setDuplexMode(ethernetif->gethSFR, IfxGeth_DuplexMode_fullDuplex);
-    		else
-    			IfxGeth_mac_setDuplexMode(ethernetif->gethSFR, IfxGeth_DuplexMode_halfDuplex);
-    		// we set the correct speed
-    		if (ctrl_status.B.LNKSPEED == 0)
-    			// 10MBit speed
-    			IfxGeth_mac_setLineSpeed(ethernetif->gethSFR, IfxGeth_LineSpeed_10Mbps);
-    		else
-        		if (ctrl_status.B.LNKSPEED == 1)
-        			// 100MBit speed
-        			IfxGeth_mac_setLineSpeed(ethernetif->gethSFR, IfxGeth_LineSpeed_100Mbps);
-        		else
-        			// 1000MBit speed
-        			IfxGeth_mac_setLineSpeed(ethernetif->gethSFR, IfxGeth_LineSpeed_1000Mbps);
-    		netif_set_link_up(&g_Lwip.netif);
-    	}
+        ctrl_status.U = GETH_MAC_PHYIF_CONTROL_STATUS.U;
+        if (ctrl_status.B.LNKSTS == 0)
+            netif_set_link_down(&g_Lwip.netif);
+        else {
+            IfxGeth_Eth *ethernetif = g_Lwip.netif.state;
+            // we set the correct duplexMode
+            if (ctrl_status.B.LNKMOD == 1)
+                IfxGeth_mac_setDuplexMode(ethernetif->gethSFR, IfxGeth_DuplexMode_fullDuplex);
+            else
+                IfxGeth_mac_setDuplexMode(ethernetif->gethSFR, IfxGeth_DuplexMode_halfDuplex);
+            // we set the correct speed
+            if (ctrl_status.B.LNKSPEED == 0)
+                // 10MBit speed
+                IfxGeth_mac_setLineSpeed(ethernetif->gethSFR, IfxGeth_LineSpeed_10Mbps);
+            else
+                if (ctrl_status.B.LNKSPEED == 1)
+                    // 100MBit speed
+                    IfxGeth_mac_setLineSpeed(ethernetif->gethSFR, IfxGeth_LineSpeed_100Mbps);
+                else
+                    // 1000MBit speed
+                    IfxGeth_mac_setLineSpeed(ethernetif->gethSFR, IfxGeth_LineSpeed_1000Mbps);
+            netif_set_link_up(&g_Lwip.netif);
+        }
     }
 }
 
@@ -396,6 +396,42 @@ void Ifx_Lwip_init(eth_addr_t ethAddr)
     /** - initialise and add a \ref netif */
     g_Lwip.eth_addr = ethAddr;
     netif_add(&g_Lwip.netif, &default_ipaddr, &default_netmask, &default_gw,
+        (void *)0, ifx_netif_init, ethernet_input);
+    netif_set_default(&g_Lwip.netif);
+    netif_set_up(&g_Lwip.netif);
+
+#if LWIP_NETIF_HOSTNAME
+    g_Lwip.netif.hostname = BOARDNAME;
+#endif
+
+#if LWIP_DHCP
+    /** - assign \ref dhcp to \ref netif */
+    dhcp_set_struct(&g_Lwip.netif, &g_Lwip.dhcp);
+
+    /* we start the dhcp always here also when we don't have a link here */
+    dhcp_start(&g_Lwip.netif);
+#endif
+
+#if LWIP_NETIF_EXT_STATUS_CALLBACK
+    netif_add_ext_callback(&g_extCallback, netif_state_changed);
+#endif
+    LWIP_DEBUGF(IFX_LWIP_DEBUG, ("Ifx_Lwip_init end!\n"));
+}
+
+void Ifx_Lwip_init_with_ip(eth_addr_t ethAddr, ip_addr_t ipAddr, ip_addr_t netMask, ip_addr_t gateway)
+{
+#ifdef __LWIP_DEBUG__
+    //Init uart for debugging
+    initUART();
+#endif
+    LWIP_DEBUGF(IFX_LWIP_DEBUG, ("Ifx_Lwip_init_with_ip start!\n"));
+
+    /** - initialise LWIP (lwip_init()) */
+    lwip_init();
+
+    /** - initialise and add a \ref netif */
+    g_Lwip.eth_addr = ethAddr;
+    netif_add(&g_Lwip.netif, &ipAddr, &netMask, &gateway,
         (void *)0, ifx_netif_init, ethernet_input);
     netif_set_default(&g_Lwip.netif);
     netif_set_up(&g_Lwip.netif);
