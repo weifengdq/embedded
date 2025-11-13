@@ -441,7 +441,7 @@ void can_rx_callback(canChannel channel, IfxCan_Message *msg) {
 
 ![image-20251112163014688](README.assets/image-20251112163014688.png)
 
-如图, 12路均能正常 echo, 且 echo 时延均小于 100ns
+如图, 12路均能正常 echo, 且 echo 时延均小于 100us
 
 ![image-20251112163534607](README.assets/image-20251112163534607.png)
 
@@ -531,78 +531,3 @@ GethConfig.mtl.rxQueue[0].rxQueueSize = IfxGeth_QueueSize_8192Bytes;
 `嵌入式_机器人_自动驾驶交流群`: 1040239879
 
 购买方式: xian yu 搜索用户 weifengdq, 在主页中查找.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
