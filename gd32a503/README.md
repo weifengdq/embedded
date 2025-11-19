@@ -79,3 +79,54 @@ Manage Project Items:
 编译无错误:
 
 ![image-20251119112614172](README.assets/image-20251119112614172.png)
+
+## 重命名工程
+
+拷贝 a503_empty 文件夹, 重命名为 a503_blink.
+
+删除 .vscode Listings Objects 文件夹 和 `*.uvguix.*` 文件
+
+重命名 `.uvoptx 和 .uvprojx` 文件为 a503_blink
+
+VSCode 打开 a503_blink 文件夹, a503_empty  全部替换为 a503_blink, 这就要求工程名别致一些, 以免误替换.
+
+![image-20251119114002467](README.assets/image-20251119114002467.png)
+
+以上操作写成一个 copy_and_rename_project.ps1, 使用方法和效果如下:
+
+![image-20251119114859703](README.assets/image-20251119114859703.png)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
