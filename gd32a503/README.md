@@ -117,7 +117,7 @@ VSCode 打开 a503_blink 文件夹, a503_empty  全部替换为 a503_blink, 这�
 
 `GD32A50x_Firmware_Library_V1.7.0\Firmware\CMSIS\GD\GD32A50x\Include\gd32a50x.h` 文件中可以看到, 默认使用外部 8MHz 晶振: `#define HXTAL_VALUE   ((uint32_t)8000000)`
 
-使用 system_clock_100m_pll_hxtal 函数安全循序的设置系统时钟到 100MHz, 反应到最终的时钟树就是:
+使用 system_clock_100m_pll_hxtal 函数安全循序的设置系统时钟到 100MHz, 反映到最终的时钟树就是:
 
 ![image-20251119134351279](README.assets/image-20251119134351279.png)
 

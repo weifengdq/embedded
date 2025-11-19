@@ -1020,6 +1020,7 @@ void can_mailbox_transmit_inactive(uint32_t can_periph, uint32_t index)
     \param[out] mdpara: mailbox descriptor struct
     \retval     ERROR or SUCCESS
 */
+#include <stdio.h>
 ErrStatus can_mailbox_receive_data_read(uint32_t can_periph, uint32_t index, can_mailbox_descriptor_struct *mdpara)
 {
     uint32_t i;
