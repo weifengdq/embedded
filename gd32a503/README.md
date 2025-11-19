@@ -96,6 +96,35 @@ VSCode 打开 a503_blink 文件夹, a503_empty  全部替换为 a503_blink, 这�
 
 ![image-20251119114859703](README.assets/image-20251119114859703.png)
 
+## 时钟树
+
+`GD32A50x_Firmware_Library_V1.7.0\Firmware\CMSIS\GD\GD32A50x\Source\ARM\startup_gd32a50x.s` 里面可以看到 `IMPORT  SystemInit  IMPORT  __main`, 也就是在 main 函数之前就已经执行了 `SystemInit` 函数.
+
+`SystemInit ` 函数在 `GD32A50x_Firmware_Library_V1.7.0\Firmware\CMSIS\GD\GD32A50x\Source\system_gd32a50x.c` 文件中实现, 用 AI 总结功能是:
+
+> SystemInit 函数主要完成上电后内核与时钟的基础复位与初始配置，步骤概述如下：  
+>
+> 1. FPU 访问：若芯片带 FPU 且已使用，开放 CP10/CP11 完全访问权限。  
+> 2. 时钟复位到缺省：确保内部 8MHz IRC8M 打开；若当前系统时钟是 PLL，执行分频阶梯降频宏 `RCU_MODIFY_DE_3(0x100)` 以减轻切换瞬间的 Vcore 波动。然后清除系统时钟源选择位。  
+> 3. 软延时：调用 `_soft_delay_(100)` 给内部稳态留时间。  
+> 4. 关闭/复位外部与 PLL 相关功能：清除 HXTAL、PLL、锁定、时钟监测等控制位，禁止所有 RCU 中断；重写 `RCU_CFG0` 与 `RCU_CFG1` 为复位初值；清除外部晶振旁路位。  
+> 5. 根据外部晶振频率设置放大/标称位：若 `HXTAL_VALUE > 8MHz` 则置位 `HXTALSCAL`。  
+> 6. 调用 `system_clock_config()`：按照编译期选择的宏（如 `__SYSTEM_CLOCK_100M_PLL_HXTAL` 等）完成目标系统时钟、PLL 倍频、总线分频及 Flash 等设置（具体实现分支在下方各 `system_clock_xxx`）。  
+> 7. 配置 LXTAL 旁路保护位：暂时打开 PMU 时钟；必要时打开后备域写入使能 `BKPWEN`；设置 `LXTALBPS` 以使低速晶振旁路保护；随后根据之前状态关闭 PMU 时钟或清除临时使能位。  
+> 8. 设置中断向量表基址：根据是否定义 `VECT_TAB_SRAM` 选择放到 SRAM 或 FLASH，偏移量为 `VECT_TAB_OFFSET`。  
+>
+> 整体作用：保证复位后时钟与电源域安全过渡到预期系统频率，避免直接高速切换导致内核或供电不稳定，同时完成 FPU、低速/高速晶振与向量表的基础环境搭建。
+
+`GD32A50x_Firmware_Library_V1.7.0\Firmware\CMSIS\GD\GD32A50x\Include\gd32a50x.h` 文件中可以看到, 默认使用外部 8MHz 晶振: `#define HXTAL_VALUE   ((uint32_t)8000000)`
+
+使用 system_clock_100m_pll_hxtal 函数安全循序的设置系统时钟到 100MHz, 反应到最终的时钟树就是:
+
+![image-20251119134351279](README.assets/image-20251119134351279.png)
+
+## printf
+
+![image-20251119135223542](README.assets/image-20251119135223542.png)
+
 
 
 
