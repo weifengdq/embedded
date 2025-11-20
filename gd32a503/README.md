@@ -135,7 +135,9 @@ VSCode 打开 a503_blink 文件夹, a503_empty  全部替换为 a503_blink, 这�
 
 ![image-20251120094819176](README.assets/image-20251120094819176.png)
 
+## CAN
 
+500K 80% + 1M 80%
 
 
 

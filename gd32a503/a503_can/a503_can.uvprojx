@@ -14,14 +14,14 @@
       <uAC6>1</uAC6>
       <TargetOption>
         <TargetCommonOption>
-          <Device>GD32A503VD</Device>
+          <Device>GD32A503KC</Device>
           <Vendor>GigaDevice</Vendor>
           <PackID>GigaDevice.GD32A50x_DFP.1.6.0</PackID>
           <PackURL>https://gd32mcu.com</PackURL>
-          <Cpu>IRAM(0x20000000,0x0C000) IROM(0x08000000,0x060000) IROM2(0x08800000,0x010000) CPUTYPE("Cortex-M33") FPU3(SFPU) DSP CLOCK(12000000) ELITTLE</Cpu>
+          <Cpu>IRAM(0x20000000,0x08000) IROM(0x08000000,0x040000) IROM2(0x08800000,0x010000) CPUTYPE("Cortex-M33") FPU3(SFPU) DSP CLOCK(12000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>
-          <FlashDriverDll>UL2V8M(-S0 -C0 -P0 -FD20000000 -FC1000 -FN2 -FF0GD32A50x_384KB -FS08000000 -FL060000 -FF1GD32A50x_DF_64KB -FS18800000 -FL110000 -FP0($$Device:GD32A503VD$Flash\GD32A50x_384KB.FLM) -FP1($$Device:GD32A503VD$Flash\GD32A50x_DF_64KB.FLM))</FlashDriverDll>
+          <FlashDriverDll>UL2V8M(-S0 -C0 -P0 -FD20000000 -FC1000 -FN2 -FF0GD32A50x_256KB -FS08000000 -FL040000 -FF1GD32A50x_DF_64KB -FS18800000 -FL110000 -FP0($$Device:GD32A503KC$Flash\GD32A50x_256KB.FLM) -FP1($$Device:GD32A503KC$Flash\GD32A50x_DF_64KB.FLM))</FlashDriverDll>
           <DeviceId>0</DeviceId>
           <RegisterFile></RegisterFile>
           <MemoryEnv></MemoryEnv>
@@ -33,7 +33,7 @@
           <SLE66CMisc></SLE66CMisc>
           <SLE66AMisc></SLE66AMisc>
           <SLE66LinkerMisc></SLE66LinkerMisc>
-          <SFDFile>$$Device:GD32A503VD$SVD\GD32A503.svd</SFDFile>
+          <SFDFile>$$Device:GD32A503KC$SVD\GD32A503.svd</SFDFile>
           <bCustSvd>0</bCustSvd>
           <UseEnv>0</UseEnv>
           <BinPath></BinPath>
@@ -138,7 +138,7 @@
           </Flash1>
           <bUseTDR>1</bUseTDR>
           <Flash2>BIN\UL2V8M.DLL</Flash2>
-          <Flash3>"" ()</Flash3>
+          <Flash3></Flash3>
           <Flash4></Flash4>
           <pFcarmOut></pFcarmOut>
           <pFcarmGrp></pFcarmGrp>
@@ -247,12 +247,12 @@
               <IRAM>
                 <Type>0</Type>
                 <StartAddress>0x20000000</StartAddress>
-                <Size>0xc000</Size>
+                <Size>0x8000</Size>
               </IRAM>
               <IROM>
                 <Type>1</Type>
                 <StartAddress>0x8000000</StartAddress>
-                <Size>0x60000</Size>
+                <Size>0x40000</Size>
               </IROM>
               <XRAM>
                 <Type>0</Type>
@@ -277,7 +277,7 @@
               <OCR_RVCT4>
                 <Type>1</Type>
                 <StartAddress>0x8000000</StartAddress>
-                <Size>0x60000</Size>
+                <Size>0x40000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
                 <Type>1</Type>
@@ -302,7 +302,7 @@
               <OCR_RVCT9>
                 <Type>0</Type>
                 <StartAddress>0x20000000</StartAddress>
-                <Size>0xc000</Size>
+                <Size>0x8000</Size>
               </OCR_RVCT9>
               <OCR_RVCT10>
                 <Type>0</Type>
