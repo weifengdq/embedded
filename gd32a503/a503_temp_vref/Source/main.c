@@ -99,7 +99,7 @@ int main(void) {
     delay_1ms(20);
 
     // 50 次测量取平均值
-    if(measure_cnt < 50) {
+    if (measure_cnt < 50) {
       uint16_t temp_val = adc_inserted_data_read(ADC0, 0);
       uint16_t vref_val = adc_inserted_data_read(ADC0, 1);
       temp_sum += temp_val;
@@ -110,14 +110,18 @@ int main(void) {
       uint32_t avg_vref = vref_sum / 50;
 
       // 计算电压值，单位 mV
-      uint32_t vref_voltage = (uint32_t)(5000U * avg_vref) / 4095;
+      uint32_t vref_voltage = (uint32_t)(3300U * avg_vref) / 4095;
 
       // 计算温度值，单位 摄氏度
-      // 温度传感器参数见参考手册
-      float temperature = (avg_temp - adc0_temp_calib_value) * 1000.0f * 5.0f /
-                            4095.0f / 4.58f + 30.0f;
+      // 数据手册 Avg_Slope 4.58 mV/°C
+      // 参考手册 温度 = (Vtemp - V30) / Avg_Slope + 30
+      // V30 是 VDDA 5V 时 30°C 对应的 ADC 转换结果, 要折算到 VDDA 3.3V
+      float temperature = (avg_temp - adc0_temp_calib_value / 3.3f * 5.0f) *
+                              1000.0f * 3.3f / 4095.0f / 4.58f +
+                          30.0f;
 
-      printf("Vref: %" PRIu32 " mV, Temperature: %.2f C\r\n", vref_voltage, temperature);
+      printf("Vref: %" PRIu32 " mV, Temperature: %.2f C\r\n", vref_voltage,
+             temperature);
 
       // 重置测量
       measure_cnt = 0;
