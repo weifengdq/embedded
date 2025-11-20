@@ -317,7 +317,7 @@ CAN 主时钟 100MHz:
 
 下载 a503_lin_master 和 a503_lin_slave 后, 按住左侧 Master 板子上的 WK 按钮不松手, 可以看到 Slave 板子上的 LED 以 1s 周期翻转.
 
-拿逻辑分析仪接在 Master 的 PA3 PA4, 抓取到的 Master 发出的 LIN 数据:
+拿逻辑分析仪接在 Master 的 PA3 PA4, 设置 19200 解码速率, 抓取到的 Master 发出的 LIN 数据:
 
 ![image-20251120162739258](README.assets/image-20251120162739258.png)
 
