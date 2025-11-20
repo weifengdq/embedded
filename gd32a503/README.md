@@ -141,7 +141,9 @@ VSCode 打开 a503_blink 文件夹, a503_empty  全部替换为 a503_blink, 这�
 
 
 
+## I2C EEPROM 24C02
 
+![image-20251120115445418](README.assets/image-20251120115445418.png)
 
 
 
