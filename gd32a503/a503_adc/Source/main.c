@@ -42,10 +42,10 @@ int fputc(int ch, FILE *f) {
 }
 
 void gpio_config(void) {
-  /* enable GPIOC clock */
-  rcu_periph_clock_enable(RCU_GPIOC);
-  /* config PC10 as analog input for ADC0_IN1 */
-  gpio_mode_set(GPIOC, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_10);
+  /* enable GPIOD clock */
+  rcu_periph_clock_enable(RCU_GPIOD);
+  /* config PD9 as analog input for ADC0_IN3 */
+  gpio_mode_set(GPIOD, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_9);
 }
 
 void rcu_config(void) {
@@ -66,8 +66,8 @@ void adc_config(void) {
 
   /* ADC channel length config */
   adc_channel_length_config(ADC0, ADC_REGULAR_CHANNEL, 1);
-  /* ADC regular channel config - ADC0_IN1 (PC10) */
-  adc_regular_channel_config(ADC0, 0, ADC_CHANNEL_1, ADC_SAMPLETIME_55POINT5);
+  /* ADC regular channel config - ADC0_IN3 (PD9) */
+  adc_regular_channel_config(ADC0, 0, ADC_CHANNEL_3, ADC_SAMPLETIME_55POINT5);
 
   /* config ADC trigger */
   adc_external_trigger_source_config(ADC0, ADC_REGULAR_CHANNEL,
@@ -88,7 +88,7 @@ int main(void) {
   rcu_config();
   adc_config();
 
-  printf("GD32A503 ADC0_IN1 (PC10) Test\r\n");
+  printf("GD32A503 ADC0_IN3 (PD9) Test\r\n");
 
   int measure_cnt = 0;
   uint32_t adc_sum = 0;
@@ -108,7 +108,7 @@ int main(void) {
       // Vref = 3.3V (3300mV)
       uint32_t voltage = (uint32_t)(3300U * avg_adc) / 4095;
 
-      printf("ADC0_IN1: %" PRIu32 " (ADC Value: %" PRIu32 "), Voltage: %" PRIu32
+      printf("ADC0_IN3: %" PRIu32 " (ADC Value: %" PRIu32 "), Voltage: %" PRIu32
              " mV\r\n",
              avg_adc, avg_adc, voltage);
 
