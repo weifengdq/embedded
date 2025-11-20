@@ -108,17 +108,30 @@ void can_config(void) {
       0x0; // configure CAN_RMPUBF register (refer to
            // can_private_filter_config() to configure CAN_RFIFOMPFx registers
            // if separate filters are used)
-  can_parameter.resync_jump_width = 8;  // SJW
-  can_parameter.prop_time_segment = 10; // PTS segment
-  can_parameter.time_segment_1 = 21;    // PBS1 segment
-  can_parameter.time_segment_2 = 8;     // PBS2 segment
-  /* 500Kbps */
+  can_parameter.resync_jump_width = 4; // SJW
+  can_parameter.prop_time_segment = 1; // PTS segment
+  can_parameter.time_segment_1 = 14;   // PBS1 segment
+  can_parameter.time_segment_2 = 4;    // PBS2 segment
+  // nominal:
+  // prescaler: 1~1024
+  // resync_jump_width: 1~32
+  // prop_time_segment: 1~64
+  // time_segment_1: 1~32
+  // time_segment_2: 1~32
+  /* 1000Kbps */
   can_parameter.prescaler = 5; // baudrate =
                                // fCANCLK/prescaler/(1+PTS+PBS1+PBS2)
 
   /* initialize CAN */
   can_init(CAN0, &can_parameter);
 
+  // data:
+  // tdc_offset: 0 ~ 31
+  // prescaler: 1~1024
+  // resync_jump_width: 1~8
+  // prop_time_segment: 0~31
+  // time_segment_1: 1~8
+  // time_segment_2: 2~8
   /* FD parameter configurations */
   fd_parameter.bitrate_switch_enable =
       ENABLE; // when transmit frame BRS bit is '1', support to switch bitrate
@@ -129,13 +142,13 @@ void can_config(void) {
   fd_parameter.tdc_enable =
       ENABLE; // disable transmit delay compensation function
   fd_parameter.tdc_offset =
-      8; // no more than (1+PTS+PBS1+PBS2)*prescaler tCANCLK
-  fd_parameter.resync_jump_width = 2; // SJW
-  fd_parameter.prop_time_segment = 1; // PTS segment for FD data bit rate
-  fd_parameter.time_segment_1 = 6;    // PBS1 segment for FD data bit rate
-  fd_parameter.time_segment_2 = 2;    // PBS2 segment for FD data bit rate
-  /* 2Mbps */
-  fd_parameter.prescaler = 5; // baudrate = fCANCLK/prescaler/(1+PTS+PBS1+PBS2),
+      15; // no more than (1+PTS+PBS1+PBS2)*prescaler tCANCLK
+  fd_parameter.resync_jump_width = 5; // SJW
+  fd_parameter.prop_time_segment = 7; // PTS segment for FD data bit rate
+  fd_parameter.time_segment_1 = 7;    // PBS1 segment for FD data bit rate
+  fd_parameter.time_segment_2 = 5;    // PBS2 segment for FD data bit rate
+  /* 5Mbps */
+  fd_parameter.prescaler = 1; // baudrate = fCANCLK/prescaler/(1+PTS+PBS1+PBS2),
                               // two prescaler should be same
 
   can_fd_config(CAN0, &fd_parameter);
@@ -163,7 +176,7 @@ int main(void) {
   can_gpio_config();
   can_config();
 
-  printf("GD32A503 CAN0 FD (500K 80%% + 2M 80%%) Test\r\n");
+  printf("GD32A503 CAN0 FD (1M 80%% + 5M 75%%) Test\r\n");
 
   const uint8_t tx_data[64] = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8};
   can_mailbox_descriptor_struct transmit_message;
