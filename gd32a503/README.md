@@ -8,9 +8,10 @@ GD32A503 评估板资源:
   - ASIL-B READY, -40~+125℃
   - Cortex-M33, 100MHz, 外置扬兴的 8MHz 无源晶振
   - 32KB SRAM, 256KB Flash, 64KB Data Flash
-  - QFN32 封装, 支持 1xCANFD, 1xUSART/LIN, 1xSPI, 同系列 64PIN 或 100PIN 封装的可以支持到 2xCANFD 3xUSART/LIN, 2xSPI
+  - QFN32 封装, 支持 1xCANFD, 1xUSART/LIN, 1xSPI, 1xMFCOM可用做UART/I2C/SPI/PWM等, 类似NXP的FlexIO
+  - 注: 同系列 64PIN 或 100PIN 封装的可以支持到 2xCANFD 3xUSART/LIN, 2xSPI
 - **CANFD 收发器**: TI , 车规级 TCAN1044AVDRBRQ1, 可支持到 8Mbits/s
-- **LIN 收发器**: 芯立特, 车规级 SIT1021QTK/1, LIN速率可到 20kbps
+- **LIN 收发器**: 芯力特, 车规级 SIT1021QTK/1, LIN速率可到 20kbps
 - **Quad SPI FLASH**: W25Q16JVUXIQ, 16Mbit
 - I2C EEPROM: 24C02S, 2KBit
 - USB串口: CH340X, 支持到 2Mbps
@@ -329,9 +330,9 @@ Break -> Sync (0x55) -> PID (0x3C) -> Data (8 bytes) -> Checksum
 
 ## 交流群
 
-板子购买: 海鲜市场同名主页中可见
+板子购买: 海鲜市场, weifengdq, 主页中可见
 
-QQ交流群 `嵌入式__机器人_自动驾驶_交流群`: 1040239879
+QQ交流群 `嵌入式_机器人_自动驾驶_交流群`: 1040239879
 
 
 
