@@ -27,38 +27,32 @@
 #include "Ifx_Types.h"
 #include "Ifx_Cfg.h"
 #include "IfxCpu.h"
-#include "IfxPort.h"
 #include "IfxWtu.h"
-#include "Bsp.h"
+#include <stdio.h>
 
+#include "serialio.h"
 
-static const IfxPort_Pin g_led1Pin   = {&MODULE_P03, 9};
-static const IfxPort_Pin g_led2Pin   = {&MODULE_P03, 10};
-static const IfxPort_Pin g_buttonPin = {&MODULE_P03, 11};
+#define UART_BAUDRATE 115200
+#define UART_LINE_BUFFER_SIZE 128
 
-
-static void initGpio(void)
+static void printStartupBanner(void)
 {
-    IfxPort_setPinMode(g_led1Pin.port, g_led1Pin.pinIndex, IfxPort_Mode_outputPushPullGeneral);
-    IfxPort_setPinMode(g_led2Pin.port, g_led2Pin.pinIndex, IfxPort_Mode_outputPushPullGeneral);
-    IfxPort_setPinMode(g_buttonPin.port, g_buttonPin.pinIndex, IfxPort_Mode_inputPullUp);
-
-    IfxPort_setPinHigh(g_led1Pin.port, g_led1Pin.pinIndex);
-    IfxPort_setPinHigh(g_led2Pin.port, g_led2Pin.pinIndex);
-}
-
-
-static void updateLedsFromButton(void)
-{
-    boolean buttonPressed = (IfxPort_getPinState(g_buttonPin.port, g_buttonPin.pinIndex) == 0);
-
-    IfxPort_setPinState(g_led1Pin.port, g_led1Pin.pinIndex, buttonPressed ? IfxPort_State_low : IfxPort_State_high);
-    IfxPort_setPinState(g_led2Pin.port, g_led2Pin.pinIndex, buttonPressed ? IfxPort_State_low : IfxPort_State_high);
+    printf("\r\n");
+    printf("************************************\r\n");
+    printf("*     TC4D7 UART0 printf / echo    *\r\n");
+    printf("* Date: %10s                *\r\n", __DATE__);
+    printf("************************************\r\n");
+    printf("UART0 TX=P14.0 RX=P14.1, 115200-8-N-1\r\n");
+    printf("Input a line and press Enter to echo it.\r\n");
 }
 
 
 void core0_main(void)
 {
+    char lineBuffer[UART_LINE_BUFFER_SIZE];
+    uint32 lineLength = 0;
+    boolean lastWasCarriageReturn = FALSE;
+
     IfxCpu_enableInterrupts();
     
     /* !!WATCHDOG0 AND SAFETY WATCHDOG ARE DISABLED HERE!!
@@ -67,12 +61,38 @@ void core0_main(void)
     IfxWtu_disableCpuWatchdog(IfxWtu_getCpuWatchdogPassword());
     IfxWtu_disableSystemWatchdog(IfxWtu_getSystemWatchdogPassword());
 
-    initTime();
-    initGpio();
+    SERIALIO_Init(UART_BAUDRATE);
+    printStartupBanner();
     
     while (1)
     {
-        updateLedsFromButton();
-        waitTime((Ifx_TickTime)(5U * TimeConst_10ms));
+        uint8 receivedByte;
+
+        if (!SERIALIO_TryReadByte(&receivedByte))
+        {
+            continue;
+        }
+
+        if ((receivedByte == '\n') && lastWasCarriageReturn)
+        {
+            lastWasCarriageReturn = FALSE;
+            continue;
+        }
+
+        if ((receivedByte == '\r') || (receivedByte == '\n'))
+        {
+            lineBuffer[lineLength] = '\0';
+            printf("%s\r\n", lineBuffer);
+            lineLength = 0;
+            lastWasCarriageReturn = (receivedByte == '\r');
+            continue;
+        }
+
+        lastWasCarriageReturn = FALSE;
+
+        if (lineLength < (UART_LINE_BUFFER_SIZE - 1U))
+        {
+            lineBuffer[lineLength++] = (char)receivedByte;
+        }
     }
 }

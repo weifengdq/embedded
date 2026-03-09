@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(tc4d7_gpio LANGUAGES C)
+project(tc4d7_uart_printf_echo LANGUAGES C)
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/AurixProject.cmake")
 
