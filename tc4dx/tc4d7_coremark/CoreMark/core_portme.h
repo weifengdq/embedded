@@ -60,7 +60,11 @@ Original Author: Shay Gal-on
 #endif
 
 #ifndef MEM_LOCATION
+#ifdef COREMARK_MEM_LOCATION
+#define MEM_LOCATION COREMARK_MEM_LOCATION
+#else
 #define MEM_LOCATION "STACK"
+#endif
 #endif
 
 typedef signed short ee_s16;
@@ -81,7 +85,13 @@ typedef Ifx_TickTime CORE_TICKS;
 #endif
 
 #ifndef MEM_METHOD
+#if defined(COREMARK_MEM_METHOD_MALLOC)
+#define MEM_METHOD MEM_MALLOC
+#elif defined(COREMARK_MEM_METHOD_STATIC)
+#define MEM_METHOD MEM_STATIC
+#else
 #define MEM_METHOD MEM_STACK
+#endif
 #endif
 
 #ifndef MULTITHREAD

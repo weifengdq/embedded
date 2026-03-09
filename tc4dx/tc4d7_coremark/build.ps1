@@ -17,6 +17,9 @@ param(
     [ValidateRange(1, 6)]
     [int]$CoremarkThreads = 1,
 
+    [ValidateSet("STACK", "MALLOC", "STATIC")]
+    [string]$CoremarkMemMethod = "STACK",
+
     [int]$CoremarkIterations = 0,
 
     [string]$FlashTool = "",
@@ -73,6 +76,7 @@ function Configure-Project {
         "-DAURIX_TOOLCHAIN_BIN=$ToolchainBin",
         "-DCMAKE_BUILD_TYPE=$BuildType",
         "-DCOREMARK_MULTITHREAD=$CoremarkThreads",
+        "-DCOREMARK_MEM_METHOD=$CoremarkMemMethod",
         "-DCOREMARK_ITERATIONS=$CoremarkIterations"
     )
 
