@@ -18,11 +18,13 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+$defaultAurixFlasher = "C:\Infineon\AURIX-Studio-1.10.28\tools\AurixFlasherSoftwareTool_v3.0.14\AURIXFlasher.exe"
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $buildPath = Join-Path $projectRoot $BuildDir
 $toolchainFile = Join-Path $projectRoot "cmake/tricore-gcc-toolchain.cmake"
 $elfPath = Join-Path $buildPath ("{0}.elf" -f $TargetName)
 $hexPath = Join-Path $buildPath ("{0}.hex" -f $TargetName)
+$flashLogPath = Join-Path $buildPath ("{0}_flasher_log.xml" -f $TargetName)
 
 function Invoke-Step {
     param(
@@ -86,12 +88,19 @@ function Download-Project {
     }
 
     if([string]::IsNullOrWhiteSpace($FlashTool)) {
-        if(-not [string]::IsNullOrWhiteSpace($env:AURIX_DOWNLOAD_TOOL)) {
+        if(Test-Path $defaultAurixFlasher) {
+            $script:FlashTool = $defaultAurixFlasher
+        }
+        elseif(-not [string]::IsNullOrWhiteSpace($env:AURIX_DOWNLOAD_TOOL)) {
             $script:FlashTool = $env:AURIX_DOWNLOAD_TOOL
         }
         else {
-            throw "No download tool configured. Use -FlashTool and -FlashArgs, or set AURIX_DOWNLOAD_TOOL and AURIX_DOWNLOAD_ARGS. Tokens: {hex} {elf} {buildDir} {projectDir}."
+            throw "No download tool configured. Install AURIXFlasher.exe at the default path, or use -FlashTool and -FlashArgs, or set AURIX_DOWNLOAD_TOOL and AURIX_DOWNLOAD_ARGS. Tokens: {hex} {elf} {buildDir} {projectDir}."
         }
+    }
+
+    if(-not (Test-Path $FlashTool)) {
+        throw "Download tool not found: $FlashTool"
     }
 
     if($FlashArgs.Count -eq 0 -and -not [string]::IsNullOrWhiteSpace($env:AURIX_DOWNLOAD_ARGS)) {
@@ -100,11 +109,28 @@ function Download-Project {
             ForEach-Object { $_.Content }
     }
 
+    if($FlashArgs.Count -eq 0 -and [System.IO.Path]::GetFileName($FlashTool) -ieq "AURIXFlasher.exe") {
+        $script:FlashArgs = @(
+            "-hex", "{hex}",
+            "-connect", "6",
+            "-start", "on",
+            "-log", "{buildDir}/${TargetName}_flasher_log.xml"
+        )
+    }
+
+    if($FlashArgs.Count -eq 0) {
+        throw "No download arguments configured for $FlashTool"
+    }
+
     $resolvedFlashArgs = foreach($argument in $FlashArgs) {
         $argument.Replace("{hex}", $hexPath).Replace("{elf}", $elfPath).Replace("{buildDir}", $buildPath).Replace("{projectDir}", $projectRoot)
     }
 
     Invoke-Step -FilePath $FlashTool -ArgumentList $resolvedFlashArgs
+
+    if(Test-Path $flashLogPath) {
+        Write-Host ("Flasher XML log: {0}" -f $flashLogPath)
+    }
 }
 
 switch($Action) {
