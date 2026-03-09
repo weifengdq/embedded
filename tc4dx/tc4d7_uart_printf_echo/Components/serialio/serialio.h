@@ -10,6 +10,7 @@ extern "C" {
 
 void SERIALIO_Init(sint32 baudrate);
 boolean SERIALIO_TryReadByte(uint8 *byte);
+boolean SERIALIO_WriteBuffer(const uint8 *data, Ifx_SizeT count);
 
 #ifdef __cplusplus
 }

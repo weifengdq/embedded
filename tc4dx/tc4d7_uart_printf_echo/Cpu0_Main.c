@@ -28,22 +28,34 @@
 #include "Ifx_Cfg.h"
 #include "IfxCpu.h"
 #include "IfxWtu.h"
-#include <stdio.h>
+#include <string.h>
 
 #include "serialio.h"
 
 #define UART_BAUDRATE 115200
 #define UART_LINE_BUFFER_SIZE 128
 
+static boolean isAcceptedInputByte(uint8 byte)
+{
+    if ((byte == '\r') || (byte == '\n'))
+    {
+        return TRUE;
+    }
+
+    return (byte >= 0x20U) && (byte <= 0x7EU);
+}
+
 static void printStartupBanner(void)
 {
-    printf("\r\n");
-    printf("************************************\r\n");
-    printf("*     TC4D7 UART0 printf / echo    *\r\n");
-    printf("* Date: %10s                *\r\n", __DATE__);
-    printf("************************************\r\n");
-    printf("UART0 TX=P14.0 RX=P14.1, 115200-8-N-1\r\n");
-    printf("Input a line and press Enter to echo it.\r\n");
+    static const char banner[] =
+        "\r\n"
+        "************************************\r\n"
+        "*     TC4D7 UART0 printf / echo    *\r\n"
+        "************************************\r\n"
+        "UART0 TX=P14.0 RX=P14.1, 115200-8-N-1\r\n"
+        "Input a line and press Enter to echo it.\r\n";
+
+    (void)SERIALIO_WriteBuffer((const uint8 *)banner, (Ifx_SizeT)(sizeof(banner) - 1U));
 }
 
 
@@ -73,6 +85,11 @@ void core0_main(void)
             continue;
         }
 
+        if (!isAcceptedInputByte(receivedByte))
+        {
+            continue;
+        }
+
         if ((receivedByte == '\n') && lastWasCarriageReturn)
         {
             lastWasCarriageReturn = FALSE;
@@ -81,8 +98,12 @@ void core0_main(void)
 
         if ((receivedByte == '\r') || (receivedByte == '\n'))
         {
-            lineBuffer[lineLength] = '\0';
-            printf("%s\r\n", lineBuffer);
+            if (lineLength > 0U)
+            {
+                (void)SERIALIO_WriteBuffer((const uint8 *)lineBuffer, (Ifx_SizeT)lineLength);
+            }
+
+            (void)SERIALIO_WriteBuffer((const uint8 *)"\r\n", 2U);
             lineLength = 0;
             lastWasCarriageReturn = (receivedByte == '\r');
             continue;
