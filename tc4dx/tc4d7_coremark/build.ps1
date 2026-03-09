@@ -8,7 +8,7 @@ param(
     [string]$Generator = "Ninja",
 
     [ValidateSet("Debug", "Release", "RelWithDebInfo", "MinSizeRel")]
-    [string]$BuildType = "Debug",
+    [string]$BuildType = "Release",
 
     [string]$ToolchainBin = "C:\Infineon\AURIX-Studio-1.10.28\tools\Compilers\tricore-gcc11\bin",
 

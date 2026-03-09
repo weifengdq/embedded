@@ -247,11 +247,12 @@ ee_u8 core_stop_parallel(core_results *res)
 
     if (g_parallel_collect_count == 0U)
     {
-        ee_u32 start = now();
+        Ifx_TickTime start = now();
+        Ifx_TickTime timeout = 120 * TimeConst_1s;
 
         while (!areAllWorkersDone(g_parallel_generation))
         {
-            if ((now() - start) > (20U * TimeConst_1s))
+            if ((now() - start) > timeout)
             {
                 ee_printf("ERROR: multicore synchronization timeout\n");
                 break;
