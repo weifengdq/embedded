@@ -52,7 +52,11 @@ Original Author: Shay Gal-on
 #endif
 
 #ifndef COMPILER_FLAGS
-#define COMPILER_FLAGS "-Og -g3"
+#ifdef COREMARK_COMPILER_FLAGS
+#define COMPILER_FLAGS COREMARK_COMPILER_FLAGS
+#else
+#define COMPILER_FLAGS "(unspecified)"
+#endif
 #endif
 
 #ifndef MEM_LOCATION

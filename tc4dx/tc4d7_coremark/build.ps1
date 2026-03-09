@@ -7,6 +7,9 @@ param(
 
     [string]$Generator = "Ninja",
 
+    [ValidateSet("Debug", "Release", "RelWithDebInfo", "MinSizeRel")]
+    [string]$BuildType = "Debug",
+
     [string]$ToolchainBin = "C:\Infineon\AURIX-Studio-1.10.28\tools\Compilers\tricore-gcc11\bin",
 
     [string]$TargetName = "tc4d7_coremark",
@@ -68,6 +71,7 @@ function Configure-Project {
         "-G", $Generator,
         "-DCMAKE_TOOLCHAIN_FILE=$toolchainFile",
         "-DAURIX_TOOLCHAIN_BIN=$ToolchainBin",
+        "-DCMAKE_BUILD_TYPE=$BuildType",
         "-DCOREMARK_MULTITHREAD=$CoremarkThreads",
         "-DCOREMARK_ITERATIONS=$CoremarkIterations"
     )
@@ -77,7 +81,7 @@ function Configure-Project {
 
 function Build-Project {
     Configure-Project
-    Invoke-Step -FilePath "cmake" -ArgumentList @("--build", $buildPath)
+    Invoke-Step -FilePath "cmake" -ArgumentList @("--build", $buildPath, "--config", $BuildType)
 }
 
 function Clean-Project {

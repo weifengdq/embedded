@@ -86,7 +86,7 @@ static sint8 coreIdToSlot(IfxCpu_Id coreId)
     }
 #endif
 #if (MULTITHREAD > 5)
-    if (rawCoreId == 6U)
+    if ((rawCoreId == 5U) || (rawCoreId == 6U))
     {
         return 5;
     }

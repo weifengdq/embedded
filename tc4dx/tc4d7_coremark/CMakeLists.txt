@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.24)
 
 project(tc4d7_coremark LANGUAGES C)
 
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
+endif()
+
+set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release RelWithDebInfo MinSizeRel)
+
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/AurixProject.cmake")
 
 set(AURIX_TARGET_NAME "${PROJECT_NAME}" CACHE STRING "Output target base name")
@@ -57,9 +63,16 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_include_directories(${PROJECT_NAME} PRIVATE ${AURIX_INCLUDE_DIRS})
 
 target_compile_options(${PROJECT_NAME} PRIVATE
-    -Og
-    -g3
-    -gdwarf-3
+    $<$<CONFIG:Debug>:-Og>
+    $<$<CONFIG:Debug>:-g3>
+    $<$<CONFIG:Debug>:-gdwarf-3>
+    $<$<CONFIG:Release>:-O3>
+    $<$<CONFIG:Release>:-DNDEBUG>
+    $<$<CONFIG:RelWithDebInfo>:-O2>
+    $<$<CONFIG:RelWithDebInfo>:-g>
+    $<$<CONFIG:RelWithDebInfo>:-DNDEBUG>
+    $<$<CONFIG:MinSizeRel>:-Os>
+    $<$<CONFIG:MinSizeRel>:-DNDEBUG>
     -Wall
     -fmessage-length=0
     -fno-common
@@ -73,6 +86,10 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     MULTITHREAD=${COREMARK_MULTITHREAD}
     ITERATIONS=${COREMARK_ITERATIONS}
     MAIN_HAS_NOARGC=1
+    $<$<CONFIG:Debug>:COREMARK_COMPILER_FLAGS="-Og -g3">
+    $<$<CONFIG:Release>:COREMARK_COMPILER_FLAGS="-O3 -DNDEBUG">
+    $<$<CONFIG:RelWithDebInfo>:COREMARK_COMPILER_FLAGS="-O2 -g -DNDEBUG">
+    $<$<CONFIG:MinSizeRel>:COREMARK_COMPILER_FLAGS="-Os -DNDEBUG">
 )
 
 set(AURIX_MAP_FILE "${CMAKE_CURRENT_BINARY_DIR}/${AURIX_TARGET_NAME}.map")
