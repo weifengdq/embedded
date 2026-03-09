@@ -9,7 +9,12 @@ param(
 
     [string]$ToolchainBin = "C:\Infineon\AURIX-Studio-1.10.28\tools\Compilers\tricore-gcc11\bin",
 
-    [string]$TargetName = "tc4d7_uart_printf_echo",
+    [string]$TargetName = "tc4d7_coremark",
+
+    [ValidateRange(1, 6)]
+    [int]$CoremarkThreads = 1,
+
+    [int]$CoremarkIterations = 0,
 
     [string]$FlashTool = "",
 
@@ -62,14 +67,16 @@ function Configure-Project {
         "-B", $buildPath,
         "-G", $Generator,
         "-DCMAKE_TOOLCHAIN_FILE=$toolchainFile",
-        "-DAURIX_TOOLCHAIN_BIN=$ToolchainBin"
+        "-DAURIX_TOOLCHAIN_BIN=$ToolchainBin",
+        "-DCOREMARK_MULTITHREAD=$CoremarkThreads",
+        "-DCOREMARK_ITERATIONS=$CoremarkIterations"
     )
 
     Invoke-Step -FilePath "cmake" -ArgumentList $configureArgs
 }
 
 function Build-Project {
-    Ensure-Configured
+    Configure-Project
     Invoke-Step -FilePath "cmake" -ArgumentList @("--build", $buildPath)
 }
 

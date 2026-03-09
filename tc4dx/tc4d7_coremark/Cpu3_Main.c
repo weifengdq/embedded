@@ -28,6 +28,7 @@
 #include "Ifx_Cfg.h"
 #include "IfxCpu.h"
 #include "IfxWtu.h"
+#include "core_portme.h"
 
 void core3_main(void)
 {
@@ -37,8 +38,6 @@ void core3_main(void)
      * Enable the watchdog and service it periodically if it is required
      */
     IfxWtu_disableCpuWatchdog(IfxWtu_getCpuWatchdogPassword());
-    
-    while(1)
-    {
-    }
+
+    coremark_worker_entry();
 }

@@ -1,10 +1,12 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(tc4d7_uart_printf_echo LANGUAGES C)
+project(tc4d7_coremark LANGUAGES C)
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/AurixProject.cmake")
 
 set(AURIX_TARGET_NAME "${PROJECT_NAME}" CACHE STRING "Output target base name")
+set(COREMARK_MULTITHREAD "1" CACHE STRING "CoreMark context count (1 for single-core, 6 for six-core)")
+set(COREMARK_ITERATIONS "0" CACHE STRING "CoreMark ITERATIONS seed (0 = auto calibrate)")
 set(AURIX_CPU "tc4DAx" CACHE STRING "TriCore CPU variant passed to -mcpu")
 set(AURIX_LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/Lcf_Gcc_Tricore_Tc.lsl" CACHE FILEPATH "Linker script")
 set(AURIX_CPROJECT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/.cproject" CACHE FILEPATH "ADS .cproject used to import source exclusion rules")
@@ -65,6 +67,12 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     -fdata-sections
     -ffunction-sections
     -mcpu=${AURIX_CPU}
+)
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    MULTITHREAD=${COREMARK_MULTITHREAD}
+    ITERATIONS=${COREMARK_ITERATIONS}
+    MAIN_HAS_NOARGC=1
 )
 
 set(AURIX_MAP_FILE "${CMAKE_CURRENT_BINARY_DIR}/${AURIX_TARGET_NAME}.map")

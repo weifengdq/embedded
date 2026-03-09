@@ -28,43 +28,12 @@
 #include "Ifx_Cfg.h"
 #include "IfxCpu.h"
 #include "IfxWtu.h"
-#include <string.h>
 
-#include "serialio.h"
-
-#define UART_BAUDRATE 115200
-#define UART_LINE_BUFFER_SIZE 128
-
-static boolean isAcceptedInputByte(uint8 byte)
-{
-    if ((byte == '\r') || (byte == '\n'))
-    {
-        return TRUE;
-    }
-
-    return (byte >= 0x20U) && (byte <= 0x7EU);
-}
-
-static void printStartupBanner(void)
-{
-    static const char banner[] =
-        "\r\n"
-        "************************************\r\n"
-        "*     TC4D7 UART0 printf / echo    *\r\n"
-        "************************************\r\n"
-        "UART0 TX=P14.0 RX=P14.1, 115200-8-N-1\r\n"
-        "Input a line and press Enter to echo it.\r\n";
-
-    (void)SERIALIO_WriteBuffer((const uint8 *)banner, (Ifx_SizeT)(sizeof(banner) - 1U));
-}
+int coremark_main(void);
 
 
 void core0_main(void)
 {
-    char lineBuffer[UART_LINE_BUFFER_SIZE];
-    uint32 lineLength = 0;
-    boolean lastWasCarriageReturn = FALSE;
-
     IfxCpu_enableInterrupts();
     
     /* !!WATCHDOG0 AND SAFETY WATCHDOG ARE DISABLED HERE!!
@@ -73,47 +42,10 @@ void core0_main(void)
     IfxWtu_disableCpuWatchdog(IfxWtu_getCpuWatchdogPassword());
     IfxWtu_disableSystemWatchdog(IfxWtu_getSystemWatchdogPassword());
 
-    SERIALIO_Init(UART_BAUDRATE);
-    printStartupBanner();
+    (void)coremark_main();
     
     while (1)
     {
-        uint8 receivedByte;
-
-        if (!SERIALIO_TryReadByte(&receivedByte))
-        {
-            continue;
-        }
-
-        if (!isAcceptedInputByte(receivedByte))
-        {
-            continue;
-        }
-
-        if ((receivedByte == '\n') && lastWasCarriageReturn)
-        {
-            lastWasCarriageReturn = FALSE;
-            continue;
-        }
-
-        if ((receivedByte == '\r') || (receivedByte == '\n'))
-        {
-            if (lineLength > 0U)
-            {
-                (void)SERIALIO_WriteBuffer((const uint8 *)lineBuffer, (Ifx_SizeT)lineLength);
-            }
-
-            (void)SERIALIO_WriteBuffer((const uint8 *)"\r\n", 2U);
-            lineLength = 0;
-            lastWasCarriageReturn = (receivedByte == '\r');
-            continue;
-        }
-
-        lastWasCarriageReturn = FALSE;
-
-        if (lineLength < (UART_LINE_BUFFER_SIZE - 1U))
-        {
-            lineBuffer[lineLength++] = (char)receivedByte;
-        }
+        __nop();
     }
 }
