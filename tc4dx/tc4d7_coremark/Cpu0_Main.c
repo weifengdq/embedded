@@ -42,9 +42,6 @@ void core0_main(void)
     IfxWtu_disableCpuWatchdog(IfxWtu_getCpuWatchdogPassword());
     IfxWtu_disableSystemWatchdog(IfxWtu_getSystemWatchdogPassword());
 
-    /* Align cache policy before touching shared LMU data. */
-    IfxCpu_setDataCache(FALSE);
-
     (void)coremark_main();
     
     while (1)

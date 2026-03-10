@@ -136,6 +136,25 @@ static void prepareLocalWorkerResults(const volatile core_results *shared,
     }
 }
 
+static void runLocalTemplate(const volatile core_results *shared,
+                             core_results *resultSink)
+{
+    ee_u8 localMem[TOTAL_DATA_SIZE] __attribute__((aligned(64)));
+    core_results localResults;
+
+    prepareLocalWorkerResults(shared, &localResults, localMem);
+    iterate(&localResults);
+
+    if (resultSink != NULL)
+    {
+        resultSink->crc = localResults.crc;
+        resultSink->crclist = localResults.crclist;
+        resultSink->crcmatrix = localResults.crcmatrix;
+        resultSink->crcstate = localResults.crcstate;
+        resultSink->err = localResults.err;
+    }
+}
+
 static void dumpWorkerCpuState(ee_u32 slot, volatile Ifx_CPU *cpu)
 {
     /* Read diagnostic data from slave core DSPR via global address.
@@ -483,7 +502,7 @@ ee_u8 core_start_parallel(core_results *res)
         __dsync();
         g_parallel_generation = generation;
 
-        iterate((void *)g_parallel_results[0]);
+        runLocalTemplate(g_parallel_results[0], (core_results *)g_parallel_results[0]);
     }
 
     return 0;

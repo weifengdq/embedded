@@ -187,8 +187,14 @@ coremark_main(int argc, char *argv[])
             results[i].size = malloc_override;
         else
             results[i].size = TOTAL_DATA_SIZE;
+
+#if (MULTITHREAD > 1)
+        results[i].memblock[0] = (i == 0U) ? portable_malloc(results[i].size) : NULL;
+#else
         results[i].memblock[0] = portable_malloc(results[i].size);
-        if (results[i].memblock[0] == NULL)
+#endif
+
+        if ((i == 0U) && (results[i].memblock[0] == NULL))
         {
             ee_printf("ERROR: portable_malloc failed for context %u, size=%lu\n",
                       i,
@@ -234,14 +240,31 @@ for (i = 0; i < MULTITHREAD; i++)
         if ((1 << (ee_u32)i) & results[0].execs)
         {
             for (ctx = 0; ctx < MULTITHREAD; ctx++)
+            {
+#if (MULTITHREAD > 1)
+                if (ctx == 0U)
+                    results[ctx].memblock[i + 1]
+                        = (char *)(results[ctx].memblock[0]) + results[0].size * j;
+                else
+                    results[ctx].memblock[i + 1] = NULL;
+#else
                 results[ctx].memblock[i + 1]
                     = (char *)(results[ctx].memblock[0]) + results[0].size * j;
+#endif
+            }
             j++;
         }
     }
     /* call inits */
     for (i = 0; i < MULTITHREAD; i++)
     {
+#if (MULTITHREAD > 1)
+        if (i != 0U)
+        {
+            results[i].list = NULL;
+            continue;
+        }
+#endif
         if (results[i].execs & ID_LIST)
         {
             results[i].list = core_list_init(
