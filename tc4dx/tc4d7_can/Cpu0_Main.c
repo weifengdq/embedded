@@ -26,94 +26,196 @@
  *********************************************************************************************************************/
 #include "Ifx_Types.h"
 #include "Ifx_Cfg.h"
+#include "IfxCan.h"
+#include "IfxCan_Can.h"
 #include "IfxCpu.h"
+#include "IfxPort.h"
 #include "IfxWtu.h"
-#include <string.h>
 
-#include "serialio.h"
+#define TC4D7_CAN_NODE_ID IfxCan_NodeId_1
+#define TC4D7_CAN_NOMINAL_BAUDRATE 500000U
+#define TC4D7_CAN_NOMINAL_SAMPLE_POINT 8000U
+#define TC4D7_CAN_DATA_BAUDRATE 2000000U
+#define TC4D7_CAN_DATA_SAMPLE_POINT 8000U
+#define TC4D7_CAN_TX_FIFO_SIZE 8U
+#define TC4D7_CAN_RX_FIFO_SIZE 8U
 
-#define UART_BAUDRATE 115200
-#define UART_LINE_BUFFER_SIZE 128
+static IfxCan_Can g_canModule;
+static IfxCan_Can_Node g_canNode;
+static uint32 g_canRxData[16];
+static uint32 g_canTxData[16];
 
-static boolean isAcceptedInputByte(uint8 byte)
+volatile uint32 g_canRxCount = 0;
+volatile uint32 g_canTxCount = 0;
+volatile uint32 g_canDropCount = 0;
+volatile uint32 g_canLastMessageId = 0;
+volatile uint32 g_canLastDlc = 0;
+
+static const IfxCan_Can_Pins g_canPins = {
+    &IfxCan_TXD01_P01_3_OUT,
+    IfxPort_OutputMode_pushPull,
+    &IfxCan_RXD01C_P01_4_IN,
+    IfxPort_InputMode_pullUp,
+    IfxPort_PadDriver_cmosAutomotiveSpeed3
+};
+
+static const IfxCan_Filter g_acceptAllStandardFilter = {
+    .number = 0,
+    .elementConfiguration = IfxCan_FilterElementConfiguration_storeInRxFifo0,
+    .stdType = IfxCan_StdFilterType_classic,
+    .xtdType = IfxCan_XtdFilterType_classic,
+    .id1 = 0,
+    .id2 = 0,
+    .rxBufferOffset = IfxCan_RxBufferId_0
+};
+
+static const IfxCan_Filter g_acceptAllExtendedFilter = {
+    .number = 0,
+    .elementConfiguration = IfxCan_FilterElementConfiguration_storeInRxFifo0,
+    .stdType = IfxCan_StdFilterType_classic,
+    .xtdType = IfxCan_XtdFilterType_classic,
+    .id1 = 0,
+    .id2 = 0,
+    .rxBufferOffset = IfxCan_RxBufferId_0
+};
+
+static void initCanTransceiver(void)
 {
-    if ((byte == '\r') || (byte == '\n'))
+    IfxPort_setPinModeOutput(&MODULE_P03, 5, IfxPort_OutputMode_pushPull, IfxPort_OutputIdx_general);
+    IfxPort_setPinPadDriver(&MODULE_P03, 5, IfxPort_PadDriver_cmosAutomotiveSpeed1);
+    IfxPort_setPinLow(&MODULE_P03, 5);
+}
+
+static void initCanNode(void)
+{
+    IfxCan_Can_Config canConfig;
+    IfxCan_Can_NodeConfig nodeConfig;
+
+    IfxCan_Can_initModuleConfig(&canConfig, &MODULE_CAN0);
+    IfxCan_Can_initModule(&g_canModule, &canConfig);
+
+    IfxCan_Can_initNodeConfig(&nodeConfig, &g_canModule);
+    nodeConfig.nodeId = TC4D7_CAN_NODE_ID;
+    nodeConfig.clockSource = IfxCan_ClockSource_both;
+    nodeConfig.frame.type = IfxCan_FrameType_transmitAndReceive;
+    nodeConfig.frame.mode = IfxCan_FrameMode_fdLongAndFast;
+    nodeConfig.calculateBitTimingValues = TRUE;
+    nodeConfig.baudRate.baudrate = TC4D7_CAN_NOMINAL_BAUDRATE;
+    nodeConfig.baudRate.samplePoint = TC4D7_CAN_NOMINAL_SAMPLE_POINT;
+    nodeConfig.baudRate.syncJumpWidth = 2000U;
+    nodeConfig.fastBaudRate.baudrate = TC4D7_CAN_DATA_BAUDRATE;
+    nodeConfig.fastBaudRate.samplePoint = TC4D7_CAN_DATA_SAMPLE_POINT;
+    nodeConfig.fastBaudRate.syncJumpWidth = 2000U;
+
+    nodeConfig.txConfig.txMode = IfxCan_TxMode_fifo;
+    nodeConfig.txConfig.dedicatedTxBuffersNumber = 0;
+    nodeConfig.txConfig.txFifoQueueSize = TC4D7_CAN_TX_FIFO_SIZE;
+    nodeConfig.txConfig.txBufferDataFieldSize = IfxCan_DataFieldSize_64;
+    nodeConfig.txConfig.txEventFifoSize = 0;
+
+    nodeConfig.rxConfig.rxMode = IfxCan_RxMode_fifo0;
+    nodeConfig.rxConfig.rxBufferDataFieldSize = IfxCan_DataFieldSize_64;
+    nodeConfig.rxConfig.rxFifo0DataFieldSize = IfxCan_DataFieldSize_64;
+    nodeConfig.rxConfig.rxFifo1DataFieldSize = IfxCan_DataFieldSize_8;
+    nodeConfig.rxConfig.rxFifo0OperatingMode = IfxCan_RxFifoMode_blocking;
+    nodeConfig.rxConfig.rxFifo0WatermarkLevel = 1;
+    nodeConfig.rxConfig.rxFifo0Size = TC4D7_CAN_RX_FIFO_SIZE;
+    nodeConfig.rxConfig.rxFifo1Size = 0;
+
+    nodeConfig.filterConfig.messageIdLength = IfxCan_MessageIdLength_both;
+    nodeConfig.filterConfig.standardListSize = 1;
+    nodeConfig.filterConfig.extendedListSize = 1;
+    nodeConfig.filterConfig.rejectRemoteFramesWithStandardId = TRUE;
+    nodeConfig.filterConfig.rejectRemoteFramesWithExtendedId = TRUE;
+    nodeConfig.filterConfig.standardFilterForNonMatchingFrames = IfxCan_NonMatchingFrame_reject;
+    nodeConfig.filterConfig.extendedFilterForNonMatchingFrames = IfxCan_NonMatchingFrame_reject;
+
+    nodeConfig.messageRAM.standardFilterListStartAddress = 0x000;
+    nodeConfig.messageRAM.extendedFilterListStartAddress = 0x010;
+    nodeConfig.messageRAM.rxFifo0StartAddress = 0x040;
+    nodeConfig.messageRAM.rxFifo1StartAddress = 0x000;
+    nodeConfig.messageRAM.rxBuffersStartAddress = 0x000;
+    nodeConfig.messageRAM.txEventFifoStartAddress = 0x000;
+    nodeConfig.messageRAM.txBuffersStartAddress = 0x300;
+
+    nodeConfig.pins = &g_canPins;
+    nodeConfig.busLoopbackEnabled = FALSE;
+
+    (void)IfxCan_Can_initNode(&g_canNode, &nodeConfig);
+    IfxCan_Can_setStandardFilter(&g_canNode, (IfxCan_Filter *)&g_acceptAllStandardFilter);
+    IfxCan_Can_setExtendedFilter(&g_canNode, (IfxCan_Filter *)&g_acceptAllExtendedFilter);
+
+    while (IfxCan_Can_isNodeSynchronized(&g_canNode) == FALSE)
     {
-        return TRUE;
+    }
+}
+
+static void echoReceivedMessage(void)
+{
+    IfxCan_Message rxMessage;
+    IfxCan_Message txMessage;
+    uint32 byteCount;
+    uint32 wordCount;
+    uint32 index;
+
+    IfxCan_Can_initMessage(&rxMessage);
+    rxMessage.readFromRxFifo0 = TRUE;
+    IfxCan_Can_readMessage(&g_canNode, &rxMessage, g_canRxData);
+
+    IfxCan_Can_initMessage(&txMessage);
+    txMessage.messageId = rxMessage.messageId;
+    txMessage.messageIdLength = rxMessage.messageIdLength;
+    txMessage.dataLengthCode = rxMessage.dataLengthCode;
+    txMessage.frameMode = rxMessage.frameMode;
+    txMessage.errorStateIndicator = rxMessage.errorStateIndicator;
+    txMessage.storeInTxFifoQueue = TRUE;
+
+    byteCount = IfxCan_Node_getDataLengthInBytes(rxMessage.dataLengthCode);
+    wordCount = (byteCount + 3U) / 4U;
+
+    for (index = 0; index < wordCount; ++index)
+    {
+        g_canTxData[index] = g_canRxData[index];
     }
 
-    return (byte >= 0x20U) && (byte <= 0x7EU);
+    g_canLastMessageId = rxMessage.messageId;
+    g_canLastDlc = rxMessage.dataLengthCode;
+    ++g_canRxCount;
+
+    if (IfxCan_Can_isTxFifoQueueFull(&g_canNode))
+    {
+        ++g_canDropCount;
+        return;
+    }
+
+    if (IfxCan_Can_sendMessage(&g_canNode, &txMessage, g_canTxData) == IfxCan_Status_ok)
+    {
+        ++g_canTxCount;
+    }
+    else
+    {
+        ++g_canDropCount;
+    }
 }
-
-static void printStartupBanner(void)
-{
-    static const char banner[] =
-        "\r\n"
-        "************************************\r\n"
-        "*     TC4D7 UART0 printf / echo    *\r\n"
-        "************************************\r\n"
-        "UART0 TX=P14.0 RX=P14.1, 115200-8-N-1\r\n"
-        "Input a line and press Enter to echo it.\r\n";
-
-    (void)SERIALIO_WriteBuffer((const uint8 *)banner, (Ifx_SizeT)(sizeof(banner) - 1U));
-}
-
 
 void core0_main(void)
 {
-    char lineBuffer[UART_LINE_BUFFER_SIZE];
-    uint32 lineLength = 0;
-    boolean lastWasCarriageReturn = FALSE;
-
     IfxCpu_enableInterrupts();
-    
+
     /* !!WATCHDOG0 AND SAFETY WATCHDOG ARE DISABLED HERE!!
      * Enable the watchdogs and service them periodically if it is required
      */
     IfxWtu_disableCpuWatchdog(IfxWtu_getCpuWatchdogPassword());
     IfxWtu_disableSystemWatchdog(IfxWtu_getSystemWatchdogPassword());
 
-    SERIALIO_Init(UART_BAUDRATE);
-    printStartupBanner();
-    
+    initCanTransceiver();
+    initCanNode();
+
     while (1)
     {
-        uint8 receivedByte;
-
-        if (!SERIALIO_TryReadByte(&receivedByte))
+        while (IfxCan_Can_getRxFifo0FillLevel(&g_canNode) > 0U)
         {
-            continue;
-        }
-
-        if (!isAcceptedInputByte(receivedByte))
-        {
-            continue;
-        }
-
-        if ((receivedByte == '\n') && lastWasCarriageReturn)
-        {
-            lastWasCarriageReturn = FALSE;
-            continue;
-        }
-
-        if ((receivedByte == '\r') || (receivedByte == '\n'))
-        {
-            if (lineLength > 0U)
-            {
-                (void)SERIALIO_WriteBuffer((const uint8 *)lineBuffer, (Ifx_SizeT)lineLength);
-            }
-
-            (void)SERIALIO_WriteBuffer((const uint8 *)"\r\n", 2U);
-            lineLength = 0;
-            lastWasCarriageReturn = (receivedByte == '\r');
-            continue;
-        }
-
-        lastWasCarriageReturn = FALSE;
-
-        if (lineLength < (UART_LINE_BUFFER_SIZE - 1U))
-        {
-            lineBuffer[lineLength++] = (char)receivedByte;
+            echoReceivedMessage();
         }
     }
 }
