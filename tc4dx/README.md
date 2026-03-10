@@ -266,6 +266,10 @@ LwIP 2.2.1, PHY DP83825I, RMII, 100M, 静态IP 192.168.0.100
 
 ### tc4d7_lwip_iperf
 
+百兆PHY测不出什么, 之前 TC397 千兆 PHY 网上测试结果大概是 200Mbits/s 左右, 也说不好 TC4Dx 的上限是多少
+
+![image-20260310171025727](README.assets/image-20260310171025727.png)
+
 ### tc4d7_adc
 
 一个是内部温度, 一个是外部 250 kΩ 电位器
