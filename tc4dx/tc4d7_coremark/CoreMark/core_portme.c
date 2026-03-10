@@ -61,25 +61,44 @@ static volatile ee_u32 __attribute__((section(".lmubss")))
     g_parallel_collect_count;
 static volatile ee_u32 __attribute__((section(".lmubss")))
     g_parallel_generation;
-static volatile ee_u32 __attribute__((section(".lmubss")))
-    g_worker_done_generation[MULTITHREAD];
-static volatile ee_u32 __attribute__((section(".lmubss")))
-    g_worker_seen_generation[MULTITHREAD];
-static volatile ee_u32 __attribute__((section(".lmubss")))
-    g_worker_boot_stage[MULTITHREAD];
-static volatile ee_u32 __attribute__((section(".lmubss")))
-    g_worker_boot_coreid[MULTITHREAD];
+
+#if (MULTITHREAD > 1)
+#define COREMARK_WORKER_MAILBOX_SEEN      0U
+#define COREMARK_WORKER_MAILBOX_DONE      1U
+#define COREMARK_WORKER_MAILBOX_CRCLIST   2U
+#define COREMARK_WORKER_MAILBOX_CRCMATRIX 3U
+#define COREMARK_WORKER_MAILBOX_CRCSTATE  4U
+#define COREMARK_WORKER_MAILBOX_CRCFINAL  5U
 
 static const unsigned int g_workerDsprBase[6] = {
     0x70000000U, 0x60000000U, 0x50000000U,
     0x40000000U, 0x30000000U, 0x20000000U
 };
 
-static volatile unsigned int *getWorkerDiag(ee_u32 slot)
+static volatile ee_u32 *getWorkerMailbox(ee_u32 slot)
 {
-    return (volatile unsigned int *)g_workerDsprBase[slot];
+    return (volatile ee_u32 *)g_workerDsprBase[slot];
 }
 
+static volatile ee_u32 *getLocalWorkerMailbox(void)
+{
+    return (volatile ee_u32 *)0xD0000000U;
+}
+
+static void clearWorkerMailbox(ee_u32 slot)
+{
+    volatile ee_u32 *mailbox = getWorkerMailbox(slot);
+
+    mailbox[COREMARK_WORKER_MAILBOX_SEEN] = 0U;
+    mailbox[COREMARK_WORKER_MAILBOX_DONE] = 0U;
+    mailbox[COREMARK_WORKER_MAILBOX_CRCLIST] = 0U;
+    mailbox[COREMARK_WORKER_MAILBOX_CRCMATRIX] = 0U;
+    mailbox[COREMARK_WORKER_MAILBOX_CRCSTATE] = 0U;
+    mailbox[COREMARK_WORKER_MAILBOX_CRCFINAL] = 0U;
+}
+#endif
+
+#if (MULTITHREAD > 1)
 static void prepareLocalWorkerResults(const volatile core_results *shared,
                                       core_results *local,
                                       ee_u8 *localMem)
@@ -155,71 +174,6 @@ static void runLocalTemplate(const volatile core_results *shared,
     }
 }
 
-static void dumpWorkerCpuState(ee_u32 slot, volatile Ifx_CPU *cpu)
-{
-    /* Read diagnostic data from slave core DSPR via global address.
-     * DSPR base addresses: CPU1=0x60000000 CPU2=0x50000000 CPU3=0x40000000
-     *                      CPU4=0x30000000 CPU5=0x20000000
-     */
-    volatile unsigned int *diag = getWorkerDiag(slot);
-    unsigned int ssw_step   = diag[0]; /* DIAG_DSPR_SSW_STEP   */
-    unsigned int trap_class = diag[1]; /* DIAG_DSPR_TRAP_CLASS */
-    unsigned int trap_id    = diag[2]; /* DIAG_DSPR_TRAP_ID    */
-    unsigned int trap_addr  = diag[3]; /* DIAG_DSPR_TRAP_ADDR  */
-    unsigned int trap_count = diag[4]; /* DIAG_DSPR_TRAP_COUNT */
-    unsigned int trap_deadd = diag[5]; /* DIAG_DSPR_TRAP_DEADD */
-    unsigned int trap_datr  = diag[6]; /* DIAG_DSPR_TRAP_DATR  */
-    /* diag[7] is unused (gap from 0x1C) */
-    unsigned int worker_res  = diag[8];  /* DIAG_DSPR_WORKER_RES  at 0x20 */
-    unsigned int worker_list = diag[9];  /* DIAG_DSPR_WORKER_LIST at 0x24 */
-    unsigned int worker_mb0  = diag[10]; /* DIAG_DSPR_WORKER_MB0  at 0x28 */
-    unsigned int worker_mb1  = diag[11]; /* DIAG_DSPR_WORKER_MB1  at 0x2C */
-    unsigned int worker_lnext = diag[12]; /* DIAG_DSPR_WORKER_LNEXT at 0x30 */
-    unsigned int worker_linfo = diag[13]; /* DIAG_DSPR_WORKER_LINFO at 0x34 */
-    unsigned int worker_ninfo = diag[14]; /* DIAG_DSPR_WORKER_NINFO at 0x38 */
-    unsigned int worker_seen  = diag[15]; /* DIAG_DSPR_WORKER_SEEN at 0x3C */
-    unsigned int worker_done  = diag[16]; /* DIAG_DSPR_WORKER_DONE at 0x40 */
-    unsigned int worker_crclist = diag[17]; /* DIAG_DSPR_WORKER_CRCLIST */
-    unsigned int worker_crcmat  = diag[18]; /* DIAG_DSPR_WORKER_CRCMAT */
-    unsigned int worker_crcstate = diag[19]; /* DIAG_DSPR_WORKER_CRCSTATE */
-    unsigned int worker_crcfinal = diag[20]; /* DIAG_DSPR_WORKER_CRCFINAL */
-
-    ee_printf("          ssw_step=0x%02lx trap_class=%lu trap_id=%lu trap_addr=0x%08lx trap_count=%lu\n",
-              (long unsigned)ssw_step,
-              (long unsigned)trap_class,
-              (long unsigned)trap_id,
-              (long unsigned)trap_addr,
-              (long unsigned)trap_count);
-    ee_printf("          trap_deadd=0x%08lx trap_datr=0x%08lx\n",
-              (long unsigned)trap_deadd,
-              (long unsigned)trap_datr);
-    ee_printf("          worker_res=0x%08lx list=0x%08lx mb0=0x%08lx mb1=0x%08lx\n",
-              (long unsigned)worker_res,
-              (long unsigned)worker_list,
-              (long unsigned)worker_mb0,
-              (long unsigned)worker_mb1);
-    ee_printf("          list_next=0x%08lx list_info=0x%08lx next_info=0x%08lx\n",
-              (long unsigned)worker_lnext,
-              (long unsigned)worker_linfo,
-              (long unsigned)worker_ninfo);
-    ee_printf("          dspr_seen=%lu dspr_done=%lu crc=0x%04lx list=0x%04lx mat=0x%04lx state=0x%04lx\n",
-              (long unsigned)worker_seen,
-              (long unsigned)worker_done,
-              (long unsigned)worker_crcfinal,
-              (long unsigned)worker_crclist,
-              (long unsigned)worker_crcmat,
-              (long unsigned)worker_crcstate);
-    ee_printf("          hra_pc=0x%08lx start_pc=0x%08lx boot_bhalt=%lu dbg_halt=%lu dbg_de=%lu dbg_susin=%lu dbg_susout=%lu\n",
-              (long unsigned)cpu->HRA_PC.U,
-              (long unsigned)((uint32)cpu->HRA_PC.B.PC << 1U),
-              (long unsigned)cpu->HRA_BOOTCON.B.BHALT,
-              (long unsigned)cpu->HRA_DBGSR.B.HALT,
-              (long unsigned)cpu->HRA_DBGSR.B.DE,
-              (long unsigned)cpu->HRA_DBGSR.B.SUSIN,
-              (long unsigned)cpu->HRA_DBGSR.B.SUSOUT);
-    (void)slot;
-}
-
 static sint8 coreIdToSlot(IfxCpu_Id coreId)
 {
     uint32 rawCoreId = (uint32)coreId;
@@ -269,7 +223,7 @@ static boolean areAllWorkersDone(ee_u32 generation)
 
     for (slot = 1U; slot < (ee_u32)MULTITHREAD; ++slot)
     {
-        if (getWorkerDiag(slot)[16] != generation)
+        if (getWorkerMailbox(slot)[COREMARK_WORKER_MAILBOX_DONE] != generation)
         {
             return FALSE;
         }
@@ -277,22 +231,7 @@ static boolean areAllWorkersDone(ee_u32 generation)
 
     return TRUE;
 }
-
-void coremark_worker_mark_boot(ee_u32 stage)
-{
-#if (MULTITHREAD > 1)
-    sint8 slot = coreIdToSlot(IfxCpu_getCoreId());
-
-    if ((slot >= 1) && ((ee_u32)slot < (ee_u32)MULTITHREAD))
-    {
-        g_worker_boot_coreid[slot] = (ee_u32)IfxCpu_getCoreId();
-        g_worker_boot_stage[slot] = stage;
-        __dsync();
-    }
-#else
-    (void)stage;
 #endif
-}
 
 void start_time(void)
 {
@@ -361,10 +300,12 @@ void portable_init(core_portable *p, int *argc, char *argv[])
         for (slot = 0U; slot < (ee_u32)MULTITHREAD; ++slot)
         {
             g_parallel_results[slot] = NULL;
-            g_worker_done_generation[slot] = 0U;
-            g_worker_seen_generation[slot] = 0U;
-            g_worker_boot_stage[slot] = 0U;
-            g_worker_boot_coreid[slot] = 0U;
+#if (MULTITHREAD > 1)
+            if (slot > 0U)
+            {
+                clearWorkerMailbox(slot);
+            }
+#endif
         }
 
         g_parallel_submit_count = 0U;
@@ -398,9 +339,7 @@ void coremark_worker_entry(void)
 #if (MULTITHREAD > 1)
     ee_u32 seen_generation = 0U;
     sint8 slot = coreIdToSlot(IfxCpu_getCoreId());
-
-    coremark_worker_mark_boot(2U);
-    coremark_worker_mark_boot(3U);
+    volatile ee_u32 *localMailbox = getLocalWorkerMailbox();
 
     if (slot < 1)
     {
@@ -422,49 +361,24 @@ void coremark_worker_entry(void)
 
         __dsync();
         seen_generation = g_parallel_generation;
-        DIAG_DSPR_WORKER_SEEN = seen_generation;
-        g_worker_boot_stage[slot] = 4U;
+        localMailbox[COREMARK_WORKER_MAILBOX_SEEN] = seen_generation;
 
         if ((ee_u32)slot < (ee_u32)MULTITHREAD)
         {
             volatile core_results *wres = g_parallel_results[slot];
-            DIAG_DSPR_WORKER_RES  = (unsigned int)wres;
-            DIAG_DSPR_WORKER_LIST = (unsigned int)(wres ? wres->list : 0);
-            DIAG_DSPR_WORKER_MB0  = (unsigned int)(wres ? wres->memblock[0] : 0);
-            DIAG_DSPR_WORKER_MB1  = (unsigned int)(wres ? wres->memblock[1] : 0);
 
             if (wres != NULL)
             {
                 prepareLocalWorkerResults(wres, &localResults, localMem);
 
-                list_head *head = localResults.list;
-                list_head *next = (head != NULL) ? head->next : NULL;
-                list_data *headInfo = (head != NULL) ? head->info : NULL;
-                list_data *nextInfo = (next != NULL) ? next->info : NULL;
-
-                DIAG_DSPR_WORKER_LNEXT = (unsigned int)next;
-                DIAG_DSPR_WORKER_LINFO = (unsigned int)headInfo;
-                DIAG_DSPR_WORKER_NINFO = (unsigned int)nextInfo;
-
-                if ((head == NULL) || (headInfo == NULL) || (next == NULL) || (nextInfo == NULL))
-                {
-                    DIAG_DSPR_WORKER_DONE = 0xBAD00000U | (unsigned int)slot;
-                    while (1)
-                    {
-                        __nop();
-                    }
-                }
-
                 iterate(&localResults);
-                DIAG_DSPR_WORKER_CRCLIST = localResults.crclist;
-                DIAG_DSPR_WORKER_CRCMAT = localResults.crcmatrix;
-                DIAG_DSPR_WORKER_CRCSTATE = localResults.crcstate;
-                DIAG_DSPR_WORKER_CRCFINAL = localResults.crc;
-                DIAG_DSPR_WORKER_DONE = seen_generation;
+                localMailbox[COREMARK_WORKER_MAILBOX_CRCLIST] = localResults.crclist;
+                localMailbox[COREMARK_WORKER_MAILBOX_CRCMATRIX] = localResults.crcmatrix;
+                localMailbox[COREMARK_WORKER_MAILBOX_CRCSTATE] = localResults.crcstate;
+                localMailbox[COREMARK_WORKER_MAILBOX_CRCFINAL] = localResults.crc;
             }
             __dsync();
-            g_worker_done_generation[slot] = seen_generation;
-            g_worker_boot_stage[slot] = 5U;
+            localMailbox[COREMARK_WORKER_MAILBOX_DONE] = seen_generation;
         }
     }
 #else
@@ -495,8 +409,7 @@ ee_u8 core_start_parallel(core_results *res)
 
         for (slot = 1U; slot < (ee_u32)MULTITHREAD; ++slot)
         {
-            g_worker_done_generation[slot] = 0U;
-            g_worker_seen_generation[slot] = 0U;
+            clearWorkerMailbox(slot);
         }
 
         __dsync();
@@ -527,36 +440,13 @@ ee_u8 core_stop_parallel(core_results *res)
 
                     for (slot = 1U; slot < (ee_u32)MULTITHREAD; ++slot)
                     {
-                        volatile unsigned int *diag = getWorkerDiag(slot);
+                        volatile ee_u32 *mailbox = getWorkerMailbox(slot);
+
                         ee_printf("  slot %u: seen=%lu done=%lu target=%lu\n",
                                   (unsigned int)slot,
-                                  (long unsigned)diag[15],
-                                  (long unsigned)diag[16],
+                                  (long unsigned)mailbox[COREMARK_WORKER_MAILBOX_SEEN],
+                                  (long unsigned)mailbox[COREMARK_WORKER_MAILBOX_DONE],
                                   (long unsigned)g_parallel_generation);
-                        ee_printf("          boot_stage=%lu coreid=%lu\n",
-                                  (long unsigned)g_worker_boot_stage[slot],
-                                  (long unsigned)g_worker_boot_coreid[slot]);
-
-                        switch (slot)
-                        {
-                        case 1U:
-                            dumpWorkerCpuState(slot, &MODULE_CPU1);
-                            break;
-                        case 2U:
-                            dumpWorkerCpuState(slot, &MODULE_CPU2);
-                            break;
-                        case 3U:
-                            dumpWorkerCpuState(slot, &MODULE_CPU3);
-                            break;
-                        case 4U:
-                            dumpWorkerCpuState(slot, &MODULE_CPU4);
-                            break;
-                        case 5U:
-                            dumpWorkerCpuState(slot, &MODULE_CPU5);
-                            break;
-                        default:
-                            break;
-                        }
                     }
                 }
                 break;
@@ -569,15 +459,15 @@ ee_u8 core_stop_parallel(core_results *res)
 
             for (slot = 1U; slot < (ee_u32)MULTITHREAD; ++slot)
             {
-                volatile unsigned int *diag = getWorkerDiag(slot);
+                volatile ee_u32 *mailbox = getWorkerMailbox(slot);
                 volatile core_results *resSlot = g_parallel_results[slot];
 
                 if (resSlot != NULL)
                 {
-                    resSlot->crclist = (ee_u16)diag[17];
-                    resSlot->crcmatrix = (ee_u16)diag[18];
-                    resSlot->crcstate = (ee_u16)diag[19];
-                    resSlot->crc = (ee_u16)diag[20];
+                    resSlot->crclist = (ee_u16)mailbox[COREMARK_WORKER_MAILBOX_CRCLIST];
+                    resSlot->crcmatrix = (ee_u16)mailbox[COREMARK_WORKER_MAILBOX_CRCMATRIX];
+                    resSlot->crcstate = (ee_u16)mailbox[COREMARK_WORKER_MAILBOX_CRCSTATE];
+                    resSlot->crc = (ee_u16)mailbox[COREMARK_WORKER_MAILBOX_CRCFINAL];
                 }
             }
         }

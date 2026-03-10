@@ -97,12 +97,6 @@ void __Core3_start(void)
     /* By default mapped to empty, skip only if configured */
     IFX_CFG_SSW_SKIP_STARTUP_ROUTINE(3);
 
-    DIAG_DSPR_TRAP_CLASS = 0U;
-    DIAG_DSPR_TRAP_ID    = 0U;
-    DIAG_DSPR_TRAP_ADDR  = 0U;
-    DIAG_DSPR_TRAP_COUNT = 0U;
-    SSW_DIAG_STEP(0x01);
-    
     #if (IFX_PROT_ENABLED == 1U)
         IfxSswProt_setState((Ifx_PROT_PROT *)&(MODULE_CPU3.PROTSFRE), IfxSswProt_State_config);
     #endif
@@ -112,12 +106,9 @@ void __Core3_start(void)
         IfxSswProt_setState((Ifx_PROT_PROT *)&(MODULE_CPU3.PROTSFRE), IfxSswProt_State_run);
     #endif
 
-    SSW_DIAG_STEP(0x02);
     Ifx_Ssw_MTCR(CPU_FCX, IFX_CFG_SSW_CSA_PTR((unsigned int)__CSA(3)));
-    SSW_DIAG_STEP(0x03);
 
     Ifx_Ssw_disableVirtualization_Cpu3();
-    SSW_DIAG_STEP(0x04);
     
     #if (IFX_PROT_ENABLED == 1U)
         IfxSswProt_setState((Ifx_PROT_PROT *)&(MODULE_CPU3.PROTSFRE), IfxSswProt_State_config);
@@ -130,7 +121,6 @@ void __Core3_start(void)
 
     /* Set the PSW to its reset value in case of a warm start,clear PSW.IS */
     Ifx_Ssw_MTCR(CPU_PSW, IFX_CFG_SSW_PSW_DEFAULT);
-    SSW_DIAG_STEP(0x05);
 
     {
         Ifx_CPU_PCON0 pcon0;
@@ -162,7 +152,6 @@ void __Core3_start(void)
         IfxSswProt_setState((Ifx_PROT_PROT *)&(MODULE_CPU3.PROTSFRE), IfxSswProt_State_config);
     #endif
 
-    SSW_DIAG_STEP(0x06);
     /* Load Base Address of Interrupt Vector Table. we will do this later in the program */
     Ifx_Ssw_MTCR(CPU_BIV, (unsigned int)__INTTAB(3));
 
@@ -172,15 +161,12 @@ void __Core3_start(void)
         IfxSswProt_setState((Ifx_PROT_PROT *)&(MODULE_CPU3.PROTSFRE), IfxSswProt_State_run);
     #endif
     Ifx_Ssw_initCSA((unsigned int *)__CSA(3), (unsigned int *)__CSA_END(3));
-    SSW_DIAG_STEP(0x07);
 
     /* initialize SDA base pointers */
     Ifx_Ssw_setAddressReg(a0, __SDATA1(3));
     Ifx_Ssw_setAddressReg(a1, __SDATA2(3));
     Ifx_Ssw_setAddressReg(a8, __SDATA3(3));
     Ifx_Ssw_setAddressReg(a9, __SDATA4(3));
-
-    SSW_DIAG_STEP(0x08);
     /*Initialize CPU Private Global Variables*/
     volatile unsigned int tempVar = ((unsigned int)&__ENABLE_INDIVIDUAL_C_INIT_CPU3);
     if (tempVar != 0U)
@@ -194,10 +180,8 @@ void __Core3_start(void)
       /* Hook functions to initialize application specific SW extensions */
       software_init_hook();	
     }
-    SSW_DIAG_STEP(0x09);
     /* MultiCore synchronization hooks to execute Safety Library tests */
     Ifx_Ssw_MultiCore_Sync_Cpu3();
-    SSW_DIAG_STEP(0x0A);
 
     /*Call main function of Cpu3 */
 #ifdef IFX_CFG_SSW_RETURN_FROM_MAIN

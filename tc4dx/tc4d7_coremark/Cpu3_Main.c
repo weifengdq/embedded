@@ -39,6 +39,5 @@ void core3_main(void)
      */
     IfxWtu_disableCpuWatchdog(IfxWtu_getCpuWatchdogPassword());
 
-    coremark_worker_mark_boot(1U);
     coremark_worker_entry();
 }

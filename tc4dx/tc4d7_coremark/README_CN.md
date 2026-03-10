@@ -1,15 +1,38 @@
-# tc4d7_coremark（中文说明）
+# tc4d7_coremark
 
-本工程用于在 AURIX TC4D7 上运行 CoreMark，支持单核与六核、Debug/Release、多种内存策略对比。
+本工程用于在 AURIX TC4D7 上运行 CoreMark，现已整理为干净的高性能 6 核版本。
 
-## 1. 功能概览
+当前版本支持：
+- 1 核与 6 核运行
+- `STACK` 与 `MALLOC` 两种最终可用的内存策略
+- Release 模式下接近 6 倍的有效多核加速
 
-当前支持：
-- 线程数切换：`CoremarkThreads=1..6`
-- 构建模式切换：`Debug/Release/RelWithDebInfo/MinSizeRel`
-- 内存策略切换：`STACK/MALLOC/STATIC`
+## 最终正式结果
 
-## 2. 常用命令
+下表为最终确认的 Release 成绩，全部满足 CoreMark 有效性要求：运行时间超过 10 秒、CRC 正确、串口输出 `Correct operation validated`。
+
+| 构建 | 线程数 | 内存策略 | 总时间 (s) | Iterations/Sec | 加速比 | 并行效率 |
+| --- | ---: | --- | ---: | ---: | ---: | ---: |
+| Release | 1 | STACK | 15.036789 | 1995.106750 | 1.0000x | 100.00% |
+| Release | 6 | STACK | 15.049913 | 11960.201780 | 5.9948x | 99.91% |
+| Release | 1 | MALLOC | 14.987649 | 2001.648112 | 1.0000x | 100.00% |
+| Release | 6 | MALLOC | 15.058318 | 11953.526303 | 5.9718x | 99.53% |
+
+结论：
+- `STACK` 与 `MALLOC` 两种模式都已经实现接近线性的 6 核扩展
+- 最终 6 核性能版在保证结果正确的前提下，基本跑满了 6 核并行效率
+- 之前 `MALLOC` 六核不稳定的问题已经被消除
+
+## 实现说明
+
+最终性能版采用了保守但高效的多核执行模型：
+- 主核只下发共享模板参数
+- 每个 worker 核在本地内存中重建自己的 CoreMark 上下文
+- 核间仅通过最小共享 mailbox 交换同步状态和 CRC 结果
+
+这样避免了 worker 直接运行在共享链表/矩阵/状态数据上的一致性风险，同时保留了高性能 6 核路径。
+
+## 构建与下载
 
 在 `tc4d7_coremark` 目录执行：
 
@@ -19,7 +42,7 @@
 .\build.ps1 -Action download -BuildType Release -CoremarkThreads 1 -CoremarkMemMethod STACK
 
 # 六核，Release，STACK
-.\build.ps1 -Action rebuild -BuildType Release -CoremarkThreads 6 -CoremarkMemMethod STACK
+.\build.ps1 -Action rebuild -BuildType Release -CoremarkThreads 6 -CoremarkMemMethod STACK -CoremarkIterations 30000
 .\build.ps1 -Action download -BuildType Release -CoremarkThreads 6 -CoremarkMemMethod STACK
 
 # 单核，Release，MALLOC
@@ -27,86 +50,286 @@
 .\build.ps1 -Action download -BuildType Release -CoremarkThreads 1 -CoremarkMemMethod MALLOC
 
 # 六核，Release，MALLOC
-.\build.ps1 -Action rebuild -BuildType Release -CoremarkThreads 6 -CoremarkMemMethod MALLOC
+.\build.ps1 -Action rebuild -BuildType Release -CoremarkThreads 6 -CoremarkMemMethod MALLOC -CoremarkIterations 30000
 .\build.ps1 -Action download -BuildType Release -CoremarkThreads 6 -CoremarkMemMethod MALLOC
 ```
 
-可选固定迭代数（便于严格对比）：
+常用参数：
+- `-BuildType`: `Debug | Release | RelWithDebInfo | MinSizeRel`
+- `-CoremarkThreads`: `1..6`
+- `-CoremarkMemMethod`: `STACK | MALLOC | STATIC`
+- `-CoremarkIterations`: 固定 CoreMark 迭代种子，`0` 表示自动校准
 
-```powershell
--CoremarkIterations 30000
+说明：
+- `STATIC` 仅适用于单上下文，CoreMark 上游不支持 `MULTITHREAD > 1` 时使用 `MEM_STATIC`
+
+## 成绩有效性检查
+
+记录分数前，应确认：
+- 串口出现 `Correct operation validated`
+- 所有 CRC 校验通过
+- 运行时间不低于 10 秒
+- 编译参数与目标测试模式一致
+
+## 构建系统清理
+
+本次还同时清理了构建脚本：
+- `build.ps1` 已去掉 `build`、`rebuild`、`all` 中重复的 configure 流程，因此不会再出现无意义的 `CMAKE_TOOLCHAIN_FILE` warning
+- `cmake/AurixProject.cmake` 已改为递归扫描有效源码目录，不再对排除的构建输出目录做全树 glob，因此可消除之前的 `GLOB mismatch!` 噪音
+
+## 测试日志
+
+```bash
+# 单核，Release，STACK
+.\build.ps1 -Action rebuild -BuildType Release -CoremarkThreads 1 -CoremarkMemMethod STACK
+.\build.ps1 -Action download -BuildType Release -CoremarkThreads 1 -CoremarkMemMethod STACK
+## 串口日志
+=== TC4D7 CoreMark (1 thread) ===
+2K performance run parameters for coremark.
+CoreMark Size    : 666
+Total ticks      : 3223427395
+Total time (secs): 15.036789
+Iterations/Sec   : 1995.106750
+Iterations       : 30000
+Compiler version : 11.3.1 20221230
+Compiler flags   : -O3 -DNDEBUG
+Memory location  : STACK
+seedcrc          : 0xe9f5
+[0]crclist       : 0xe714
+[0]crcmatrix     : 0x1fd7
+[0]crcstate      : 0x8e3a
+[0]crcfinal      : 0x5275
+Correct operation validated. See README.md for run and reporting rules.
+CoreMark 1.0 : 1995.106750 / 11.3.1 20221230 -O3 -DNDEBUG / STACK
+
+# 六核，Release，STACK
+.\build.ps1 -Action rebuild -BuildType Release -CoremarkThreads 6 -CoremarkMemMethod STACK -CoremarkIterations 30000
+.\build.ps1 -Action download -BuildType Release -CoremarkThreads 6 -CoremarkMemMethod STACK
+## 串口日志
+=== TC4D7 CoreMark (6 thread) ===
+2K performance run parameters for coremark.
+CoreMark Size    : 666
+Total ticks      : 3229989361
+Total time (secs): 15.049913
+Iterations/Sec   : 11960.201780
+Iterations       : 180000
+Compiler version : 11.3.1 20221230
+Compiler flags   : -O3 -DNDEBUG
+Parallel AURIX_TC4DX_CORES : 6
+Memory location  : STACK
+seedcrc          : 0xe9f5
+[0]crclist       : 0xe714
+[1]crclist       : 0xe714
+[2]crclist       : 0xe714
+[3]crclist       : 0xe714
+[4]crclist       : 0xe714
+[5]crclist       : 0xe714
+[0]crcmatrix     : 0x1fd7
+[1]crcmatrix     : 0x1fd7
+[2]crcmatrix     : 0x1fd7
+[3]crcmatrix     : 0x1fd7
+[4]crcmatrix     : 0x1fd7
+[5]crcmatrix     : 0x1fd7
+[0]crcstate      : 0x8e3a
+[1]crcstate      : 0x8e3a
+[2]crcstate      : 0x8e3a
+[3]crcstate      : 0x8e3a
+[4]crcstate      : 0x8e3a
+[5]crcstate      : 0x8e3a
+[0]crcfinal      : 0x5275
+[1]crcfinal      : 0x5275
+[2]crcfinal      : 0x5275
+[3]crcfinal      : 0x5275
+[4]crcfinal      : 0x5275
+[5]crcfinal      : 0x5275
+Correct operation validated. See README.md for run and reporting rules.
+CoreMark 1.0 : 11960.201780 / 11.3.1 20221230 -O3 -DNDEBUG / STACK / 6:AURIX_TC4DX_CORES
+
+# 单核，Release，MALLOC
+.\build.ps1 -Action rebuild -BuildType Release -CoremarkThreads 1 -CoremarkMemMethod MALLOC
+.\build.ps1 -Action download -BuildType Release -CoremarkThreads 1 -CoremarkMemMethod MALLOC
+## 串口日志
+=== TC4D7 CoreMark (1 thread) ===
+2K performance run parameters for coremark.
+CoreMark Size    : 666
+Total ticks      : 3198857374
+Total time (secs): 14.987649
+Iterations/Sec   : 2001.648112
+Iterations       : 30000
+Compiler version : 11.3.1 20221230
+Compiler flags   : -O3 -DNDEBUG
+Memory location  : MALLOC
+seedcrc          : 0xe9f5
+[0]crclist       : 0xe714
+[0]crcmatrix     : 0x1fd7
+[0]crcstate      : 0x8e3a
+[0]crcfinal      : 0x5275
+Correct operation validated. See README.md for run and reporting rules.
+CoreMark 1.0 : 2001.648112 / 11.3.1 20221230 -O3 -DNDEBUG / MALLOC
+
+# 六核，Release，MALLOC
+.\build.ps1 -Action rebuild -BuildType Release -CoremarkThreads 6 -CoremarkMemMethod MALLOC -CoremarkIterations 30000
+.\build.ps1 -Action download -BuildType Release -CoremarkThreads 6 -CoremarkMemMethod MALLOC
+# 串口日志
+=== TC4D7 CoreMark (6 thread) ===
+2K performance run parameters for coremark.
+CoreMark Size    : 666
+Total ticks      : 3234191692
+Total time (secs): 15.058318
+Iterations/Sec   : 11953.526303
+Iterations       : 180000
+Compiler version : 11.3.1 20221230
+Compiler flags   : -O3 -DNDEBUG
+Parallel AURIX_TC4DX_CORES : 6
+Memory location  : MALLOC
+seedcrc          : 0xe9f5
+[0]crclist       : 0xe714
+[1]crclist       : 0xe714
+[2]crclist       : 0xe714
+[3]crclist       : 0xe714
+[4]crclist       : 0xe714
+[5]crclist       : 0xe714
+[0]crcmatrix     : 0x1fd7
+[1]crcmatrix     : 0x1fd7
+[2]crcmatrix     : 0x1fd7
+[3]crcmatrix     : 0x1fd7
+[4]crcmatrix     : 0x1fd7
+[5]crcmatrix     : 0x1fd7
+[0]crcstate      : 0x8e3a
+[1]crcstate      : 0x8e3a
+[2]crcstate      : 0x8e3a
+[3]crcstate      : 0x8e3a
+[4]crcstate      : 0x8e3a
+[5]crcstate      : 0x8e3a
+[0]crcfinal      : 0x5275
+[1]crcfinal      : 0x5275
+[2]crcfinal      : 0x5275
+[3]crcfinal      : 0x5275
+[4]crcfinal      : 0x5275
+[5]crcfinal      : 0x5275
+Correct operation validated. See README.md for run and reporting rules.
+CoreMark 1.0 : 11953.526303 / 11.3.1 20221230 -O3 -DNDEBUG / MALLOC / 6:AURIX_TC4DX_CORES
 ```
 
-## 3. 日志解读
+## 复测
 
-关键字段：
-- `Iterations/Sec`：核心性能指标
-- `Compiler flags`：确认是否是 Release（`-O3 -DNDEBUG`）
-- `Parallel ... : 6`：六核并行模式已启用
-- `crc*`：结果校验，必须全部正确
-- `Correct operation validated`：结果有效
+```bash
+# 6 stack
+=== TC4D7 CoreMark (6 thread) ===
+2K performance run parameters for coremark.
+CoreMark Size    : 666
+Total ticks      : 3225019284
+Total time (secs): 15.039973
+Iterations/Sec   : 11968.106464
+Iterations       : 180000
+Compiler version : 11.3.1 20221230
+Compiler flags   : -O3 -DNDEBUG
+Parallel AURIX_TC4DX_CORES : 6
+Memory location  : STACK
+seedcrc          : 0xe9f5
+[0]crclist       : 0xe714
+[1]crclist       : 0xe714
+[2]crclist       : 0xe714
+[3]crclist       : 0xe714
+[4]crclist       : 0xe714
+[5]crclist       : 0xe714
+[0]crcmatrix     : 0x1fd7
+[1]crcmatrix     : 0x1fd7
+[2]crcmatrix     : 0x1fd7
+[3]crcmatrix     : 0x1fd7
+[4]crcmatrix     : 0x1fd7
+[5]crcmatrix     : 0x1fd7
+[0]crcstate      : 0x8e3a
+[1]crcstate      : 0x8e3a
+[2]crcstate      : 0x8e3a
+[3]crcstate      : 0x8e3a
+[4]crcstate      : 0x8e3a
+[5]crcstate      : 0x8e3a
+[0]crcfinal      : 0x5275
+[1]crcfinal      : 0x5275
+[2]crcfinal      : 0x5275
+[3]crcfinal      : 0x5275
+[4]crcfinal      : 0x5275
+[5]crcfinal      : 0x5275
+Correct operation validated. See README.md for run and reporting rules.
+CoreMark 1.0 : 11968.106464 / 11.3.1 20221230 -O3 -DNDEBUG / STACK / 6:AURIX_TC4DX_CORES
 
-## 4. 为什么 6 核不是 6 倍
 
-这是嵌入式多核常见现象，不是异常：
-- CoreMark 含较多内存访问和链表操作，容易受内存/互联瓶颈限制
-- 多核有同步与共享资源争用开销
-- 当前实现下数据放置方式会显著影响扩展效率
+# 6 malloc
+=== TC4D7 CoreMark (6 thread) ===
+2K performance run parameters for coremark.
+CoreMark Size    : 666
+Total ticks      : 3235204444
+Total time (secs): 15.060343
+Iterations/Sec   : 11951.918642
+Iterations       : 180000
+Compiler version : 11.3.1 20221230
+Compiler flags   : -O3 -DNDEBUG
+Parallel AURIX_TC4DX_CORES : 6
+Memory location  : MALLOC
+seedcrc          : 0xe9f5
+[0]crclist       : 0xe714
+[1]crclist       : 0xe714
+[2]crclist       : 0xe714
+[3]crclist       : 0xe714
+[4]crclist       : 0xe714
+[5]crclist       : 0xe714
+[0]crcmatrix     : 0x1fd7
+[1]crcmatrix     : 0x1fd7
+[2]crcmatrix     : 0x1fd7
+[3]crcmatrix     : 0x1fd7
+[4]crcmatrix     : 0x1fd7
+[5]crcmatrix     : 0x1fd7
+[0]crcstate      : 0x8e3a
+[1]crcstate      : 0x8e3a
+[2]crcstate      : 0x8e3a
+[3]crcstate      : 0x8e3a
+[4]crcstate      : 0x8e3a
+[5]crcstate      : 0x8e3a
+[0]crcfinal      : 0x5275
+[1]crcfinal      : 0x5275
+[2]crcfinal      : 0x5275
+[3]crcfinal      : 0x5275
+[4]crcfinal      : 0x5275
+[5]crcfinal      : 0x5275
+Correct operation validated. See README.md for run and reporting rules.
+CoreMark 1.0 : 11951.918642 / 11.3.1 20221230 -O3 -DNDEBUG / MALLOC / 6:AURIX_TC4DX_CORES
 
-建议用下列指标评估：
-- 加速比 = `6核 Iter/s / 1核 Iter/s`
-- 并行效率 = `加速比 / 6`
+# 单 malloc
+=== TC4D7 CoreMark (1 thread) ===
+2K performance run parameters for coremark.
+CoreMark Size    : 666
+Total ticks      : 3223187381
+Total time (secs): 15.036309
+Iterations/Sec   : 1995.170443
+Iterations       : 30000
+Compiler version : 11.3.1 20221230
+Compiler flags   : -O3 -DNDEBUG
+Memory location  : MALLOC
+seedcrc          : 0xe9f5
+[0]crclist       : 0xe714
+[0]crcmatrix     : 0x1fd7
+[0]crcstate      : 0x8e3a
+[0]crcfinal      : 0x5275
+Correct operation validated. See README.md for run and reporting rules.
+CoreMark 1.0 : 1995.170443 / 11.3.1 20221230 -O3 -DNDEBUG / MALLOC
 
-## 5. 本轮多核优化改动
-
-### 5.1 修复 MALLOC 六核卡住
-
-已做两项修复：
-- 链接脚本 `Lcf_Gcc_Tricore_Tc.lsl`：`LCF_HEAP_SIZE` 从 `4k` 提升到 `64k`
-- `core_main.c`：增加 `portable_malloc` 失败检查，失败时打印错误并退出，避免“无日志卡死”
-- `core_portme.c`：修复 worker 晚启动时可能错过首轮 generation 的竞态（会导致 timeout 和非主核 CRC 全 0），并在超时时打印每个 slot 的 `seen/done/target` 诊断信息
-
-### 5.2 新增 LMU 专用池（用于多核 MALLOC）
-
-为减少多核情况下普通堆分配的不确定性，在 `core_portme.c` 增加了：
-- 多核 + `MEM_MALLOC` 时使用 `.coremark_lmu` 段上的固定池（bump allocator）
-- `portable_free` 在该模式下为 no-op
-- 池大小默认 `256KB`
-
-### 5.3 链接脚本新增段
-
-在 `Lcf_Gcc_Tricore_Tc.lsl` 新增：
-- `.coremark_lmu (NOLOAD)`，放到 `lmuram`
-
-## 6. 内存策略建议
-
-- `STACK`：当前基线，单核稳定、六核可运行
-- `MALLOC`：现在已可用于六核对比，且具备 LMU 池加持
-- `STATIC`：仅适合单上下文，不适合六核（CoreMark 上游逻辑限制）
-
-## 7. 推荐测试矩阵
-
-建议固定迭代数后，执行以下 4 组并记录串口：
-
-1. `Release + 1核 + STACK + Iter=30000`
-2. `Release + 6核 + STACK + Iter=30000`
-3. `Release + 1核 + MALLOC + Iter=30000`
-4. `Release + 6核 + MALLOC + Iter=30000`
-
-建议输出对比表：
-- BuildType
-- Threads
-- MemMethod
-- Iterations
-- Total time
-- Iterations/Sec
-- Speedup（相对 1核同策略）
-- Efficiency
-
-## 8. 后续可继续优化方向
-
-- 做“按核本地内存分片”分配（每个 context 尽量落在对应核更优内存）
-- 降低并行同步共享变量争用
-- 在保持结果有效前提下尝试编译器增强（如 LTO）
-
-如果你把 4 组日志贴出来，我可以直接给你生成完整的性能评估报告和下一步改造优先级。
+# 单 stack
+=== TC4D7 CoreMark (1 thread) ===
+2K performance run parameters for coremark.
+CoreMark Size    : 666
+Total ticks      : 3222481712
+Total time (secs): 15.034898
+Iterations/Sec   : 1995.357732
+Iterations       : 30000
+Compiler version : 11.3.1 20221230
+Compiler flags   : -O3 -DNDEBUG
+Memory location  : STACK
+seedcrc          : 0xe9f5
+[0]crclist       : 0xe714
+[0]crcmatrix     : 0x1fd7
+[0]crcstate      : 0x8e3a
+[0]crcfinal      : 0x5275
+Correct operation validated. See README.md for run and reporting rules.
+CoreMark 1.0 : 1995.357732 / 11.3.1 20221230 -O3 -DNDEBUG / STACK
+```

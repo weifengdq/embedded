@@ -125,7 +125,6 @@ typedef struct CORE_PORTABLE_S
 void portable_init(core_portable *p, int *argc, char *argv[]);
 void portable_fini(core_portable *p);
 
-void coremark_worker_mark_boot(ee_u32 stage);
 void coremark_worker_entry(void);
 
 #if !defined(PROFILE_RUN) && !defined(PERFORMANCE_RUN) && !defined(VALIDATION_RUN)

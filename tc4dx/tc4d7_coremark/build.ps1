@@ -68,17 +68,22 @@ function Configure-Project {
         throw "Toolchain file not found: $toolchainFile"
     }
 
+    $cacheFile = Join-Path $buildPath "CMakeCache.txt"
+
     $configureArgs = @(
         "-S", $projectRoot,
         "-B", $buildPath,
         "-G", $Generator,
-        "-DCMAKE_TOOLCHAIN_FILE=$toolchainFile",
         "-DAURIX_TOOLCHAIN_BIN=$ToolchainBin",
         "-DCMAKE_BUILD_TYPE=$BuildType",
         "-DCOREMARK_MULTITHREAD=$CoremarkThreads",
         "-DCOREMARK_MEM_METHOD=$CoremarkMemMethod",
         "-DCOREMARK_ITERATIONS=$CoremarkIterations"
     )
+
+    if(-not (Test-Path $cacheFile)) {
+        $configureArgs += "-DCMAKE_TOOLCHAIN_FILE=$toolchainFile"
+    }
 
     Invoke-Step -FilePath "cmake" -ArgumentList $configureArgs
 }
@@ -151,8 +156,8 @@ function Download-Project {
 switch($Action) {
     "configure" { Configure-Project }
     "build"     { Build-Project }
-    "rebuild"   { Clean-Project; Configure-Project; Build-Project }
+    "rebuild"   { Clean-Project; Build-Project }
     "clean"     { Clean-Project }
     "download"  { Download-Project }
-    "all"       { Configure-Project; Build-Project; Download-Project }
+    "all"       { Build-Project; Download-Project }
 }
