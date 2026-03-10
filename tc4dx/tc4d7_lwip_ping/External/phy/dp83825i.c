@@ -26,8 +26,6 @@
  *********************************************************************************************************************/
 
 #include <stdint.h>
-#include <stdio.h>
-
 #include "phy/dp83825i.h"
 
 #define PHY_ID              0x2000A140
@@ -59,15 +57,11 @@ int dp83825i_init(phy_t *phy, uint8_t addr, phy_read_reg_t read, phy_write_reg_t
 
     if (phy_id == PHY_MII_INVALID_PHY_ID)
     {
-        printf("DP83825I probe timeout at PHY address %u.\r\n", (unsigned)addr);
         return -1;
     }
 
-    printf("DP83825I PHY ID: 0x%08lX\r\n", (unsigned long)phy_id);
-
     if ((phy_id & PHY_ID_MSK) != PHY_ID)
     {
-        printf("DP83825I PHY ID mismatch at PHY address %u.\r\n", (unsigned)addr);
         return -1;
     }
 

@@ -6,7 +6,6 @@
 #include <Ifx_Types.h>
 #include <Cpu/Std/IfxCpu.h>
 
-#include <stdio.h>
 #include <string.h>
 
 #include "IfxGeth_Eth.h"
@@ -93,20 +92,13 @@ void Ifx_Lwip_pollReceiveFlags(void)
 
 static void Ifx_Lwip_initCommon(eth_addr_t ethAddr, const ip_addr_t *ipAddr, const ip_addr_t *netMask, const ip_addr_t *gateway)
 {
-    err_t result;
-
     memset(&g_Lwip, 0, sizeof(g_Lwip));
 
-    printf("lwIP core init...\r\n");
     lwip_init();
 
     g_Lwip.eth_addr = ethAddr;
-    printf("lwIP netif_add...\r\n");
-    result = netif_add(&g_Lwip.netif, ipAddr, netMask, gateway, NULL_PTR, ifx_netif_init, ethernet_input) != NULL_PTR ? ERR_OK : ERR_IF;
-
-    if (result != ERR_OK)
+    if (netif_add(&g_Lwip.netif, ipAddr, netMask, gateway, NULL_PTR, ifx_netif_init, ethernet_input) == NULL_PTR)
     {
-        printf("lwIP netif_add failed.\r\n");
         return;
     }
 
@@ -116,9 +108,7 @@ static void Ifx_Lwip_initCommon(eth_addr_t ethAddr, const ip_addr_t *ipAddr, con
     g_Lwip.netif.hostname = BOARDNAME;
 #endif
 
-    printf("lwIP netif_set_up...\r\n");
     netif_set_up(&g_Lwip.netif);
-    printf("lwIP init done.\r\n");
 }
 
 void Ifx_Lwip_init(eth_addr_t ethAddr)

@@ -260,6 +260,10 @@ Read benchmark      : 2048 bytes in 52470 us, 39031 B/s
 
 ### tc4d7_lwip_ping
 
+LwIP 2.2.1, PHY DP83825I, RMII, 100M, 静态IP 192.168.0.100
+
+![image-20260310163101929](README.assets/image-20260310163101929.png)
+
 ### tc4d7_lwip_iperf
 
 ### tc4d7_adc

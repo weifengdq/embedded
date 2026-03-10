@@ -115,7 +115,6 @@ void core0_main(void)
            ethAddr.addr[0], ethAddr.addr[1], ethAddr.addr[2],
            ethAddr.addr[3], ethAddr.addr[4], ethAddr.addr[5]);
 
-        printf("Starting lwIP initialization...\r\n");
     Ifx_Lwip_init_with_ip(ethAddr, ipAddr, netMask, gateway);
 
     printf("lwIP started, waiting for link and ICMP echo requests.\r\n");

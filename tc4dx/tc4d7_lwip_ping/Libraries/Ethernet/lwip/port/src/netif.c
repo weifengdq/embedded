@@ -126,8 +126,6 @@ struct ethernetif
 
 static phy_t g_phy;
 static boolean g_netifLinkLogged;
-static uint32 g_netifRxFrameCount;
-static uint32 g_netifTxFrameCount;
 
 static const Ifx_GETH_MDIO_Pins g_gethMdioPins = {
     .mdc = &BOARD_GETH0_P0_MDC,
@@ -271,7 +269,7 @@ static void ifxNetifEnableVoltageRails(void)
 
 static void ifxNetifClearGethSram(void)
 {
-    printf("ETH init: skip VMT SRAM clear due AXI MBIST stall.\r\n");
+    /* Skip GETH SRAM VMT clear because AXI MBIST stalls on the current board setup. */
 }
 
 static void ifxNetifApplyLinkState(netif_t *netif)
@@ -360,14 +358,11 @@ static void low_level_init(netif_t *netif)
     /* we don't set the LINK_UP flag because we don't say when it is linked */
     netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_ETHERNET;
 
-    printf("ETH init: enable rails...\r\n");
     ifxNetifEnableVoltageRails();
 
-    printf("ETH init: HSPHY...\r\n");
     (void)HSPHY_Init();
     (void)HSPHY_ETH_Init(0U, hsphyConfig);
 
-    printf("ETH init: GETH/MDIO...\r\n");
     IfxGeth_enableModule(&MODULE_GETH0);
     gethClockRate = IfxClock_getXGeth0Frequency();
     (void)ifxNetifMdioInit(&g_gethMdioPins, gethClockRate);
@@ -378,21 +373,16 @@ static void low_level_init(netif_t *netif)
         return;
     }
 
-    printf("ETH init: PHY configure...\r\n");
     (void)dp83825i_cfg_link(&g_phy,
                             (enum phy_link_speed)(LINK_HALF_10BASE_T |
                                                   LINK_FULL_10BASE_T |
                                                   LINK_HALF_100BASE_T |
                                                   LINK_FULL_100BASE_T));
 
-    printf("ETH init: clear SRAM...\r\n");
     ifxNetifClearGethSram();
 
-    printf("ETH init: setup RMII input...\r\n");
     IfxHsphy_Geth_setupRmiiInputPins(&MODULE_HSPHY, IfxHsphy_EthIndex_0, &g_gethRmiiPins);
-    printf("ETH init: RMII input ready.\r\n");
 
-    printf("ETH init: configure MAC/DMA...\r\n");
     IfxGeth_Eth_initModuleConfig(&gethConfig, &MODULE_GETH0);
     gethConfig.port[0].phyInterfaceMode = IfxGeth_PhyInterfaceMode_rmii_100;
     gethConfig.port[0].mac.disableCrcCheck = FALSE;
@@ -419,7 +409,6 @@ static void low_level_init(netif_t *netif)
     gethConfig.dma.rxChannel[0].rxBuffer1StartAddress = (uint32 *)&channel0RxBuffer1[0][0];
     gethConfig.bridge.mode = IfxGeth_BridgePortMode_singlePort0;
 
-    printf("ETH init: start module...\r\n");
     IfxGeth_Eth_initModule(ethernetif, &gethConfig);
     (void)ifxNetifMdioInit(NULL_PTR, gethClockRate);
     MODULE_GETH0.PORT[IFX_LWIP_GETH_PORT_INDEX].CORE.MAC_PACKET_FILTER.U = 0U;
@@ -427,9 +416,7 @@ static void low_level_init(netif_t *netif)
     IfxGeth_startTxDma(&MODULE_GETH0, IfxGeth_TxDmaChannel_0);
     IfxHsphy_Geth_setupRmiiOutputPins(&MODULE_HSPHY, &g_gethRmiiPins);
 
-    printf("ETH init: initial link check...\r\n");
     ifx_netif_update_link(netif);
-    printf("ETH init: complete.\r\n");
 }
 
 /**
@@ -474,13 +461,6 @@ static err_t low_level_output(netif_t *netif, pbuf_t *p)
 #endif
 
     LINK_STATS_INC(link.xmit);
-
-    g_netifTxFrameCount += 1U;
-
-    if ((g_netifTxFrameCount <= 4U) || ((g_netifTxFrameCount % 16U) == 0U))
-    {
-        printf("ETH TX frame #%lu, %u bytes.\r\n", (unsigned long)g_netifTxFrameCount, copiedLength);
-    }
 
     return ERR_OK;
 }
@@ -581,12 +561,6 @@ static pbuf_t *low_level_input(netif_t *netif)
 #endif
 
         LINK_STATS_INC(link.recv);
-        g_netifRxFrameCount += 1U;
-
-        if ((g_netifRxFrameCount <= 4U) || ((g_netifRxFrameCount % 16U) == 0U))
-        {
-            printf("ETH RX frame #%lu, %u bytes.\r\n", (unsigned long)g_netifRxFrameCount, len);
-        }
     }
     else
     {

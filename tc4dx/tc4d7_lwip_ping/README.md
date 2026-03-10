@@ -101,6 +101,7 @@ build.ps1 的默认工具链路径为：
    - EEPROM MAC 读取结果
    - 实际使用的 MAC 地址
    - lwIP 启动提示
+  - 链路建立后的速率和双工信息
 4. 将 PC 网口配置到同一网段，例如：
    - IP：192.168.0.10
    - 子网掩码：255.255.255.0
@@ -124,6 +125,10 @@ ping 192.168.0.100
   表示 EEPROM 访问失败，工程回退到本地管理 MAC 地址继续启动网络。
 - lwIP started, waiting for link and ICMP echo requests.
   表示协议栈已初始化完成，正在等待 PHY 链路和 ping 请求。
+- ETH link up: 100M full duplex.
+  表示 DP83825I 已完成协商，GETH MAC 已切换到对应速率和双工模式。
+- ETH link down.
+  表示当前网线拔出或链路协商失效，GETH 收发已被停止。
 
 ## 故障排查
 
@@ -135,6 +140,12 @@ ping 192.168.0.100
 4. 串口日志是否显示 EEPROM 或 PHY 初始化失败。
 5. 本机防火墙是否阻止 ICMP。
 6. 构建是否使用了正确的工具链与 linker script。
+
+## 当前实现备注
+
+- 当前版本已在板卡上验证可正常 ping 通 192.168.0.100。
+- 以太网初始化阶段没有调用 GETH AXI SRAM 的 VMT clear 流程。
+- 原因是当前板卡/工程组合下，AXI MBIST clear 会导致启动卡死，绕过该步骤后 GETH0 Port0 + lwIP 工作正常。
 
 ## 实现说明
 
