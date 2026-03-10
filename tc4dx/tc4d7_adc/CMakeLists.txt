@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(tc4d7_uart_printf_echo LANGUAGES C)
+project(tc4d7_adc LANGUAGES C)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
@@ -42,6 +42,13 @@ aurix_collect_project_files(
     OUT_SOURCES AURIX_SOURCE_FILES
     OUT_HEADERS AURIX_HEADER_FILES
     OUT_INCLUDE_DIRS AURIX_INCLUDE_DIRS
+)
+
+list(APPEND AURIX_SOURCE_FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/CpuGeneric/Adc/Std/IfxAdc.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/CpuGeneric/Adc/Tmadc/IfxAdc_Tmadc.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/CpuGeneric/Dma/Std/IfxDma.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/CpuGeneric/Dma/Dma/IfxDma_Dma.c"
 )
 
 if(NOT AURIX_SOURCE_FILES)

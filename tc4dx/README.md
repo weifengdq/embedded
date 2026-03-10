@@ -10,14 +10,18 @@
 
 ## 开发环境
 
-- Aurix Development Studio: 1.10.28, iLLD 2.4.0, GCC 11.3.1
+- Aurix Development Studio: 1.10.28, iLLD 2.4.0, Tricore GCC 11.3.1, 目前这个 ADS 版本并没有像 TC3XX 那样集成 Pin Mapper, 还不太友好. 至于官网有 TC4D9 例子的 Limit 版本或者 Pin Mapper, 似乎是需要申请的, 本文并不涉及这些, 只用最通用的 ADS 即可.
 - Memtool: 2025.04
-
-
 
 ## 导入工程
 
+File -> Import -> Infineon -> AURIX Development Studio Project -> Next
 
+![image-20260310174519400](README.assets/image-20260310174519400.png)
+
+可以看到 TC4D7 相关的示例工程, 可勾选一个, 编译下载(可能需要先打开 TAS Perfmeter)不再赘述
+
+![image-20260310174742468](README.assets/image-20260310174742468.png)
 
 ## 新建工程
 
@@ -60,7 +64,7 @@ $defaultAurixFlasher = "C:\Infineon\AURIX-Studio-1.10.28\tools\AurixFlasherSoftw
 
 ### tc4d7_coremark
 
-没有什么优化, 可能有出入, 仅供参考, ADS 带的 GCC 11.3.1, CoreMark 跑分单核 1995, 多核 11951
+没有太多优化, 实际可能有出入或许更优, 此处结果仅供参考, ADS 带的 GCC 11.3.1, CoreMark 跑分单核 1995, 多核 11951
 
 ![image-20260310132627364](README.assets/image-20260310132627364.png)
 
@@ -223,7 +227,7 @@ EEPROM 24AA02E48, slave=0x50
       OK
 [2/5] Read EUI-48 MAC from 0xFA...
       OK
-MAC address : 44:B7:D0:ED:AE:B9
+MAC address : 44:B7:D0:**:**:**
 [3/5] Run EEPROM write/read verification at 0x20-0x3F...
       FAILED, I2C status=0, last address=0x20
       Mismatch at +0x00: expected=0x31 actual=0xFF backup=0xFF
@@ -272,13 +276,21 @@ LwIP 2.2.1, PHY DP83825I, RMII, 100M, 静态IP 192.168.0.100
 
 ### tc4d7_adc
 
-一个是内部温度, 一个是外部 250 kΩ 电位器
+外部 250 kΩ 电位器, 这里的温度不是走的ADC, 是从 PMS VTMON 获取的, 不过代码没有删除. 旋转电位器, 逆时针数值增大, 顺时针数值减小
+
+![image-20260310174308747](README.assets/image-20260310174308747.png)
 
 
 
+## 工程链接
 
+再次贴出 Github 工程链接, 欢迎 Star:
 
+[https://github.com/weifengdq/embedded](https://github.com/weifengdq/embedded)
 
+另外官方的示例工程是:
+
+[https://github.com/Infineon/AURIX_code_examples](https://github.com/Infineon/AURIX_code_examples)
 
 
 

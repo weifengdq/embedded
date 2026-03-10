@@ -28,42 +28,30 @@
 #include "Ifx_Cfg.h"
 #include "IfxCpu.h"
 #include "IfxWtu.h"
-#include <string.h>
+#include "Bsp.h"
+#include <stdio.h>
 
 #include "serialio.h"
+#include "AdcMonitor.h"
 
-#define UART_BAUDRATE 115200
-#define UART_LINE_BUFFER_SIZE 128
-
-static boolean isAcceptedInputByte(uint8 byte)
-{
-    if ((byte == '\r') || (byte == '\n'))
-    {
-        return TRUE;
-    }
-
-    return (byte >= 0x20U) && (byte <= 0x7EU);
-}
+#define UART_BAUDRATE        115200
+#define REPORT_PERIOD_MS     500U
 
 static void printStartupBanner(void)
 {
-    static const char banner[] =
-        "\r\n"
-        "************************************\r\n"
-        "*     TC4D7 UART0 printf / echo    *\r\n"
-        "************************************\r\n"
-        "UART0 TX=P14.0 RX=P14.1, 115200-8-N-1\r\n"
-        "Input a line and press Enter to echo it.\r\n";
-
-    (void)SERIALIO_WriteBuffer((const uint8 *)banner, (Ifx_SizeT)(sizeof(banner) - 1U));
+    printf("\r\n");
+    printf("************************************\r\n");
+    printf("*        TC4D7 ADC Monitor         *\r\n");
+    printf("************************************\r\n");
+    printf("UART0 TX=P14.0 RX=P14.1, 115200-8-N-1\r\n");
+    printf("AN0 uses TMADC0 Channel 0.\r\n");
+    printf("Internal temperature uses PMS DTS.\r\n");
 }
 
 
 void core0_main(void)
 {
-    char lineBuffer[UART_LINE_BUFFER_SIZE];
-    uint32 lineLength = 0;
-    boolean lastWasCarriageReturn = FALSE;
+    AdcMonitor_Reading reading;
 
     IfxCpu_enableInterrupts();
     
@@ -75,45 +63,33 @@ void core0_main(void)
 
     SERIALIO_Init(UART_BAUDRATE);
     printStartupBanner();
+    AdcMonitor_init();
+
+    printf("Sampling every %u ms. Rotate the potentiometer connected to AN0.\r\n", REPORT_PERIOD_MS);
     
     while (1)
     {
-        uint8 receivedByte;
-
-        if (!SERIALIO_TryReadByte(&receivedByte))
+        if (AdcMonitor_sample(&reading) != FALSE)
         {
-            continue;
-        }
-
-        if (!isAcceptedInputByte(receivedByte))
-        {
-            continue;
-        }
-
-        if ((receivedByte == '\n') && lastWasCarriageReturn)
-        {
-            lastWasCarriageReturn = FALSE;
-            continue;
-        }
-
-        if ((receivedByte == '\r') || (receivedByte == '\n'))
-        {
-            if (lineLength > 0U)
+            if (reading.temperatureValid != FALSE)
             {
-                (void)SERIALIO_WriteBuffer((const uint8 *)lineBuffer, (Ifx_SizeT)lineLength);
+                printf("AN0 raw=%4u  ratio=%6.2f%%  voltage=%.3f V  DTS raw=%4u  temp=%.2f C\r\n",
+                    reading.potiRaw,
+                    reading.potiRatio * 100.0f,
+                    reading.potiVoltage,
+                    reading.temperatureRaw,
+                    reading.temperatureCelsius);
             }
-
-            (void)SERIALIO_WriteBuffer((const uint8 *)"\r\n", 2U);
-            lineLength = 0;
-            lastWasCarriageReturn = (receivedByte == '\r');
-            continue;
+            else
+            {
+                printf("AN0 raw=%4u  ratio=%6.2f%%  voltage=%.3f V  DTS warming up (raw=%4u)\r\n",
+                    reading.potiRaw,
+                    reading.potiRatio * 100.0f,
+                    reading.potiVoltage,
+                    reading.temperatureRaw);
+            }
         }
 
-        lastWasCarriageReturn = FALSE;
-
-        if (lineLength < (UART_LINE_BUFFER_SIZE - 1U))
-        {
-            lineBuffer[lineLength++] = (char)receivedByte;
-        }
+        waitTime(IfxStm_getTicksFromMilliseconds(REPORT_PERIOD_MS));
     }
 }
