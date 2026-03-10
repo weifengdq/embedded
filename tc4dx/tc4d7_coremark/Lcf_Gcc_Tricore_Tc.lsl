@@ -57,7 +57,7 @@ LCF_CSA5_SIZE    = 8k;
 LCF_USTACK5_SIZE = 2k;
 LCF_ISTACK5_SIZE = 1k;
 
-LCF_HEAP_SIZE = 4k;
+LCF_HEAP_SIZE = 64k;
 
 LCF_DSPR5_START = 0x20000000;
 LCF_DSPR5_SIZE  = 240K;
@@ -2523,11 +2523,25 @@ SECTIONS
         . = ALIGN(2);
     } > lmuram AT> pfls0
     
-    CORE_SEC(.lmubss) : FLAGS(aw)
+    CORE_SEC(.lmubss) (NOLOAD) : FLAGS(aw)
     {
         *(.lmubss)
         *(.lmubss.*)
-    } > lmuram
+    } > lmuram_nc
+
+    .coremark_lmu (NOLOAD) : FLAGS(aw)
+    {
+        . = ALIGN(64);
+        *(.coremark_lmu*)
+        . = ALIGN(64);
+    } > lmuram_nc
+
+    .coremark_shared_nc (NOLOAD) : FLAGS(aw)
+    {
+        . = ALIGN(64);
+        *(.coremark_shared_nc*)
+        . = ALIGN(64);
+    } > lmuram_nc
 }
 
 /*Far Const Sections, selectable with patterns and user defined sections*/

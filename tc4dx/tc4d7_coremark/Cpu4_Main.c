@@ -39,5 +39,9 @@ void core4_main(void)
      */
     IfxWtu_disableCpuWatchdog(IfxWtu_getCpuWatchdogPassword());
 
+    /* Configure before any shared-memory read/write. */
+    IfxCpu_setDataCache(FALSE);
+
+    coremark_worker_mark_boot(1U);
     coremark_worker_entry();
 }

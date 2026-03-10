@@ -22,6 +22,16 @@ Original Author: Shay Gal-on
 */
 #include "coremark.h"
 
+#if (MULTITHREAD > 1)
+static core_results __attribute__((section(".lmubss"), aligned(64)))
+    g_shared_results[MULTITHREAD];
+
+#if (MEM_METHOD == MEM_STACK)
+static ee_u8 __attribute__((section(".lmubss"), aligned(64)))
+    g_shared_stack_memblock[TOTAL_DATA_SIZE * MULTITHREAD];
+#endif
+#endif
+
 /* Function: iterate
         Run the benchmark for a specified number of iterations.
 
@@ -119,8 +129,12 @@ coremark_main(int argc, char *argv[])
     ee_s16       known_id = -1, total_errors = 0;
     ee_u16       seedcrc = 0;
     CORE_TICKS   total_time;
-    core_results results[MULTITHREAD];
-#if (MEM_METHOD == MEM_STACK)
+#if (MULTITHREAD > 1)
+    core_results *results = g_shared_results;
+#else
+    core_results results[1];
+#endif
+#if (MEM_METHOD == MEM_STACK) && (MULTITHREAD == 1)
     ee_u8 stack_memblock[TOTAL_DATA_SIZE * MULTITHREAD];
 #endif
     /* first call any initializations needed */
@@ -174,6 +188,13 @@ coremark_main(int argc, char *argv[])
         else
             results[i].size = TOTAL_DATA_SIZE;
         results[i].memblock[0] = portable_malloc(results[i].size);
+        if (results[i].memblock[0] == NULL)
+        {
+            ee_printf("ERROR: portable_malloc failed for context %u, size=%lu\n",
+                      i,
+                      (long unsigned)results[i].size);
+            return MAIN_RETURN_VAL;
+        }
         results[i].seed1       = results[0].seed1;
         results[i].seed2       = results[0].seed2;
         results[i].seed3       = results[0].seed3;
@@ -181,6 +202,9 @@ coremark_main(int argc, char *argv[])
         results[i].execs       = results[0].execs;
     }
 #elif (MEM_METHOD == MEM_STACK)
+#if (MULTITHREAD > 1)
+    ee_u8 *stack_memblock = g_shared_stack_memblock;
+#endif
 for (i = 0; i < MULTITHREAD; i++)
 {
     results[i].memblock[0] = stack_memblock + i * TOTAL_DATA_SIZE;

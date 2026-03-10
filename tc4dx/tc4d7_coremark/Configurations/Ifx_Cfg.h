@@ -69,7 +69,32 @@
 /*********************************************************************************************************************/
 /*---------------------------------Configuration for Trap Hook Functions' Extensions---------------------------------*/
 /*********************************************************************************************************************/
-/* #define IFX_CFG_EXTEND_TRAP_HOOKS */ /* Decomment this line if the project needs to extend trap hook functions */
+#define IFX_CFG_EXTEND_TRAP_HOOKS
+
+/*********************************************************************************************************************/
+/*---------------------------------SSW Diagnostic: DSPR-local step markers-------------------------------------------*/
+/*********************************************************************************************************************/
+#define DIAG_DSPR_SSW_STEP   (*(volatile unsigned int *)0xD0000000)
+#define DIAG_DSPR_TRAP_CLASS (*(volatile unsigned int *)0xD0000004)
+#define DIAG_DSPR_TRAP_ID    (*(volatile unsigned int *)0xD0000008)
+#define DIAG_DSPR_TRAP_ADDR  (*(volatile unsigned int *)0xD000000C)
+#define DIAG_DSPR_TRAP_COUNT (*(volatile unsigned int *)0xD0000010)
+#define DIAG_DSPR_TRAP_DEADD (*(volatile unsigned int *)0xD0000014)
+#define DIAG_DSPR_TRAP_DATR  (*(volatile unsigned int *)0xD0000018)
+#define DIAG_DSPR_WORKER_RES     (*(volatile unsigned int *)0xD0000020)
+#define DIAG_DSPR_WORKER_LIST    (*(volatile unsigned int *)0xD0000024)
+#define DIAG_DSPR_WORKER_MB0     (*(volatile unsigned int *)0xD0000028)
+#define DIAG_DSPR_WORKER_MB1     (*(volatile unsigned int *)0xD000002C)
+#define DIAG_DSPR_WORKER_LNEXT   (*(volatile unsigned int *)0xD0000030)
+#define DIAG_DSPR_WORKER_LINFO   (*(volatile unsigned int *)0xD0000034)
+#define DIAG_DSPR_WORKER_NINFO   (*(volatile unsigned int *)0xD0000038)
+#define DIAG_DSPR_WORKER_SEEN    (*(volatile unsigned int *)0xD000003C)
+#define DIAG_DSPR_WORKER_DONE    (*(volatile unsigned int *)0xD0000040)
+#define DIAG_DSPR_WORKER_CRCLIST (*(volatile unsigned int *)0xD0000044)
+#define DIAG_DSPR_WORKER_CRCMAT  (*(volatile unsigned int *)0xD0000048)
+#define DIAG_DSPR_WORKER_CRCSTATE (*(volatile unsigned int *)0xD000004C)
+#define DIAG_DSPR_WORKER_CRCFINAL (*(volatile unsigned int *)0xD0000050)
+#define SSW_DIAG_STEP(n) do { DIAG_DSPR_SSW_STEP = (unsigned int)(n); } while(0)
 
 /*********************************************************************************************************************/
 /*-----------------------------------------------Configuration for Device -------------------------------------------*/
