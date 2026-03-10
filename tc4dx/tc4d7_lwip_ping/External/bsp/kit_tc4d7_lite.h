@@ -32,7 +32,9 @@
 
 #include "board.h"
 
+#ifndef IFX_PIN_PACKAGE_BGA292_COM
 #define IFX_PIN_PACKAGE_BGA292_COM
+#endif
 
 #include "IfxPort_PinMap.h"
 #include "IfxAsclin_PinMap.h"

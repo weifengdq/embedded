@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(tc4d7_uart_printf_echo LANGUAGES C)
+project(tc4d7_lwip_ping LANGUAGES C)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
@@ -18,6 +18,7 @@ set(AURIX_EXCLUDED_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/build"
     "${CMAKE_CURRENT_SOURCE_DIR}/TriCore Debug (GCC)"
     "${CMAKE_CURRENT_SOURCE_DIR}/TriCore Release (GCC)"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/Ethernet/lwip/src/apps"
     CACHE STRING "Semicolon-separated directories excluded from recursive source scan"
 )
 set(AURIX_EXCLUDED_FILES "" CACHE STRING "Semicolon-separated files excluded from recursive source scan")
@@ -43,6 +44,34 @@ aurix_collect_project_files(
     OUT_HEADERS AURIX_HEADER_FILES
     OUT_INCLUDE_DIRS AURIX_INCLUDE_DIRS
 )
+
+set(AURIX_MANUAL_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/CpuGeneric/Geth/Std/IfxGeth.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/CpuGeneric/Geth/Eth/IfxGeth_Eth.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/CpuGeneric/Hsphy/Std/IfxHsphy.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/I2c/Std/IfxI2c.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/I2c/I2c/IfxI2c_I2c.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/Pms/Std/IfxPmsEvr.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/Vmt/Std/IfxVmt.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/CpuGeneric/_PinMap/TC4Dx/IfxAsclin_PinMap_TC4Dx_BGA292_COM.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/CpuGeneric/_PinMap/TC4Dx/IfxGeth_PinMap_TC4Dx_BGA292_COM.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/_PinMap/TC4Dx/IfxI2c_PinMap_TC4Dx_BGA292_COM.c"
+)
+
+list(APPEND AURIX_SOURCE_FILES ${AURIX_MANUAL_SOURCES})
+list(REMOVE_DUPLICATES AURIX_SOURCE_FILES)
+
+list(APPEND AURIX_INCLUDE_DIRS
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/CpuGeneric/Geth/Eth"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/CpuGeneric/Hsphy/Std"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/CpuGeneric/_PinMap"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/CpuGeneric/_PinMap/TC4Dx"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/I2c/I2c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/Pms/Std"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/_PinMap"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/_PinMap/TC4Dx"
+)
+list(REMOVE_DUPLICATES AURIX_INCLUDE_DIRS)
 
 if(NOT AURIX_SOURCE_FILES)
     message(FATAL_ERROR "No C source files were found after applying exclusions.")

@@ -27,46 +27,57 @@
 #include "Ifx_Types.h"
 #include "Ifx_Cfg.h"
 #include "IfxCpu.h"
+#include "IfxStm.h"
 #include "IfxWtu.h"
-#include <string.h>
 
+#include <stdio.h>
+
+#include "Configuration.h"
+#include "EthernetMacEeprom.h"
+#include "Ifx_Lwip.h"
 #include "serialio.h"
 
 #define UART_BAUDRATE 115200
-#define UART_LINE_BUFFER_SIZE 128
 
-static boolean isAcceptedInputByte(uint8 byte)
-{
-    if ((byte == '\r') || (byte == '\n'))
-    {
-        return TRUE;
-    }
-
-    return (byte >= 0x20U) && (byte <= 0x7EU);
-}
+static const uint8 g_fallbackMacAddress[ETHERNET_MAC_EEPROM_LENGTH] = {0x02U, 0x00U, 0x5EU, 0x4DU, 0x70U, 0x01U};
 
 static void printStartupBanner(void)
 {
-    static const char banner[] =
-        "\r\n"
-        "************************************\r\n"
-        "*     TC4D7 UART0 printf / echo    *\r\n"
-        "************************************\r\n"
-        "UART0 TX=P14.0 RX=P14.1, 115200-8-N-1\r\n"
-        "Input a line and press Enter to echo it.\r\n";
-
-    (void)SERIALIO_WriteBuffer((const uint8 *)banner, (Ifx_SizeT)(sizeof(banner) - 1U));
+    printf("\r\n");
+    printf("========================================\r\n");
+    printf(" TC4D7 lwIP ping demo\r\n");
+    printf(" UART0 TX=P14.0 RX=P14.1, 115200-8-N-1\r\n");
+    printf(" Static IP  : 192.168.0.100\r\n");
+    printf(" Netmask    : 255.255.255.0\r\n");
+    printf(" Gateway    : 192.168.0.1\r\n");
+    printf(" PHY        : DP83825I (RMII, GETH0 Port0)\r\n");
+    printf("========================================\r\n");
 }
 
+static void initSystemTick(void)
+{
+    IfxStm_CompareConfig compareConfig;
+
+    IfxStm_initCompareConfig(&compareConfig);
+    compareConfig.triggerPriority = ISR_PRIORITY_OS_TICK;
+    compareConfig.comparatorInterrupt = IfxStm_ComparatorInterrupt_ir0;
+    compareConfig.ticks = IFX_CFG_STM_TICKS_PER_MS;
+    compareConfig.typeOfService = IfxSrc_Tos_cpu0;
+
+    IfxStm_initCompare(&MODULE_CPU0, &compareConfig);
+}
 
 void core0_main(void)
 {
-    char lineBuffer[UART_LINE_BUFFER_SIZE];
-    uint32 lineLength = 0;
-    boolean lastWasCarriageReturn = FALSE;
+    uint8 macAddress[ETHERNET_MAC_EEPROM_LENGTH];
+    boolean macReadOk;
+    eth_addr_t ethAddr;
+    ip_addr_t ipAddr = IPADDR4_INIT_BYTES(192, 168, 0, 100);
+    ip_addr_t netMask = IPADDR4_INIT_BYTES(255, 255, 255, 0);
+    ip_addr_t gateway = IPADDR4_INIT_BYTES(192, 168, 0, 1);
 
     IfxCpu_enableInterrupts();
-    
+
     /* !!WATCHDOG0 AND SAFETY WATCHDOG ARE DISABLED HERE!!
      * Enable the watchdogs and service them periodically if it is required
      */
@@ -74,46 +85,54 @@ void core0_main(void)
     IfxWtu_disableSystemWatchdog(IfxWtu_getSystemWatchdogPassword());
 
     SERIALIO_Init(UART_BAUDRATE);
+    initSystemTick();
     printStartupBanner();
-    
+
+    macReadOk = EthernetMacEeprom_read(macAddress);
+
+    if (macReadOk == FALSE)
+    {
+        uint32 index;
+
+        for (index = 0U; index < ETHERNET_MAC_EEPROM_LENGTH; ++index)
+        {
+            macAddress[index] = g_fallbackMacAddress[index];
+        }
+
+        printf("EEPROM MAC read failed, using fallback MAC address.\r\n");
+    }
+    else
+    {
+        printf("EEPROM MAC read succeeded.\r\n");
+    }
+
+    for (uint32 index = 0U; index < ETHERNET_MAC_EEPROM_LENGTH; ++index)
+    {
+        ethAddr.addr[index] = macAddress[index];
+    }
+
+    printf("MAC address: %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+           ethAddr.addr[0], ethAddr.addr[1], ethAddr.addr[2],
+           ethAddr.addr[3], ethAddr.addr[4], ethAddr.addr[5]);
+
+    Ifx_Lwip_init_with_ip(ethAddr, ipAddr, netMask, gateway);
+
+    printf("lwIP started, waiting for link and ICMP echo requests.\r\n");
+
     while (1)
     {
-        uint8 receivedByte;
-
-        if (!SERIALIO_TryReadByte(&receivedByte))
-        {
-            continue;
-        }
-
-        if (!isAcceptedInputByte(receivedByte))
-        {
-            continue;
-        }
-
-        if ((receivedByte == '\n') && lastWasCarriageReturn)
-        {
-            lastWasCarriageReturn = FALSE;
-            continue;
-        }
-
-        if ((receivedByte == '\r') || (receivedByte == '\n'))
-        {
-            if (lineLength > 0U)
-            {
-                (void)SERIALIO_WriteBuffer((const uint8 *)lineBuffer, (Ifx_SizeT)lineLength);
-            }
-
-            (void)SERIALIO_WriteBuffer((const uint8 *)"\r\n", 2U);
-            lineLength = 0;
-            lastWasCarriageReturn = (receivedByte == '\r');
-            continue;
-        }
-
-        lastWasCarriageReturn = FALSE;
-
-        if (lineLength < (UART_LINE_BUFFER_SIZE - 1U))
-        {
-            lineBuffer[lineLength++] = (char)receivedByte;
-        }
+        Ifx_Lwip_pollTimerFlags();
+        Ifx_Lwip_pollReceiveFlags();
     }
+}
+
+IFX_INTERRUPT(updateLwipStackIsr, 0, ISR_PRIORITY_OS_TICK);
+
+void updateLwipStackIsr(void)
+{
+    IfxStm_clearCompareFlag(&MODULE_CPU0, IfxStm_Comparator_0);
+    IfxStm_increaseCompare(&MODULE_CPU0, IfxStm_Comparator_0, IFX_CFG_STM_TICKS_PER_MS);
+
+    g_TickCount_1ms += 1U;
+    Ifx_Lwip_onTimerTick();
 }

@@ -12,7 +12,7 @@ param(
 
     [string]$ToolchainBin = "C:\Infineon\AURIX-Studio-1.10.28\tools\Compilers\tricore-gcc11\bin",
 
-    [string]$TargetName = "tc4d7_uart_printf_echo",
+    [string]$TargetName = "tc4d7_lwip_ping",
 
     [string]$FlashTool = "",
 
