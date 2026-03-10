@@ -44,6 +44,41 @@ function(aurix_path_is_excluded candidate_path excluded_dirs excluded_files resu
     set(${result_var} ${is_excluded} PARENT_SCOPE)
 endfunction()
 
+function(aurix_collect_directory_entries current_dir excluded_dirs excluded_files out_sources out_headers out_include_dirs)
+    file(GLOB directory_entries CONFIGURE_DEPENDS "${current_dir}/*")
+
+    set(local_sources)
+    set(local_headers)
+    set(local_include_dirs "${current_dir}")
+
+    foreach(entry IN LISTS directory_entries)
+        aurix_path_is_excluded("${entry}" "${excluded_dirs}" "${excluded_files}" is_excluded)
+        if(is_excluded)
+            continue()
+        endif()
+
+        if(IS_DIRECTORY "${entry}")
+            aurix_collect_directory_entries("${entry}" "${excluded_dirs}" "${excluded_files}" child_sources child_headers child_include_dirs)
+            list(APPEND local_sources ${child_sources})
+            list(APPEND local_headers ${child_headers})
+            list(APPEND local_include_dirs ${child_include_dirs})
+        else()
+            get_filename_component(entry_ext "${entry}" EXT)
+            string(TOLOWER "${entry_ext}" entry_ext)
+
+            if(entry_ext STREQUAL ".c")
+                list(APPEND local_sources "${entry}")
+            elseif(entry_ext STREQUAL ".h")
+                list(APPEND local_headers "${entry}")
+            endif()
+        endif()
+    endforeach()
+
+    set(${out_sources} "${local_sources}" PARENT_SCOPE)
+    set(${out_headers} "${local_headers}" PARENT_SCOPE)
+    set(${out_include_dirs} "${local_include_dirs}" PARENT_SCOPE)
+endfunction()
+
 function(aurix_collect_project_files)
     set(options)
     set(one_value_args ROOT_DIR OUT_SOURCES OUT_HEADERS OUT_INCLUDE_DIRS)
@@ -54,35 +89,13 @@ function(aurix_collect_project_files)
         message(FATAL_ERROR "aurix_collect_project_files requires ROOT_DIR")
     endif()
 
-    file(GLOB_RECURSE discovered_sources CONFIGURE_DEPENDS "${AURIX_ROOT_DIR}/*.c")
-    file(GLOB_RECURSE discovered_headers CONFIGURE_DEPENDS "${AURIX_ROOT_DIR}/*.h")
-    file(GLOB_RECURSE discovered_paths LIST_DIRECTORIES TRUE CONFIGURE_DEPENDS "${AURIX_ROOT_DIR}/*")
-
-    set(filtered_sources)
-    foreach(source_file IN LISTS discovered_sources)
-        aurix_path_is_excluded("${source_file}" "${AURIX_EXCLUDED_DIRS}" "${AURIX_EXCLUDED_FILES}" is_excluded)
-        if(NOT is_excluded)
-            list(APPEND filtered_sources "${source_file}")
-        endif()
-    endforeach()
-
-    set(filtered_headers)
-    foreach(header_file IN LISTS discovered_headers)
-        aurix_path_is_excluded("${header_file}" "${AURIX_EXCLUDED_DIRS}" "${AURIX_EXCLUDED_FILES}" is_excluded)
-        if(NOT is_excluded)
-            list(APPEND filtered_headers "${header_file}")
-        endif()
-    endforeach()
-
-    set(include_dirs)
-    foreach(candidate_path IN LISTS discovered_paths)
-        if(IS_DIRECTORY "${candidate_path}")
-            aurix_path_is_excluded("${candidate_path}" "${AURIX_EXCLUDED_DIRS}" "${AURIX_EXCLUDED_FILES}" is_excluded)
-            if(NOT is_excluded)
-                list(APPEND include_dirs "${candidate_path}")
-            endif()
-        endif()
-    endforeach()
+    aurix_collect_directory_entries(
+        "${AURIX_ROOT_DIR}"
+        "${AURIX_EXCLUDED_DIRS}"
+        "${AURIX_EXCLUDED_FILES}"
+        filtered_sources
+        filtered_headers
+        include_dirs)
 
     list(APPEND include_dirs "${AURIX_ROOT_DIR}")
     list(REMOVE_DUPLICATES filtered_sources)

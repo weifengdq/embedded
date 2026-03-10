@@ -7,6 +7,9 @@ param(
 
     [string]$Generator = "Ninja",
 
+    [ValidateSet("Debug", "Release", "RelWithDebInfo", "MinSizeRel")]
+    [string]$BuildType = "Release",
+
     [string]$ToolchainBin = "C:\Infineon\AURIX-Studio-1.10.28\tools\Compilers\tricore-gcc11\bin",
 
     [string]$TargetName = "tc4d7_uart_printf_echo",
@@ -57,20 +60,26 @@ function Configure-Project {
         throw "Toolchain file not found: $toolchainFile"
     }
 
+    $cacheFile = Join-Path $buildPath "CMakeCache.txt"
+
     $configureArgs = @(
         "-S", $projectRoot,
         "-B", $buildPath,
         "-G", $Generator,
-        "-DCMAKE_TOOLCHAIN_FILE=$toolchainFile",
-        "-DAURIX_TOOLCHAIN_BIN=$ToolchainBin"
+        "-DAURIX_TOOLCHAIN_BIN=$ToolchainBin",
+        "-DCMAKE_BUILD_TYPE=$BuildType"
     )
+
+    if(-not (Test-Path $cacheFile)) {
+        $configureArgs += "-DCMAKE_TOOLCHAIN_FILE=$toolchainFile"
+    }
 
     Invoke-Step -FilePath "cmake" -ArgumentList $configureArgs
 }
 
 function Build-Project {
-    Ensure-Configured
-    Invoke-Step -FilePath "cmake" -ArgumentList @("--build", $buildPath)
+    Configure-Project
+    Invoke-Step -FilePath "cmake" -ArgumentList @("--build", $buildPath, "--config", $BuildType)
 }
 
 function Clean-Project {
@@ -136,8 +145,8 @@ function Download-Project {
 switch($Action) {
     "configure" { Configure-Project }
     "build"     { Build-Project }
-    "rebuild"   { Clean-Project; Configure-Project; Build-Project }
+    "rebuild"   { Clean-Project; Build-Project }
     "clean"     { Clean-Project }
     "download"  { Download-Project }
-    "all"       { Configure-Project; Build-Project; Download-Project }
+    "all"       { Build-Project; Download-Project }
 }
