@@ -26,6 +26,7 @@
  *********************************************************************************************************************/
 
 #include <stdint.h>
+#include <stdio.h>
 
 #include "phy/dp83825i.h"
 
@@ -33,6 +34,7 @@
 #define PHY_ID_MSK          0xfffffff0
 
 #define DP83825I_RESET_HOLD_TIME_MS 10
+#define DP83825I_MAX_ID_PROBES       1000U
 
 int dp83825i_init(phy_t *phy, uint8_t addr, phy_read_reg_t read, phy_write_reg_t write, uint32_t init_flags)
 {
@@ -43,14 +45,29 @@ int dp83825i_init(phy_t *phy, uint8_t addr, phy_read_reg_t read, phy_write_reg_t
     phy->link_status.is_up = false;
 
     uint32_t phy_id;
-    do
+    uint32_t probeCount;
+
+    for (probeCount = 0U; probeCount < DP83825I_MAX_ID_PROBES; ++probeCount)
     {
         phy_get_id(phy, &phy_id);
+
+        if (phy_id != PHY_MII_INVALID_PHY_ID)
+        {
+            break;
+        }
     }
-    while (phy_id == PHY_MII_INVALID_PHY_ID);
+
+    if (phy_id == PHY_MII_INVALID_PHY_ID)
+    {
+        printf("DP83825I probe timeout at PHY address %u.\r\n", (unsigned)addr);
+        return -1;
+    }
+
+    printf("DP83825I PHY ID: 0x%08lX\r\n", (unsigned long)phy_id);
 
     if ((phy_id & PHY_ID_MSK) != PHY_ID)
     {
+        printf("DP83825I PHY ID mismatch at PHY address %u.\r\n", (unsigned)addr);
         return -1;
     }
 

@@ -83,6 +83,7 @@
 
 #include "lwip/opt.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include "lwip/def.h"
@@ -124,6 +125,9 @@ struct ethernetif
 };
 
 static phy_t g_phy;
+static boolean g_netifLinkLogged;
+static uint32 g_netifRxFrameCount;
+static uint32 g_netifTxFrameCount;
 
 static const Ifx_GETH_MDIO_Pins g_gethMdioPins = {
     .mdc = &BOARD_GETH0_P0_MDC,
@@ -267,18 +271,7 @@ static void ifxNetifEnableVoltageRails(void)
 
 static void ifxNetifClearGethSram(void)
 {
-    IfxVmt_clearSram(IfxVmt_MbistSel_ethermacAxi);
-    IfxVmt_clearSram(IfxVmt_MbistSel_ethermacDmi);
-    IfxVmt_clearSram(IfxVmt_MbistSel_ethermac0Gcl);
-    IfxVmt_clearSram(IfxVmt_MbistSel_ethermac1Gcl);
-    IfxVmt_clearSram(IfxVmt_MbistSel_ethermac0RxEven);
-    IfxVmt_clearSram(IfxVmt_MbistSel_ethermac0RxOdd);
-    IfxVmt_clearSram(IfxVmt_MbistSel_ethermac1RxEven);
-    IfxVmt_clearSram(IfxVmt_MbistSel_ethermac1RxOdd);
-    IfxVmt_clearSram(IfxVmt_MbistSel_ethermac0TxEven);
-    IfxVmt_clearSram(IfxVmt_MbistSel_ethermac0TxOdd);
-    IfxVmt_clearSram(IfxVmt_MbistSel_ethermac1TxEven);
-    IfxVmt_clearSram(IfxVmt_MbistSel_ethermac1TxOdd);
+    printf("ETH init: skip VMT SRAM clear due AXI MBIST stall.\r\n");
 }
 
 static void ifxNetifApplyLinkState(netif_t *netif)
@@ -290,6 +283,13 @@ static void ifxNetifApplyLinkState(netif_t *netif)
         IfxGeth_stopRx(geth, IFX_LWIP_GETH_PORT_INDEX);
         IfxGeth_stopTx(geth, IFX_LWIP_GETH_PORT_INDEX);
         netif_set_link_down(netif);
+
+        if (g_netifLinkLogged != FALSE)
+        {
+            g_netifLinkLogged = FALSE;
+            printf("ETH link down.\r\n");
+        }
+
         return;
     }
 
@@ -314,6 +314,14 @@ static void ifxNetifApplyLinkState(netif_t *netif)
     IfxGeth_startRx(geth, IFX_LWIP_GETH_PORT_INDEX);
     IfxGeth_startTx(geth, IFX_LWIP_GETH_PORT_INDEX);
     netif_set_link_up(netif);
+
+    if (g_netifLinkLogged == FALSE)
+    {
+        g_netifLinkLogged = TRUE;
+        printf("ETH link up: %s %s duplex.\r\n",
+               PHY_LINK_IS_SPEED_100M(g_phy.link_status.speed) != 0 ? "100M" : "10M",
+               PHY_LINK_IS_FULL_DUPLEX(g_phy.link_status.speed) != 0 ? "full" : "half");
+    }
 }
 
 /**
@@ -352,20 +360,39 @@ static void low_level_init(netif_t *netif)
     /* we don't set the LINK_UP flag because we don't say when it is linked */
     netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_ETHERNET;
 
+    printf("ETH init: enable rails...\r\n");
     ifxNetifEnableVoltageRails();
 
+    printf("ETH init: HSPHY...\r\n");
     (void)HSPHY_Init();
     (void)HSPHY_ETH_Init(0U, hsphyConfig);
 
+    printf("ETH init: GETH/MDIO...\r\n");
     IfxGeth_enableModule(&MODULE_GETH0);
     gethClockRate = IfxClock_getXGeth0Frequency();
     (void)ifxNetifMdioInit(&g_gethMdioPins, gethClockRate);
-    (void)dp83825i_init(&g_phy, IFX_LWIP_GETH_PHY_ADDR, ifxNetifMdioRead, ifxNetifMdioWrite, 0U);
-    (void)dp83825i_cfg_link(&g_phy, LINK_FULL_100BASE_T);
 
+    if (dp83825i_init(&g_phy, IFX_LWIP_GETH_PHY_ADDR, ifxNetifMdioRead, ifxNetifMdioWrite, 0U) != 0)
+    {
+        printf("ETH init: PHY probe failed at address %u.\r\n", (unsigned)IFX_LWIP_GETH_PHY_ADDR);
+        return;
+    }
+
+    printf("ETH init: PHY configure...\r\n");
+    (void)dp83825i_cfg_link(&g_phy,
+                            (enum phy_link_speed)(LINK_HALF_10BASE_T |
+                                                  LINK_FULL_10BASE_T |
+                                                  LINK_HALF_100BASE_T |
+                                                  LINK_FULL_100BASE_T));
+
+    printf("ETH init: clear SRAM...\r\n");
     ifxNetifClearGethSram();
-    IfxHsphy_Geth_setupRmiiInputPins(&MODULE_HSPHY, IfxHsphy_EthIndex_0, &g_gethRmiiPins);
 
+    printf("ETH init: setup RMII input...\r\n");
+    IfxHsphy_Geth_setupRmiiInputPins(&MODULE_HSPHY, IfxHsphy_EthIndex_0, &g_gethRmiiPins);
+    printf("ETH init: RMII input ready.\r\n");
+
+    printf("ETH init: configure MAC/DMA...\r\n");
     IfxGeth_Eth_initModuleConfig(&gethConfig, &MODULE_GETH0);
     gethConfig.port[0].phyInterfaceMode = IfxGeth_PhyInterfaceMode_rmii_100;
     gethConfig.port[0].mac.disableCrcCheck = FALSE;
@@ -392,13 +419,17 @@ static void low_level_init(netif_t *netif)
     gethConfig.dma.rxChannel[0].rxBuffer1StartAddress = (uint32 *)&channel0RxBuffer1[0][0];
     gethConfig.bridge.mode = IfxGeth_BridgePortMode_singlePort0;
 
+    printf("ETH init: start module...\r\n");
     IfxGeth_Eth_initModule(ethernetif, &gethConfig);
     (void)ifxNetifMdioInit(NULL_PTR, gethClockRate);
+    MODULE_GETH0.PORT[IFX_LWIP_GETH_PORT_INDEX].CORE.MAC_PACKET_FILTER.U = 0U;
     IfxGeth_startRxDma(&MODULE_GETH0, IfxGeth_RxDmaChannel_0);
     IfxGeth_startTxDma(&MODULE_GETH0, IfxGeth_TxDmaChannel_0);
     IfxHsphy_Geth_setupRmiiOutputPins(&MODULE_HSPHY, &g_gethRmiiPins);
 
+    printf("ETH init: initial link check...\r\n");
     ifx_netif_update_link(netif);
+    printf("ETH init: complete.\r\n");
 }
 
 /**
@@ -444,6 +475,13 @@ static err_t low_level_output(netif_t *netif, pbuf_t *p)
 
     LINK_STATS_INC(link.xmit);
 
+    g_netifTxFrameCount += 1U;
+
+    if ((g_netifTxFrameCount <= 4U) || ((g_netifTxFrameCount % 16U) == 0U))
+    {
+        printf("ETH TX frame #%lu, %u bytes.\r\n", (unsigned long)g_netifTxFrameCount, copiedLength);
+    }
+
     return ERR_OK;
 }
 
@@ -488,6 +526,13 @@ static pbuf_t *low_level_input(netif_t *netif)
     if (IfxGeth_Eth_isRxDataAvailable(ethernetif, IfxGeth_RxDmaChannel_0) != FALSE)
     {
         len = GetRxFrameSize((IfxGeth_RxDescr *)IfxGeth_Eth_getActualRxDescriptor(ethernetif, IfxGeth_RxDmaChannel_0));
+
+        if (len == 0xFFFFU)
+        {
+            printf("ETH RX descriptor error, dropping frame.\r\n");
+            IfxGeth_Eth_freeReceiveBuffer(ethernetif, IfxGeth_RxDmaChannel_0);
+            return (pbuf_t *)0;
+        }
     }
 
     if (len == 0)
@@ -536,6 +581,12 @@ static pbuf_t *low_level_input(netif_t *netif)
 #endif
 
         LINK_STATS_INC(link.recv);
+        g_netifRxFrameCount += 1U;
+
+        if ((g_netifRxFrameCount <= 4U) || ((g_netifRxFrameCount % 16U) == 0U))
+        {
+            printf("ETH RX frame #%lu, %u bytes.\r\n", (unsigned long)g_netifRxFrameCount, len);
+        }
     }
     else
     {
