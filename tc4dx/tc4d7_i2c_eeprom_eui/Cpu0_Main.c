@@ -29,6 +29,9 @@
 #include "IfxCpu.h"
 #include "IfxWtu.h"
 #include "I2cEepromEui.h"
+#include "serialio.h"
+
+#define TC4D7_DEBUG_UART_BAUDRATE 115200
 
 
 void core0_main(void)
@@ -40,6 +43,8 @@ void core0_main(void)
      */
     IfxWtu_disableCpuWatchdog(IfxWtu_getCpuWatchdogPassword());
     IfxWtu_disableSystemWatchdog(IfxWtu_getSystemWatchdogPassword());
+
+    SERIALIO_Init(TC4D7_DEBUG_UART_BAUDRATE);
 
     TC4D7_I2cEepromEui_run();
     

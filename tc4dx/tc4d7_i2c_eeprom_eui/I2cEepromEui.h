@@ -21,9 +21,15 @@ extern volatile boolean g_readWriteTestPassed;
 extern volatile boolean g_restorePassed;
 extern volatile boolean g_benchmarkPassed;
 extern volatile boolean g_allTestsPassed;
+extern volatile boolean g_writeBlockedDetected;
+extern volatile boolean g_readOnlyModeDetected;
 
 extern volatile uint8 g_lastEepromAddress;
 extern volatile IfxI2c_I2c_Status g_lastI2cStatus;
+extern volatile uint8 g_mismatchIndex;
+extern volatile uint8 g_expectedByte;
+extern volatile uint8 g_actualByte;
+extern volatile uint8 g_backupByte;
 extern volatile uint32 g_readyPollCount;
 extern volatile uint32 g_writeBenchmarkBytes;
 extern volatile uint32 g_readBenchmarkBytes;
@@ -33,5 +39,6 @@ extern volatile uint32 g_writeBenchmarkBytesPerSecond;
 extern volatile uint32 g_readBenchmarkBytesPerSecond;
 
 void TC4D7_I2cEepromEui_run(void);
+void TC4D7_I2cEepromEui_printReport(void);
 
 #endif

@@ -210,7 +210,53 @@ CoreMark 1.0 : 11953.526303 / 11.3.1 20221230 -O3 -DNDEBUG / MALLOC / 6:AURIX_TC
 
 ### tc4d7_i2c_eeprom_eui
 
-KIT_A3G_TC4D7_LITE 提供一个 2 Kb I2C 串行 EEPROM，预编程的 EUI-48 MAC ID（Microchip 24AA02E48）, 工程 I2C 速率 400 kHz
+KIT_A3G_TC4D7_LITE 提供一个 2 Kb I2C 串行 EEPROM，预编程的 EUI-48 MAC ID（Microchip 24AA02E48）, 工程 I2C 速率 400 kHz, 没有写入, 只有读出 MAC 地址
+
+```bash
+========================================
+TC4D7 I2C EEPROM / EUI-48 test
+UART0 TX=P14.0 RX=P14.1 @ 115200
+I2C0  SCL=P13.1 SDA=P13.2 @ 400 kHz
+EEPROM 24AA02E48, slave=0x50
+========================================
+[1/5] Initialize I2C0...
+      OK
+[2/5] Read EUI-48 MAC from 0xFA...
+      OK
+MAC address : 44:B7:D0:ED:AE:B9
+[3/5] Run EEPROM write/read verification at 0x20-0x3F...
+      FAILED, I2C status=0, last address=0x20
+      Mismatch at +0x00: expected=0x31 actual=0xFF backup=0xFF
+      Data stayed equal to backup; write looks blocked or ignored by hardware.
+      Write data  : 31 3E 4C 59 67 74 82 8F 9D AA B8 C5 D3 E0 EE FB
+      Read back   : FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+      Backup data : FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+      Switch to read-only mode: user EEPROM area behaves as read-only on this board.
+[4/5] Measure read throughput only...
+      OK
+[5/5] Restore original EEPROM test area...
+      SKIPPED (no writable EEPROM area available)
+
+Result summary
+--------------
+I2C init            : PASS
+MAC read            : PASS
+Write/read test     : READ-ONLY
+Benchmark           : PASS
+Restore             : SKIPPED
+Overall             : PASS (READ-ONLY)
+Write blocked hint  : YES
+Read-only mode      : YES
+MAC address : 44:B7:D0:**:**:**
+Mismatch detail     : +0x00 expected=0x31 actual=0xFF backup=0xFF
+Ready polls         : 32
+Last I2C status     : 0
+Last EEPROM addr    : 0x20
+Write benchmark     : 0 bytes in 0 us, 0 B/s
+Read benchmark      : 2048 bytes in 52470 us, 39031 B/s
+```
+
+
 
 ### tc4d7_lwip_ping
 
