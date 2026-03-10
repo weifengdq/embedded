@@ -1,4 +1,6 @@
-## KIT_A3G_TC4D7_LITE 上手笔记
+# KIT_A3G_TC4D7_LITE 上手笔记
+
+## 板子图片
 
 包装盒和板子正反面:
 
@@ -7,6 +9,28 @@
 ![image-20260309112428373](README.assets/image-20260309112428373.png)
 
 ![image-20260309112513961](README.assets/image-20260309112513961.png)
+
+## 电源启动复位时钟调试
+
+![image-20260310182534722](README.assets/image-20260310182534722.png)
+
+**电源**:
+
+- 单接 TypeC, CCx引脚有5.1K下拉, 5V输出, 板子能正常工作, 也能同时在X3 Jack 2.1mm 或 排针 VCC_IN 接入 12V 外部供电
+- DC-DC: TPS565247DRLR, 输入最大到16V, 输出3.3V, 最大5A
+- LDO: TLE4284DV50ATMA1, 输入最大到40V, 输出五福一安, 默认J2上的跳线帽接到了来自USB的5V, 这个LDO搁置.
+- VCORE 来自 VGATEE1N 和 VGATEE1P 两个 MOS 管 BUK4D16-20H 和 BUK4D38-20PX, 万用表实测 1.048V.
+
+**启动配置**:
+
+- HWCFG[2:1] = 01B, 通过 3.3V 单电源供电, 内部 EVRC 工作在 SMPS 模式, VGATE1P VGATE1N 引脚外接 MOSFET 输出 VCORE
+- HWCFG[4:3]
+
+**时钟**:
+
+- 25MHz 无源晶振
+
+
 
 ## 开发环境
 
@@ -280,7 +304,11 @@ LwIP 2.2.1, PHY DP83825I, RMII, 100M, 静态IP 192.168.0.100
 
 ![image-20260310174308747](README.assets/image-20260310174308747.png)
 
+### tc4d7_clock
 
+打出了从外部 25MHz 无源晶振到系统时钟 500MHz, 以及常用外设的主时钟, 未检查, 可能有误
+
+![image-20260310183716466](README.assets/image-20260310183716466.png)
 
 ## 工程链接
 
