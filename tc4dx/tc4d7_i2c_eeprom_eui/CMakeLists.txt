@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(tc4d7_uart_printf_echo LANGUAGES C)
+project(tc4d7_i2c_eeprom_eui LANGUAGES C)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
@@ -43,6 +43,33 @@ aurix_collect_project_files(
     OUT_HEADERS AURIX_HEADER_FILES
     OUT_INCLUDE_DIRS AURIX_INCLUDE_DIRS
 )
+
+set(AURIX_I2C_EXTRA_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/I2c/Std/IfxI2c.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/I2c/I2c/IfxI2c_I2c.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/_PinMap/TC4Dx/IfxI2c_PinMap_TC4Dx_BGA292_COM.c"
+)
+
+set(AURIX_I2C_EXTRA_HEADERS
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/I2c/Std/IfxI2c.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/I2c/I2c/IfxI2c_I2c.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/_PinMap/IfxI2c_PinMap.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/_PinMap/TC4Dx/IfxI2c_PinMap_TC4Dx_BGA292_COM.h"
+)
+
+list(APPEND AURIX_SOURCE_FILES ${AURIX_I2C_EXTRA_SOURCES})
+list(APPEND AURIX_HEADER_FILES ${AURIX_I2C_EXTRA_HEADERS})
+list(APPEND AURIX_INCLUDE_DIRS
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/I2c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/I2c/Std"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/I2c/I2c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/_PinMap"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/_PinMap/TC4Dx"
+)
+list(REMOVE_DUPLICATES AURIX_SOURCE_FILES)
+list(REMOVE_DUPLICATES AURIX_HEADER_FILES)
+list(REMOVE_DUPLICATES AURIX_INCLUDE_DIRS)
 
 if(NOT AURIX_SOURCE_FILES)
     message(FATAL_ERROR "No C source files were found after applying exclusions.")

@@ -1,4 +1,4 @@
-## KIT_A3G_TC4D7_LITE
+## KIT_A3G_TC4D7_LITE 上手笔记
 
 包装盒和板子正反面:
 
@@ -60,7 +60,7 @@ $defaultAurixFlasher = "C:\Infineon\AURIX-Studio-1.10.28\tools\AurixFlasherSoftw
 
 ### tc4d7_coremark
 
-没有什么优化, GCC, 单核 1995, 多核 11951
+没有什么优化, 可能有出入, 仅供参考, ADS 带的 GCC 11.3.1, CoreMark 跑分单核 1995, 多核 11951
 
 ![image-20260310132627364](README.assets/image-20260310132627364.png)
 
@@ -209,6 +209,8 @@ CoreMark 1.0 : 11953.526303 / 11.3.1 20221230 -O3 -DNDEBUG / MALLOC / 6:AURIX_TC
 ![image-20260310135441839](README.assets/image-20260310135441839.png)
 
 ### tc4d7_i2c_eeprom_eui
+
+KIT_A3G_TC4D7_LITE 提供一个 2 Kb I2C 串行 EEPROM，预编程的 EUI-48 MAC ID（Microchip 24AA02E48）, 工程 I2C 速率 400 kHz
 
 ### tc4d7_lwip_ping
 
