@@ -1,5 +1,29 @@
 # KIT_A3G_TC4D7_LITE 上手笔记
 
+
+- [KIT\_A3G\_TC4D7\_LITE 上手笔记](#kit_a3g_tc4d7_lite-上手笔记)
+  - [板子图片](#板子图片)
+  - [电源启动复位时钟调试](#电源启动复位时钟调试)
+  - [开发环境](#开发环境)
+  - [ADS 工程操作](#ads-工程操作)
+    - [导入工程](#导入工程)
+    - [新建工程](#新建工程)
+  - [MCU简介](#mcu简介)
+  - [板载硬件测试](#板载硬件测试)
+    - [tc4d7\_gpio](#tc4d7_gpio)
+    - [tc4d7\_uart\_printf\_echo](#tc4d7_uart_printf_echo)
+    - [tc4d7\_coremark](#tc4d7_coremark)
+    - [tc4d7\_can](#tc4d7_can)
+    - [tc4d7\_i2c\_eeprom\_eui](#tc4d7_i2c_eeprom_eui)
+    - [tc4d7\_lwip\_ping](#tc4d7_lwip_ping)
+    - [tc4d7\_lwip\_iperf](#tc4d7_lwip_iperf)
+    - [tc4d7\_adc](#tc4d7_adc)
+    - [tc4d7\_clock](#tc4d7_clock)
+  - [CMake补充说明](#cmake补充说明)
+  - [链接脚本文件](#链接脚本文件)
+  - [工程链接](#工程链接)
+
+
 ## 板子图片
 
 包装盒和板子正反面:
