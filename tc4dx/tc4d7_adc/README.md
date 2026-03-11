@@ -173,7 +173,7 @@ $$
 如果你需要调整输出或采样行为，可以修改 `AdcMonitor.c` 里的几个宏：
 
 - `ADCMONITOR_POTI_REFERENCE_VOLTAGE`
-  - AN0 电压换算参考值，默认 5.0 V
+  - AN0 电压换算参考值，默认 3.3 V
 - `ADCMONITOR_TEMP_WARMUP_SAMPLES`
   - DTS 预热丢弃样本数，默认 2
 
