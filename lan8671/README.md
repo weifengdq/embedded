@@ -1,5 +1,20 @@
 # 10BASE-T1S LAN8671
 
+- [10BASE-T1S LAN8671](#10base-t1s-lan8671)
+  - [LAN8671 简介](#lan8671-简介)
+  - [LAN8671 原理图](#lan8671-原理图)
+  - [与 STM32F407 的接线](#与-stm32f407-的接线)
+  - [Github 工程的使用](#github-工程的使用)
+  - [测试](#测试)
+    - [PING](#ping)
+    - [MAC 地址](#mac-地址)
+    - [UDP Echo](#udp-echo)
+    - [IPERF](#iperf)
+  - [部分代码说明](#部分代码说明)
+  - [Github 链接](#github-链接)
+  - [购买与交流群](#购买与交流群)
+
+
 ## LAN8671 简介
 
 ![image-20260413172302002](README.assets/image-20260413172302002.png)
