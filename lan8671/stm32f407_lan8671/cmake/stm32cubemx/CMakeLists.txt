@@ -36,7 +36,6 @@ set(MX_Include_Dirs
 # STM32CubeMX generated application sources
 set(MX_Application_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../LWIP/App/lwip.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../LWIP/Target/ethernetif.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../LWIP/Target/eth_custom_phy_interface.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/main.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/stm32f4xx_it.c
@@ -67,6 +66,10 @@ set(STM32_Drivers_Src
 
 set(STM32_HAL_ETH_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_eth.c
+)
+
+set(STM32_LWIP_Port_Src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../LWIP/Target/ethernetif.c
 )
 
 # Drivers Midllewares
@@ -163,6 +166,7 @@ set(MX_LINK_DIRS
 set(MX_LINK_LIBS 
     STM32_Drivers
     STM32_ETH_Driver
+    STM32_LWIP_Port
     ${TOOLCHAIN_LINK_LIBRARIES}
     LwIP
 	
@@ -183,8 +187,13 @@ add_library(STM32_ETH_Driver OBJECT)
 target_sources(STM32_ETH_Driver PRIVATE ${STM32_HAL_ETH_SRC})
 target_link_libraries(STM32_ETH_Driver PUBLIC stm32cubemx)
 
+add_library(STM32_LWIP_Port OBJECT)
+target_sources(STM32_LWIP_Port PRIVATE ${STM32_LWIP_Port_Src})
+target_link_libraries(STM32_LWIP_Port PUBLIC stm32cubemx)
+
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     target_compile_options(STM32_ETH_Driver PRIVATE -O0)
+    target_compile_options(STM32_LWIP_Port PRIVATE -O0)
 endif()
 
 
