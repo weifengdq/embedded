@@ -39,6 +39,10 @@ SJA1124:
 
 ![image-20260416152922250](README.assets/image-20260416152922250.png)
 
+STM32H503RBT6 是 X Pulse 家的, 贴的 8M 无源晶振
+
+![image-20260416173117137](README.assets/image-20260416173117137.png)
+
 **SPI3 配置**:
 
 - 模式: SPI Mode 1 (CPOL=0, CPHA=1)(SPI_POLARITY_LOW, SPI_PHASE_2EDGE)
@@ -55,6 +59,8 @@ SJA1124:
 ## Github 工程简介
 
 把 NXP 官方的 [nxp-appcodehub/dm-sja1124evb-spi-to-quad-lin-bridge](https://github.com/nxp-appcodehub/dm-sja1124evb-spi-to-quad-lin-bridge) 部分功能搬运到了 STM32H503 上.
+
+STM32CubeMX 6.17.0, STM32CubeH5 Firmware Package V1.6.0.
 
 用 GCC + CMake 管理工程:
 
@@ -101,7 +107,13 @@ cd h503_sja1124
 
 ### Banner
 
-SJA1124 四通道 LIN 主机测试
+SJA1124 四通道 LIN 主机测试, SJA1124 默认配置如下 (可在代码中修改 `SJA1124_GetDefaultConfig`):
+
+- LIN 19200 baud
+- Master Break Length（主节点同步间隔长度）13bits, 对应LIN 总线主节点发送的 Break 信号（同步间隔）的位时长, 19200 Bd 下约 13 bits Break ≈ **677 µs**
+- Delimiter 定界符: 2 bit (位置: Break → Delimiter → Sync 0x55 → PID → Data → Checksum)
+- Stop 停止位 1 bit
+- 使能高速模式, 使能同步帧发送
 
 ![image-20260416155822864](README.assets/image-20260416155822864.png)
 
@@ -126,6 +138,10 @@ SJA1124 四通道 LIN 主机测试
 `PLL locked (STATUS=0x08)` 是读 0x13 状态寄存器出来的
 
 ![image-20260416162505142](README.assets/image-20260416162505142.png)
+
+另外, 677us 的 Break 宽度 和 104us 的 Delimiter 宽度实际也对得上
+
+![image-20260416174547509](README.assets/image-20260416174547509.png)
 
 ### 发送 LIN
 
@@ -174,3 +190,12 @@ SJA1124 通道1 请求 0x02 8字节 增强型校验, 收到从机发来的 8 字
 
 ![image-20260416171101743](README.assets/image-20260416171101743.png)
 
+## Github 链接
+
+[https://github.com/weifengdq/embedded](https://github.com/weifengdq/embedded/)
+
+## 购买与交流群
+
+【闲鱼】https://m.tb.cn/h.ips7IY2?tk=jmYq569VVIK tG-#22>lD 「我在闲鱼发布了【SJA1124 评估板, SPI 转 4路 LIN:】」 点击链接直接打开
+
+Q 交流群: 1040239879
