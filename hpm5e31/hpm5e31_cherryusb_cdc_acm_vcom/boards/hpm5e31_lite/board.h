@@ -25,7 +25,7 @@
 #include "eeprom_device.h"
 #endif
 
-#define BOARD_NAME          "hpm5e31_hello_world"
+#define BOARD_NAME          "hpm5e31_lite"
 #define BOARD_UF2_SIGNATURE (0x0A4D5048UL)
 #define BOARD_CPU_FREQ      (480000000UL)
 
@@ -197,10 +197,10 @@
 
 /* User button */
 #define BOARD_APP_GPIO_CTRL        HPM_GPIO0
-#define BOARD_APP_GPIO_INDEX       GPIO_DI_GPIOC
-#define BOARD_APP_GPIO_PIN         21
-#define BOARD_APP_GPIO_IRQ         IRQn_GPIO0_C
-#define BOARD_BUTTON_PRESSED_VALUE 0
+#define BOARD_APP_GPIO_INDEX       GPIO_DI_GPIOA
+#define BOARD_APP_GPIO_PIN         3
+#define BOARD_APP_GPIO_IRQ         IRQn_GPIO0_A
+#define BOARD_BUTTON_PRESSED_VALUE 1
 
 /* gpiom section */
 #define BOARD_APP_GPIOM_BASE            HPM_GPIOM
@@ -265,8 +265,8 @@
 
 /* LED */
 #define BOARD_LED_GPIO_CTRL  HPM_GPIO0
-#define BOARD_LED_GPIO_INDEX GPIO_DI_GPIOC
-#define BOARD_LED_GPIO_PIN   28
+#define BOARD_LED_GPIO_INDEX GPIO_DI_GPIOA
+#define BOARD_LED_GPIO_PIN   2
 #define BOARD_LED_OFF_LEVEL  0
 #define BOARD_LED_ON_LEVEL   1
 
