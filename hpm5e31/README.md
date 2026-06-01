@@ -45,6 +45,7 @@
 - Debug 和 Release 对应不同的构建目录。
 - clean 只清理当前 Config 对应的构建目录；如果 Debug 和 Release 都清理，需要各执行一次。
 - flash 默认下载当前 Config 对应的 demo.elf。
+- flash 脚本已预置 JTAGConf -1,-1 自动探测参数，当前板子下载时不再停在 JTAGConf 提示符等待手工回车。
 - gdbserver 会启动 JLinkGDBServerCL，用于外部 GDB 调试。
 
 如果 SDK 或 JLink 路径变化，可覆盖脚本参数：
@@ -114,16 +115,19 @@ led off, blink period: 1000ms
 - Debug 构建：通过
 - Release 构建：通过
 - Debug 下载：通过
-- USB CDC ACM 枚举：未确认
+- USB CDC ACM 枚举：通过
 - 当前代码行为：下载后会初始化 USB0 设备 CDC ACM，并在 UART0 打印启动日志。
-- 当前实测结果：Windows 串口枚举列表中只看到 COM13 的 JLink CDC UART Port，没有看到新增的 USB CDC ACM 虚拟串口。
+- 当前实测结果：修正板级 USB 初始化后，Windows 已枚举出新的 USB CDC ACM 虚拟串口 COM62。
 
 ```text
 COM1   通信端口
 COM13  JLink CDC UART Port
+COM62  USB 串行设备
 ```
 
-- 结论：CherryUSB 工程已完成构建和下载验证，但 USB 虚拟串口未在当前 PC 上枚举成功。优先检查 USB0 数据线是否已连接到当前 PC，以及板上 USB0 口的硬件连接。
+- 设备信息：VID_34B7，PID_FFFF，PNPDeviceID 为 USB\VID_34B7&PID_FFFF&MI_00\7&A4712DB&1&0000。
+- DTR 联调：主机打开 COM62 并拉起 DTR 后，设备端成功返回首字节 h，说明 CDC 数据通路已经打通。
+- 修复点：boards/hpm5e31_lite/board.c 中启用了 usb_phy_using_internal_vbus()，并增加了 usb_phy_disable_dp_dm_pulldown()，解决了设备侧 VBUS 感知和 DP/DM 下拉导致的未枚举问题。
 
 ## 当前目录状态
 

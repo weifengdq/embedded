@@ -158,6 +158,7 @@ function Invoke-Flash {
     $jlinkCommandFile = Join-Path $BuildDir 'flash.jlink'
     $jlinkElfPath = $elfPath -replace '\\', '/'
     $jlinkLines = @(
+        'JTAGConf -1,-1',
         'r',
         'h',
         "loadfile $jlinkElfPath",

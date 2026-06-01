@@ -466,12 +466,14 @@ void board_init_usb(USB_Type *ptr)
         init_usb_pins(ptr);
         clock_add_to_group(clock_usb0, 0);
 
+        usb_phy_disable_dp_dm_pulldown(ptr);
+
         usb_hcd_set_power_ctrl_polarity(ptr, true);
         /* Wait USB_PWR pin control vbus power stable. Time depend on decoupling capacitor, you can decrease or increase this time */
         board_delay_ms(100);
 
-        /* As LQFP100 has no vbus pin, so should be call usb_phy_using_internal_vbus() API to use internal vbus. */
-        /* usb_phy_using_internal_vbus(ptr); */
+        /* HPM5E31 on this board has no external VBUS sense wired to the SoC, so use the PHY's internal VBUS detect. */
+        usb_phy_using_internal_vbus(ptr);
     }
 }
 
