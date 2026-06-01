@@ -1,6 +1,6 @@
 # hpm5e31_lite Projects
 
-本目录当前包含 4 个基于自定义板 hpm5e31_lite 的 HPM5E31 工程：
+本目录当前包含 5 个基于自定义板 hpm5e31_lite 的 HPM5E31 工程：
 
 | 工程目录 | 参考来源 |
 | --- | --- |
@@ -8,6 +8,7 @@
 | hpm5e31_coremark | hpm_sdk/samples/coremark |
 | hpm5e31_gpio | hpm_sdk/samples/drivers/gpio |
 | hpm5e31_cherryusb_cdc_acm_vcom | hpm_sdk/samples/cherryusb/device/cdc_acm/cdc_acm_vcom |
+| hpm5321_rgmii_mac_to_mac | hpm_sdk/samples/lwip/lwip_iperf |
 
 ## 公共板级信息
 
@@ -17,6 +18,7 @@
 - 调试串口：UART0
 - UART0 引脚：PA00 TXD，PA01 RXD
 - PC 调试串口：COM13
+- RGMII 双板联调串口：旧板 COM13，新板 COM61
 - 用户 LED：PA02，高电平点亮
 - 用户按键：PA03，按下高电平
 - 调试器：JLink
@@ -128,6 +130,38 @@ COM62  USB 串行设备
 - 设备信息：VID_34B7，PID_FFFF，PNPDeviceID 为 USB\VID_34B7&PID_FFFF&MI_00\7&A4712DB&1&0000。
 - DTR 联调：主机打开 COM62 并拉起 DTR 后，设备端成功返回首字节 h，说明 CDC 数据通路已经打通。
 - 修复点：boards/hpm5e31_lite/board.c 中启用了 usb_phy_using_internal_vbus()，并增加了 usb_phy_disable_dp_dm_pulldown()，解决了设备侧 VBUS 感知和 DP/DM 下拉导致的未枚举问题。
+
+### hpm5321_rgmii_mac_to_mac
+
+- Debug 构建：Role A 通过，Role B 通过
+- Debug 下载：通过
+- 工程用途：两块 HPM5E31 自定义板通过 ENET0 RGMII 做 MAC-to-MAC 直连，基于 lwIP iperf 做双板互通和吞吐测试。
+- 当前稳定配置：fixed-link 100Mbps 全双工；实测 1000Mbps fixed-link 时，client 侧在 iperf 会话开始后会重新启动，因此当前 README 只记录 100Mbps 稳定结果。
+- 默认角色/IP 规划：
+	- Role A：192.168.10.13
+	- Role B：192.168.10.61
+- 实测板卡映射：
+	- Role A：J-Link SN 24060502，调试串口 COM13
+	- Role B：J-Link SN 1120000012，调试串口 COM61
+- 参考命令：
+
+```powershell
+./build.ps1 -Action rebuild -Config Debug -Role A
+./build.ps1 -Action rebuild -Config Debug -Role B
+./tools/serial_iperf_test.ps1 -Protocol udp -OutputPath C:/Windows/Temp/hpm5e31_udp_report.txt
+./tools/serial_iperf_test.ps1 -Protocol udp -ClientBoard B -OutputPath C:/Windows/Temp/hpm5e31_udp_b_to_a_report.txt
+./tools/serial_iperf_test.ps1 -Protocol tcp -OutputPath C:/Windows/Temp/hpm5e31_tcp_report.txt
+./tools/serial_iperf_test.ps1 -Protocol tcp -ClientBoard A -OutputPath C:/Windows/Temp/hpm5e31_tcp_a_to_b_report.txt
+```
+
+- 启动联调结果：两块板上电后都能稳定打印 Link Status Up、Link Speed 100Mbps、静态 IP 正确。
+- UDP 实测结果：
+	- A(COM13) -> B(COM61)：type=7，remote_port=5001，total_bytes=119760606，duration_ms=10501，kbits_per_s=91237
+	- B(COM61) -> A(COM13)：type=7，remote_port=5001，total_bytes=120558312，duration_ms=10501，kbits_per_s=91845
+- TCP 当前结果：
+	- A(COM13) -> B(COM61)：type=2，remote_port=5001，total_bytes=7324，duration_ms=9750，kbits_per_s=0
+	- B(COM61) -> A(COM13)：type=2，remote_port=5001，total_bytes=7324，duration_ms=9750，kbits_per_s=0
+- 结论：当前双板 RGMII MAC-to-MAC 在 100Mbps fixed-link 下已经完成双向 UDP iperf 实测，链路和双向吞吐验证通过；TCP iperf 仍会以 lwIP `LWIPERF_TCP_ABORTED_LOCAL` 结束，后续需要继续针对 TCP 会话路径排查。
 
 ## 当前目录状态
 

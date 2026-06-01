@@ -10,6 +10,7 @@
  *---------------------------------------------------------------------*/
 #include "common.h"
 #include "utils.h"
+#include "netinfo.h"
 #include "netconf.h"
 #include "sys_arch.h"
 #include "ethernetif.h"
@@ -20,11 +21,7 @@
 #include "lwip/prot/dhcp.h"
 
 #ifndef IPERF_UDP_CLIENT_RATE
-#if defined(RGMII) && RGMII
-    #define IPERF_UDP_CLIENT_RATE (1000 * 1024 * 1024)
-#else
     #define IPERF_UDP_CLIENT_RATE (100 * 1024 * 1024)
-#endif
 #endif
 
 #ifndef IPERF_CLIENT_AMOUNT
@@ -39,9 +36,14 @@ lwiperf_report(void *arg, enum lwiperf_report_type report_type,
   LWIP_UNUSED_ARG(arg);
   LWIP_UNUSED_ARG(local_addr);
   LWIP_UNUSED_ARG(local_port);
+    LWIP_UNUSED_ARG(remote_addr);
 
-  LWIP_PLATFORM_DIAG(("iperf report: type=%d, remote: %s:%d, total bytes: %"U32_F", duration in ms: %"U32_F", kbits/s: %"U32_F"\n",
-    (int)report_type, ipaddr_ntoa(remote_addr), (int)remote_port, bytes_transferred, ms_duration, bandwidth_kbitpsec));
+    LWIP_PLATFORM_DIAG(("iperf report:\n"));
+    LWIP_PLATFORM_DIAG(("type=%d\n", (int)report_type));
+    LWIP_PLATFORM_DIAG(("remote_port=%d\n", (int)remote_port));
+    LWIP_PLATFORM_DIAG(("total_bytes=%"U32_F"\n", bytes_transferred));
+    LWIP_PLATFORM_DIAG(("duration_ms=%"U32_F"\n", ms_duration));
+    LWIP_PLATFORM_DIAG(("kbits_per_s=%"U32_F"\n", bandwidth_kbitpsec));
 }
 
 static bool select_mode(struct netif *netif, bool *server_mode, bool *tcp, enum lwiperf_client_type *client_type)
@@ -109,8 +111,10 @@ void *start_iperf(void)
 
     if (server) {
         if (tcp) {
+            printf("Starting TCP server...\n");
             session = lwiperf_start_tcp_server_default(lwiperf_report, NULL);
         } else {
+            printf("Starting UDP server...\n");
             session = lwiperf_start_udp_server(netif_ip_addr4(netif_default), LWIPERF_UDP_PORT_DEFAULT,
                                                lwiperf_report, NULL);
         }
@@ -120,15 +124,24 @@ void *start_iperf(void)
         }
 
         ip4addr_aton((char *)cmd_str_buff, &remote_addr);
+        printf("Remote IP parsed.\n");
 
         if (tcp) {
+            printf("Calling lwiperf_start_tcp_client_default...\n");
             session = lwiperf_start_tcp_client_default(&remote_addr, lwiperf_report, NULL);
         } else {
+            printf("Calling lwiperf_start_udp_client...\n");
             session = lwiperf_start_udp_client(netif_ip_addr4(netif_default), LWIPERF_UDP_PORT_DEFAULT,
                                                &remote_addr, LWIPERF_UDP_PORT_DEFAULT, client_type,
                                                IPERF_CLIENT_AMOUNT, IPERF_UDP_CLIENT_RATE, 0,
                                                lwiperf_report, NULL);
         }
+    }
+
+    if (session == NULL) {
+        printf("Failed to start iperf session.\n");
+    } else {
+        printf("Iperf session started.\n");
     }
 
     return session;
@@ -176,8 +189,8 @@ int main(void)
     #else
     printf("Board Role: A\n");
     #endif
-    printf("Local IP:  %s\n", HPM_STRINGIFY(IP0_CONFIG));
-    printf("Peer IP:   %s\n", HPM_STRINGIFY(REMOTE_IP0_CONFIG));
+    printf("Local IP:  %s\n", IP0_CONFIG_STR);
+    printf("Peer IP:   %s\n", REMOTE_IP0_CONFIG_STR);
 
     /* Initialize GPIOs, clock, MAC(DMA) and PHY */
     if (enet_init(ENET) == 0) {
