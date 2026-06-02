@@ -42,8 +42,8 @@
 #define LOG_MESSAGE_MAX_LEN  (128U)
 
 #if defined(MAC_TO_MAC_FIXED_LINK) && MAC_TO_MAC_FIXED_LINK
-#define MAC_TO_MAC_FIXED_LINK_LINE_SPEED enet_line_speed_100mbps
-#define MAC_TO_MAC_FIXED_LINK_PHY_SPEED enet_phy_port_speed_100mbps
+#define MAC_TO_MAC_FIXED_LINK_LINE_SPEED enet_line_speed_1000mbps
+#define MAC_TO_MAC_FIXED_LINK_PHY_SPEED enet_phy_port_speed_1000mbps
 #define MAC_TO_MAC_FIXED_LINK_DUPLEX enet_phy_duplex_full
 #endif
 
@@ -199,7 +199,7 @@ hpm_stat_t enet_init(ENET_Type *ptr)
     #if defined(MAC_TO_MAC_FIXED_LINK) && MAC_TO_MAC_FIXED_LINK
     enet_set_line_speed(ENET, MAC_TO_MAC_FIXED_LINK_LINE_SPEED);
     enet_set_duplex_mode(ENET, MAC_TO_MAC_FIXED_LINK_DUPLEX);
-    printf("Enet fixed-link init passed (RGMII MAC-to-MAC, 100Mbps Full duplex)!\n");
+    printf("Enet fixed-link init passed (RGMII MAC-to-MAC, 1000Mbps Full duplex)!\n");
     return status_success;
     #else
     return status_fail;

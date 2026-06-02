@@ -21,12 +21,23 @@
 #include "lwip/prot/dhcp.h"
 
 #ifndef IPERF_UDP_CLIENT_RATE
-    #define IPERF_UDP_CLIENT_RATE (100 * 1024 * 1024)
+    #define IPERF_UDP_CLIENT_RATE (800 * 1024 * 1024)
 #endif
 
 #ifndef IPERF_CLIENT_AMOUNT
 #define IPERF_CLIENT_AMOUNT (-1000) /* 10 seconds */
 #endif
+
+long exception_handler(long cause, long epc)
+{
+    printf("exception trap: cause=0x%08lX epc=0x%08lX mtval=0x%08lX\n",
+           (unsigned long)cause,
+           (unsigned long)epc,
+           (unsigned long)read_csr(CSR_MTVAL));
+    board_delay_ms(20);
+    while (1) {
+    }
+}
 
 static void
 lwiperf_report(void *arg, enum lwiperf_report_type report_type,

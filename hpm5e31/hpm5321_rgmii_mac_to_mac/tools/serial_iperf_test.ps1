@@ -77,13 +77,24 @@ function Busy-Drain {
         [System.IO.Ports.SerialPort[]]$Ports,
 
         [Parameter(Mandatory = $true)]
-        [int]$DurationMs
+        [int]$DurationMs,
+
+        [string]$ClientPortName,
+
+        [ref]$ClientLog,
+
+        [ref]$ServerLog
     )
 
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     while ($stopwatch.ElapsedMilliseconds -lt $DurationMs) {
         foreach ($port in $Ports) {
-            [void]$port.ReadExisting()
+            $chunk = $port.ReadExisting()
+            if ($port.PortName -eq $ClientPortName) {
+                $ClientLog.Value += $chunk
+            } else {
+                $ServerLog.Value += $chunk
+            }
         }
     }
 }
@@ -141,12 +152,12 @@ try {
     }
 
     $serverPort.Write("$serverChoice`r")
-    Busy-Drain -Ports @($portA, $portB) -DurationMs 1500
+    $clientLog = ''
+    $serverLog = ''
+    Busy-Drain -Ports @($portA, $portB) -DurationMs 1500 -ClientPortName $clientPort.PortName -ClientLog ([ref]$clientLog) -ServerLog ([ref]$serverLog)
 
     $clientPort.Write("$clientChoice`r")
 
-    $clientLog = ''
-    $serverLog = ''
     $remotePromptHandled = $false
     $reportDetected = $false
     $reportDelay = $null
@@ -177,9 +188,13 @@ try {
     }
 
     $report = [regex]::Match($clientLog, 'iperf report:[\s\S]*?kbits_per_s=.*').Value
+    $reportLines += "Protocol: $Protocol"
+    $reportLines += "Direction: $direction"
+    $reportLines += '--- Startup Log A ---'
+    $reportLines += $startupA
+    $reportLines += '--- Startup Log B ---'
+    $reportLines += $startupB
     if ([string]::IsNullOrWhiteSpace($report)) {
-        $reportLines += "Protocol: $Protocol"
-        $reportLines += "Direction: $direction"
         $reportLines += 'Status: report not found'
         $reportLines += '--- Client Log ---'
         $reportLines += $clientLog
@@ -188,9 +203,11 @@ try {
         throw 'iperf report not found'
     }
 
-    $reportLines += "Protocol: $Protocol"
-    $reportLines += "Direction: $direction"
     $reportLines += $report
+    $reportLines += '--- Client Log ---'
+    $reportLines += $clientLog
+    $reportLines += '--- Server Log ---'
+    $reportLines += $serverLog
 }
 finally {
     if ($OutputPath) {

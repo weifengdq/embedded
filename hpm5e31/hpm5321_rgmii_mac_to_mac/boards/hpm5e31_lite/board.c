@@ -13,6 +13,7 @@
 #include "pinmux.h"
 #include "hpm_pmp_drv.h"
 #include "hpm_clock_drv.h"
+#include "hpm_soc_ip.h"
 /* #include "hpm_sysctl_drv.h" */
 #include "hpm_pllctlv2_drv.h"
 #include "hpm_enet_drv.h"
@@ -127,6 +128,19 @@ void board_print_clock_freq(void)
     printf("==============================\n");
 }
 
+static void board_print_reset_status(void)
+{
+    uint32_t reset_flag = HPM_PPOR->RESET_FLAG;
+    uint32_t reset_status = HPM_PPOR->RESET_STATUS;
+
+    printf("reset flag:   0x%08lX\n", (unsigned long) reset_flag);
+    printf("reset status: 0x%08lX\n", (unsigned long) reset_status);
+
+    if (reset_flag != 0U) {
+        HPM_PPOR->RESET_FLAG = reset_flag;
+    }
+}
+
 void board_init_uart(UART_Type *ptr)
 {
     /* configure uart's pin before opening uart's clock */
@@ -168,6 +182,7 @@ void board_init(void)
 {
     board_init_clock();
     board_init_console();
+    board_print_reset_status();
     board_init_pmp();
 #if BOARD_SHOW_CLOCK
     board_print_clock_freq();

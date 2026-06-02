@@ -136,7 +136,8 @@ COM62  USB 串行设备
 - Debug 构建：Role A 通过，Role B 通过
 - Debug 下载：通过
 - 工程用途：两块 HPM5E31 自定义板通过 ENET0 RGMII 做 MAC-to-MAC 直连，基于 lwIP iperf 做双板互通和吞吐测试。
-- 当前稳定配置：fixed-link 100Mbps 全双工；实测 1000Mbps fixed-link 时，client 侧在 iperf 会话开始后会重新启动，因此当前 README 只记录 100Mbps 稳定结果。
+- 当前代码配置：fixed-link 1000Mbps 全双工，BOARD_ENET_RGMII_TX_DLY=0，BOARD_ENET_RGMII_RX_DLY=7，UDP client 速率上限 800Mbps，用于继续做 1Gbps 直连调优。
+- 当前稳定基线：fixed-link 100Mbps 全双工；这是当前唯一完成双向 UDP 实测且稳定复现的档位。
 - 默认角色/IP 规划：
 	- Role A：192.168.10.13
 	- Role B：192.168.10.61
@@ -154,14 +155,20 @@ COM62  USB 串行设备
 ./tools/serial_iperf_test.ps1 -Protocol tcp -ClientBoard A -OutputPath C:/Windows/Temp/hpm5e31_tcp_a_to_b_report.txt
 ```
 
-- 启动联调结果：两块板上电后都能稳定打印 Link Status Up、Link Speed 100Mbps、静态 IP 正确。
-- UDP 实测结果：
+- 100Mbps 基线结果：两块板都能稳定打印 Link Status Up、Link Speed 100Mbps、静态 IP 正确。
+- 100Mbps UDP 实测结果：
 	- A(COM13) -> B(COM61)：type=7，remote_port=5001，total_bytes=119760606，duration_ms=10501，kbits_per_s=91237
 	- B(COM61) -> A(COM13)：type=7，remote_port=5001，total_bytes=120558312，duration_ms=10501，kbits_per_s=91845
-- TCP 当前结果：
-	- A(COM13) -> B(COM61)：type=2，remote_port=5001，total_bytes=7324，duration_ms=9750，kbits_per_s=0
-	- B(COM61) -> A(COM13)：type=2，remote_port=5001，total_bytes=7324，duration_ms=9750，kbits_per_s=0
-- 结论：当前双板 RGMII MAC-to-MAC 在 100Mbps fixed-link 下已经完成双向 UDP iperf 实测，链路和双向吞吐验证通过；TCP iperf 仍会以 lwIP `LWIPERF_TCP_ABORTED_LOCAL` 结束，后续需要继续针对 TCP 会话路径排查。
+- 100Mbps TCP 调试进展：
+	- 已在本地 SDK 的 lwiperf.c 中修正 TCP server 对 24-byte settings header 分片的处理；修正前会出现 server type=3、client type=5，且 total_bytes=24 的早期退出。
+	- 修正后，B(COM61) -> A(COM13) 已能推进到 type=2，remote_port=5001，total_bytes=115364，duration_ms=10247，kbits_per_s=88。
+	- 同一轮 server 侧日志显示 total_bytes 约 105144 后同样以 type=2 收尾，说明问题已从“首包分片”收敛为“会话推进约 100KB 后 10 秒 idle timeout”。
+	- 额外诊断结果：PPOR reset flag/status 未显示硬复位来源，自定义 exception_handler 也没有抓到 machine-mode trap，当前更像 TCP 会话推进停滞后进入 lwIP 本地超时。
+- 1Gbps 调优结果：
+	- TX_DLY=0、RX_DLY=7 时，两块板都能稳定打印 Link Speed 1000Mbps，说明 1Gbps fixed-link 已能起链。
+	- 在旧的 100Mbps UDP 发送速率下，A(COM13) -> B(COM61) 可完成：type=7，remote_port=5001，total_bytes=120879640，duration_ms=10501，kbits_per_s=92090。
+	- 将 UDP client 发送速率提高到 800Mbps 后，A 侧 client 在 `Iperf session started.` 后重新回到启动菜单，PPOR reset flag/status 仍为 0，说明 RX_DLY=7 足以让 1Gbps 起链，但还不足以支撑高吞吐稳定传输。
+- 结论：当前双板 RGMII MAC-to-MAC 的可用稳定档仍是 100Mbps fixed-link 双向 UDP；TCP 已排除首包分片和显式 trap/硬复位这两类问题，但仍会在约 100KB 后卡死并以 `LWIPERF_TCP_ABORTED_LOCAL` 结束；1Gbps `RX_DLY=7` 已验证可起链，但高于 100Mbps 的高吞吐 UDP 仍不稳定，后续需要继续试更合适的 RGMII delay 组合或进一步查高负载下的控制流跳转问题。
 
 ## 当前目录状态
 
