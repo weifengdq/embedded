@@ -99,6 +99,51 @@ function Busy-Drain {
     }
 }
 
+function Wait-ForText {
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.IO.Ports.SerialPort[]]$Ports,
+
+        [Parameter(Mandatory = $true)]
+        [int]$TimeoutMs,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ClientPortName,
+
+        [Parameter(Mandatory = $true)]
+        [string]$TargetPortName,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Text,
+
+        [ref]$ClientLog,
+
+        [ref]$ServerLog
+    )
+
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($stopwatch.ElapsedMilliseconds -lt $TimeoutMs) {
+        foreach ($port in $Ports) {
+            $chunk = $port.ReadExisting()
+            if ($port.PortName -eq $ClientPortName) {
+                $ClientLog.Value += $chunk
+            } else {
+                $ServerLog.Value += $chunk
+            }
+        }
+
+        if ($TargetPortName -eq $ClientPortName) {
+            if ($ClientLog.Value.Contains($Text)) {
+                return $true
+            }
+        } elseif ($ServerLog.Value.Contains($Text)) {
+            return $true
+        }
+    }
+
+    return $false
+}
+
 $reportLines = @()
 $portA = $null
 $portB = $null
@@ -154,7 +199,10 @@ try {
     $serverPort.Write("$serverChoice`r")
     $clientLog = ''
     $serverLog = ''
-    Busy-Drain -Ports @($portA, $portB) -DurationMs 1500 -ClientPortName $clientPort.PortName -ClientLog ([ref]$clientLog) -ServerLog ([ref]$serverLog)
+    $serverReady = Wait-ForText -Ports @($portA, $portB) -TimeoutMs 5000 -ClientPortName $clientPort.PortName -TargetPortName $serverPort.PortName -Text 'Iperf session started.' -ClientLog ([ref]$clientLog) -ServerLog ([ref]$serverLog)
+    if (-not $serverReady) {
+        throw 'Server ready marker not found'
+    }
 
     $clientPort.Write("$clientChoice`r")
 
@@ -182,8 +230,18 @@ try {
             $reportDelay = [System.Diagnostics.Stopwatch]::StartNew()
         }
 
-        if ($reportDetected -and $reportDelay.ElapsedMilliseconds -ge 500) {
-            break
+        if ($reportDetected) {
+            if ($Protocol -eq 'tcp') {
+                if ($serverLog.Contains('tcp recv eof:') -or $serverLog.Contains('iperf report:')) {
+                    break
+                }
+
+                if ($reportDelay.ElapsedMilliseconds -ge 5000) {
+                    break
+                }
+            } elseif ($reportDelay.ElapsedMilliseconds -ge 500) {
+                break
+            }
         }
     }
 

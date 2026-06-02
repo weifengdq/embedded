@@ -213,6 +213,7 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
                 memcpy((uint8_t *)((uint8_t *)buffer + buffer_offset),
                     (uint8_t *)((uint8_t *)q->payload + payload_offset),
                             ENET_TX_BUFF_SIZE - buffer_offset);
+                l1c_dc_writeback(((uint32_t)buffer + (MEM_ALIGNMENT - 1)) & ~(MEM_ALIGNMENT - 1), ENET_TX_BUFF_SIZE);
 
                 /* Point to next descriptor */
                 dma_tx_desc = (enet_tx_desc_t *)(dma_tx_desc->tdes3_bm.next_desc);
@@ -231,14 +232,17 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
                 buffer_offset = 0;
             }
 
-            /* pass payload to buffer */
-            desc.tx_desc_list_cur->tdes2_bm.buffer1 = core_local_mem_to_sys_address(BOARD_RUNNING_CORE, (uint32_t)q->payload);
+            if (bytes_left_to_copy > 0U) {
+                memcpy((uint8_t *)((uint8_t *)buffer + buffer_offset),
+                    (uint8_t *)((uint8_t *)q->payload + payload_offset),
+                    bytes_left_to_copy);
+                l1c_dc_writeback(((uint32_t)buffer + (MEM_ALIGNMENT - 1)) & ~(MEM_ALIGNMENT - 1), ENET_TX_BUFF_SIZE);
+            }
             buffer_offset = buffer_offset + bytes_left_to_copy;
             frame_length = frame_length + bytes_left_to_copy;
         }
         /* Prepare transmit descriptors to give to DMA*/
         frame_length += 4;
-        l1c_dc_writeback(((uint32_t)p->payload + (MEM_ALIGNMENT - 1)) & ~(MEM_ALIGNMENT - 1), ENET_TX_BUFF_SIZE);
 
         #if defined(LWIP_PTP) && LWIP_PTP
             enet_prepare_tx_desc_with_ts_record(ENET, &desc.tx_desc_list_cur, &desc.tx_control_config, frame_length, desc.tx_buff_cfg.size, &timestamp);

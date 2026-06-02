@@ -136,7 +136,7 @@ COM62  USB 串行设备
 - Debug 构建：Role A 通过，Role B 通过
 - Debug 下载：通过
 - 工程用途：两块 HPM5E31 自定义板通过 ENET0 RGMII 做 MAC-to-MAC 直连，基于 lwIP iperf 做双板互通和吞吐测试。
-- 当前代码配置：已恢复到 fixed-link 100Mbps 全双工、BOARD_ENET_RGMII_TX_DLY=0、BOARD_ENET_RGMII_RX_DLY=0，便于继续在稳定基线上排查 TCP；本地 SDK 的 lwiperf.c 还带有 TCP 24-byte settings header 分片修复，以及本轮新增的 TCP PCB/ethernetif 诊断探针。
+- 当前代码配置：源码当前已恢复到 fixed-link 100Mbps 全双工、BOARD_ENET_RGMII_TX_DLY=0、BOARD_ENET_RGMII_RX_DLY=0 的稳定基线；本地 SDK 的 lwiperf.c 保留了 TCP 24-byte settings header 分片修复和当前轮次的 recv/close/PCB 诊断，ethernetif.c 的 low_level_output() 也已改为把整条 pbuf 链完整拷入 DMA buffer，避免链式 pbuf 时仅保留最后一段 payload。
 - 当前稳定基线：fixed-link 100Mbps 全双工；这是当前唯一完成双向 UDP 实测且稳定复现的档位。
 - 默认角色/IP 规划：
 	- Role A：192.168.10.13
@@ -162,17 +162,21 @@ COM62  USB 串行设备
 - 100Mbps TCP 调试进展：
 	- 已在本地 SDK 的 lwiperf.c 中修正 TCP server 对 24-byte settings header 分片的处理；修正前会出现 server type=3、client type=5，且 total_bytes=24 的早期退出。
 	- 新增 PPOR reset 和自定义 exception_handler 诊断后，仍未观察到硬复位来源或 machine-mode trap，TCP 失败路径可以继续收敛到 lwIP 会话本身。
-	- B(COM61) -> A(COM13) 最新复测结果：client 侧为 type=2，remote_port=5001，total_bytes=10974，duration_ms=9172，kbits_per_s=8。
-	- 同一轮 client 侧 lwIP PCB 诊断显示：`state=ESTABLISHED(4)`，`snd_wnd=11680`，`snd_buf=706`，`snd_queuelen=9`，并同时存在 `unsent=1`、`unacked=1`；ethernetif 计数显示 `tx_busy=0`，实际只发出 11 帧 / 3598 字节、收到 7 帧 / 420 字节，说明问题已经从“DMA 队列忙”缩小为“连接已建立，但有一个未确认段和一个未发送段长期卡在 TCP 队列里”。
-	- A(COM13) -> B(COM61) 最新复测结果：client 侧可正常结束，type=1，remote_port=5001，total_bytes=13164，duration_ms=10500，kbits_per_s=8；但 server 侧仍以 type=2 超时结束，remote_port=49153，total_bytes=1608，duration_ms=9511，kbits_per_s=0。
-	- 同一轮 server 侧 lwIP PCB 诊断显示：`state=ESTABLISHED(4)`，`snd_buf=11680`，`snd_queuelen=0`，`unsent=0`，`unacked=0`；ethernetif 计数显示 server 侧实际收到了 21 帧 / 8160 字节，但 lwiperf 只累计到 1608 字节，说明有相当一部分数据已进入 lwIP/netif 层，却没有让 server iperf 会话继续完整推进。
-	- 当前结论：100Mbps TCP 已基本排除“描述符拿不到”“硬复位”“机器态异常”这三类问题，现阶段更像是 TCP 会话在 ESTABLISHED 状态下卡在 ACK/FIN 或 server receive progression 的上层处理问题。
+	- 进一步对比后确认，baremetal ethernetif 原始 TX 路径对链式 pbuf 的处理有问题；当一个 TCP 报文由多个 pbuf 组成时，descriptor 最终只会保留最后一段 payload。修正为“整条 pbuf 链完整复制到 DMA buffer”后，A->B 的 TCP 症状从早期 abort/空转显著改善为可正常结束。
+	- tools/serial_iperf_test.ps1 也已从“固定等待 1.5s”改为“明确等待 server 打出 Iperf session started. 再启动 client”，并在 TCP 模式下额外等待 server 侧 EOF/report，避免把脚本竞态误判为协议栈问题。
+	- 调试过程中还发现，lwiperf 的 tcp_err() 回调不能继续访问已失效的 conn_pcb；修正这一路径后，前面那种“reset flag/status 仍为 0，但程序直接跳回启动 banner”的自引入破坏已明显收敛。
+	- A(COM13) -> B(COM61) 最新复测结果：client 侧可正常结束，type=1，remote_port=5001，total_bytes=20464，duration_ms=10548，kbits_per_s=8；server 侧已经能稳定看到 `tcp accept` 和连续的 `tcp recv data`，说明 server receive path 已经真正跑起来，而不是停在 accept 之前。
+	- B(COM61) -> A(COM13) 最新复测结果：client 侧仍为 type=2，remote_port=5001，total_bytes=10244，duration_ms=9047，kbits_per_s=8。
+	- 同一轮 client 侧 lwIP PCB 诊断仍显示：`state=ESTABLISHED(4)`，`snd_wnd=11680`，并同时存在 `unsent=1`、`unacked=1`；目前更像是 B->A 方向在少量 MSS 窗口后仍会卡在 ACK/发送推进上，而不是最初那个“24-byte header 分片”或“脚本竞态”问题。
+	- 当前结论：100Mbps TCP 这条线已经确认了两个真实问题并修正掉了它们：`low_level_output()` 的链式 pbuf TX 缺陷，以及调试版 lwiperf tcp_err() 对悬空 PCB 的访问；剩余问题已经收敛为“吞吐很低，且 B->A 方向仍会在 ESTABLISHED 状态下卡住”。
 - 1Gbps 调优结果：
 	- TX_DLY=0、RX_DLY=7 时，两块板都能稳定打印 Link Speed 1000Mbps，说明 1Gbps fixed-link 已能起链。
 	- 在旧的 100Mbps UDP 发送速率下，A(COM13) -> B(COM61) 可完成：type=7，remote_port=5001，total_bytes=120879640，duration_ms=10501，kbits_per_s=92090；这只能证明 1Gbps 配置没有立刻失稳，还不能代表 1Gbps 真正吞吐能力。
 	- 将 UDP client 发送速率提高到 800Mbps 后，当前已试的四组 delay 组合 `TX/RX=0/7`、`7/7`、`15/7`、`15/15` 都无法稳定跑完；症状表现为 client 侧或双侧在 `Iperf session started.` 后重新回到启动菜单。
+	- 在完成 TX pbuf-chain 修正后，又补做了一轮更保守的 1Gbps 阈值验证：临时切到 `TX/RX=0/7`、UDP 200Mbps、A(COM13) -> B(COM61)，结果仍然是 client/server 双侧回到启动 banner、`report not found`。这说明 1Gbps 不稳定并不只是“800Mbps 发送率太激进”，而是在更低负载下也仍然存在。
+	- 上述 1Gbps 200Mbps 试验结束后，源码已经恢复回当前 100Mbps 基线，避免仓库停留在临时试验配置。
 	- 这些 1Gbps 高负载失败场景里，PPOR reset flag/status 仍为 0，自定义 exception_handler 也没有抓到 machine-mode trap，说明当前 delay 小矩阵尚未找到可支撑高吞吐稳定传输的组合。
-- 结论：当前双板 RGMII MAC-to-MAC 的可用稳定档仍是 100Mbps fixed-link 双向 UDP；100Mbps TCP 现在已经缩小到“ESTABLISHED 状态下 TCP 队列/receive progression 卡死”的问题面；1Gbps fixed-link 虽然已经能起链，但本轮试过的 `0/7`、`7/7`、`15/7`、`15/15` 都不能支撑 800Mbps UDP 稳定运行，后续需要继续扩大 RGMII delay 搜索范围，或进一步深挖 TCP/高负载下上层协议推进为何停住。
+- 结论：当前双板 RGMII MAC-to-MAC 的可用稳定档仍是 100Mbps fixed-link 双向 UDP；100Mbps TCP 这轮已经确认并修正了两个实际缺陷，但剩余症状仍是“吞吐很低，且 B->A 会在 ESTABLISHED 状态下卡住”；1Gbps fixed-link 虽然已经能起链，但在完成 TX 修正后，`0/7` 即使把 UDP 发送率降到 200Mbps 也依旧不稳定，因此后续除了继续扩大 RGMII delay 搜索范围，还需要继续深挖高负载下为何会无 trap/无复位地重新回到启动流程。
 
 ## 当前目录状态
 
