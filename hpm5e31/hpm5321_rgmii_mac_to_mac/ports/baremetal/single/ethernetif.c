@@ -93,6 +93,20 @@
 xSemaphoreHandle s_xSemaphore = NULL;
 #endif
 
+static ethernetif_debug_counters_t s_ethernetif_debug_counters;
+
+void ethernetif_reset_debug_counters(void)
+{
+    memset(&s_ethernetif_debug_counters, 0, sizeof(s_ethernetif_debug_counters));
+}
+
+void ethernetif_get_debug_counters(ethernetif_debug_counters_t *counters)
+{
+    if (counters != NULL) {
+        *counters = s_ethernetif_debug_counters;
+    }
+}
+
 LWIP_MEMPOOL_DECLARE(enet0_rx_pool, ENET_RX_BUFF_COUNT, sizeof(my_custom_pbuf_t), "Custom RX PBUF pool");
 
 /**
@@ -163,6 +177,7 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
     enet_tx_desc_t  *tx_desc_list_cur = desc.tx_desc_list_cur;
 
     if (netif == NULL || p == NULL) {
+        s_ethernetif_debug_counters.tx_errors++;
         return ERR_VAL;
     }
 
@@ -188,6 +203,7 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
 
 
             if (dma_tx_desc->tdes0_bm.own != 0) {
+                s_ethernetif_debug_counters.tx_busy++;
                 return ERR_INPROGRESS;
             }
 
@@ -203,6 +219,7 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
 
                 /* Check if the buffer is available */
                 if (dma_tx_desc->tdes0_bm.own != 0) {
+                    s_ethernetif_debug_counters.tx_busy++;
                     return ERR_INPROGRESS;
                 }
 
@@ -231,6 +248,10 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
         #else
             enet_prepare_tx_desc(ENET, &desc.tx_desc_list_cur, &desc.tx_control_config, frame_length, desc.tx_buff_cfg.size);
         #endif
+
+        s_ethernetif_debug_counters.tx_frames++;
+        s_ethernetif_debug_counters.tx_bytes += frame_length;
+        s_ethernetif_debug_counters.last_tx_ms = sys_now();
 
 #if defined(NO_SYS) && !NO_SYS
         /* Give semaphore and exit */
@@ -312,6 +333,9 @@ static struct pbuf *low_level_input(struct netif *netif)
 
             if (p != NULL) {
                 l1c_dc_invalidate((uint32_t)buffer, ENET_RX_BUFF_SIZE);
+                s_ethernetif_debug_counters.rx_frames++;
+                s_ethernetif_debug_counters.rx_bytes += len;
+                s_ethernetif_debug_counters.last_rx_ms = sys_now();
                 #if defined(LWIP_PTP) && LWIP_PTP
                 /* Get the received timestamp */
                 p->time_sec  = fp->frame[fp->idx].rx_desc->rdes7_bm.rtsh;
@@ -388,9 +412,11 @@ err_t ethernetif_input(struct netif *netif)
             err = netif->input(p, netif);
 
             if (err != ERR_OK) {
+                s_ethernetif_debug_counters.input_err++;
                 LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
                 pbuf_free(p);
             } else {
+                s_ethernetif_debug_counters.input_ok++;
                 goto GET_NEXT_FRAME;
             }
         }

@@ -136,7 +136,7 @@ COM62  USB 串行设备
 - Debug 构建：Role A 通过，Role B 通过
 - Debug 下载：通过
 - 工程用途：两块 HPM5E31 自定义板通过 ENET0 RGMII 做 MAC-to-MAC 直连，基于 lwIP iperf 做双板互通和吞吐测试。
-- 当前代码配置：fixed-link 1000Mbps 全双工，BOARD_ENET_RGMII_TX_DLY=0，BOARD_ENET_RGMII_RX_DLY=7，UDP client 速率上限 800Mbps，用于继续做 1Gbps 直连调优。
+- 当前代码配置：已恢复到 fixed-link 100Mbps 全双工、BOARD_ENET_RGMII_TX_DLY=0、BOARD_ENET_RGMII_RX_DLY=0，便于继续在稳定基线上排查 TCP；本地 SDK 的 lwiperf.c 还带有 TCP 24-byte settings header 分片修复，以及本轮新增的 TCP PCB/ethernetif 诊断探针。
 - 当前稳定基线：fixed-link 100Mbps 全双工；这是当前唯一完成双向 UDP 实测且稳定复现的档位。
 - 默认角色/IP 规划：
 	- Role A：192.168.10.13
@@ -161,14 +161,18 @@ COM62  USB 串行设备
 	- B(COM61) -> A(COM13)：type=7，remote_port=5001，total_bytes=120558312，duration_ms=10501，kbits_per_s=91845
 - 100Mbps TCP 调试进展：
 	- 已在本地 SDK 的 lwiperf.c 中修正 TCP server 对 24-byte settings header 分片的处理；修正前会出现 server type=3、client type=5，且 total_bytes=24 的早期退出。
-	- 修正后，B(COM61) -> A(COM13) 已能推进到 type=2，remote_port=5001，total_bytes=115364，duration_ms=10247，kbits_per_s=88。
-	- 同一轮 server 侧日志显示 total_bytes 约 105144 后同样以 type=2 收尾，说明问题已从“首包分片”收敛为“会话推进约 100KB 后 10 秒 idle timeout”。
-	- 额外诊断结果：PPOR reset flag/status 未显示硬复位来源，自定义 exception_handler 也没有抓到 machine-mode trap，当前更像 TCP 会话推进停滞后进入 lwIP 本地超时。
+	- 新增 PPOR reset 和自定义 exception_handler 诊断后，仍未观察到硬复位来源或 machine-mode trap，TCP 失败路径可以继续收敛到 lwIP 会话本身。
+	- B(COM61) -> A(COM13) 最新复测结果：client 侧为 type=2，remote_port=5001，total_bytes=10974，duration_ms=9172，kbits_per_s=8。
+	- 同一轮 client 侧 lwIP PCB 诊断显示：`state=ESTABLISHED(4)`，`snd_wnd=11680`，`snd_buf=706`，`snd_queuelen=9`，并同时存在 `unsent=1`、`unacked=1`；ethernetif 计数显示 `tx_busy=0`，实际只发出 11 帧 / 3598 字节、收到 7 帧 / 420 字节，说明问题已经从“DMA 队列忙”缩小为“连接已建立，但有一个未确认段和一个未发送段长期卡在 TCP 队列里”。
+	- A(COM13) -> B(COM61) 最新复测结果：client 侧可正常结束，type=1，remote_port=5001，total_bytes=13164，duration_ms=10500，kbits_per_s=8；但 server 侧仍以 type=2 超时结束，remote_port=49153，total_bytes=1608，duration_ms=9511，kbits_per_s=0。
+	- 同一轮 server 侧 lwIP PCB 诊断显示：`state=ESTABLISHED(4)`，`snd_buf=11680`，`snd_queuelen=0`，`unsent=0`，`unacked=0`；ethernetif 计数显示 server 侧实际收到了 21 帧 / 8160 字节，但 lwiperf 只累计到 1608 字节，说明有相当一部分数据已进入 lwIP/netif 层，却没有让 server iperf 会话继续完整推进。
+	- 当前结论：100Mbps TCP 已基本排除“描述符拿不到”“硬复位”“机器态异常”这三类问题，现阶段更像是 TCP 会话在 ESTABLISHED 状态下卡在 ACK/FIN 或 server receive progression 的上层处理问题。
 - 1Gbps 调优结果：
 	- TX_DLY=0、RX_DLY=7 时，两块板都能稳定打印 Link Speed 1000Mbps，说明 1Gbps fixed-link 已能起链。
-	- 在旧的 100Mbps UDP 发送速率下，A(COM13) -> B(COM61) 可完成：type=7，remote_port=5001，total_bytes=120879640，duration_ms=10501，kbits_per_s=92090。
-	- 将 UDP client 发送速率提高到 800Mbps 后，A 侧 client 在 `Iperf session started.` 后重新回到启动菜单，PPOR reset flag/status 仍为 0，说明 RX_DLY=7 足以让 1Gbps 起链，但还不足以支撑高吞吐稳定传输。
-- 结论：当前双板 RGMII MAC-to-MAC 的可用稳定档仍是 100Mbps fixed-link 双向 UDP；TCP 已排除首包分片和显式 trap/硬复位这两类问题，但仍会在约 100KB 后卡死并以 `LWIPERF_TCP_ABORTED_LOCAL` 结束；1Gbps `RX_DLY=7` 已验证可起链，但高于 100Mbps 的高吞吐 UDP 仍不稳定，后续需要继续试更合适的 RGMII delay 组合或进一步查高负载下的控制流跳转问题。
+	- 在旧的 100Mbps UDP 发送速率下，A(COM13) -> B(COM61) 可完成：type=7，remote_port=5001，total_bytes=120879640，duration_ms=10501，kbits_per_s=92090；这只能证明 1Gbps 配置没有立刻失稳，还不能代表 1Gbps 真正吞吐能力。
+	- 将 UDP client 发送速率提高到 800Mbps 后，当前已试的四组 delay 组合 `TX/RX=0/7`、`7/7`、`15/7`、`15/15` 都无法稳定跑完；症状表现为 client 侧或双侧在 `Iperf session started.` 后重新回到启动菜单。
+	- 这些 1Gbps 高负载失败场景里，PPOR reset flag/status 仍为 0，自定义 exception_handler 也没有抓到 machine-mode trap，说明当前 delay 小矩阵尚未找到可支撑高吞吐稳定传输的组合。
+- 结论：当前双板 RGMII MAC-to-MAC 的可用稳定档仍是 100Mbps fixed-link 双向 UDP；100Mbps TCP 现在已经缩小到“ESTABLISHED 状态下 TCP 队列/receive progression 卡死”的问题面；1Gbps fixed-link 虽然已经能起链，但本轮试过的 `0/7`、`7/7`、`15/7`、`15/15` 都不能支撑 800Mbps UDP 稳定运行，后续需要继续扩大 RGMII delay 搜索范围，或进一步深挖 TCP/高负载下上层协议推进为何停住。
 
 ## 当前目录状态
 

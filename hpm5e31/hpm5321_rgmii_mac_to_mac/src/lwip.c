@@ -44,10 +44,15 @@ lwiperf_report(void *arg, enum lwiperf_report_type report_type,
   const ip_addr_t* local_addr, u16_t local_port, const ip_addr_t* remote_addr, u16_t remote_port,
   u32_t bytes_transferred, u32_t ms_duration, u32_t bandwidth_kbitpsec)
 {
+    ethernetif_debug_counters_t debug_counters;
+    u32_t now_ms;
   LWIP_UNUSED_ARG(arg);
   LWIP_UNUSED_ARG(local_addr);
   LWIP_UNUSED_ARG(local_port);
     LWIP_UNUSED_ARG(remote_addr);
+
+        ethernetif_get_debug_counters(&debug_counters);
+        now_ms = sys_now();
 
     LWIP_PLATFORM_DIAG(("iperf report:\n"));
     LWIP_PLATFORM_DIAG(("type=%d\n", (int)report_type));
@@ -55,6 +60,16 @@ lwiperf_report(void *arg, enum lwiperf_report_type report_type,
     LWIP_PLATFORM_DIAG(("total_bytes=%"U32_F"\n", bytes_transferred));
     LWIP_PLATFORM_DIAG(("duration_ms=%"U32_F"\n", ms_duration));
     LWIP_PLATFORM_DIAG(("kbits_per_s=%"U32_F"\n", bandwidth_kbitpsec));
+        LWIP_PLATFORM_DIAG(("dbg_tx_frames=%"U32_F"\n", debug_counters.tx_frames));
+        LWIP_PLATFORM_DIAG(("dbg_tx_bytes=%"U32_F"\n", debug_counters.tx_bytes));
+        LWIP_PLATFORM_DIAG(("dbg_tx_busy=%"U32_F"\n", debug_counters.tx_busy));
+        LWIP_PLATFORM_DIAG(("dbg_tx_errors=%"U32_F"\n", debug_counters.tx_errors));
+        LWIP_PLATFORM_DIAG(("dbg_rx_frames=%"U32_F"\n", debug_counters.rx_frames));
+        LWIP_PLATFORM_DIAG(("dbg_rx_bytes=%"U32_F"\n", debug_counters.rx_bytes));
+        LWIP_PLATFORM_DIAG(("dbg_input_ok=%"U32_F"\n", debug_counters.input_ok));
+        LWIP_PLATFORM_DIAG(("dbg_input_err=%"U32_F"\n", debug_counters.input_err));
+        LWIP_PLATFORM_DIAG(("dbg_last_tx_age_ms=%"U32_F"\n", debug_counters.last_tx_ms == 0 ? 0 : now_ms - debug_counters.last_tx_ms));
+        LWIP_PLATFORM_DIAG(("dbg_last_rx_age_ms=%"U32_F"\n", debug_counters.last_rx_ms == 0 ? 0 : now_ms - debug_counters.last_rx_ms));
 }
 
 static bool select_mode(struct netif *netif, bool *server_mode, bool *tcp, enum lwiperf_client_type *client_type)
@@ -119,6 +134,8 @@ void *start_iperf(void)
     if (!select_mode(&gnetif, &server, &tcp, &client_type)) {
         return NULL;
     }
+
+    ethernetif_reset_debug_counters();
 
     if (server) {
         if (tcp) {
