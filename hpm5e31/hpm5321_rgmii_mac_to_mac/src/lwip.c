@@ -28,8 +28,42 @@
 #define IPERF_CLIENT_AMOUNT (-1000) /* 10 seconds */
 #endif
 
+ATTR_PLACE_AT_FAST_RAM_NON_INIT volatile uint32_t g_lwiperf_restart_marker;
+
+void __assert_func(const char *file, int line, const char *func, const char *expr)
+{
+    g_lwiperf_restart_marker = 0xA5500001U;
+    printf("assert failed: file=%s line=%d func=%s expr=%s\n",
+           file != NULL ? file : "?",
+           line,
+           func != NULL ? func : "?",
+           expr != NULL ? expr : "?");
+    board_delay_ms(20);
+    while (1) {
+    }
+}
+
+void abort(void)
+{
+    g_lwiperf_restart_marker = 0xA5500002U;
+    printf("abort()\n");
+    board_delay_ms(20);
+    while (1) {
+    }
+}
+
+void _exit(int status)
+{
+    g_lwiperf_restart_marker = 0xA5500003U;
+    printf("_exit(%d)\n", status);
+    board_delay_ms(20);
+    while (1) {
+    }
+}
+
 long exception_handler(long cause, long epc)
 {
+    g_lwiperf_restart_marker = 0xA5500004U;
     printf("exception trap: cause=0x%08lX epc=0x%08lX mtval=0x%08lX\n",
            (unsigned long)cause,
            (unsigned long)epc,

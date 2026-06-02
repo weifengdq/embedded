@@ -116,6 +116,22 @@ a lot of data that needs to be copied, this should be set high. */
 #define MEM_SIZE                5*1024
 #endif
 
+#ifndef MEM_OVERFLOW_CHECK
+#define MEM_OVERFLOW_CHECK      2
+#endif
+
+#ifndef MEMP_OVERFLOW_CHECK
+#define MEMP_OVERFLOW_CHECK     2
+#endif
+
+#ifndef MEM_SANITY_CHECK
+#define MEM_SANITY_CHECK        1
+#endif
+
+#ifndef MEMP_SANITY_CHECK
+#define MEMP_SANITY_CHECK       1
+#endif
+
 /* MEMP_NUM_PBUF: the number of memp struct pbufs. If the application
    sends a lot of data out of ROM (or other static memory), this
    should be set high. */
