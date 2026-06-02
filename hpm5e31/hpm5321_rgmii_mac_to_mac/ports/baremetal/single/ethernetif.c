@@ -94,7 +94,6 @@ xSemaphoreHandle s_xSemaphore = NULL;
 #endif
 
 static ethernetif_debug_counters_t s_ethernetif_debug_counters;
-static uint32_t s_ethernetif_rx_trace_count;
 
 void ethernetif_reset_debug_counters(void)
 {
@@ -237,7 +236,6 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
                 memcpy((uint8_t *)((uint8_t *)buffer + buffer_offset),
                     (uint8_t *)((uint8_t *)q->payload + payload_offset),
                     bytes_left_to_copy);
-                l1c_dc_writeback(((uint32_t)buffer + (MEM_ALIGNMENT - 1)) & ~(MEM_ALIGNMENT - 1), ENET_TX_BUFF_SIZE);
             }
             buffer_offset = buffer_offset + bytes_left_to_copy;
             frame_length = frame_length + bytes_left_to_copy;
@@ -330,12 +328,6 @@ static struct pbuf *low_level_input(struct netif *netif)
         if (len > 0) {
             /* Allocate a pbuf chain of pbufs from the custom buffer pool */
             fp->frame[fp->idx].used = 1;
-            if (s_ethernetif_rx_trace_count < 8U) {
-                printf("rx trace: low_level_input len=%lu idx=%lu buf=0x%08lX\n",
-                       (unsigned long) len,
-                       (unsigned long) fp->idx,
-                       (unsigned long) (uint32_t) buffer);
-            }
             my_pbuf = (my_custom_pbuf_t *)LWIP_MEMPOOL_ALLOC(enet0_rx_pool);
             if (my_pbuf == NULL) {
                 free_rx_dma_descriptor((void *)&fp->frame[fp->idx]);
@@ -431,14 +423,7 @@ err_t ethernetif_input(struct netif *netif)
             err = ERR_MEM;
         } else {
              /* entry point to the LwIP stack */
-            if (s_ethernetif_rx_trace_count < 8U) {
-                printf("rx trace: before netif->input len=%u tot=%u\n", (unsigned) p->len, (unsigned) p->tot_len);
-            }
             err = netif->input(p, netif);
-            if (s_ethernetif_rx_trace_count < 8U) {
-                printf("rx trace: after netif->input err=%d\n", (int) err);
-                s_ethernetif_rx_trace_count++;
-            }
 
             if (err != ERR_OK) {
                 s_ethernetif_debug_counters.input_err++;
@@ -447,13 +432,7 @@ err_t ethernetif_input(struct netif *netif)
             } else {
                 s_ethernetif_debug_counters.input_ok++;
                 #if defined(LWIP_TIMERS) && LWIP_TIMERS
-                if (s_ethernetif_rx_trace_count < 8U) {
-                    printf("rx trace: before sys_check_timeouts\n");
-                }
                 sys_check_timeouts();
-                if (s_ethernetif_rx_trace_count < 8U) {
-                    printf("rx trace: after sys_check_timeouts\n");
-                }
                 #endif
                 goto GET_NEXT_FRAME;
             }

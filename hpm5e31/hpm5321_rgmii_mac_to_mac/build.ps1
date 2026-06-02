@@ -21,7 +21,10 @@ param(
     [string]$JLinkDevice = 'HPM5E31xGNx',
 
     [Parameter(Mandatory = $false)]
-    [int]$JLinkSpeed = 4000
+    [int]$JLinkSpeed = 4000,
+
+    [Parameter(Mandatory = $false)]
+    [string]$JLinkSerial = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -184,6 +187,10 @@ function Invoke-Flash {
         '-CommandFile', $jlinkCommandFile
     )
 
+    if (-not [string]::IsNullOrWhiteSpace($JLinkSerial)) {
+        $jlinkArgs += @('-SelectEmuBySN', $JLinkSerial)
+    }
+
     Invoke-External $script:JLinkExe @jlinkArgs
 }
 
@@ -199,6 +206,10 @@ function Invoke-GdbServer {
         '-singlerun',
         '-nogui'
     )
+
+    if (-not [string]::IsNullOrWhiteSpace($JLinkSerial)) {
+        $gdbServerArgs += @('-select', 'USB=$JLinkSerial')
+    }
 
     Invoke-External $script:JLinkGdbServerExe @gdbServerArgs
 }

@@ -21,7 +21,7 @@
 #include "lwip/prot/dhcp.h"
 
 #ifndef IPERF_UDP_CLIENT_RATE
-    #define IPERF_UDP_CLIENT_RATE (800 * 1024 * 1024)
+    #define IPERF_UDP_CLIENT_RATE (10 * 1024 * 1024)
 #endif
 
 #ifndef IPERF_CLIENT_AMOUNT
