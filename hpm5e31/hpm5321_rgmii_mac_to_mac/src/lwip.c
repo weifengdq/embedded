@@ -28,7 +28,23 @@
 #define IPERF_CLIENT_AMOUNT (-1000) /* 10 seconds */
 #endif
 
+ATTR_PLACE_AT_FAST_RAM_NON_INIT volatile uint32_t g_lwiperf_restart_guard_lo[4];
 ATTR_PLACE_AT_FAST_RAM_NON_INIT volatile uint32_t g_lwiperf_restart_marker;
+ATTR_PLACE_AT_FAST_RAM_NON_INIT volatile uint32_t g_lwiperf_restart_guard_hi[4];
+
+static void lwip_restart_probe_store_magic(volatile uint32_t *guard, uint32_t seed)
+{
+    for (uint32_t index = 0; index < 4U; index++) {
+        guard[index] = seed + index;
+    }
+}
+
+void lwip_restart_probe_arm(void)
+{
+    lwip_restart_probe_store_magic(g_lwiperf_restart_guard_lo, 0x4C4F1000U);
+    g_lwiperf_restart_marker = 0U;
+    lwip_restart_probe_store_magic(g_lwiperf_restart_guard_hi, 0x48491000U);
+}
 
 void __assert_func(const char *file, int line, const char *func, const char *expr)
 {
@@ -264,6 +280,9 @@ int main(void)
 
         /* Start services */
         enet_services(&gnetif);
+
+        /* Arm the restart probe only after lwIP and ENET bring-up settle. */
+        lwip_restart_probe_arm();
 
         /* Start a board timer */
         board_timer_create(LWIP_APP_TIMER_INTERVAL, sys_timer_callback);

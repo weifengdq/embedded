@@ -130,7 +130,9 @@ void board_print_clock_freq(void)
 
 static void board_print_reset_status(void)
 {
+    extern volatile uint32_t g_lwiperf_restart_guard_lo[4];
     extern volatile uint32_t g_lwiperf_restart_marker;
+    extern volatile uint32_t g_lwiperf_restart_guard_hi[4];
     static uint32_t s_board_init_count;
     uint32_t reset_flag = HPM_PPOR->RESET_FLAG;
     uint32_t reset_status = HPM_PPOR->RESET_STATUS;
@@ -143,10 +145,18 @@ static void board_print_reset_status(void)
     printf("reset flag:   0x%08lX\n", (unsigned long) reset_flag);
     printf("reset status: 0x%08lX\n", (unsigned long) reset_status);
     printf("last marker:  0x%08lX\n", (unsigned long) restart_marker);
+        printf("guard lo:     %08lX %08lX %08lX %08lX\n",
+            (unsigned long) g_lwiperf_restart_guard_lo[0],
+            (unsigned long) g_lwiperf_restart_guard_lo[1],
+            (unsigned long) g_lwiperf_restart_guard_lo[2],
+            (unsigned long) g_lwiperf_restart_guard_lo[3]);
+        printf("guard hi:     %08lX %08lX %08lX %08lX\n",
+            (unsigned long) g_lwiperf_restart_guard_hi[0],
+            (unsigned long) g_lwiperf_restart_guard_hi[1],
+            (unsigned long) g_lwiperf_restart_guard_hi[2],
+            (unsigned long) g_lwiperf_restart_guard_hi[3]);
     printf("cpu%u lp:      0x%08lX\n", (unsigned) BOARD_RUNNING_CORE, (unsigned long) cpu_lp);
     printf("cpu%u reset:   %lu\n", (unsigned) BOARD_RUNNING_CORE, (unsigned long) SYSCTL_CPU_LP_RESET_FLAG_GET(cpu_lp));
-
-    g_lwiperf_restart_marker = 0U;
 
     if (reset_flag != 0U) {
         HPM_PPOR->RESET_FLAG = reset_flag;

@@ -337,6 +337,13 @@ static struct pbuf *low_level_input(struct netif *netif)
                        (unsigned long) (uint32_t) buffer);
             }
             my_pbuf = (my_custom_pbuf_t *)LWIP_MEMPOOL_ALLOC(enet0_rx_pool);
+            if (my_pbuf == NULL) {
+                free_rx_dma_descriptor((void *)&fp->frame[fp->idx]);
+                s_ethernetif_debug_counters.input_err++;
+                desc.rx_frame_info.seg_count = 0;
+                enet_rx_resume(ENET);
+                return NULL;
+            }
             my_pbuf->p.custom_free_function = enet0_pbuf_free_custom;
             my_pbuf->dma_descriptor = (void *)&fp->frame[fp->idx];
 
@@ -352,6 +359,10 @@ static struct pbuf *low_level_input(struct netif *netif)
                 p->time_sec  = fp->frame[fp->idx].rx_desc->rdes7_bm.rtsh;
                 p->time_nsec = fp->frame[fp->idx].rx_desc->rdes6_bm.rtsl;
                 #endif
+            } else {
+                free_rx_dma_descriptor((void *)&fp->frame[fp->idx]);
+                LWIP_MEMPOOL_FREE(enet0_rx_pool, my_pbuf);
+                s_ethernetif_debug_counters.input_err++;
             }
 
             ++fp->idx;
