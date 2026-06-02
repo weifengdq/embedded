@@ -232,7 +232,11 @@ try {
 
         if ($reportDetected) {
             if ($Protocol -eq 'tcp') {
-                if ($serverLog.Contains('tcp recv eof:') -or $serverLog.Contains('iperf report:')) {
+                if ($serverLog.Contains('kbits_per_s=')) {
+                    break
+                }
+
+                if ($serverLog.Contains('tcp recv eof:') -and $reportDelay.ElapsedMilliseconds -ge 1500) {
                     break
                 }
 

@@ -132,9 +132,12 @@ static void board_print_reset_status(void)
 {
     uint32_t reset_flag = HPM_PPOR->RESET_FLAG;
     uint32_t reset_status = HPM_PPOR->RESET_STATUS;
+    uint32_t cpu_lp = HPM_SYSCTL->CPU[BOARD_RUNNING_CORE].LP;
 
     printf("reset flag:   0x%08lX\n", (unsigned long) reset_flag);
     printf("reset status: 0x%08lX\n", (unsigned long) reset_status);
+    printf("cpu%u lp:      0x%08lX\n", (unsigned) BOARD_RUNNING_CORE, (unsigned long) cpu_lp);
+    printf("cpu%u reset:   %lu\n", (unsigned) BOARD_RUNNING_CORE, (unsigned long) SYSCTL_CPU_LP_RESET_FLAG_GET(cpu_lp));
 
     if (reset_flag != 0U) {
         HPM_PPOR->RESET_FLAG = reset_flag;
