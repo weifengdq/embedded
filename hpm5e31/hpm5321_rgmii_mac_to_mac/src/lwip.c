@@ -40,7 +40,7 @@ enum {
     APP_FATAL_REASON_EXCEPTION = 4U
 };
 
-__attribute__((section(".fast_ram.non_init"))) static volatile app_fatal_snapshot_t s_fatal_snapshot;
+__attribute__((section(".noncacheable.non_init"))) static volatile app_fatal_snapshot_t s_fatal_snapshot;
 
 static void app_record_fatal(uint32_t reason, uint32_t line, uint32_t cause, uint32_t epc)
 {
