@@ -72,6 +72,15 @@
 ./tools/serial_iperf_test.ps1 -Protocol tcp -ClientBoard A -OutputPath C:/Windows/Temp/release_tcp_A_to_B_10mcfg.txt
 ```
 
+### 5.3 10 轮稳定性测试
+
+用于回归当前构建在连续多轮下是否稳定，脚本会逐轮执行并在任一轮失败时返回非 0：
+
+```powershell
+./tools/serial_iperf_stability_test.ps1 -Protocol udp -ClientBoard A -Rounds 10
+./tools/serial_iperf_stability_test.ps1 -Protocol udp -ClientBoard B -Rounds 10
+```
+
 ## 6. 当前测试结果（2026-06-02）
 
 ### 6.1 UDP（发布基线，10Mbps 配置）

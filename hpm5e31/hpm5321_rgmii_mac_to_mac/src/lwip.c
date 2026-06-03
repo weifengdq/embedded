@@ -20,71 +20,144 @@
 #include "lwip/dhcp.h"
 #include "lwip/prot/dhcp.h"
 
+#define APP_FATAL_SNAPSHOT_MAGIC 0x46545031UL
+
+typedef struct app_fatal_snapshot {
+    uint32_t magic;
+    uint32_t boot_count;
+    uint32_t reason;
+    uint32_t line;
+    uint32_t cause;
+    uint32_t epc;
+    uint32_t mtval;
+    uint32_t mstatus;
+} app_fatal_snapshot_t;
+
+enum {
+    APP_FATAL_REASON_ASSERT = 1U,
+    APP_FATAL_REASON_ABORT = 2U,
+    APP_FATAL_REASON_EXIT = 3U,
+    APP_FATAL_REASON_EXCEPTION = 4U
+};
+
+__attribute__((section(".fast_ram.non_init"))) static volatile app_fatal_snapshot_t s_fatal_snapshot;
+
+static void app_record_fatal(uint32_t reason, uint32_t line, uint32_t cause, uint32_t epc)
+{
+    s_fatal_snapshot.magic = APP_FATAL_SNAPSHOT_MAGIC;
+    s_fatal_snapshot.reason = reason;
+    s_fatal_snapshot.line = line;
+    s_fatal_snapshot.cause = cause;
+    s_fatal_snapshot.epc = epc;
+    s_fatal_snapshot.mtval = (uint32_t) read_csr(CSR_MTVAL);
+    s_fatal_snapshot.mstatus = (uint32_t) read_csr(CSR_MSTATUS);
+}
+
+static void app_dump_lwiperf_debug_events(void)
+{
+    uint32_t i;
+    uint32_t head;
+
+    if (g_lwiperf_debug_magic != LWIPERF_DEBUG_MAGIC) {
+        return;
+    }
+
+    head = g_lwiperf_debug_head % LWIPERF_DEBUG_EVENT_RING_SIZE;
+    printf("lwiperf dbg: magic=0x%08lX head=%lu seq=%lu\n",
+           (unsigned long) g_lwiperf_debug_magic,
+           (unsigned long) g_lwiperf_debug_head,
+           (unsigned long) g_lwiperf_debug_seq);
+    for (i = 0; i < LWIPERF_DEBUG_EVENT_RING_SIZE; i++) {
+        uint32_t idx = (head + i) % LWIPERF_DEBUG_EVENT_RING_SIZE;
+        const volatile lwiperf_debug_event_t *e = &g_lwiperf_debug_events[idx];
+        if (e->seq == 0U && e->code == 0U && e->ts_ms == 0U) {
+            continue;
+        }
+        printf("lwiperf evt[%lu]: seq=%lu ts=%lu code=%lu line=%lu a=0x%08lX b=0x%08lX c=0x%08lX d=0x%08lX\n",
+               (unsigned long) idx,
+               (unsigned long) e->seq,
+               (unsigned long) e->ts_ms,
+               (unsigned long) e->code,
+               (unsigned long) e->line,
+               (unsigned long) e->a,
+               (unsigned long) e->b,
+               (unsigned long) e->c,
+               (unsigned long) e->d);
+    }
+}
+
+static void app_dump_boot_diagnostics(void)
+{
+    if (s_fatal_snapshot.magic != APP_FATAL_SNAPSHOT_MAGIC) {
+        s_fatal_snapshot.magic = APP_FATAL_SNAPSHOT_MAGIC;
+        s_fatal_snapshot.boot_count = 0U;
+        s_fatal_snapshot.reason = 0U;
+        s_fatal_snapshot.line = 0U;
+        s_fatal_snapshot.cause = 0U;
+        s_fatal_snapshot.epc = 0U;
+        s_fatal_snapshot.mtval = 0U;
+        s_fatal_snapshot.mstatus = 0U;
+    }
+
+    s_fatal_snapshot.boot_count++;
+    printf("boot counter: %lu\n", (unsigned long) s_fatal_snapshot.boot_count);
+
+    if (s_fatal_snapshot.reason != 0U) {
+        printf("last fatal: reason=%lu line=%lu cause=0x%08lX epc=0x%08lX mtval=0x%08lX mstatus=0x%08lX\n",
+               (unsigned long) s_fatal_snapshot.reason,
+               (unsigned long) s_fatal_snapshot.line,
+               (unsigned long) s_fatal_snapshot.cause,
+               (unsigned long) s_fatal_snapshot.epc,
+               (unsigned long) s_fatal_snapshot.mtval,
+               (unsigned long) s_fatal_snapshot.mstatus);
+    }
+
+    app_dump_lwiperf_debug_events();
+}
+
 #ifndef IPERF_UDP_CLIENT_RATE
-    #define IPERF_UDP_CLIENT_RATE (10 * 1024 * 1024)
+    #define IPERF_UDP_CLIENT_RATE (100 * 1024 * 1024)
 #endif
 
 #ifndef IPERF_CLIENT_AMOUNT
 #define IPERF_CLIENT_AMOUNT (-1000) /* 10 seconds */
 #endif
 
-ATTR_PLACE_AT_FAST_RAM_NON_INIT volatile uint32_t g_lwiperf_restart_guard_lo[4];
-ATTR_PLACE_AT_FAST_RAM_NON_INIT volatile uint32_t g_lwiperf_restart_marker;
-ATTR_PLACE_AT_FAST_RAM_NON_INIT volatile uint32_t g_lwiperf_restart_guard_hi[4];
-
-static void lwip_restart_probe_store_magic(volatile uint32_t *guard, uint32_t seed)
-{
-    for (uint32_t index = 0; index < 4U; index++) {
-        guard[index] = seed + index;
-    }
-}
-
-void lwip_restart_probe_arm(void)
-{
-    lwip_restart_probe_store_magic(g_lwiperf_restart_guard_lo, 0x4C4F1000U);
-    g_lwiperf_restart_marker = 0U;
-    lwip_restart_probe_store_magic(g_lwiperf_restart_guard_hi, 0x48491000U);
-}
-
 void __assert_func(const char *file, int line, const char *func, const char *expr)
 {
-    g_lwiperf_restart_marker = 0xA5500001U;
+    app_record_fatal(APP_FATAL_REASON_ASSERT, (uint32_t) line, 0U, (uint32_t) __builtin_return_address(0));
     printf("assert failed: file=%s line=%d func=%s expr=%s\n",
            file != NULL ? file : "?",
            line,
            func != NULL ? func : "?",
            expr != NULL ? expr : "?");
-    board_delay_ms(20);
     while (1) {
     }
 }
 
 void abort(void)
 {
-    g_lwiperf_restart_marker = 0xA5500002U;
+    app_record_fatal(APP_FATAL_REASON_ABORT, 0U, 0U, (uint32_t) __builtin_return_address(0));
     printf("abort()\n");
-    board_delay_ms(20);
     while (1) {
     }
 }
 
 void _exit(int status)
 {
-    g_lwiperf_restart_marker = 0xA5500003U;
+    app_record_fatal(APP_FATAL_REASON_EXIT, (uint32_t) status, 0U, (uint32_t) __builtin_return_address(0));
     printf("_exit(%d)\n", status);
-    board_delay_ms(20);
     while (1) {
     }
 }
 
 long exception_handler(long cause, long epc)
 {
-    g_lwiperf_restart_marker = 0xA5500004U;
+    app_record_fatal(APP_FATAL_REASON_EXCEPTION, 0U, (uint32_t) cause, (uint32_t) epc);
     printf("exception trap: cause=0x%08lX epc=0x%08lX mtval=0x%08lX\n",
            (unsigned long)cause,
            (unsigned long)epc,
            (unsigned long)read_csr(CSR_MTVAL));
-    board_delay_ms(20);
     while (1) {
     }
 }
@@ -254,6 +327,7 @@ int main(void)
 {
     /* Initialize BSP */
     board_init();
+    app_dump_boot_diagnostics();
 
     #if defined(__ENABLE_ENET_RECEIVE_INTERRUPT) && __ENABLE_ENET_RECEIVE_INTERRUPT
     printf("This is an ethernet demo: Iperf (Interrupt Usage)\n");
@@ -280,9 +354,6 @@ int main(void)
 
         /* Start services */
         enet_services(&gnetif);
-
-        /* Arm the restart probe only after lwIP and ENET bring-up settle. */
-        lwip_restart_probe_arm();
 
         /* Start a board timer */
         board_timer_create(LWIP_APP_TIMER_INTERVAL, sys_timer_callback);

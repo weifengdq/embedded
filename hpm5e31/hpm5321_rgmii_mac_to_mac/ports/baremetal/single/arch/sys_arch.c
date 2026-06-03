@@ -638,9 +638,11 @@ void sys_timer_callback(void)
 {
     sys_tick++;
 
+#if !(defined(MAC_TO_MAC_FIXED_LINK) && MAC_TO_MAC_FIXED_LINK)
     if (sys_tick % (2000 * LWIP_APP_TIMER_INTERVAL) == 0) {
         enet_self_adaptive_port_speed();
     }
+#endif
 }
 
 u32_t sys_now(void)

@@ -95,6 +95,18 @@ xSemaphoreHandle s_xSemaphore = NULL;
 
 static ethernetif_debug_counters_t s_ethernetif_debug_counters;
 
+static inline uint32_t cacheline_aligned_addr(uint32_t addr)
+{
+    return HPM_L1C_CACHELINE_ALIGN_DOWN(addr);
+}
+
+static inline uint32_t cacheline_aligned_size(uint32_t addr, uint32_t size)
+{
+    uint32_t start = HPM_L1C_CACHELINE_ALIGN_DOWN(addr);
+    uint32_t end = HPM_L1C_CACHELINE_ALIGN_UP(addr + size);
+    return end - start;
+}
+
 void ethernetif_reset_debug_counters(void)
 {
     memset(&s_ethernetif_debug_counters, 0, sizeof(s_ethernetif_debug_counters));
@@ -213,7 +225,7 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
                 memcpy((uint8_t *)((uint8_t *)buffer + buffer_offset),
                     (uint8_t *)((uint8_t *)q->payload + payload_offset),
                             ENET_TX_BUFF_SIZE - buffer_offset);
-                l1c_dc_writeback(((uint32_t)buffer + (MEM_ALIGNMENT - 1)) & ~(MEM_ALIGNMENT - 1), ENET_TX_BUFF_SIZE);
+                l1c_dc_writeback(cacheline_aligned_addr((uint32_t)buffer), cacheline_aligned_size((uint32_t)buffer, ENET_TX_BUFF_SIZE));
 
                 /* Point to next descriptor */
                 dma_tx_desc = (enet_tx_desc_t *)(dma_tx_desc->tdes3_bm.next_desc);
@@ -239,6 +251,11 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
             }
             buffer_offset = buffer_offset + bytes_left_to_copy;
             frame_length = frame_length + bytes_left_to_copy;
+        }
+
+        /* Flush the last partially filled TX DMA buffer before handing descriptors to ENET. */
+        if (buffer_offset > 0U) {
+            l1c_dc_writeback(cacheline_aligned_addr((uint32_t)buffer), cacheline_aligned_size((uint32_t)buffer, ENET_TX_BUFF_SIZE));
         }
         /* Prepare transmit descriptors to give to DMA*/
         frame_length += 4;
@@ -342,7 +359,7 @@ static struct pbuf *low_level_input(struct netif *netif)
             p = pbuf_alloced_custom(PBUF_RAW, fp->frame[fp->idx].length, PBUF_REF, &my_pbuf->p, (uint8_t *)fp->frame[fp->idx].buffer, ENET_RX_BUFF_SIZE);
 
             if (p != NULL) {
-                l1c_dc_invalidate((uint32_t)buffer, ENET_RX_BUFF_SIZE);
+                l1c_dc_invalidate(cacheline_aligned_addr((uint32_t)buffer), cacheline_aligned_size((uint32_t)buffer, ENET_RX_BUFF_SIZE));
                 s_ethernetif_debug_counters.rx_frames++;
                 s_ethernetif_debug_counters.rx_bytes += len;
                 s_ethernetif_debug_counters.last_rx_ms = sys_now();
