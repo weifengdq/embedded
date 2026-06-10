@@ -1,6 +1,6 @@
 # hpm5e31_lite Projects
 
-本目录当前包含 5 个基于自定义板 hpm5e31_lite 的 HPM5E31 工程：
+本目录当前包含 6 个基于自定义板 hpm5e31_lite 的 HPM5E31 工程：
 
 | 工程目录 | 参考来源 |
 | --- | --- |
@@ -8,6 +8,7 @@
 | hpm5e31_coremark | hpm_sdk/samples/coremark |
 | hpm5e31_gpio | hpm_sdk/samples/drivers/gpio |
 | hpm5e31_cherryusb_cdc_acm_vcom | hpm_sdk/samples/cherryusb/device/cdc_acm/cdc_acm_vcom |
+| hpm5e31_lwip_rtl8211f | hpm_sdk/samples/lwip/lwip_udpecho + lwip_iperf |
 | hpm5321_rgmii_mac_to_mac | hpm_sdk/samples/lwip/lwip_iperf |
 
 ## 公共板级信息
@@ -130,6 +131,27 @@ COM62  USB 串行设备
 - 设备信息：VID_34B7，PID_FFFF，PNPDeviceID 为 USB\VID_34B7&PID_FFFF&MI_00\7&A4712DB&1&0000。
 - DTR 联调：主机打开 COM62 并拉起 DTR 后，设备端成功返回首字节 h，说明 CDC 数据通路已经打通。
 - 修复点：boards/hpm5e31_lite/board.c 中启用了 usb_phy_using_internal_vbus()，并增加了 usb_phy_disable_dp_dm_pulldown()，解决了设备侧 VBUS 感知和 DP/DM 下拉导致的未枚举问题。
+
+### hpm5e31_lwip_rtl8211f
+
+- Debug 构建：通过
+- Debug 下载：通过
+- 调试器与串口：J-Link SN 1120000012，UART0 对应 COM61
+- 工程用途：HPM5E31 通过 ENET0 RGMII 连接外部 RTL8211FI，提供静态 IP、UDP echo 与 iperf server 验证
+- 当前发布基线：100Mbps 全双工，关闭自动协商，RTL8211F 内部 RGMII TX/RX delay 均开启 2ns，静态 IP 为 192.168.0.68
+- 实测关键结论：
+	- 用户预估的 PHYAD[2:0] = 011 与实测不符；上电后 MDIO 扫描检测到 RTL8211FI 实际地址为 0
+	- 当前连线可起链，PC 侧 Intel I350-T4 与板端都稳定协商到 100Mbps Full duplex
+	- ping 192.168.0.68：6/6 通过，RTT < 1ms
+	- UDP echo：通过，PC 发送 `udp-echo-from-pc`，板端原样回显
+	- UDP iperf：通过，PC 侧 5s/10Mbps 实测约 10.0Mbps；板端 report 为 `type=6`、`total_bytes=6137250`、`duration_ms=5011`、`kbits_per_s=9798`
+	- TCP iperf：当前未通过，PC 侧约 104KB 后被 server reset，尚未作为本工程发布通过项
+- 当前软件修正点：
+	- 本地板级 RGMII pinmux 使用 PF02-PF13 + PA30/PA31，PHY reset 改为 PF26
+	- 启动时自动扫描 MDIO 地址 0..7，避免把 RTL8211 地址写死为 3
+	- 本地 common.c 覆盖 RTL8211F 状态读取逻辑，修正链路状态误判问题
+	- 本地 common.c 额外配置 RTL8211F page 0xD08 的 TX/RX internal delay
+- 结论：当前工程已完成静态 IP、ping、UDP echo、UDP iperf 的实机验证，可作为 RTL8211FI 单板联机基线；如果后续需要恢复自动协商或 1Gbps/TCP 稳定性，还需要继续调 PHY 状态读取和 RGMII 时序。
 
 ### hpm5321_rgmii_mac_to_mac
 
