@@ -138,20 +138,22 @@ COM62  USB 串行设备
 - Debug 下载：通过
 - 调试器与串口：J-Link SN 1120000012，UART0 对应 COM61
 - 工程用途：HPM5E31 通过 ENET0 RGMII 连接外部 RTL8211FI，提供静态 IP、UDP echo 与 iperf server 验证
-- 当前发布基线：100Mbps 全双工，关闭自动协商，RTL8211F 内部 RGMII TX/RX delay 均开启 2ns，静态 IP 为 192.168.0.68
+- 当前发布基线：自动协商 1Gbps Full duplex，MAC RGMII delay 0/0，RTL8211FI PHY internal delay TX/RX 均开启 2ns，静态 IP 为 192.168.0.68
 - 实测关键结论：
 	- 用户预估的 PHYAD[2:0] = 011 与实测不符；上电后 MDIO 扫描检测到 RTL8211FI 实际地址为 0
-	- 当前连线可起链，PC 侧 Intel I350-T4 与板端都稳定协商到 100Mbps Full duplex
-	- ping 192.168.0.68：6/6 通过，RTT < 1ms
-	- UDP echo：通过，PC 发送 `udp-echo-from-pc`，板端原样回显
-	- UDP iperf：通过，PC 侧 5s/10Mbps 实测约 10.0Mbps；板端 report 为 `type=6`、`total_bytes=6137250`、`duration_ms=5011`、`kbits_per_s=9798`
-	- TCP iperf：当前未通过，PC 侧约 104KB 后被 server reset，尚未作为本工程发布通过项
+	- 当前连线可起链，PC 侧 Intel I350-T4 与板端都稳定协商到 1Gbps Full duplex
+	- ping 192.168.0.68：12/12 通过，RTT < 1ms
+	- UDP echo：通过，PC 发送 `udp-echo-1g`，板端原样回显
+	- UDP iperf：通过；当前 1G 基线下 20M/50M/100M 三档均可复现，其中 100M 档 PC server report 约 95.8Mbps、丢包约 0.76%
+	- UDP 100M 连续 3 轮回归：server report 分别约 97.8Mbps、97.8Mbps、97.7Mbps，丢包约 0.28%~0.30%
+	- TCP iperf：已从早期 `Connection reset by peer` 改进为可完整结束并打印 server report，但当前吞吐仍低，约 0.65Mbps，尚未作为性能发布项
 - 当前软件修正点：
 	- 本地板级 RGMII pinmux 使用 PF02-PF13 + PA30/PA31，PHY reset 改为 PF26
 	- 启动时自动扫描 MDIO 地址 0..7，避免把 RTL8211 地址写死为 3
-	- 本地 common.c 覆盖 RTL8211F 状态读取逻辑，修正链路状态误判问题
-	- 本地 common.c 额外配置 RTL8211F page 0xD08 的 TX/RX internal delay
-- 结论：当前工程已完成静态 IP、ping、UDP echo、UDP iperf 的实机验证，可作为 RTL8211FI 单板联机基线；如果后续需要恢复自动协商或 1Gbps/TCP 稳定性，还需要继续调 PHY 状态读取和 RGMII 时序。
+	- 本地 common.c 改为用 `BMSR + reg 0x1A` 读取 RTL8211FI 实际链路/速率状态，修正自动协商下的速度误判
+	- 本地 common.c 额外配置 RTL8211FI page 0xD08 的 TX/RX internal delay，并验证过多组 MAC/PHY delay 组合后选定当前 1G 最优档
+	- 新增当前工程私有 `src/lwiperf_local.c`，在不修改 SDK 的前提下补了 UDP client 复用、UDP close/timeout 清理和 TCP err 安全释放等修复
+- 结论：当前工程已完成 RTL8211FI 单板 1Gbps 自动协商 bring-up、ping、UDP echo、稳定 UDP iperf 和可完成的 TCP iperf，可作为当前 HPM5E31 + RTL8211FI 的 1G 联机基线。
 
 ### hpm5321_rgmii_mac_to_mac
 

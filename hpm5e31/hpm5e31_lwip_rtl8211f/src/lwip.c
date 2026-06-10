@@ -12,6 +12,7 @@
 #include "lwip/init.h"
 #include "lwip/timeouts.h"
 #include "lwip/apps/lwiperf.h"
+#include "lwiperf_local.h"
 #include "udp_echo.h"
 
 static void lwiperf_report(void *arg,
@@ -45,17 +46,17 @@ static void start_network_services(void)
     udp_echo_init();
     printf("UDP echo server started on port %u\n", (unsigned int) UDP_LOCAL_PORT);
 
-    tcp_server = lwiperf_start_tcp_server_default(lwiperf_report, NULL);
+    tcp_server = app_lwiperf_start_tcp_server_default(lwiperf_report, NULL);
     if (tcp_server == NULL) {
         printf("Failed to start TCP iperf server\n");
     } else {
         printf("TCP iperf server started on port %u\n", (unsigned int) LWIPERF_TCP_PORT_DEFAULT);
     }
 
-    udp_server = lwiperf_start_udp_server(netif_ip_addr4(netif_default),
-                                          LWIPERF_UDP_PORT_DEFAULT,
-                                          lwiperf_report,
-                                          NULL);
+    udp_server = app_lwiperf_start_udp_server(netif_ip_addr4(netif_default),
+                                              LWIPERF_UDP_PORT_DEFAULT,
+                                              lwiperf_report,
+                                              NULL);
     if (udp_server == NULL) {
         printf("Failed to start UDP iperf server\n");
     } else {

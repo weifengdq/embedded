@@ -99,18 +99,14 @@ static void rtl8211_get_phy_status_local(ENET_Type *ptr, uint32_t phy_addr, enet
 {
     uint16_t bmsr;
     uint16_t physr;
+    uint16_t physr_legacy;
 
     bmsr = enet_read_phy(ptr, phy_addr, RTL8211_BMSR);
     bmsr = enet_read_phy(ptr, phy_addr, RTL8211_BMSR);
-    physr = enet_read_phy(ptr, phy_addr, RTL8211_PHYSR);
+    physr = enet_read_phy(ptr, phy_addr, 0x1AU);
+    physr_legacy = enet_read_phy(ptr, phy_addr, RTL8211_PHYSR);
 
     status->enet_phy_link = (bmsr & APP_RTL8211_BMSR_LINK_STATUS_MASK) != 0U;
-
-#if defined(__DISABLE_AUTO_NEGO) && __DISABLE_AUTO_NEGO
-    status->enet_phy_speed = enet_phy_port_speed_100mbps;
-    status->enet_phy_duplex = enet_phy_duplex_full;
-    return;
-#endif
 
     status->enet_phy_duplex = ((physr & APP_RTL8211_PHYSR_DUPLEX_MASK) != 0U)
         ? enet_phy_duplex_full
@@ -128,26 +124,46 @@ static void rtl8211_get_phy_status_local(ENET_Type *ptr, uint32_t phy_addr, enet
         status->enet_phy_speed = enet_phy_port_speed_1000mbps;
         break;
     }
+
+    if (status->enet_phy_link) {
+        static uint16_t last_physr;
+        static uint16_t last_physr_legacy;
+
+        if ((physr != last_physr) || (physr_legacy != last_physr_legacy)) {
+            last_physr = physr;
+            last_physr_legacy = physr_legacy;
+            printf("RTL8211 status probe: bmsr=0x%04X reg1A=0x%04X reg11=0x%04X\n",
+                   bmsr,
+                   physr,
+                   physr_legacy);
+        }
+    }
 }
 
 static void rtl8211_config_rgmii_delay_local(ENET_Type *ptr, uint32_t phy_addr)
 {
     uint16_t txcr;
     uint16_t rxcr;
+    uint16_t tx_delay = APP_RTL8211_PHY_TX_DELAY_ENABLE ? APP_RTL8211F_TX_DELAY_MASK : 0U;
+    uint16_t rx_delay = APP_RTL8211_PHY_RX_DELAY_ENABLE ? APP_RTL8211F_RX_DELAY_MASK : 0U;
 
     enet_write_phy(ptr, phy_addr, APP_RTL8211_PAGE_SELECT_REG, APP_RTL8211F_RGMII_PAGE);
 
     txcr = enet_read_phy(ptr, phy_addr, APP_RTL8211F_TXCR);
-    txcr |= APP_RTL8211F_TX_DELAY_MASK;
+    txcr = (uint16_t) ((txcr & ~APP_RTL8211F_TX_DELAY_MASK) | tx_delay);
     enet_write_phy(ptr, phy_addr, APP_RTL8211F_TXCR, txcr);
 
     rxcr = enet_read_phy(ptr, phy_addr, APP_RTL8211F_RXCR);
-    rxcr |= APP_RTL8211F_RX_DELAY_MASK;
+    rxcr = (uint16_t) ((rxcr & ~APP_RTL8211F_RX_DELAY_MASK) | rx_delay);
     enet_write_phy(ptr, phy_addr, APP_RTL8211F_RXCR, rxcr);
 
     enet_write_phy(ptr, phy_addr, APP_RTL8211_PAGE_SELECT_REG, 0U);
 
-    printf("RTL8211F RGMII internal delay enabled: TX=2ns RX=2ns\n");
+    printf("RTL8211F RGMII delay config: PHY_TX=%s PHY_RX=%s, MAC_TX=%u MAC_RX=%u\n",
+           APP_RTL8211_PHY_TX_DELAY_ENABLE ? "2ns" : "off",
+           APP_RTL8211_PHY_RX_DELAY_ENABLE ? "2ns" : "off",
+           (unsigned int) BOARD_ENET_RGMII_TX_DLY,
+           (unsigned int) BOARD_ENET_RGMII_RX_DLY);
 }
 #endif
 
@@ -332,10 +348,6 @@ hpm_stat_t enet_init(ENET_Type *ptr)
         if (jl1111_basic_mode_init(ptr, JL1111_ADDR, &phy_config) == true) {
     #endif
             printf("Enet phy init passed !\n");
-#if defined(__DISABLE_AUTO_NEGO) && __DISABLE_AUTO_NEGO
-            enet_set_line_speed(ENET, enet_line_speed_100mbps);
-            enet_set_duplex_mode(ENET, enet_phy_duplex_full);
-#endif
             return status_success;
         } else {
             printf("Enet phy init failed !\n");

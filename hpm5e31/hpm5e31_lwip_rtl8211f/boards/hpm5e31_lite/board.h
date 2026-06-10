@@ -12,6 +12,7 @@
 #include "hpm_soc.h"
 #include "hpm_soc_feature.h"
 #include "hpm_clock_drv.h"
+#include "common_cfg.h"
 #include "pinmux.h"
 #include "hpm_trgm_drv.h"
 #include "hpm_gptmr_drv.h"
@@ -287,8 +288,8 @@
 #define BOARD_ENET_RGMII_RST_GPIO_PIN   (26U)
 
 #define BOARD_ENET_RGMII        HPM_ENET0
-#define BOARD_ENET_RGMII_TX_DLY (0U)
-#define BOARD_ENET_RGMII_RX_DLY (0U)
+#define BOARD_ENET_RGMII_TX_DLY APP_ENET_RGMII_TX_DLY
+#define BOARD_ENET_RGMII_RX_DLY APP_ENET_RGMII_RX_DLY
 
 #define BOARD_ENET_RGMII_PTP_CLOCK   (clock_ptp0)
 #define BOARD_ENET_RGMII_PPS0_PINOUT (0)
