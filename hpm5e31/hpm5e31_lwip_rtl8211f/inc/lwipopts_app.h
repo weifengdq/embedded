@@ -16,11 +16,21 @@ a lot of data that needs to be copied, this should be set high. */
 /* MEMP_NUM_PBUF: the number of memp struct pbufs. If the application
    sends a lot of data out of ROM (or other static memory), this
    should be set high. */
-#define MEMP_NUM_PBUF           16
+#define MEMP_NUM_PBUF           32
 
 /* MEMP_NUM_TCP_SEG: the number of simultaneously queued TCP
    segments. */
-#define MEMP_NUM_TCP_SEG        24
+#define MEMP_NUM_TCP_SEG        32
+
+/* PBUF_POOL_SIZE: keep enough RX pbuf headroom for high-rate UDP without
+   exhausting DLM. This value was previously validated with this board. */
+#define PBUF_POOL_SIZE          24
+
+/* Catch high-load memory corruption before it degrades into a silent restart. */
+#define MEM_OVERFLOW_CHECK      2
+#define MEMP_OVERFLOW_CHECK     2
+#define MEM_SANITY_CHECK        1
+#define MEMP_SANITY_CHECK       1
 
 /* ---------- TCP options ---------- */
 #define LWIP_TCP                1
@@ -34,7 +44,7 @@ a lot of data that needs to be copied, this should be set high. */
 #define TCP_MSS                 (1500 - 40)	  /* TCP_MSS = (Ethernet MTU - IP header size - TCP header size) */
 
 /* TCP sender buffer space (bytes). */
-#define TCP_SND_BUF             (8 * TCP_MSS)
+#define TCP_SND_BUF             (12 * TCP_MSS)
 
 /*  TCP_SND_QUEUELEN: TCP sender buffer space (pbufs). This must be at least
   as much as (2 * TCP_SND_BUF/TCP_MSS) for things to work. */
@@ -42,7 +52,7 @@ a lot of data that needs to be copied, this should be set high. */
 #define TCP_SND_QUEUELEN        (2 * TCP_SND_BUF / TCP_MSS)
 
 /* TCP receive window. */
-#define TCP_WND                 (8 * TCP_MSS)
+#define TCP_WND                 (12 * TCP_MSS)
 
 /*
  * To use this feature let the following define uncommented.

@@ -340,7 +340,13 @@ static void
 lwip_tcp_conn_report(lwiperf_state_tcp_t *conn, enum lwiperf_report_type report_type)
 {
   if ((conn != NULL) && (conn->report_fn != NULL)) {
+    const struct tcp_pcb *pcb = conn->conn_pcb;
     u32_t now, duration_ms, bandwidth_kbitpsec;
+    const ip_addr_t *local_addr = NULL;
+    const ip_addr_t *remote_addr = NULL;
+    u16_t local_port = 0;
+    u16_t remote_port = 0;
+
     now = sys_now();
     duration_ms = now - conn->time_started;
     if (duration_ms == 0) {
@@ -348,9 +354,17 @@ lwip_tcp_conn_report(lwiperf_state_tcp_t *conn, enum lwiperf_report_type report_
     } else {
       bandwidth_kbitpsec = (conn->bytes_transferred / duration_ms) * 8U;
     }
+
+    if (pcb != NULL) {
+      local_addr = &pcb->local_ip;
+      remote_addr = &pcb->remote_ip;
+      local_port = pcb->local_port;
+      remote_port = pcb->remote_port;
+    }
+
     conn->report_fn(conn->report_arg, report_type,
-                    &conn->conn_pcb->local_ip, conn->conn_pcb->local_port,
-                    &conn->conn_pcb->remote_ip, conn->conn_pcb->remote_port,
+                    local_addr, local_port,
+                    remote_addr, remote_port,
                     conn->bytes_transferred, duration_ms, bandwidth_kbitpsec);
   }
 }
@@ -360,23 +374,27 @@ static void
 lwiperf_tcp_close(lwiperf_state_tcp_t *conn, enum lwiperf_report_type report_type)
 {
   err_t err;
+  struct tcp_pcb *conn_pcb = conn->conn_pcb;
+  struct tcp_pcb *server_pcb = conn->server_pcb;
 
   lwiperf_list_remove(&conn->base);
   lwip_tcp_conn_report(conn, report_type);
-  if (conn->conn_pcb != NULL) {
-    tcp_arg(conn->conn_pcb, NULL);
-    tcp_poll(conn->conn_pcb, NULL, 0);
-    tcp_sent(conn->conn_pcb, NULL);
-    tcp_recv(conn->conn_pcb, NULL);
-    tcp_err(conn->conn_pcb, NULL);
-    err = tcp_close(conn->conn_pcb);
+  conn->conn_pcb = NULL;
+  conn->server_pcb = NULL;
+  if (conn_pcb != NULL) {
+    tcp_arg(conn_pcb, NULL);
+    tcp_poll(conn_pcb, NULL, 0);
+    tcp_sent(conn_pcb, NULL);
+    tcp_recv(conn_pcb, NULL);
+    tcp_err(conn_pcb, NULL);
+    err = tcp_close(conn_pcb);
     if (err != ERR_OK) {
       /* don't want to wait for free memory here... */
-      tcp_abort(conn->conn_pcb);
+      tcp_abort(conn_pcb);
     }
-  } else {
+  } else if (server_pcb != NULL) {
     /* no conn pcb, this is the listener pcb */
-    err = tcp_close(conn->server_pcb);
+    err = tcp_close(server_pcb);
     LWIP_ASSERT("error", err == ERR_OK);
   }
   LWIPERF_FREE(lwiperf_state_tcp_t, conn);
@@ -681,7 +699,10 @@ lwiperf_tcp_err(void *arg, err_t err)
 {
   lwiperf_state_tcp_t *conn = (lwiperf_state_tcp_t *)arg;
   LWIP_UNUSED_ARG(err);
-  lwiperf_tcp_close(conn, LWIPERF_TCP_ABORTED_REMOTE);
+  if (conn != NULL) {
+    conn->conn_pcb = NULL;
+    lwiperf_tcp_close(conn, LWIPERF_TCP_ABORTED_REMOTE);
+  }
 }
 
 /** TCP poll callback, try to send more data */

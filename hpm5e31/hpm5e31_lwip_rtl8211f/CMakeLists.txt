@@ -27,6 +27,12 @@ if (APP_USE_ENET_ITF_RGMII AND APP_USE_ENET_ITF_RMII)
     message(FATAL_ERROR "This sample doesn't support more than one Ethernet phy!")
 endif()
 
+# The SDK defaults to 16 KB heap + 16 KB stack in DLM.
+# This project runs very close to the DLM limit, so keep more headroom for
+# lwIP control paths and shrink the C library heap instead.
+set(HEAP_SIZE 0x1000)
+set(STACK_SIZE 0x5000)
+
 find_package(hpm-sdk REQUIRED HINTS $ENV{HPM_SDK_BASE})
 
 sdk_compile_definitions(-D__DISABLE_AUTO_NEGO=0)
@@ -48,6 +54,7 @@ sdk_app_src(ports/baremetal/single/arch/sys_arch.c)
 sdk_app_src(ports/baremetal/single/ethernetif.c)
 sdk_app_src(common/single/netconf.c)
 sdk_app_src(common/single/common.c)
+sdk_app_src(src/fatal_probe.c)
 sdk_app_src(src/lwiperf_local.c)
 sdk_app_src(src/app/udp_echo.c)
 sdk_app_src(src/lwip.c)

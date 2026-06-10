@@ -633,6 +633,7 @@ sys_check_core_locking(void)
 
 #else
 static volatile uint32_t sys_tick = 0;
+static volatile bool s_link_status_poll_due = false;
 
 void sys_timer_callback(void)
 {
@@ -640,9 +641,17 @@ void sys_timer_callback(void)
 
 #if !(defined(MAC_TO_MAC_FIXED_LINK) && MAC_TO_MAC_FIXED_LINK)
     if (sys_tick % (2000 * LWIP_APP_TIMER_INTERVAL) == 0) {
-        enet_self_adaptive_port_speed();
+    s_link_status_poll_due = true;
     }
 #endif
+}
+
+bool enet_link_status_poll_due(void)
+{
+  bool poll_due = s_link_status_poll_due;
+
+  s_link_status_poll_due = false;
+  return poll_due;
 }
 
 u32_t sys_now(void)

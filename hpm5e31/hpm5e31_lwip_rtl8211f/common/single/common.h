@@ -111,6 +111,7 @@ extern volatile bool rx_flag;
 hpm_stat_t enet_init(ENET_Type *ptr);
 uint8_t enet_get_mac_address(uint8_t *mac);
 bool enet_get_link_status(void);
+bool enet_link_status_poll_due(void);
 void enet_self_adaptive_port_speed(void);
 void enet_services(struct netif *netif);
 void enet_common_handler(struct netif *netif);

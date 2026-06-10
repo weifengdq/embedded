@@ -9,6 +9,7 @@
 #include "common.h"
 #include "netinfo.h"
 #include "netconf.h"
+#include "ethernetif.h"
 #include "lwip/init.h"
 #include "lwip/timeouts.h"
 #include "lwip/apps/lwiperf.h"
@@ -25,10 +26,14 @@ static void lwiperf_report(void *arg,
                            u32_t ms_duration,
                            u32_t bandwidth_kbitpsec)
 {
+    ethernetif_debug_counters_t counters = {0};
+
     LWIP_UNUSED_ARG(arg);
     LWIP_UNUSED_ARG(local_addr);
     LWIP_UNUSED_ARG(local_port);
     LWIP_UNUSED_ARG(remote_addr);
+
+    ethernetif_get_debug_counters(&counters);
 
     printf("iperf report:\n");
     printf("type=%d\n", (int) report_type);
@@ -36,12 +41,24 @@ static void lwiperf_report(void *arg,
     printf("total_bytes=%lu\n", (unsigned long) bytes_transferred);
     printf("duration_ms=%lu\n", (unsigned long) ms_duration);
     printf("kbits_per_s=%lu\n", (unsigned long) bandwidth_kbitpsec);
+    printf("eth tx_busy=%lu tx_err=%lu input_err=%lu input_ok=%lu\n",
+           (unsigned long) counters.tx_busy,
+           (unsigned long) counters.tx_errors,
+           (unsigned long) counters.input_err,
+           (unsigned long) counters.input_ok);
+    printf("eth tx_frames=%lu rx_frames=%lu tx_bytes=%lu rx_bytes=%lu\n",
+           (unsigned long) counters.tx_frames,
+           (unsigned long) counters.rx_frames,
+           (unsigned long) counters.tx_bytes,
+           (unsigned long) counters.rx_bytes);
 }
 
 static void start_network_services(void)
 {
     void *tcp_server;
     void *udp_server;
+
+    ethernetif_reset_debug_counters();
 
     udp_echo_init();
     printf("UDP echo server started on port %u\n", (unsigned int) UDP_LOCAL_PORT);
@@ -63,6 +80,7 @@ static void start_network_services(void)
         printf("UDP iperf server started on port %u\n", (unsigned int) LWIPERF_UDP_PORT_DEFAULT);
     }
 }
+
 
 int main(void)
 {

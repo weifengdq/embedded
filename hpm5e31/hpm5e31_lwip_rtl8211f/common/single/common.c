@@ -49,6 +49,30 @@
 
 static enet_phy_status_t last_status = {.enet_phy_link = enet_phy_link_unknown};
 static uint8_t dhcp_last_state = DHCP_STATE_OFF;
+static uint8_t s_link_down_confirm_count = 0;
+static bool s_link_seen_up = false;
+
+#ifndef APP_LINK_DOWN_CONFIRM_POLLS
+#define APP_LINK_DOWN_CONFIRM_POLLS (3U)
+#endif
+
+#ifndef APP_LINK_DOWN_ACTIVITY_GUARD_MS
+#define APP_LINK_DOWN_ACTIVITY_GUARD_MS (1500U)
+#endif
+
+#ifndef APP_IGNORE_RUNTIME_LINK_DOWN
+#define APP_IGNORE_RUNTIME_LINK_DOWN (1U)
+#endif
+
+static bool enet_has_recent_activity(u32_t now_ms)
+{
+    ethernetif_debug_counters_t counters = {0};
+
+    ethernetif_get_debug_counters(&counters);
+
+    return ((now_ms - counters.last_rx_ms) < APP_LINK_DOWN_ACTIVITY_GUARD_MS)
+        || ((now_ms - counters.last_tx_ms) < APP_LINK_DOWN_ACTIVITY_GUARD_MS);
+}
 
 #if defined(RGMII) && RGMII && defined(__USE_RTL8211) && __USE_RTL8211
 static uint32_t s_rtl8211_phy_addr = RTL8211_ADDR;
@@ -593,6 +617,27 @@ void enet_self_adaptive_port_speed(void)
         #endif
     #endif
 
+    if (status.enet_phy_link) {
+        s_link_seen_up = true;
+        s_link_down_confirm_count = 0;
+    } else {
+        if (!s_link_seen_up) {
+            return;
+        }
+#if APP_IGNORE_RUNTIME_LINK_DOWN
+        return;
+#else
+        if (enet_has_recent_activity(sys_now())) {
+            s_link_down_confirm_count = 0;
+            return;
+        }
+
+        if (++s_link_down_confirm_count < APP_LINK_DOWN_CONFIRM_POLLS) {
+            return;
+        }
+#endif
+    }
+
     if (status.enet_phy_link || (status.enet_phy_link != last_status.enet_phy_link)) {
         if (memcmp(&last_status, &status, sizeof(enet_phy_status_t)) != 0) {
             memcpy(&last_status, &status, sizeof(enet_phy_status_t));
@@ -609,6 +654,7 @@ void enet_self_adaptive_port_speed(void)
                 netif_set_link_up(netif_get_by_index(LWIP_NETIF_IDX));
                 #endif
             } else {
+                s_link_down_confirm_count = 0;
                 printf("Link Status: Down\n");
                 #if defined(NO_SYS) && !NO_SYS
                 msg = enet_phy_link_down;
@@ -623,9 +669,7 @@ void enet_self_adaptive_port_speed(void)
 
 void enet_services(struct netif *netif)
 {
-#if defined(MAC_TO_MAC_FIXED_LINK) && MAC_TO_MAC_FIXED_LINK
     enet_self_adaptive_port_speed();
-#endif
 
 #if defined(LWIP_DHCP) && LWIP_DHCP
     #if defined(NO_SYS) && NO_SYS
@@ -667,6 +711,12 @@ void enet_services(struct netif *netif)
 void enet_common_handler(struct netif *netif)
 {
     ethernetif_input(netif);
+
+#if !(defined(MAC_TO_MAC_FIXED_LINK) && MAC_TO_MAC_FIXED_LINK)
+    if (enet_link_status_poll_due()) {
+        enet_self_adaptive_port_speed();
+    }
+#endif
 
     /* Handle all system timeouts for all core protocols */
     #if defined(LWIP_TIMERS) && LWIP_TIMERS
