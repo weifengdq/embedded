@@ -264,16 +264,69 @@ D:\hpm\embedded\hpm5e31\bak\iperf.exe -c 192.168.0.99 -t 10
 
 ## 7. 测试结果
 
-> 📝 待实际测试后填写
+> 测试日期：2026-06-11
 
 | 测试项目 | 结果 | 备注 |
 | -------- | ---- | ---- |
-| Ping | - | - |
-| UDP Echo | - | - |
-| iperf UDP | - | - |
-| iperf TCP | - | - |
-| 链路速率 | - | - |
-| PHY 地址 | - | - |
+| 固件编译 | ✅ 通过 | ELF 137KB, Flash 87KB/s |
+| JLink 烧录 | ✅ 通过 | S/N 24060502, HPM5E31xGNx |
+| 时间戳日志 | ✅ 正常 | mchtmr @24MHz, ms 级精度 |
+| 88Q2112 MDIO 检测 | ❌ 失败 | PHYID=0xFFFF, MDIO 无响应 |
+| Ping | ❌ 不可达 | PHY 未初始化 |
+| UDP Echo | ⏳ 待 PHY 修复 | - |
+| iperf TCP/UDP | ⏳ 待 PHY 修复 | - |
+| 链路速率 | ⏳ 待 PHY 修复 | - |
+
+### 7.1 完整启动日志
+
+```
+[       1] board init:   1
+[       3] reset flag:   0x00000000
+[       7] reset status: 0x00000000
+[      10] reset type:   0x00000000
+[      13] soft reset:   0
+[      16] cpu0 lp:      0x00001000
+[      19] cpu0 reset:   0
+[      21] This is an ethernet demo: 88Q2112 1000BASE-T1 + lwIP (Polling Usage)
+[      29] LwIP Version: 2.1.2
+[      31] Local IP:  192.168.0.99
+[      35] Host IP:   192.168.0.2
+[      99] 88Q2112 MDIO scan:
+[     103] 88Q2112 not found, fallback to addr 7
+[     108] 88Q2112 init at PHY addr 7
+[     111]   PHYID1=0xFFFF
+[     114]   PHYID2=0xFFFF
+[     116]   Init seq0...
+[     129]   Init seq1...
+[     133] 88Q2112 init complete.
+[     136] Enet phy init passed !
+IPv4 Address: 192.168.0.99
+IPv4 Netmask: 255.255.255.0
+IPv4 Gateway: 0.0.0.0
+[     155] UDP echo server started on port 5005
+[     160] TCP iperf server started on port 5001
+[     165] UDP iperf server started on port 5001
+[     169] Ready:
+[     171]   ping 192.168.0.99
+[     174]   UDP echo port: 5005
+[     177]   iperf TCP/UDP server port: 5001
+```
+
+### 7.2 诊断结论
+
+**PHYID1=0xFFFF, PHYID2=0xFFFF** 表示 MDIO 总线上没有设备响应。扫描地址 0~31 全部无响应。
+
+**可能原因（按优先级）：**
+1. 88Q2112 未上电 — 检查 VDD、VDDIO
+2. MDC/MDIO 飞线问题 — PA31(MDC)、PA30(MDIO)
+3. 复位引脚 — PF26 → 88Q2112 NRST
+4. 88Q2112 硬件 strapping 配置
+5. 88Q2112 时钟未起振
+
+**固件侧已确认正确：**
+- PF26 复位时序: 拉低 10ms → 拉高 50ms
+- MDIO 扫描: 地址 0~31, C22 方式
+- 驱动逻辑: 来自 Linux 内核 marvell-88q2xxx.c
 
 ## 8. 参考代码
 

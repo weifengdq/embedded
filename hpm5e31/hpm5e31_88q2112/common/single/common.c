@@ -132,24 +132,24 @@ static uint32_t detect_q2112_phy_addr(ENET_Type *ptr)
 {
     uint32_t phy_addr;
 
-    printf("88Q2112 MDIO scan:\n");
+    TS_LOG("88Q2112 MDIO scan:\n");
     for (phy_addr = 0; phy_addr < 32U; phy_addr++) {
         uint16_t id1 = enet_read_phy(ptr, phy_addr, 2);
         uint16_t id2 = enet_read_phy(ptr, phy_addr, 3);
 
         if (id1 == 0xFFFF || id1 == 0x0000) continue;
 
-        printf("  addr %2u: ID1=0x%04X ID2=0x%04X", (unsigned int)phy_addr, id1, id2);
+        TS_LOG("  addr %2u: ID1=0x%04X ID2=0x%04X", (unsigned int)phy_addr, id1, id2);
 
         if (id1 == Q2112_ID1 && (id2 & Q2112_ID2_MASK) == Q2112_ID2_EXPECT) {
-            printf(" <== 88Q2112!\n");
+            TS_LOG(" <== 88Q2112!\n");
             s_q2112_phy_addr = phy_addr;
             return phy_addr;
         }
-        printf("\n");
+        TS_LOG("\n");
     }
 
-    printf("88Q2112 not found, fallback to addr %u\n", (unsigned int)Q2112_ADDR);
+    TS_LOG("88Q2112 not found, fallback to addr %u\n", (unsigned int)Q2112_ADDR);
     s_q2112_phy_addr = Q2112_ADDR;
     return s_q2112_phy_addr;
 }
@@ -180,7 +180,7 @@ static void q2112_get_phy_status(ENET_Type *ptr, uint32_t phy_addr,
         if ((stat1 != last_stat1) || (stat2 != last_stat2)) {
             last_stat1 = stat1;
             last_stat2 = stat2;
-            printf("88Q2112: BMSR=0x%04X AN_STAT=0x%04X AN_STAT2=0x%04X speed=%s\n",
+            TS_LOG("88Q2112: BMSR=0x%04X AN_STAT=0x%04X AN_STAT2=0x%04X speed=%s\n",
                    bmsr, stat1, stat2,
                    (status->enet_phy_speed == enet_phy_port_speed_1000mbps) ? "1000M" : "100M");
         }
@@ -191,15 +191,15 @@ static bool q2112_init(ENET_Type *ptr, uint32_t phy_addr)
 {
     uint16_t val;
 
-    printf("88Q2112 init at PHY addr %u\n", (unsigned int)phy_addr);
+    TS_LOG("88Q2112 init at PHY addr %u\n", (unsigned int)phy_addr);
 
     val = enet_read_phy(ptr, phy_addr, 2);
-    printf("  PHYID1=0x%04X\n", val);
+    TS_LOG("  PHYID1=0x%04X\n", val);
     val = enet_read_phy(ptr, phy_addr, 3);
-    printf("  PHYID2=0x%04X\n", val);
+    TS_LOG("  PHYID2=0x%04X\n", val);
 
     /* Init sequence 0 (from Linux mv88q2110_init_seq0) */
-    printf("  Init seq0...\n");
+    TS_LOG("  Init seq0...\n");
     enet_c45_write(ptr, phy_addr, MDIO_MMD_PCS, 0xffe4, 0x07b5);
     enet_c45_write(ptr, phy_addr, MDIO_MMD_PCS, 0xffe4, 0x06b6);
 
@@ -207,7 +207,7 @@ static bool q2112_init(ENET_Type *ptr, uint32_t phy_addr)
     for (volatile uint32_t d = 0; d < 800000; d++) { __asm volatile("nop"); }
 
     /* Init sequence 1 (from Linux mv88q2110_init_seq1) */
-    printf("  Init seq1...\n");
+    TS_LOG("  Init seq1...\n");
     enet_c45_write(ptr, phy_addr, MDIO_MMD_PCS, 0xffde, 0x402f);
     enet_c45_write(ptr, phy_addr, MDIO_MMD_PCS, 0xfe34, 0x4040);
     enet_c45_write(ptr, phy_addr, MDIO_MMD_PCS, 0xfe2a, 0x3c1d);
@@ -223,7 +223,7 @@ static bool q2112_init(ENET_Type *ptr, uint32_t phy_addr)
     val &= ~MDIO_CTRL1_LPOWER;
     enet_c45_write(ptr, phy_addr, MDIO_MMD_PMAPMD, MDIO_CTRL1, val);
 
-    printf("88Q2112 init complete.\n");
+    TS_LOG("88Q2112 init complete.\n");
     return true;
 }
 #endif /* RGMII && __USE_88Q2112 */
@@ -306,7 +306,7 @@ hpm_stat_t enet_init(ENET_Type *ptr)
     #elif defined(RMII) && RMII
     /* Set RMII reference clock */
     board_init_enet_rmii_reference_clock(ENET, BOARD_ENET_RMII_INT_REF_CLK);
-    printf("Reference Clock: %s\n", BOARD_ENET_RMII_INT_REF_CLK ? "Internal Clock" : "External Clock");
+    TS_LOG("Reference Clock: %s\n", BOARD_ENET_RMII_INT_REF_CLK ? "Internal Clock" : "External Clock");
     #elif defined(MII) && MII
     board_init_enet_mii_clock(ENET);
     #endif
@@ -379,10 +379,10 @@ hpm_stat_t enet_init(ENET_Type *ptr)
         {
             uint32_t q2112_phy_addr = detect_q2112_phy_addr(ptr);
             if (q2112_init(ptr, q2112_phy_addr)) {
-                printf("Enet phy init passed !\n");
+                TS_LOG("Enet phy init passed !\n");
                 return status_success;
             } else {
-                printf("Enet phy init failed !\n");
+                TS_LOG("Enet phy init failed !\n");
                 return status_fail;
             }
         }
@@ -394,10 +394,10 @@ hpm_stat_t enet_init(ENET_Type *ptr)
             #endif
             dp83867_basic_mode_default_config(ptr, &phy_config);
             if (dp83867_basic_mode_init(ptr, DP83867_ADDR, &phy_config) == true) {
-                printf("Enet phy init passed !\n");
+                TS_LOG("Enet phy init passed !\n");
                 return status_success;
             } else {
-                printf("Enet phy init failed !\n");
+                TS_LOG("Enet phy init failed !\n");
                 return status_fail;
             }
         }
@@ -408,10 +408,10 @@ hpm_stat_t enet_init(ENET_Type *ptr)
             rtl8211_basic_mode_default_config(ptr, &phy_config);
             if (rtl8211_basic_mode_init(ptr, rtl8211_phy_addr, &phy_config) == true) {
                 rtl8211_config_rgmii_delay_local(ptr, rtl8211_phy_addr);
-                printf("Enet phy init passed !\n");
+                TS_LOG("Enet phy init passed !\n");
                 return status_success;
             } else {
-                printf("Enet phy init failed !\n");
+                TS_LOG("Enet phy init failed !\n");
                 return status_fail;
             }
         }
@@ -422,10 +422,10 @@ hpm_stat_t enet_init(ENET_Type *ptr)
             dp83848_reset(ptr, DP83848_ADDR);
             dp83848_basic_mode_default_config(ptr, &phy_config);
             if (dp83848_basic_mode_init(ptr, DP83848_ADDR, &phy_config) == true) {
-                printf("Enet phy init passed !\n");
+                TS_LOG("Enet phy init passed !\n");
                 return status_success;
             } else {
-                printf("Enet phy init failed !\n");
+                TS_LOG("Enet phy init failed !\n");
                 return status_fail;
             }
         }
@@ -435,10 +435,10 @@ hpm_stat_t enet_init(ENET_Type *ptr)
             rtl8201_basic_mode_default_config(ptr, &phy_config);
             phy_config.rmii_refclk_dir = BOARD_ENET_RMII_INT_REF_CLK;
             if (rtl8201_basic_mode_init(ptr, RTL8201_ADDR, &phy_config) == true) {
-                printf("Enet phy init passed !\n");
+                TS_LOG("Enet phy init passed !\n");
                 return status_success;
             } else {
-                printf("Enet phy init failed !\n");
+                TS_LOG("Enet phy init failed !\n");
                 return status_fail;
             }
         }
@@ -448,10 +448,10 @@ hpm_stat_t enet_init(ENET_Type *ptr)
             jl1111_basic_mode_default_config(ptr, &phy_config);
             phy_config.rmii_refclk_dir = BOARD_ENET_RMII_INT_REF_CLK;
             if (jl1111_basic_mode_init(ptr, JL1111_ADDR, &phy_config) == true) {
-                printf("Enet phy init passed !\n");
+                TS_LOG("Enet phy init passed !\n");
                 return status_success;
             } else {
-                printf("Enet phy init failed !\n");
+                TS_LOG("Enet phy init failed !\n");
                 return status_fail;
             }
         }
@@ -461,10 +461,10 @@ hpm_stat_t enet_init(ENET_Type *ptr)
             jl1111_reset(ptr, JL1111_ADDR);
             jl1111_basic_mode_default_config(ptr, &phy_config);
             if (jl1111_basic_mode_init(ptr, JL1111_ADDR, &phy_config) == true) {
-                printf("Enet phy init passed !\n");
+                TS_LOG("Enet phy init passed !\n");
                 return status_success;
             } else {
-                printf("Enet phy init failed !\n");
+                TS_LOG("Enet phy init failed !\n");
                 return status_fail;
             }
         }
@@ -500,7 +500,7 @@ static void log_task(void *pvParameters) /* NOLINT */
 
     for (;;) {
         if (xQueueReceive(log_queue, &log_msg, portMAX_DELAY) == pdTRUE) {
-            printf("%s", log_msg.message);
+            TS_LOG("%s", log_msg.message);
         }
     }
 }
@@ -512,7 +512,7 @@ static void log_task(void *parameter) /* NOLINT */
 
     for (;;) {
         if (rt_mq_recv(log_queue, &log_msg, sizeof(log_message_t), RT_WAITING_FOREVER) == RT_EOK) {
-            printf("%s", log_msg.message);
+            TS_LOG("%s", log_msg.message);
         }
     }
 }
@@ -606,7 +606,7 @@ void enet_update_dhcp_state(struct netif *netif)
 #if defined(NO_SYS) && !NO_SYS
         log_send_message("DHCP State: %s\r\n", state_str);
 #else
-        printf("DHCP State: %s\r\n", state_str);
+        TS_LOG("DHCP State: %s\r\n", state_str);
 #endif
 
         if (dhcp_last_state == DHCP_STATE_BOUND) {
@@ -740,9 +740,9 @@ void enet_self_adaptive_port_speed(void)
         if (memcmp(&last_status, &status, sizeof(enet_phy_status_t)) != 0) {
             memcpy(&last_status, &status, sizeof(enet_phy_status_t));
             if (status.enet_phy_link) {
-                printf("Link Status: Up\n");
-                printf("Link Speed:  %s\n", speed_str[status.enet_phy_speed]);
-                printf("Link Duplex: %s\n", duplex_str[status.enet_phy_duplex]);
+                TS_LOG("Link Status: Up\n");
+                TS_LOG("Link Speed:  %s\n", speed_str[status.enet_phy_speed]);
+                TS_LOG("Link Duplex: %s\n", duplex_str[status.enet_phy_duplex]);
                 enet_set_line_speed(ENET, line_speed[status.enet_phy_speed]);
                 enet_set_duplex_mode(ENET, status.enet_phy_duplex);
                 #if defined(NO_SYS) && !NO_SYS
@@ -753,7 +753,7 @@ void enet_self_adaptive_port_speed(void)
                 #endif
             } else {
                 s_link_down_confirm_count = 0;
-                printf("Link Status: Down\n");
+                TS_LOG("Link Status: Down\n");
                 #if defined(NO_SYS) && !NO_SYS
                 msg = enet_phy_link_down;
                 sys_mbox_trypost_fromisr(&netif_status_mbox, &msg);

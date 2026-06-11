@@ -34,18 +34,18 @@ static void lwiperf_report(void *arg,
 
     ethernetif_get_debug_counters(&counters);
 
-    printf("iperf report:\n");
-    printf("type=%d\n", (int) report_type);
-    printf("remote_port=%u\n", (unsigned int) remote_port);
-    printf("total_bytes=%lu\n", (unsigned long) bytes_transferred);
-    printf("duration_ms=%lu\n", (unsigned long) ms_duration);
-    printf("kbits_per_s=%lu\n", (unsigned long) bandwidth_kbitpsec);
-    printf("eth tx_busy=%lu tx_err=%lu input_err=%lu input_ok=%lu\n",
+    TS_LOG("iperf report:\n");
+    TS_LOG("type=%d\n", (int) report_type);
+    TS_LOG("remote_port=%u\n", (unsigned int) remote_port);
+    TS_LOG("total_bytes=%lu\n", (unsigned long) bytes_transferred);
+    TS_LOG("duration_ms=%lu\n", (unsigned long) ms_duration);
+    TS_LOG("kbits_per_s=%lu\n", (unsigned long) bandwidth_kbitpsec);
+    TS_LOG("eth tx_busy=%lu tx_err=%lu input_err=%lu input_ok=%lu\n",
            (unsigned long) counters.tx_busy,
            (unsigned long) counters.tx_errors,
            (unsigned long) counters.input_err,
            (unsigned long) counters.input_ok);
-    printf("eth tx_frames=%lu rx_frames=%lu tx_bytes=%lu rx_bytes=%lu\n",
+    TS_LOG("eth tx_frames=%lu rx_frames=%lu tx_bytes=%lu rx_bytes=%lu\n",
            (unsigned long) counters.tx_frames,
            (unsigned long) counters.rx_frames,
            (unsigned long) counters.tx_bytes,
@@ -60,13 +60,13 @@ static void start_network_services(void)
     ethernetif_reset_debug_counters();
 
     udp_echo_init();
-    printf("UDP echo server started on port %u\n", (unsigned int) UDP_LOCAL_PORT);
+    TS_LOG("UDP echo server started on port %u\n", (unsigned int) UDP_LOCAL_PORT);
 
     tcp_server = app_lwiperf_start_tcp_server_default(lwiperf_report, NULL);
     if (tcp_server == NULL) {
-        printf("Failed to start TCP iperf server\n");
+        TS_LOG("Failed to start TCP iperf server\n");
     } else {
-        printf("TCP iperf server started on port %u\n", (unsigned int) LWIPERF_TCP_PORT_DEFAULT);
+        TS_LOG("TCP iperf server started on port %u\n", (unsigned int) LWIPERF_TCP_PORT_DEFAULT);
     }
 
     udp_server = app_lwiperf_start_udp_server(netif_ip_addr4(netif_default),
@@ -74,9 +74,9 @@ static void start_network_services(void)
                                               lwiperf_report,
                                               NULL);
     if (udp_server == NULL) {
-        printf("Failed to start UDP iperf server\n");
+        TS_LOG("Failed to start UDP iperf server\n");
     } else {
-        printf("UDP iperf server started on port %u\n", (unsigned int) LWIPERF_UDP_PORT_DEFAULT);
+        TS_LOG("UDP iperf server started on port %u\n", (unsigned int) LWIPERF_UDP_PORT_DEFAULT);
     }
 }
 
@@ -86,13 +86,13 @@ int main(void)
     board_init();
 
 #if defined(__ENABLE_ENET_RECEIVE_INTERRUPT) && __ENABLE_ENET_RECEIVE_INTERRUPT
-    printf("This is an ethernet demo: 88Q2112 1000BASE-T1 + lwIP (Interrupt Usage)\n");
+    TS_LOG("This is an ethernet demo: 88Q2112 1000BASE-T1 + lwIP (Interrupt Usage)\n");
 #else
-    printf("This is an ethernet demo: 88Q2112 1000BASE-T1 + lwIP (Polling Usage)\n");
+    TS_LOG("This is an ethernet demo: 88Q2112 1000BASE-T1 + lwIP (Polling Usage)\n");
 #endif
-    printf("LwIP Version: %s\n", LWIP_VERSION_STRING);
-    printf("Local IP:  %s\n", IP0_CONFIG_STR);
-    printf("Host IP:   %s\n", REMOTE_IP0_CONFIG_STR);
+    TS_LOG("LwIP Version: %s\n", LWIP_VERSION_STRING);
+    TS_LOG("Local IP:  %s\n", IP0_CONFIG_STR);
+    TS_LOG("Host IP:   %s\n", REMOTE_IP0_CONFIG_STR);
 
     if (enet_init(ENET) == status_success) {
         lwip_init();
@@ -102,17 +102,17 @@ int main(void)
         start_network_services();
         board_timer_create(LWIP_APP_TIMER_INTERVAL, sys_timer_callback);
 
-        printf("Ready:\n");
-        printf("  ping %s\n", IP0_CONFIG_STR);
-        printf("  UDP echo port: %u\n", (unsigned int) UDP_LOCAL_PORT);
-        printf("  iperf TCP/UDP server port: %u\n", (unsigned int) LWIPERF_TCP_PORT_DEFAULT);
+        TS_LOG("Ready:\n");
+        TS_LOG("  ping %s\n", IP0_CONFIG_STR);
+        TS_LOG("  UDP echo port: %u\n", (unsigned int) UDP_LOCAL_PORT);
+        TS_LOG("  iperf TCP/UDP server port: %u\n", (unsigned int) LWIPERF_TCP_PORT_DEFAULT);
 
         while (1) {
             enet_common_handler(&gnetif);
         }
     }
 
-    printf("Enet initialization fails !!!\n");
+    TS_LOG("Enet initialization fails !!!\n");
     while (1) {
     }
 

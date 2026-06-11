@@ -115,17 +115,17 @@ void board_init_console(void)
 
 void board_print_clock_freq(void)
 {
-    printf("==============================\n");
-    printf(" %s clock summary\n", BOARD_NAME);
-    printf("==============================\n");
-    printf("cpu0:\t\t %dHz\n", clock_get_frequency(clock_cpu0));
-    printf("ahb:\t\t %luHz\n", clock_get_frequency(clock_ahb0));
-    printf("axif:\t\t %dHz\n", clock_get_frequency(clock_axif));
-    printf("axis:\t\t %dHz\n", clock_get_frequency(clock_axis));
-    printf("axic:\t\t %dHz\n", clock_get_frequency(clock_axic));
-    printf("xpi0:\t\t %dHz\n", clock_get_frequency(clock_xpi0));
-    printf("mchtmr0:\t %dHz\n", clock_get_frequency(clock_mchtmr0));
-    printf("==============================\n");
+    TS_LOG("==============================\n");
+    TS_LOG(" %s clock summary\n", BOARD_NAME);
+    TS_LOG("==============================\n");
+    TS_LOG("cpu0:\t\t %dHz\n", clock_get_frequency(clock_cpu0));
+    TS_LOG("ahb:\t\t %luHz\n", clock_get_frequency(clock_ahb0));
+    TS_LOG("axif:\t\t %dHz\n", clock_get_frequency(clock_axif));
+    TS_LOG("axis:\t\t %dHz\n", clock_get_frequency(clock_axis));
+    TS_LOG("axic:\t\t %dHz\n", clock_get_frequency(clock_axic));
+    TS_LOG("xpi0:\t\t %dHz\n", clock_get_frequency(clock_xpi0));
+    TS_LOG("mchtmr0:\t %dHz\n", clock_get_frequency(clock_mchtmr0));
+    TS_LOG("==============================\n");
 }
 
 static void board_print_reset_status(void)
@@ -139,13 +139,13 @@ static void board_print_reset_status(void)
 
     s_board_init_count++;
 
-    printf("board init:   %lu\n", (unsigned long) s_board_init_count);
-    printf("reset flag:   0x%08lX\n", (unsigned long) reset_flag);
-    printf("reset status: 0x%08lX\n", (unsigned long) reset_status);
-    printf("reset type:   0x%08lX\n", (unsigned long) reset_type);
-    printf("soft reset:   %lu\n", (unsigned long) software_reset);
-    printf("cpu%u lp:      0x%08lX\n", (unsigned) BOARD_RUNNING_CORE, (unsigned long) cpu_lp);
-    printf("cpu%u reset:   %lu\n", (unsigned) BOARD_RUNNING_CORE, (unsigned long) SYSCTL_CPU_LP_RESET_FLAG_GET(cpu_lp));
+    TS_LOG("board init:   %lu\n", (unsigned long) s_board_init_count);
+    TS_LOG("reset flag:   0x%08lX\n", (unsigned long) reset_flag);
+    TS_LOG("reset status: 0x%08lX\n", (unsigned long) reset_status);
+    TS_LOG("reset type:   0x%08lX\n", (unsigned long) reset_type);
+    TS_LOG("soft reset:   %lu\n", (unsigned long) software_reset);
+    TS_LOG("cpu%u lp:      0x%08lX\n", (unsigned) BOARD_RUNNING_CORE, (unsigned long) cpu_lp);
+    TS_LOG("cpu%u reset:   %lu\n", (unsigned) BOARD_RUNNING_CORE, (unsigned long) SYSCTL_CPU_LP_RESET_FLAG_GET(cpu_lp));
 
     if (reset_flag != 0U) {
         HPM_PPOR->RESET_FLAG = reset_flag;
@@ -173,9 +173,9 @@ $$ |  $$ |$$ |      $$ | \\_/ $$ |$$ |\\$$$$$$$\\ $$ |      \\$$$$$$  |\n\
 \\__|  \\__|\\__|      \\__|     \\__|\\__| \\_______|\\__|       \\______/\n\
 ----------------------------------------------------------------------\n" };
 #ifdef SDK_VERSION_STRING
-    printf("hpm_sdk: %s\n", SDK_VERSION_STRING);
+    TS_LOG("hpm_sdk: %s\n", SDK_VERSION_STRING);
 #endif
-    printf("%s", banner);
+    TS_LOG("%s", banner);
 }
 
 uint8_t board_get_led_gpio_off_level(void)
@@ -247,19 +247,19 @@ void board_timer_create(uint32_t ms, board_timer_cb cb)
 void board_i2c_bus_clear(I2C_Type *ptr)
 {
     if (i2c_get_line_scl_status(ptr) == false) {
-        printf("CLK is low, please power cycle the board\n");
+        TS_LOG("CLK is low, please power cycle the board\n");
         while (1) {
         }
     }
     if (i2c_get_line_sda_status(ptr) == false) {
-        printf("SDA is low, try to issue I2C bus clear\n");
+        TS_LOG("SDA is low, try to issue I2C bus clear\n");
     } else {
-        printf("I2C bus is ready\n");
+        TS_LOG("I2C bus is ready\n");
         return;
     }
     i2c_gen_reset_signal(ptr, 9);
     board_delay_ms(100);
-    printf("I2C bus is cleared\n");
+    TS_LOG("I2C bus is cleared\n");
 }
 
 uint32_t board_init_i2c_clock(I2C_Type *ptr)
@@ -311,7 +311,7 @@ void board_init_i2c(I2C_Type *ptr)
     config.is_10bit_addressing = false;
     stat = i2c_init_master(ptr, freq, &config);
     if (stat != status_success) {
-        printf("failed to initialize i2c 0x%lx\n", (uint32_t) ptr);
+        TS_LOG("failed to initialize i2c 0x%lx\n", (uint32_t) ptr);
         while (1) {
         }
     }

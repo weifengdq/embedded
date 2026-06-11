@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "common_cfg.h"
 
 static unsigned long fatal_probe_read_csr(const char *csr_name)
 {
@@ -33,25 +34,25 @@ static void fatal_probe_halt(void)
 
 void _exit(int status)
 {
-    printf("fatal: _exit(%d)\n", status);
+    TS_LOG("fatal: _exit(%d)\n", status);
     fatal_probe_halt();
 }
 
 void abort(void)
 {
-    printf("fatal: abort()\n");
+    TS_LOG("fatal: abort()\n");
     fatal_probe_halt();
 }
 
 void __stack_chk_fail(void)
 {
-    printf("fatal: __stack_chk_fail()\n");
+    TS_LOG("fatal: __stack_chk_fail()\n");
     fatal_probe_halt();
 }
 
 void __assert_func(const char *file, int line, const char *func, const char *expr)
 {
-    printf("fatal: assert file=%s line=%d func=%s expr=%s\n",
+    TS_LOG("fatal: assert file=%s line=%d func=%s expr=%s\n",
            file != NULL ? file : "?",
            line,
            func != NULL ? func : "?",
@@ -61,7 +62,7 @@ void __assert_func(const char *file, int line, const char *func, const char *exp
 
 long exception_handler(long cause, long epc)
 {
-    printf("fatal: exception cause=0x%08lx epc=0x%08lx mtval=0x%08lx mstatus=0x%08lx\n",
+    TS_LOG("fatal: exception cause=0x%08lx epc=0x%08lx mtval=0x%08lx mstatus=0x%08lx\n",
            (unsigned long) cause,
            (unsigned long) epc,
            fatal_probe_read_csr("mtval"),
@@ -72,7 +73,7 @@ long exception_handler(long cause, long epc)
 
 long exception_s_handler(long cause, long epc)
 {
-    printf("fatal: s_exception cause=0x%08lx epc=0x%08lx mtval=0x%08lx mstatus=0x%08lx\n",
+    TS_LOG("fatal: s_exception cause=0x%08lx epc=0x%08lx mtval=0x%08lx mstatus=0x%08lx\n",
            (unsigned long) cause,
            (unsigned long) epc,
            fatal_probe_read_csr("mtval"),
