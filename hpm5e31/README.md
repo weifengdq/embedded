@@ -1,6 +1,6 @@
 # hpm5e31_lite Projects
 
-本目录当前包含 6 个基于自定义板 hpm5e31_lite 的 HPM5E31 工程：
+本目录当前包含 7 个基于自定义板 hpm5e31_lite 的 HPM5E31 工程：
 
 | 工程目录 | 参考来源 |
 | --- | --- |
@@ -9,6 +9,7 @@
 | hpm5e31_gpio | hpm_sdk/samples/drivers/gpio |
 | hpm5e31_cherryusb_cdc_acm_vcom | hpm_sdk/samples/cherryusb/device/cdc_acm/cdc_acm_vcom |
 | hpm5e31_lwip_rtl8211f | hpm_sdk/samples/lwip/lwip_udpecho + lwip_iperf |
+| hpm5e31_88q2112 | hpm_sdk/samples/lwip/lwip_iperf |
 | hpm5321_rgmii_mac_to_mac | hpm_sdk/samples/lwip/lwip_iperf |
 
 ## 公共板级信息
@@ -154,6 +155,24 @@ COM62  USB 串行设备
 	- 本地 common.c 额外配置 RTL8211FI page 0xD08 的 TX/RX internal delay，并验证过多组 MAC/PHY delay 组合后选定当前 1G 最优档
 	- 新增当前工程私有 `src/lwiperf_local.c`，在不修改 SDK 的前提下补了 UDP client 复用、UDP close/timeout 清理和 TCP err 安全释放等修复
 - 结论：当前工程已完成 RTL8211FI 单板 1Gbps 自动协商 bring-up、ping、UDP echo、稳定 UDP iperf 和可完成的 TCP iperf，可作为当前 HPM5E31 + RTL8211FI 的 1G 联机基线。
+
+### hpm5e31_88q2112
+
+- Debug 构建：通过
+- Debug 下载：待测试
+- 调试器与串口：J-Link，UART0 对应 COM13
+- 工程用途：HPM5E31 通过 ENET0 RGMII 连接外部 Marvell 88Q2112 (1000BASE-T1 车载以太网 PHY)，提供静态 IP、UDP echo 与 iperf server 验证
+- 静态 IP：192.168.0.99，目标主机 192.168.0.2
+- 硬件特点：
+	- 88Q2112 使用 IEEE 802.3 Clause 45 MDIO 协议（不同于普通 PHY 的 C22）
+	- C45 访问通过 C22 间接寄存器 13/14 实现
+	- 88Q2112 仅支持 1000BASE-T1（单对双绞线），需通过千兆车载以太网转换盒连接到电脑
+	- 88Q2112 默认 Slave 模式，转换盒需设为 Master
+- 88Q2112 初始化序列：参考 Linux 内核 `marvell-88q2xxx.c` 的 `mv88q2110_init_seq0/1`
+- PHY 地址：默认 strap 为 111（地址 7），上电后自动扫描 MDIO 0~31 确认
+- MAC RGMII delay：TX=0, RX=0（88Q2112 内部自带延时）
+- 测试项目：Ping、UDP Echo (端口 5005)、iperf TCP/UDP (端口 5001)
+- 结论：待测试
 
 ### hpm5321_rgmii_mac_to_mac
 
