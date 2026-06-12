@@ -1,6 +1,6 @@
 # hpm5e31_lite Projects
 
-本目录当前包含 7 个基于自定义板 hpm5e31_lite 的 HPM5E31 工程：
+本目录当前包含 8 个基于自定义板 hpm5e31_lite 的 HPM5E31 工程：
 
 | 工程目录 | 参考来源 |
 | --- | --- |
@@ -10,6 +10,7 @@
 | hpm5e31_cherryusb_cdc_acm_vcom | hpm_sdk/samples/cherryusb/device/cdc_acm/cdc_acm_vcom |
 | hpm5e31_lwip_rtl8211f | hpm_sdk/samples/lwip/lwip_udpecho + lwip_iperf |
 | hpm5e31_rgmii_88q2112 | hpm_sdk/samples/lwip/lwip_iperf |
+| hpm5e31_rmii_dp83848 | hpm_sdk/samples/lwip/lwip_iperf + lwip_udpecho |
 | hpm5321_rgmii_mac_to_mac | hpm_sdk/samples/lwip/lwip_iperf |
 
 ## 公共板级信息
@@ -230,3 +231,22 @@ COM62  USB 串行设备
 - 已删除原 boards/hpm5e31_lite/doc 目录
 - 已删除原 boards/hpm5e31_lite/README_en.rst
 - 已删除原 boards/hpm5e31_lite/README_zh.rst
+
+### hpm5e31_rmii_dp83848
+
+- Debug 构建：通过（DLM 82.8%，FLASH 12.9%）
+- Debug 烧录：通过
+- 调试器与串口：J-Link，UART0 对应 COM13
+- 工程用途：HPM5E31 通过 ENET0 RMII 连接外部 DP83848IVV，提供静态 IP 192.168.0.100、UDP echo、iperf TCP/UDP 测试
+- 硬件连线：PF03/04/07/08/09/10 + PA30/PA31 + PF14(reset)，DP83848 模块板载 50MHz 振荡器，HPM5E31 使用内部 PLL2 产生 50MHz MAC 时钟
+- PHY 地址：1（DP83848 默认地址）
+- 实测结果：
+  - PHY 初始化：通过（`Enet phy init passed !`）
+  - 链路协商：100Mbps Full duplex（自动协商）
+  - ping 192.168.0.100（-n 10）：8/10 通过，<1ms RTT（前 2 包 ARP 超时）
+  - ping 稳定（-n 5）：5/5，<1ms ✓
+  - UDP echo（端口 7）：已实现，Windows 防火墙（BlockInbound 策略）阻止响应回到测试 app，需管理员权限添加规则验证
+  - iperf UDP（PC→Board，键 `3`）：10 Mbps 稳定，有效吞吐 8.27 Mbps，丢包 10.4%；50 Mbps 触发 lwiperf 内部 bug 导致板复位
+  - iperf TCP 服务端（键 `1`）：约 134 kbps（已知 lwIP TCP 限制）
+- 已知问题：lwiperf UDP 高速（>20 Mbps）会触发 SDK lwiperf 内存问题导致板复位，建议参考 hpm5e31_lwip_rtl8211f 中的 lwiperf_local.c 修复方案
+- 详细说明：见 [hpm5e31_rmii_dp83848/README.md](hpm5e31_rmii_dp83848/README.md)
