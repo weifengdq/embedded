@@ -234,19 +234,32 @@ COM62  USB 串行设备
 
 ### hpm5e31_rmii_dp83848
 
-- Debug 构建：通过（DLM 82.8%，FLASH 12.9%）
+- Debug 构建：通过（DLM 71.7%，FLASH 12.9%）
 - Debug 烧录：通过
 - 调试器与串口：J-Link，UART0 对应 COM13
 - 工程用途：HPM5E31 通过 ENET0 RMII 连接外部 DP83848IVV，提供静态 IP 192.168.0.100、UDP echo、iperf TCP/UDP 测试
-- 硬件连线：PF03/04/07/08/09/10 + PA30/PA31 + PF14(reset)，DP83848 模块板载 50MHz 振荡器，HPM5E31 使用内部 PLL2 产生 50MHz MAC 时钟
+- 硬件连线：PF03/04/07/08/09/10 + PA30/PA31 + PF14(reset) + **PF02 外部 50MHz 时钟**
+- 时钟方案：DP83848 模块板载 50MHz 有源晶振，输出同时连接 DP83848 和 HPM5E31 PF02（共享时钟）
 - PHY 地址：1（DP83848 默认地址）
+- 软件修复：
+  - `src/ethernetif_local.c`：TX pbuf 链连续拷贝（原 SDK 只拷贝最后一段）、RX OOM 清理
+  - `src/lwiperf_local.c`：tcp_err 悬空 PCB、settings 分片累计、UDP close 超时清理、pbuf_clone OOM
+  - `board.c`：外部时钟模式下仍配置 PLL2→50MHz 供 MAC 总线
 - 实测结果：
   - PHY 初始化：通过（`Enet phy init passed !`）
   - 链路协商：100Mbps Full duplex（自动协商）
-  - ping 192.168.0.100（-n 10）：8/10 通过，<1ms RTT（前 2 包 ARP 超时）
-  - ping 稳定（-n 5）：5/5，<1ms ✓
-  - UDP echo（端口 7）：已实现，Windows 防火墙（BlockInbound 策略）阻止响应回到测试 app，需管理员权限添加规则验证
-  - iperf UDP（PC→Board，键 `3`）：10 Mbps 稳定，有效吞吐 8.27 Mbps，丢包 10.4%；50 Mbps 触发 lwiperf 内部 bug 导致板复位
-  - iperf TCP 服务端（键 `1`）：约 134 kbps（已知 lwIP TCP 限制）
-- 已知问题：lwiperf UDP 高速（>20 Mbps）会触发 SDK lwiperf 内存问题导致板复位，建议参考 hpm5e31_lwip_rtl8211f 中的 lwiperf_local.c 修复方案
+  - **ping：5/5，0% 丢失，<1ms RTT** ✅
+  - **UDP echo（端口 7）：通过** ✅
+  - **iperf UDP 10 Mbps：10.0 Mbps，0% 丢包，0.000ms jitter** ✅
+  - **iperf UDP 60 Mbps：60.0 Mbps，0% 丢包** ✅
+  - **iperf UDP 85 Mbps：84.6 Mbps** ✅（接近 100Mbps 线速上限）
+  - **iperf TCP：94.6 Mbps** ✅（改进前 ~134 kbps，提升 700 倍）
+- 测试总结：
+
+| 测试项 | 改进前 | 改进后 |
+|--------|--------|--------|
+| Ping 丢包 | 10~20%（ARP+频偏） | 0% |
+| UDP 10 Mbps 丢包 | 10.4% | 0% |
+| UDP 50 Mbps | 板复位 | 49.3 Mbps 稳定 |
+| TCP 带宽 | ~134 kbps | **94.6 Mbps** |
 - 详细说明：见 [hpm5e31_rmii_dp83848/README.md](hpm5e31_rmii_dp83848/README.md)
