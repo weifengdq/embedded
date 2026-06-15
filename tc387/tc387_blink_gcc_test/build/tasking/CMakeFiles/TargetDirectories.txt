@@ -1,0 +1,3 @@
+C:/git/embedded/tc387/tc387_blink_gcc_test/build/tasking/CMakeFiles/tc387_blink_gcc_test.dir
+C:/git/embedded/tc387/tc387_blink_gcc_test/build/tasking/CMakeFiles/edit_cache.dir
+C:/git/embedded/tc387/tc387_blink_gcc_test/build/tasking/CMakeFiles/rebuild_cache.dir

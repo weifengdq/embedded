@@ -1,0 +1,5 @@
+C:/git/embedded/tc387/tc387_blink_gcc_test/build/gcc/CMakeFiles/tc387_blink_gcc_test.dir
+C:/git/embedded/tc387/tc387_blink_gcc_test/build/gcc/CMakeFiles/tc387_blink_gcc_test_hex.dir
+C:/git/embedded/tc387/tc387_blink_gcc_test/build/gcc/CMakeFiles/tc387_blink_gcc_test_size.dir
+C:/git/embedded/tc387/tc387_blink_gcc_test/build/gcc/CMakeFiles/edit_cache.dir
+C:/git/embedded/tc387/tc387_blink_gcc_test/build/gcc/CMakeFiles/rebuild_cache.dir

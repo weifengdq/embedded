@@ -1,0 +1,189 @@
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/z/app/CMake/share/cmake-3.27/Modules/CMakeDetermineSystem.cmake:206 (message)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      The target system is: Generic -  - tricore
+      The host system is: Windows - 10.0.26200 - AMD64
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/z/app/CMake/share/cmake-3.27/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/z/app/CMake/share/cmake-3.27/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/z/app/CMake/share/cmake-3.27/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+      Compiler: C:/Infineon/AURIX-Studio-1.10.28/tools/Compilers/tricore-gcc11/bin/tricore-elf-gcc.exe 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
+      
+      The C compiler identification is GNU, found in:
+        C:/git/embedded/tc387/tc387_blink_gcc_test/build/gcc/CMakeFiles/3.27.4/CompilerIdC/a.out
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/z/app/CMake/share/cmake-3.27/Modules/CMakeDetermineCompilerId.cmake:1104 (message)"
+      - "C:/z/app/CMake/share/cmake-3.27/Modules/CMakeDetermineASMCompiler.cmake:127 (CMAKE_DETERMINE_COMPILER_ID_VENDOR)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      Checking whether the ASM compiler is GNU using "--version" matched "(GNU assembler)|(GCC)|(Free Software Foundation)":
+      tricore-elf-gcc.exe (AURIX(tm) GCC - Built 2025-09-08 17:02:36) 11.3.1 20221230
+      Copyright (C) 2021 Free Software Foundation, Inc.
+      This is free software; see the source for copying conditions.  There is NO
+      warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/z/app/CMake/share/cmake-3.27/Modules/CMakeDetermineCompilerABI.cmake:57 (try_compile)"
+      - "C:/z/app/CMake/share/cmake-3.27/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:2 (project)"
+    checks:
+      - "Detecting C compiler ABI info"
+    directories:
+      source: "C:/git/embedded/tc387/tc387_blink_gcc_test/build/gcc/CMakeFiles/CMakeScratch/TryCompile-e6dzap"
+      binary: "C:/git/embedded/tc387/tc387_blink_gcc_test/build/gcc/CMakeFiles/CMakeScratch/TryCompile-e6dzap"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "CMAKE_C_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/git/embedded/tc387/tc387_blink_gcc_test/build/gcc/CMakeFiles/CMakeScratch/TryCompile-e6dzap'
+        
+        Run Build Command(s): C:/Users/weife/AppData/Local/Microsoft/WinGet/Packages/Ninja-build.Ninja_Microsoft.Winget.Source_8wekyb3d8bbwe/ninja.exe -v cmTC_377c7
+        [1/2] C:\\Infineon\\AURIX-Studio-1.10.28\\tools\\Compilers\\tricore-gcc11\\bin\\tricore-elf-gcc.exe   -v -o CMakeFiles/cmTC_377c7.dir/CMakeCCompilerABI.c.obj -c C:/z/app/CMake/share/cmake-3.27/Modules/CMakeCCompilerABI.c
+        Using built-in specs.
+        COLLECT_GCC=C:\\Infineon\\AURIX-Studio-1.10.28\\tools\\Compilers\\tricore-gcc11\\bin\\tricore-elf-gcc.exe
+        Target: tricore-elf
+        Configured with: /home/ifxpadmclab/jenkins-slave/workspace/TriCore-GCC-Linux/tricore-gcc-toolchain/tricore-gcc/configure LDFLAGS=-static 'CFLAGS_FOR_TARGET=-O2 -gdwarf-3 -ffast-math -ffunction-sections -mfast-div -fno-common -mno-eabi-bitfield-limit' 'CPPFLAGS_FOR_TARGET=-O2 -gdwarf-3 -ffast-math -ffunction-sections -mfast-div -fno-common -mno-eabi-bitfield-limit' --with-pkgversion='AURIX(tm) GCC - Built 2025-09-08 17:02:36' --target=tricore-elf --host=x86_64-w64-mingw32 --enable-lib32 --disable-lib64 --prefix=/home/ifxpadmclab/jenkins-slave/workspace/TriCore-GCC-Linux/tricore-gcc-toolchain/INSTALL-WIN --enable-languages=c,c++ --enable-libstdcxx-debug-flags='-gdwarf-3 -g -O0 -D_GLIBCXX_ASSERTIONS' --enable-c99 --enable-long-long --enable-checking --enable-nls --enable-static --disable-threads --disable-shared --with-headers=yes --with-gnu-ld --with-gnu-as --with-newlib=yes --enable-mingw-wildcard --disable-libstdcxx-pch --enable-newlib-elix-level=3 --enable-newlib-io-long-long --disable-newlib-supplied-syscalls --disable-libssp --disable-test-suite
+        Thread model: single
+        Supported LTO compression algorithms: zlib
+        gcc version 11.3.1 20221230 (AURIX(tm) GCC - Built 2025-09-08 17:02:36) 
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_377c7.dir/CMakeCCompilerABI.c.obj' '-c' '-dumpdir' 'CMakeFiles/cmTC_377c7.dir/'
+         c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../libexec/gcc/tricore-elf/11.3.1/cc1.exe -quiet -v -iprefix c:\\infineon\\aurix-studio-1.10.28\\tools\\compilers\\tricore-gcc11\\bin\\../lib/gcc/tricore-elf/11.3.1/ C:/z/app/CMake/share/cmake-3.27/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_377c7.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -version -o C:\\Users\\weife\\AppData\\Local\\Temp\\cczPJpMd.s
+        GNU C17 (AURIX(tm) GCC - Built 2025-09-08 17:02:36) version 11.3.1 20221230 (tricore-elf)
+        	compiled by GNU C version 10-win32 20220113, GMP version 6.1.0, MPFR version 3.1.6, MPC version 1.0.3, isl version isl-0.18-GMP
+        
+        GGC heuristics: --param ggc-min-expand=30 --param ggc-min-heapsize=4096
+        ignoring nonexistent directory "c:\\infineon\\aurix-studio-1.10.28\\tools\\compilers\\tricore-gcc11\\bin\\../lib/gcc/tricore-elf/11.3.1/../../../../tricore-elf/sys-include"
+        ignoring duplicate directory "c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/lib/gcc/../../lib/gcc/tricore-elf/11.3.1/include"
+        ignoring duplicate directory "c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/lib/gcc/../../lib/gcc/tricore-elf/11.3.1/include-fixed"
+        ignoring nonexistent directory "c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/lib/gcc/../../lib/gcc/tricore-elf/11.3.1/../../../../tricore-elf/sys-include"
+        ignoring duplicate directory "c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/lib/gcc/../../lib/gcc/tricore-elf/11.3.1/../../../../tricore-elf/include"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         c:\\infineon\\aurix-studio-1.10.28\\tools\\compilers\\tricore-gcc11\\bin\\../lib/gcc/tricore-elf/11.3.1/include
+         c:\\infineon\\aurix-studio-1.10.28\\tools\\compilers\\tricore-gcc11\\bin\\../lib/gcc/tricore-elf/11.3.1/include-fixed
+         c:\\infineon\\aurix-studio-1.10.28\\tools\\compilers\\tricore-gcc11\\bin\\../lib/gcc/tricore-elf/11.3.1/../../../../tricore-elf/include
+        End of search list.
+        GNU C17 (AURIX(tm) GCC - Built 2025-09-08 17:02:36) version 11.3.1 20221230 (tricore-elf)
+        	compiled by GNU C version 10-win32 20220113, GMP version 6.1.0, MPFR version 3.1.6, MPC version 1.0.3, isl version isl-0.18-GMP
+        
+        GGC heuristics: --param ggc-min-expand=30 --param ggc-min-heapsize=4096
+        Compiler executable checksum: 4796e3ba5af94fd42d431e3ae53f746b
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_377c7.dir/CMakeCCompilerABI.c.obj' '-c' '-dumpdir' 'CMakeFiles/cmTC_377c7.dir/'
+         c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../lib/gcc/tricore-elf/11.3.1/../../../../tricore-elf/bin/as.exe -v --traditional-format -mtc13 -mcpu048 -mcpu060 -mcpu069 -mcpu070 -mcpu072 -mcpu081 -mcpu082 -mcpu083 -mcpu094 -mcpu095 -o CMakeFiles/cmTC_377c7.dir/CMakeCCompilerABI.c.obj C:\\Users\\weife\\AppData\\Local\\Temp\\cczPJpMd.s
+        GNU assembler version 2.40.50 (tricore-elf) using BFD version (GNU Binutils) 2.40.50.20230607
+        COMPILER_PATH=c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../libexec/gcc/tricore-elf/11.3.1/;c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../libexec/gcc/;c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../lib/gcc/tricore-elf/11.3.1/../../../../tricore-elf/bin/
+        LIBRARY_PATH=c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../lib/gcc/tricore-elf/11.3.1/;c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../lib/gcc/;c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../lib/gcc/tricore-elf/11.3.1/../../../../tricore-elf/lib/
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_377c7.dir/CMakeCCompilerABI.c.obj' '-c' '-dumpdir' 'CMakeFiles/cmTC_377c7.dir/CMakeCCompilerABI.c.'
+        [2/2] cmd.exe /C "cd . && C:\\z\\app\\CMake\\bin\\cmake.exe -E rm -f libcmTC_377c7.a && C:\\Infineon\\AURIX-Studio-1.10.28\\tools\\Compilers\\tricore-gcc11\\bin\\tricore-elf-ar.exe qc libcmTC_377c7.a  CMakeFiles/cmTC_377c7.dir/CMakeCCompilerABI.c.obj && C:\\Infineon\\AURIX-Studio-1.10.28\\tools\\Compilers\\tricore-gcc11\\bin\\tricore-elf-ranlib.exe libcmTC_377c7.a && cd ."
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/z/app/CMake/share/cmake-3.27/Modules/CMakeDetermineCompilerABI.cmake:127 (message)"
+      - "C:/z/app/CMake/share/cmake-3.27/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      Parsed C implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../lib/gcc/tricore-elf/11.3.1/include]
+          add: [c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../lib/gcc/tricore-elf/11.3.1/include-fixed]
+          add: [c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../lib/gcc/tricore-elf/11.3.1/../../../../tricore-elf/include]
+        end of search list found
+        collapse include dir [c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../lib/gcc/tricore-elf/11.3.1/include] ==> [C:/Infineon/AURIX-Studio-1.10.28/tools/Compilers/tricore-gcc11/lib/gcc/tricore-elf/11.3.1/include]
+        collapse include dir [c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../lib/gcc/tricore-elf/11.3.1/include-fixed] ==> [C:/Infineon/AURIX-Studio-1.10.28/tools/Compilers/tricore-gcc11/lib/gcc/tricore-elf/11.3.1/include-fixed]
+        collapse include dir [c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../lib/gcc/tricore-elf/11.3.1/../../../../tricore-elf/include] ==> [C:/Infineon/AURIX-Studio-1.10.28/tools/Compilers/tricore-gcc11/tricore-elf/include]
+        implicit include dirs: [C:/Infineon/AURIX-Studio-1.10.28/tools/Compilers/tricore-gcc11/lib/gcc/tricore-elf/11.3.1/include;C:/Infineon/AURIX-Studio-1.10.28/tools/Compilers/tricore-gcc11/lib/gcc/tricore-elf/11.3.1/include-fixed;C:/Infineon/AURIX-Studio-1.10.28/tools/Compilers/tricore-gcc11/tricore-elf/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/z/app/CMake/share/cmake-3.27/Modules/CMakeDetermineCompilerABI.cmake:152 (message)"
+      - "C:/z/app/CMake/share/cmake-3.27/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      Parsed C implicit link information:
+        link line regex: [^( *|.*[/\\])(tricore-elf-ld\\.exe|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        ignore line: [Change Dir: 'C:/git/embedded/tc387/tc387_blink_gcc_test/build/gcc/CMakeFiles/CMakeScratch/TryCompile-e6dzap']
+        ignore line: []
+        ignore line: [Run Build Command(s): C:/Users/weife/AppData/Local/Microsoft/WinGet/Packages/Ninja-build.Ninja_Microsoft.Winget.Source_8wekyb3d8bbwe/ninja.exe -v cmTC_377c7]
+        ignore line: [[1/2] C:\\Infineon\\AURIX-Studio-1.10.28\\tools\\Compilers\\tricore-gcc11\\bin\\tricore-elf-gcc.exe   -v -o CMakeFiles/cmTC_377c7.dir/CMakeCCompilerABI.c.obj -c C:/z/app/CMake/share/cmake-3.27/Modules/CMakeCCompilerABI.c]
+        ignore line: [Using built-in specs.]
+        ignore line: [COLLECT_GCC=C:\\Infineon\\AURIX-Studio-1.10.28\\tools\\Compilers\\tricore-gcc11\\bin\\tricore-elf-gcc.exe]
+        ignore line: [Target: tricore-elf]
+        ignore line: [Configured with: /home/ifxpadmclab/jenkins-slave/workspace/TriCore-GCC-Linux/tricore-gcc-toolchain/tricore-gcc/configure LDFLAGS=-static 'CFLAGS_FOR_TARGET=-O2 -gdwarf-3 -ffast-math -ffunction-sections -mfast-div -fno-common -mno-eabi-bitfield-limit' 'CPPFLAGS_FOR_TARGET=-O2 -gdwarf-3 -ffast-math -ffunction-sections -mfast-div -fno-common -mno-eabi-bitfield-limit' --with-pkgversion='AURIX(tm) GCC - Built 2025-09-08 17:02:36' --target=tricore-elf --host=x86_64-w64-mingw32 --enable-lib32 --disable-lib64 --prefix=/home/ifxpadmclab/jenkins-slave/workspace/TriCore-GCC-Linux/tricore-gcc-toolchain/INSTALL-WIN --enable-languages=c,c++ --enable-libstdcxx-debug-flags='-gdwarf-3 -g -O0 -D_GLIBCXX_ASSERTIONS' --enable-c99 --enable-long-long --enable-checking --enable-nls --enable-static --disable-threads --disable-shared --with-headers=yes --with-gnu-ld --with-gnu-as --with-newlib=yes --enable-mingw-wildcard --disable-libstdcxx-pch --enable-newlib-elix-level=3 --enable-newlib-io-long-long --disable-newlib-supplied-syscalls --disable-libssp --disable-test-suite]
+        ignore line: [Thread model: single]
+        ignore line: [Supported LTO compression algorithms: zlib]
+        ignore line: [gcc version 11.3.1 20221230 (AURIX(tm) GCC - Built 2025-09-08 17:02:36) ]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_377c7.dir/CMakeCCompilerABI.c.obj' '-c' '-dumpdir' 'CMakeFiles/cmTC_377c7.dir/']
+        ignore line: [ c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../libexec/gcc/tricore-elf/11.3.1/cc1.exe -quiet -v -iprefix c:\\infineon\\aurix-studio-1.10.28\\tools\\compilers\\tricore-gcc11\\bin\\../lib/gcc/tricore-elf/11.3.1/ C:/z/app/CMake/share/cmake-3.27/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_377c7.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -version -o C:\\Users\\weife\\AppData\\Local\\Temp\\cczPJpMd.s]
+        ignore line: [GNU C17 (AURIX(tm) GCC - Built 2025-09-08 17:02:36) version 11.3.1 20221230 (tricore-elf)]
+        ignore line: [	compiled by GNU C version 10-win32 20220113  GMP version 6.1.0  MPFR version 3.1.6  MPC version 1.0.3  isl version isl-0.18-GMP]
+        ignore line: []
+        ignore line: [GGC heuristics: --param ggc-min-expand=30 --param ggc-min-heapsize=4096]
+        ignore line: [ignoring nonexistent directory "c:\\infineon\\aurix-studio-1.10.28\\tools\\compilers\\tricore-gcc11\\bin\\../lib/gcc/tricore-elf/11.3.1/../../../../tricore-elf/sys-include"]
+        ignore line: [ignoring duplicate directory "c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/lib/gcc/../../lib/gcc/tricore-elf/11.3.1/include"]
+        ignore line: [ignoring duplicate directory "c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/lib/gcc/../../lib/gcc/tricore-elf/11.3.1/include-fixed"]
+        ignore line: [ignoring nonexistent directory "c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/lib/gcc/../../lib/gcc/tricore-elf/11.3.1/../../../../tricore-elf/sys-include"]
+        ignore line: [ignoring duplicate directory "c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/lib/gcc/../../lib/gcc/tricore-elf/11.3.1/../../../../tricore-elf/include"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ c:\\infineon\\aurix-studio-1.10.28\\tools\\compilers\\tricore-gcc11\\bin\\../lib/gcc/tricore-elf/11.3.1/include]
+        ignore line: [ c:\\infineon\\aurix-studio-1.10.28\\tools\\compilers\\tricore-gcc11\\bin\\../lib/gcc/tricore-elf/11.3.1/include-fixed]
+        ignore line: [ c:\\infineon\\aurix-studio-1.10.28\\tools\\compilers\\tricore-gcc11\\bin\\../lib/gcc/tricore-elf/11.3.1/../../../../tricore-elf/include]
+        ignore line: [End of search list.]
+        ignore line: [GNU C17 (AURIX(tm) GCC - Built 2025-09-08 17:02:36) version 11.3.1 20221230 (tricore-elf)]
+        ignore line: [	compiled by GNU C version 10-win32 20220113  GMP version 6.1.0  MPFR version 3.1.6  MPC version 1.0.3  isl version isl-0.18-GMP]
+        ignore line: []
+        ignore line: [GGC heuristics: --param ggc-min-expand=30 --param ggc-min-heapsize=4096]
+        ignore line: [Compiler executable checksum: 4796e3ba5af94fd42d431e3ae53f746b]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_377c7.dir/CMakeCCompilerABI.c.obj' '-c' '-dumpdir' 'CMakeFiles/cmTC_377c7.dir/']
+        ignore line: [ c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../lib/gcc/tricore-elf/11.3.1/../../../../tricore-elf/bin/as.exe -v --traditional-format -mtc13 -mcpu048 -mcpu060 -mcpu069 -mcpu070 -mcpu072 -mcpu081 -mcpu082 -mcpu083 -mcpu094 -mcpu095 -o CMakeFiles/cmTC_377c7.dir/CMakeCCompilerABI.c.obj C:\\Users\\weife\\AppData\\Local\\Temp\\cczPJpMd.s]
+        ignore line: [GNU assembler version 2.40.50 (tricore-elf) using BFD version (GNU Binutils) 2.40.50.20230607]
+        ignore line: [COMPILER_PATH=c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../libexec/gcc/tricore-elf/11.3.1/]
+        ignore line: [c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../libexec/gcc/]
+        ignore line: [c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../lib/gcc/tricore-elf/11.3.1/../../../../tricore-elf/bin/]
+        ignore line: [LIBRARY_PATH=c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../lib/gcc/tricore-elf/11.3.1/]
+        ignore line: [c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../lib/gcc/]
+        ignore line: [c:/infineon/aurix-studio-1.10.28/tools/compilers/tricore-gcc11/bin/../lib/gcc/tricore-elf/11.3.1/../../../../tricore-elf/lib/]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles/cmTC_377c7.dir/CMakeCCompilerABI.c.obj' '-c' '-dumpdir' 'CMakeFiles/cmTC_377c7.dir/CMakeCCompilerABI.c.']
+        ignore line: [[2/2] cmd.exe /C "cd . && C:\\z\\app\\CMake\\bin\\cmake.exe -E rm -f libcmTC_377c7.a && C:\\Infineon\\AURIX-Studio-1.10.28\\tools\\Compilers\\tricore-gcc11\\bin\\tricore-elf-ar.exe qc libcmTC_377c7.a  CMakeFiles/cmTC_377c7.dir/CMakeCCompilerABI.c.obj && C:\\Infineon\\AURIX-Studio-1.10.28\\tools\\Compilers\\tricore-gcc11\\bin\\tricore-elf-ranlib.exe libcmTC_377c7.a && cd ."]
+        ignore line: []
+        ignore line: []
+        implicit libs: []
+        implicit objs: []
+        implicit dirs: []
+        implicit fwks: []
+      
+      
+...
