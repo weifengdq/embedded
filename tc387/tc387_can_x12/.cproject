@@ -501,6 +501,7 @@
 							<tool id="com.infineon.aurix.buildsystem.managed.tool.c.objcopy.2055004737" name="AURIX Object Copy" superClass="com.infineon.aurix.buildsystem.managed.tool.c.objcopy"/>
 							<tool id="com.infineon.aurix.buildsystem.managed.tool.objdump.439122800" name="AURIX Create Listing" superClass="com.infineon.aurix.buildsystem.managed.tool.objdump"/>
 							<tool id="com.infineon.aurix.buildsystem.managed.tool.printsize.1730349483" name="AURIX Print Size" superClass="com.infineon.aurix.buildsystem.managed.tool.printsize"/>
+							<tool id="com.infineon.aurix.buildsystem.managed.tool.archiver.2081338942" name="AURIX Archiver" superClass="com.infineon.aurix.buildsystem.managed.tool.archiver"/>
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
@@ -713,6 +714,7 @@
 							<tool id="com.infineon.aurix.buildsystem.managed.tool.c.objcopy.1141453358" name="AURIX Object Copy" superClass="com.infineon.aurix.buildsystem.managed.tool.c.objcopy"/>
 							<tool id="com.infineon.aurix.buildsystem.managed.tool.objdump.414162184" name="AURIX Create Listing" superClass="com.infineon.aurix.buildsystem.managed.tool.objdump"/>
 							<tool id="com.infineon.aurix.buildsystem.managed.tool.printsize.1148767446" name="AURIX Print Size" superClass="com.infineon.aurix.buildsystem.managed.tool.printsize"/>
+							<tool id="com.infineon.aurix.buildsystem.managed.tool.archiver.1047218174" name="AURIX Archiver" superClass="com.infineon.aurix.buildsystem.managed.tool.archiver"/>
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
