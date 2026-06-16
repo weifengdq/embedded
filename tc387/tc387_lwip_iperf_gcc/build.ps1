@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-    tc387_blink_gcc_test CMake 命令行构建脚本（TriCore GCC + TASKING 双工具链）。
+    tc387_lwip_iperf_gcc CMake 命令行构建脚本（TriCore GCC + TASKING 双工具链）。
 
 .PARAMETER Action
     执行操作: configure | build（默认）| rebuild | clean | download | reset | all
@@ -58,7 +58,7 @@ param(
 
     [string]$BuildDir = "",
 
-    [string]$TargetName = "tc387_blink_gcc_test",
+    [string]$TargetName = "tc387_lwip_iperf_gcc",
 
     # ---- 高层路径（推导 GCC/TASKING/Flasher/make 子路径）----
     [string]$AurixStudioPath = "C:\Infineon\AURIX-Studio-1.10.28",

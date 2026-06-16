@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.24)
-project(tc387_blink_gcc_test LANGUAGES C ASM)
+﻿cmake_minimum_required(VERSION 3.24)
+project(tc387_lwip_iperf_gcc LANGUAGES C ASM)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
