@@ -1,6 +1,58 @@
 # embedded
 weifengdq's embedded
 
-所有板子都可到闲鱼搜索用户 weifengdq , 在主页中找到购买链接
+所有板子都可到闲鱼搜索用户 weifengdq , 在主页中找到购买链接, 或直接点击以下链接: 【闲鱼】https://m.tb.cn/h.RJLGTFF?tk=9gzPgSFTDTy tG-#22>lD 「这是我的闲鱼号，快来看看吧～」
 
 QQ 群(`嵌入式_机器人_自动驾驶交流群`): 1040239879, 所有板子资料在群公告网盘链接中免费下载, 欢迎进群潜水, 无需发言, 无需购买板子.
+
+TC387:
+
+![image-20260623112218257](README.assets/image-20260623112218257.png)
+
+S32K312:
+
+![image-20260623112607407](README.assets/image-20260623112607407.png)
+
+CYT2B95:
+
+![image-20260623112121967](README.assets/image-20260623112121967.png)
+
+GD32A503:
+
+![image-20260623114532196](README.assets/image-20260623114532196.png)
+
+HPM5E31:
+
+![image-20260623112855378](README.assets/image-20260623112855378.png)
+
+LAN9370, 5-Port 100BASE-T1 Gigabit Ethernet Switch:
+
+![image-20260623112716271](README.assets/image-20260623112716271.png)
+
+TJA1103, RMII-100BASE-T1:
+
+![image-20260623114356526](README.assets/image-20260623114356526.png)
+
+LAN8651, SPI-10BASE-T1S:
+
+![image-20260623113052528](README.assets/image-20260623113052528.png)
+
+LAN8671, RMII-10BASE-T1S:
+
+![image-20260623113241205](README.assets/image-20260623113241205.png)
+
+P3T1755, I3C:
+
+![image-20260623113145931](README.assets/image-20260623113145931.png)
+
+TCAN4550, SPI-CANFD:
+
+![image-20260623114154950](README.assets/image-20260623114154950.png)
+
+MCP251863, SPI-CANFD:
+
+![image-20260623113323208](README.assets/image-20260623113323208.png)
+
+SJA1124, SPI-4xLIN:
+
+![image-20260623113456205](README.assets/image-20260623113456205.png)

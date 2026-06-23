@@ -1,5 +1,23 @@
 ![image-20251120164148581](README.assets/image-20251120164148581.png)
 
+- [板子简介](#板子简介)
+- [软件固件](#软件固件)
+- [新建工程](#新建工程)
+- [重命名工程](#重命名工程)
+- [时钟树](#时钟树)
+- [GPIO](#gpio)
+- [Printf](#printf)
+- [ADC](#adc)
+- [Temp Vref](#temp-vref)
+- [I2C EEPROM 24C02](#i2c-eeprom-24c02)
+- [SPI Quad Flash 25Q16](#spi-quad-flash-25q16)
+- [CANFD 500K+2M](#canfd-500k2m)
+- [CANFD 1M+5M](#canfd-1m5m)
+- [LIN Master Slave](#lin-master-slave)
+- [立创开源](#立创开源)
+- [板子购买与QQ交流群](#板子购买与qq交流群)
+
+
 ## 板子简介
 
 GD32A503 评估板资源:
@@ -328,25 +346,15 @@ CAN 主时钟 100MHz:
 
 Break -> Sync (0x55) -> PID (0x3C) -> Data (8 bytes) -> Checksum
 
-## 交流群
+## 立创开源
 
-板子购买: 海鲜市场, weifengdq, 主页中可见
+板子已在立创开源平台发布, 有需要查看PCB的可以点击以下链接:
+
+"GD32A503 LIN CANFD 评估板 兆易创新车规MCU - 立创开源硬件平台" https://oshwhub.com/weifengdq/gd32a503
+
+## 板子购买与QQ交流群
+
+板子购买: 闲鱼搜索用户 weifengdq, 主页中可见, 或直接点击以下链接: 【闲鱼】https://m.tb.cn/h.RIyiJkT?tk=tOIxgSFwbiL tG-#22>lD 「我在闲鱼发布了【GD32A503开发板，兆易创新车规MCU, 评估板资源:】」
 
 QQ交流群 `嵌入式_机器人_自动驾驶_交流群`: 1040239879
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

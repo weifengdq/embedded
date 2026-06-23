@@ -213,6 +213,9 @@ SJA1124 通道1 请求 0x02 8字节 增强型校验, 收到从机发来的 8 字
 
 ## 购买与交流群
 
-【闲鱼】https://m.tb.cn/h.ips7IY2?tk=jmYq569VVIK tG-#22>lD 「我在闲鱼发布了【SJA1124 评估板, SPI 转 4路 LIN:】」 点击链接直接打开
+闲鱼搜索用户 weifengdq, 主页里可购买, 或者点击以下链接:
+
+【闲鱼】https://m.tb.cn/h.RrNkzuX?tk=JuuFgSvSJIy MF278 「我在闲鱼发布了【SJA1124 评估板, SPI 转 4路 LIN:】」
+点击链接直接打开
 
 Q 交流群: 1040239879

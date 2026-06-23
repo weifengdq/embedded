@@ -1,3 +1,15 @@
+- [hpm5e31\_lite Projects](#hpm5e31_lite-projects)
+  - [公共板级信息](#公共板级信息)
+  - [公共构建方法](#公共构建方法)
+  - [各工程测试结果](#各工程测试结果)
+    - [hpm5e31\_hello\_world](#hpm5e31_hello_world)
+    - [hpm5e31\_coremark](#hpm5e31_coremark)
+    - [hpm5e31\_gpio](#hpm5e31_gpio)
+    - [hpm5e31\_cherryusb\_cdc\_acm\_vcom](#hpm5e31_cherryusb_cdc_acm_vcom)
+    - [hpm5e31\_rmii\_dp83848](#hpm5e31_rmii_dp83848)
+  - [板子购买](#板子购买)
+
+
 # hpm5e31_lite Projects
 
 本目录当前包含 8 个基于自定义板 hpm5e31_lite 的 HPM5E31 工程：
@@ -162,3 +174,8 @@ COM62  USB 串行设备
 | UDP 50 Mbps | 板复位 | 49.3 Mbps 稳定 |
 | TCP 带宽 | ~134 kbps | **94.6 Mbps** |
 - 详细说明：见 [hpm5e31_rmii_dp83848/README.md](hpm5e31_rmii_dp83848/README.md)
+
+## 板子购买
+
+【闲鱼】https://m.tb.cn/h.RIyl3ab?tk=VjKRgSvZf7l CZ009 「我在闲鱼发布了【先楫 HPM5E31IPB1 最小系统板, 手贴了几块, 已】」
+点击链接直接打开

@@ -1292,6 +1292,7 @@ __attribute__((section(".dtcm_bss"))) struct canfd_frame_circlebuf can_tx_cbuf[C
 
 `嵌入式_机器人_自动驾驶交流` QQ群: 1040239879
 
-闲鱼: weifengdq
+闲鱼搜索用户 weifengdq, 主页里可购买, 或者点击以下链接:
 
-<img src="README.assets/image-20250928105137807.png" alt="image-20250928105137807" style="zoom:50%;" />
+【闲鱼】https://m.tb.cn/h.RqF4KDc?tk=2L4zgSv6upq CZ005 「我在闲鱼发布了【NXP S32K312 评估板 开发板 CANFD测试板，引】」
+点击链接直接打开

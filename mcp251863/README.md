@@ -307,7 +307,10 @@ https://github.com/weifengdq/embedded/tree/main/mcp251863
 
 ## 评估板购买方式
 
-![image-20250819112755541](README.assets/image-20250819112755541.png)
+闲鱼搜索用户 weifengdq, 主页里可购买, 或者点击以下链接:
+
+【闲鱼】https://m.tb.cn/h.RIyrFu1?tk=fOxIgSveiWZ CZ005 「我在闲鱼发布了【MCP251863评估板，SPI转CANFD, 是MCP25】」
+点击链接直接打开
 
 
 

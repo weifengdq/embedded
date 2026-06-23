@@ -1,7 +1,21 @@
 # CYT2B95
 
-[TOC]
-
+- [CYT2B95](#cyt2b95)
+  - [板子图片](#板子图片)
+  - [开发环境](#开发环境)
+  - [新建工程 LED Blink](#新建工程-led-blink)
+    - [Project Creator 创建工程](#project-creator-创建工程)
+    - [BSP Assistant 配置IO和时钟树](#bsp-assistant-配置io和时钟树)
+    - [打开工程编译下载](#打开工程编译下载)
+    - [HEX生成  JFlash烧录](#hex生成--jflash烧录)
+  - [UART print](#uart-print)
+  - [重建 mtb\_shared](#重建-mtb_shared)
+  - [mtb\_shared 库更新](#mtb_shared-库更新)
+  - [重命名工程](#重命名工程)
+  - [CAN x1 1M+5M CANFD](#can-x1-1m5m-canfd)
+  - [CAN x8 8路CANFD收发测试](#can-x8-8路canfd收发测试)
+  - [板子购买 资料下载](#板子购买-资料下载)
+  - [参考链接](#参考链接)
 
 
 ## 板子图片
@@ -688,7 +702,10 @@ CAN分析仪逐个连接8路CANFD, 测试echo, 如下8路均能正常 echo:
 
 ## 板子购买 资料下载
 
-xian yu 搜索用户 weifengdq, 主页里可购买 CYT2B95开发板.
+闲鱼搜索用户 weifengdq, 主页里可购买 CYT2B95开发板, 或者点击以下链接:
+
+【闲鱼】https://m.tb.cn/h.RJoouKc?tk=57XegSu2Gom HU108 「我在闲鱼发布了【CYT2B95开发板，英飞凌 TRAVEO II 评估板，智】」
+点击链接直接打开
 
 QQ 群(`嵌入式_机器人_自动驾驶交流群`): 1040239879
 

@@ -183,7 +183,8 @@ Github 开源链接 https://github.com/weifengdq/embedded/tree/main/lan8671
 
 ## 购买与交流群
 
-【闲鱼】https://m.tb.cn/h.ipLxBxD?tk=Xk6W5gnc8ee HU287 「我在闲鱼发布了【LAN8671 10BASE-T1S 评估板:】」 点击链接直接打开
+【闲鱼】https://m.tb.cn/h.RqFbHaC?tk=6i9CgSvdMJJ CZ028 「我在闲鱼发布了【LAN8671 10BASE-T1S 评估板:】」
+点击链接直接打开
 
 QQ 交流群: 1040239879
 
