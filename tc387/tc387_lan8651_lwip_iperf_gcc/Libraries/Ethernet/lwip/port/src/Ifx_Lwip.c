@@ -47,11 +47,9 @@
 /******************************************************************************/
 #include <Cpu/Std/Ifx_Types.h>
 #include <Cpu/Std/IfxCpu.h>
-#include "IfxGeth_Eth.h"
 #include "Ifx_Lwip.h"
 #include "lwipopts.h"
 #include "Ifx_Netif.h"
-#include "IfxGeth_Phy_Rtl8211f.h"
 #include "Configuration.h"
 #include <string.h>
 #include <stdarg.h>
@@ -208,11 +206,8 @@
 
 volatile uint32 g_TickCount_1ms;
 Ifx_Lwip    g_Lwip;
-IfxGeth_Eth g_IfxGeth;
 uint32 isrTxCount=0;
 uint32 isrRxCount=0;
-uint8 channel0TxBuffer1[IFXGETH_MAX_TX_DESCRIPTORS][IFXGETH_MAX_TX_BUFFER_SIZE];
-uint8 channel0RxBuffer1[IFXGETH_MAX_RX_DESCRIPTORS][IFXGETH_MAX_RX_BUFFER_SIZE];
 
 
 /******************************************************************************/
@@ -316,30 +311,10 @@ void Ifx_Lwip_pollTimerFlags(void)
 
     if (timerFlags & IFX_LWIP_FLAG_LINK)
     {
-        Ifx_GETH_MAC_PHYIF_CONTROL_STATUS ctrl_status;
-        ctrl_status.U = GETH_MAC_PHYIF_CONTROL_STATUS.U;
-        if (ctrl_status.B.LNKSTS == 0)
+        if (lan8651_link_up(&g_lan8651) == FALSE)
             netif_set_link_down(&g_Lwip.netif);
-        else {
-            IfxGeth_Eth *ethernetif = g_Lwip.netif.state;
-            // we set the correct duplexMode
-            if (ctrl_status.B.LNKMOD == 1)
-                IfxGeth_mac_setDuplexMode(ethernetif->gethSFR, IfxGeth_DuplexMode_fullDuplex);
-            else
-                IfxGeth_mac_setDuplexMode(ethernetif->gethSFR, IfxGeth_DuplexMode_halfDuplex);
-            // we set the correct speed
-            if (ctrl_status.B.LNKSPEED == 0)
-                // 10MBit speed
-                IfxGeth_mac_setLineSpeed(ethernetif->gethSFR, IfxGeth_LineSpeed_10Mbps);
-            else
-                if (ctrl_status.B.LNKSPEED == 1)
-                    // 100MBit speed
-                    IfxGeth_mac_setLineSpeed(ethernetif->gethSFR, IfxGeth_LineSpeed_100Mbps);
-                else
-                    // 1000MBit speed
-                    IfxGeth_mac_setLineSpeed(ethernetif->gethSFR, IfxGeth_LineSpeed_1000Mbps);
+        else
             netif_set_link_up(&g_Lwip.netif);
-        }
     }
 }
 

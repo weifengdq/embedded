@@ -68,6 +68,13 @@ if(NOT AURIX_SOURCE_FILES)
     message(FATAL_ERROR "No C source files were found after applying exclusions.")
 endif()
 
+# Force include QSPI and DMA driver sources required by LAN8651 SPI backend.
+list(APPEND AURIX_SOURCE_FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC3xx/Tricore/Qspi/SpiMaster/IfxQspi_SpiMaster.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC3xx/Tricore/Qspi/Std/IfxQspi.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC3xx/Tricore/Dma/Dma/IfxDma_Dma.c"
+)
+
 # ---------- 构建目标 ----------
 add_executable(${PROJECT_NAME} ${AURIX_SOURCE_FILES} ${AURIX_HEADER_FILES})
 

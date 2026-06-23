@@ -71,7 +71,7 @@
 #include "lwip/init.h"
 #include "netif/etharp.h"
 #include "netif/ppp/pppoe.h"
-#include "IfxGeth_Eth.h"
+#include "lan8651.h"
 
 //________________________________________________________________________________________
 // HELPER MACROS
@@ -140,9 +140,7 @@ typedef struct
 // GLOBAL VARIABLES
 IFX_EXTERN volatile uint32 g_TickCount_1ms;
 IFX_EXTERN Ifx_Lwip g_Lwip;
-IFX_EXTERN IfxGeth_Eth g_IfxGeth;
-IFX_EXTERN uint8 channel0TxBuffer1[IFXGETH_MAX_TX_DESCRIPTORS][IFXGETH_MAX_TX_BUFFER_SIZE];
-IFX_EXTERN uint8 channel0RxBuffer1[IFXGETH_MAX_RX_DESCRIPTORS][IFXGETH_MAX_RX_BUFFER_SIZE];
+IFX_EXTERN lan8651_t g_lan8651;
 
 //________________________________________________________________________________________
 // FUNCTION PROTOTYPES
@@ -159,7 +157,7 @@ IFX_INLINE uint8   *Ifx_Lwip_getIpAddrPtr(void);
 IFX_INLINE uint8   *Ifx_Lwip_getHwAddrPtr(void);
 
 /* This function is used to get the low-level driver */
-IFX_INLINE IfxGeth_Eth *IfxGeth_get(void);
+IFX_INLINE lan8651_t *IfxLan8651_get(void);
 
 /** \} */
 //________________________________________________________________________________________
@@ -186,9 +184,9 @@ IFX_INLINE uint8 *Ifx_Lwip_getHwAddrPtr(void)
 }
 
 /* This function is used to get the low-level driver */
-IFX_INLINE IfxGeth_Eth *IfxGeth_get(void)
+IFX_INLINE lan8651_t *IfxLan8651_get(void)
 {
-    return &g_IfxGeth;
+    return &g_lan8651;
 }
 
 
