@@ -11,7 +11,7 @@
 - [tc387\_can\_x12](#tc387_can_x12)
 - [tc387\_lwip\_ping](#tc387_lwip_ping)
 - [tc387\_lwip\_iperf](#tc387_lwip_iperf)
-- [交流群](#交流群)
+- [板子购买与QQ交流群](#板子购买与qq交流群)
 
 
 
@@ -526,8 +526,10 @@ GethConfig.mtl.rxQueue[0].rxQueueSize = IfxGeth_QueueSize_8192Bytes;
 
 ![image-20251112170406649](README.assets/image-20251112170406649.png)
 
-## 交流群
+## 板子购买与QQ交流群
 
 `嵌入式_机器人_自动驾驶交流群`: 1040239879
 
-购买方式: xian yu 搜索用户 weifengdq, 在主页中查找.
+闲鱼搜索用户 weifengdq, 主页里可购买, 或者点击以下链接:
+
+【闲鱼】https://m.tb.cn/h.RJIXJo2?tk=qyNRgSxNZsy CZ001 「我在闲鱼发布了【英飞凌 AURIX TC387 评估板:】」

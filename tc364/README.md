@@ -262,10 +262,10 @@ MCU背面的开窗开的有些大, 开出了一条 1.25V 的走线, 注意不要
 
 ## 购买链接与交流群
 
+闲鱼搜索用户 weifengdq, 主页里可购买, 或者点击以下链接:
+
+【闲鱼】https://m.tb.cn/h.RJIYhoQ?tk=wJGvgSxOdmH CZ028 「我在闲鱼发布了【TC364 评估板 开发板，TQFP144封装的TC364,】」
+
 QQ 交流群
 
 ![image-20250926161949694](README.assets/image-20250926161949694.png)
-
-闲鱼搜索用户 weifengdq, 主页里可购买, 或者点击以下链接:
-
-![image-20250926161819745](README.assets/image-20250926161819745.png)
