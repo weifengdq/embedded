@@ -71,6 +71,8 @@
 
 #define LAN8651_SPI_BAUDRATE         (1000000U)
 
+#define LAN8651_FORCE_LINK_UP        (1U)
+
 #define LAN8651_PLCA_ENABLE          (1U)
 #define LAN8651_PLCA_NODE_ID         (1U)
 #define LAN8651_PLCA_NODE_COUNT      (8U)

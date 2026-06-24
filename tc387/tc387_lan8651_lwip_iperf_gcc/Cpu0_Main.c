@@ -33,13 +33,63 @@
 #include "ConfigurationIsr.h"
 #include "Ifx_Lwip.h"
 #include "lwip/apps/lwiperf.h"
+#include "lwip/etharp.h"
+#include "lwip/ip_addr.h"
+#include "lwip/pbuf.h"
+#include "lwip/udp.h"
 #include "lan8651.h"
 #include "Bsp.h"
+#include "UART_Logging.h"
 
 /*********************************************************************************************************************/
 /*-------------------------------------------------Global variables--------------------------------------------------*/
 /*********************************************************************************************************************/
 IfxCpu_syncEvent cpuSyncEvent = 0;
+
+#define UDP_ECHO_PORT 9U
+
+static struct udp_pcb *g_udpEchoPcb = NULL_PTR;
+static uint8_t g_arp_sent = 0U;
+
+static void udp_echo_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p,
+    const ip_addr_t *addr, u16_t port)
+{
+    LWIP_UNUSED_ARG(arg);
+
+    if (p == NULL)
+    {
+        return;
+    }
+
+    udp_sendto(pcb, p, addr, port);
+    pbuf_free(p);
+}
+
+static void udp_echo_init(void)
+{
+    err_t err;
+
+    g_udpEchoPcb = udp_new_ip_type(IPADDR_TYPE_ANY);
+
+    if (g_udpEchoPcb == NULL)
+    {
+        Ifx_Lwip_printf("UDP echo pcb alloc failed");
+        return;
+    }
+
+    err = udp_bind(g_udpEchoPcb, IP_ANY_TYPE, UDP_ECHO_PORT);
+
+    if (err != ERR_OK)
+    {
+        Ifx_Lwip_printf("UDP echo bind failed: %d", (int)err);
+        udp_remove(g_udpEchoPcb);
+        g_udpEchoPcb = NULL_PTR;
+        return;
+    }
+
+    udp_recv(g_udpEchoPcb, udp_echo_recv, NULL_PTR);
+    Ifx_Lwip_printf("UDP echo listening on port %u", (unsigned)UDP_ECHO_PORT);
+}
 
 #if LWIP_TCP
 static void
@@ -61,6 +111,12 @@ lwiperf_report(void *arg, enum lwiperf_report_type report_type,
 /*********************************************************************************************************************/
 void core0_main (void)
 {
+    boolean lastLinkUp = FALSE;
+    char ipAddrText[16];
+    char netMaskText[16];
+    char gatewayText[16];
+    uint32_t lastDiagTick = 0U;
+
     /* Enable the global interrupts of this CPU */
     IfxCpu_enableInterrupts();
 
@@ -82,6 +138,11 @@ void core0_main (void)
     stmCompareConfig.typeOfService       = IfxSrc_Tos_cpu0;                 /* CPU0 serves the interrupts                   */
     IfxStm_initCompare(&MODULE_STM0, &stmCompareConfig);                    /* Initialize the Compare functionality         */
 
+#ifdef __LWIP_DEBUG__
+    initUART();
+    Ifx_Lwip_printf("Booting TC387 LAN8651 firmware");
+#endif
+
     {
         uint8_t mac[6] = {
             LAN8651_MAC0,
@@ -95,6 +156,16 @@ void core0_main (void)
         ip_addr_t ipAddr  = IPADDR4_INIT_BYTES(LAN8651_IP_ADDR0, LAN8651_IP_ADDR1, LAN8651_IP_ADDR2, LAN8651_IP_ADDR3);
         ip_addr_t netMask = IPADDR4_INIT_BYTES(LAN8651_NETMASK0, LAN8651_NETMASK1, LAN8651_NETMASK2, LAN8651_NETMASK3);
         ip_addr_t gateway = IPADDR4_INIT_BYTES(LAN8651_GATEWAY0, LAN8651_GATEWAY1, LAN8651_GATEWAY2, LAN8651_GATEWAY3);
+        uint32_t oaConfig0 = 0U;
+        uint32_t plcaCtrl0 = 0U;
+        uint32_t plcaCtrl1 = 0U;
+        uint32_t plcaTotmr = 0U;
+        uint32_t plcaBurst = 0U;
+        uint32_t plcaSts = 0U;
+        uint32_t phyBmcr = 0U;
+        uint32_t phyBmsr = 0U;
+        uint32_t macNcr = 0U;
+        uint32_t macNcfgr = 0U;
 
         ethAddr.addr[0] = mac[0];
         ethAddr.addr[1] = mac[1];
@@ -125,17 +196,99 @@ void core0_main (void)
             }
         }
 
+        if ((lan8651_read_reg(&g_lan8651, LAN8651_OA_CONFIG0, &oaConfig0) == kLan8651Status_Ok) &&
+            (lan8651_read_reg(&g_lan8651, LAN8651_PLCA_CTRL0, &plcaCtrl0) == kLan8651Status_Ok) &&
+            (lan8651_read_reg(&g_lan8651, LAN8651_PLCA_CTRL1, &plcaCtrl1) == kLan8651Status_Ok) &&
+            (lan8651_read_reg(&g_lan8651, LAN8651_PLCA_TOTMR, &plcaTotmr) == kLan8651Status_Ok) &&
+            (lan8651_read_reg(&g_lan8651, LAN8651_PLCA_BURST, &plcaBurst) == kLan8651Status_Ok) &&
+            (lan8651_read_reg(&g_lan8651, LAN8651_PLCA_STS, &plcaSts) == kLan8651Status_Ok) &&
+            (lan8651_read_reg(&g_lan8651, LAN8651_PHY_BMCR, &phyBmcr) == kLan8651Status_Ok) &&
+            (lan8651_read_reg(&g_lan8651, LAN8651_PHY_BMSR, &phyBmsr) == kLan8651Status_Ok) &&
+            (lan8651_read_reg(&g_lan8651, LAN8651_MAC_NCR, &macNcr) == kLan8651Status_Ok) &&
+            (lan8651_read_reg(&g_lan8651, LAN8651_MAC_NCFGR, &macNcfgr) == kLan8651Status_Ok))
+        {
+            Ifx_Lwip_printf("cfg: oa=0x%04lX plca0=0x%04lX plca1=0x%04lX to=0x%04lX burst=0x%04lX pst=%u bmcr=0x%04lX bmsr=0x%04lX ncr=0x%02lX ncfgr=0x%08lX",
+                (unsigned long)(oaConfig0 & 0xFFFFU),
+                (unsigned long)(plcaCtrl0 & 0xFFFFU),
+                (unsigned long)(plcaCtrl1 & 0xFFFFU),
+                (unsigned long)(plcaTotmr & 0xFFFFU),
+                (unsigned long)(plcaBurst & 0xFFFFU),
+                (unsigned)((plcaSts & LAN8651_PLCA_STS_PST) != 0U),
+                (unsigned long)(phyBmcr & 0xFFFFU),
+                (unsigned long)(phyBmsr & 0xFFFFU),
+                (unsigned long)(macNcr & 0xFFU),
+                (unsigned long)macNcfgr);
+        }
+        else
+        {
+            Ifx_Lwip_printf("cfg: register readback failed");
+        }
+
         Ifx_Lwip_init_with_ip(ethAddr, ipAddr, netMask, gateway);
+        ipaddr_ntoa_r(&ipAddr, ipAddrText, sizeof(ipAddrText));
+        ipaddr_ntoa_r(&netMask, netMaskText, sizeof(netMaskText));
+        ipaddr_ntoa_r(&gateway, gatewayText, sizeof(gatewayText));
+        Ifx_Lwip_printf("LAN8651 started, MAC=%02X:%02X:%02X:%02X:%02X:%02X",
+            mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+        Ifx_Lwip_printf("Static IP=%s MASK=%s GW=%s",
+            ipAddrText, netMaskText, gatewayText);
+        udp_echo_init();
     }
 
 #if LWIP_TCP
     lwiperf_start_tcp_server_default(lwiperf_report, NULL);
+    Ifx_Lwip_printf("lwIP iperf server ready");
 #endif
 
     while (1)
     {
-        Ifx_Lwip_pollTimerFlags();                          /* Poll LwIP timers and trigger protocols execution if required */
-        Ifx_Lwip_pollReceiveFlags();                        /* Receive data package through ETH                             */
+        Ifx_Lwip_pollTimerFlags();
+        Ifx_Lwip_pollReceiveFlags();
+
+        {
+            boolean currentLinkUp = lan8651_link_up(&g_lan8651);
+
+            if (currentLinkUp != lastLinkUp)
+        {
+                lastLinkUp = currentLinkUp;
+                Ifx_Lwip_printf("LAN8651 link %s", lastLinkUp != FALSE ? "up" : "down");
+
+                if ((lastLinkUp != FALSE) && (g_arp_sent == 0U))
+                {
+                    g_arp_sent = 1U;
+                    if (etharp_gratuitous(&g_Lwip.netif) == ERR_OK)
+                    {
+                        Ifx_Lwip_printf("gratuitous_arp=sent");
+                    }
+                }
+            }
+        }
+
+#if 0 /* Periodic diagnostics - enable for debugging */
+        if ((g_TickCount_1ms - lastDiagTick) >= 30000U)
+        {
+            uint32_t oaStatus0 = 0U;
+            uint32_t plcaSts = 0U;
+            uint32_t bmsr = 0U;
+            uint32_t bufsts = 0U;
+
+            lastDiagTick = g_TickCount_1ms;
+
+            if ((lan8651_read_reg(&g_lan8651, LAN8651_OA_STATUS0, &oaStatus0) == kLan8651Status_Ok) &&
+                (lan8651_read_reg(&g_lan8651, LAN8651_PLCA_STS, &plcaSts) == kLan8651Status_Ok) &&
+                (lan8651_read_reg(&g_lan8651, LAN8651_PHY_BMSR, &bmsr) == kLan8651Status_Ok) &&
+                (lan8651_read_reg(&g_lan8651, LAN8651_OA_BUFSTS, &bufsts) == kLan8651Status_Ok))
+            {
+                Ifx_Lwip_printf("diag: sync=%u pst=%u phy_link=%u irq=%u rba=%lu txc=%lu",
+                    (unsigned)((oaStatus0 & LAN8651_OA_STATUS0_SYNC) != 0U),
+                    (unsigned)((plcaSts & LAN8651_PLCA_STS_PST) != 0U),
+                    (unsigned)((bmsr & LAN8651_PHY_BMSR_LINK_STATUS) != 0U),
+                    (unsigned)(lan8651_irq_asserted(&g_lan8651) ? 1U : 0U),
+                    (unsigned long)(bufsts & LAN8651_OA_BUFSTS_RBA_MASK),
+                    (unsigned long)((bufsts & LAN8651_OA_BUFSTS_TXC_MASK) >> LAN8651_OA_BUFSTS_TXC_SHIFT));
+            }
+        }
+#endif
     }
 }
 

@@ -455,6 +455,8 @@ lan8651_status_t lan8651_init(lan8651_t *dev,
 
     IfxQspi_SpiMaster_initChannelConfig(&channelConfig, &dev->spi);
     channelConfig.ch.baudrate = LAN8651_SPI_BAUDRATE;
+    channelConfig.ch.mode.autoCS = 0;
+    channelConfig.ch.mode.shiftClock = IfxQspi_ShiftClock_shiftTransmitDataOnTrailingEdge;
     channelConfig.sls.output = slso;
     IfxQspi_SpiMaster_initChannel(&dev->spiChannel, &channelConfig);
 

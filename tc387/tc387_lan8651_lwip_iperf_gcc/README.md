@@ -97,11 +97,18 @@ QSPI2 中断优先级（也在 `Configuration.h`）：
 ./build.ps1 -Action build -Compiler gcc
 ```
 
-当前状态：
-- 编译通过到链接阶段。
-- 在当前机器上遇到 TriCore GCC 链接器临时响应文件错误：
-  - `ld.exe: cannot find @C:\WINDOWS\TEMP\ccXXXXXX: Invalid argument`
-- 该问题为工具链/环境问题（非本次代码语法问题）。
+当前实测：
+- GCC 已可完整编译并链接成功。
+- GCC 产物可正常通过 AURIXFlasher 下载。
+
+若出现 TriCore GCC 链接器临时响应文件错误（例如 `ld.exe: cannot find @C:\WINDOWS\TEMP\ccXXXXXX`），可在构建前指定临时目录后重试：
+
+```powershell
+New-Item -ItemType Directory -Path C:\Temp -Force | Out-Null
+$env:TEMP = "C:\Temp"
+$env:TMP  = "C:\Temp"
+./build.ps1 -Action rebuild -Compiler gcc
+```
 
 ## 5. 功能测试步骤
 
@@ -142,6 +149,35 @@ cd C:\git\embedded\tc387\bak
 ./iperf.exe -c 192.168.1.100 -i 1 -t 10
 ```
 
+### 5.5 最新实测结果（2026-06-23）
+
+- TASKING：
+  - 编译链接通过。
+  - 下载通过。
+  - 串口启动日志确认：
+    - `Booting TC387 LAN8651 firmware`
+    - LAN8651 寄存器配置输出
+    - `LAN8651 started, MAC=02:00:00:10:BA:5E`
+    - `Static IP=192.168.1.100 MASK=255.255.255.0 GW=192.168.1.1`
+    - `UDP echo listening on port 9`
+    - `lwIP iperf server ready`
+    - `LAN8651 link up` + `gratuitous_arp=sent`
+- 网络功能：
+  - ✅ **Ping**: `ping 192.168.1.100 -n 4` → **4/4 回复**，平均延迟 7ms（最短 3ms，最长 20ms）
+  - ✅ **UDP Echo**: 发送到 `192.168.1.100:9` → 正确回显
+  - ✅ **iperf TCP**: 连接成功，平均吞吐 ~173 Kbits/sec（10BASE-T1S + 1MHz SPI 限制）
+- GCC：
+  - 清理重建成功。
+  - 下载成功（若遇到链接器临时文件错误，参考第 4.2 节的 `TEMP` 环境变量解决方法）。
+
+#### 关键修复说明
+
+网络不通的根因是 **lwIP `ETH_PAD_SIZE` 与 pbuf 对齐**：
+- `ETH_PAD_SIZE=2` 时，lwIP 的 `struct eth_hdr` 在 MAC 字段前包含 2 字节填充
+- **RX 路径**：`PBUF_RAW` pbuf 必须在以太网帧前手动添加 `ETH_PAD_SIZE` 字节零填充
+- **TX 路径**：lwIP pbuf payload 前 `ETH_PAD_SIZE` 字节为填充，发送到线路上时必须跳过
+- 同时需要正确配置 QSPI SPI 模式（Mode 0：`shiftTransmitDataOnTrailingEdge`）和手动 CS 控制（`autoCS=0`）
+
 ## 6. 本次修改文件清单
 
 - `Cpu0_Main.c`
@@ -164,3 +200,4 @@ cd C:\git\embedded\tc387\bak
    - USB-10BASE-T1S 适配器的 IPv4 配置
 3. PLCA 多节点测试时请避免 Node ID 冲突。
 4. 若需更高吞吐，可尝试提升 `LAN8651_SPI_BAUDRATE`（并结合逻辑分析仪验证时序裕量）。
+5. 若 COM9 被占用，串口抓日志会失败（`Access to the path 'COM9' is denied`）；请先关闭其他串口工具后再测试。

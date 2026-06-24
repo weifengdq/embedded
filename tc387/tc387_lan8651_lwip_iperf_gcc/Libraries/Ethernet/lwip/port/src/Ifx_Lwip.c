@@ -311,7 +311,13 @@ void Ifx_Lwip_pollTimerFlags(void)
 
     if (timerFlags & IFX_LWIP_FLAG_LINK)
     {
-        if (lan8651_link_up(&g_lan8651) == FALSE)
+        boolean linkUp = lan8651_link_up(&g_lan8651);
+
+#if LAN8651_FORCE_LINK_UP
+        linkUp = TRUE;
+#endif
+
+        if (linkUp == FALSE)
             netif_set_link_down(&g_Lwip.netif);
         else
             netif_set_link_up(&g_Lwip.netif);
