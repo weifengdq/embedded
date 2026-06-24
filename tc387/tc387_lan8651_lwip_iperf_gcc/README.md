@@ -62,7 +62,7 @@ TC387 + LAN8651 (10BASE-T1S, OA-TC6 over SPI/QSPI2) + LwIP 示例工程。
 位于 `Configurations/Configuration.h`：
 
 - LAN8651 线序与引脚：`LAN8651_RST_*`, `LAN8651_INT_*`
-- SPI 速率：`LAN8651_SPI_BAUDRATE` (默认 1MHz)
+- SPI 速率：`LAN8651_SPI_BAUDRATE` (默认 20MHz)
 - PLCA：
   - `LAN8651_PLCA_ENABLE` = 1
   - `LAN8651_PLCA_NODE_ID` = 1
@@ -149,34 +149,45 @@ cd C:\git\embedded\tc387\bak
 ./iperf.exe -c 192.168.1.100 -i 1 -t 10
 ```
 
-### 5.5 最新实测结果（2026-06-23）
+### 5.5 最新实测结果（2026-06-24）
 
-- TASKING：
-  - 编译链接通过。
-  - 下载通过。
-  - 串口启动日志确认：
-    - `Booting TC387 LAN8651 firmware`
-    - LAN8651 寄存器配置输出
-    - `LAN8651 started, MAC=02:00:00:10:BA:5E`
-    - `Static IP=192.168.1.100 MASK=255.255.255.0 GW=192.168.1.1`
-    - `UDP echo listening on port 9`
-    - `lwIP iperf server ready`
-    - `LAN8651 link up` + `gratuitous_arp=sent`
+- SPI 速率：20MHz
+- 编译：
+  - **TASKING**: 0 errors, 自定义代码 **零警告**（仅 lwIP/iLLD 库有第三方警告）
+  - **GCC**: 0 errors, 自定义代码 **零警告**
+  - 两个编译器均可正常下载运行
+- 串口启动日志确认：
+  - `Booting TC387 LAN8651 firmware`
+  - LAN8651 寄存器配置输出
+  - `LAN8651 started, MAC=02:00:00:10:BA:5E`
+  - `Static IP=192.168.1.100 MASK=255.255.255.0 GW=192.168.1.1`
+  - `UDP echo listening on port 9`
+  - `lwIP iperf server ready`
+  - `LAN8651 link up` + `gratuitous_arp=sent`
 - 网络功能：
-  - ✅ **Ping**: `ping 192.168.1.100 -n 4` → **4/4 回复**，平均延迟 7ms（最短 3ms，最长 20ms）
+  - ✅ **Ping**: `ping 192.168.1.100 -n 4` → **4/4 回复**，平均延迟 3ms
   - ✅ **UDP Echo**: 发送到 `192.168.1.100:9` → 正确回显
-  - ✅ **iperf TCP**: 连接成功，平均吞吐 ~173 Kbits/sec（10BASE-T1S + 1MHz SPI 限制）
-- GCC：
-  - 清理重建成功。
-  - 下载成功（若遇到链接器临时文件错误，参考第 4.2 节的 `TEMP` 环境变量解决方法）。
+  - ✅ **iperf TCP**:
 
-#### 关键修复说明
+| 编译器 | iperf 吞吐 | 说明 |
+|--------|-----------|------|
+| TASKING | **8.22 Mbits/sec** | 接近 10BASE-T1S 理论极限 |
+| GCC | **8.30 Mbits/sec** | 略优于 TASKING |
 
-网络不通的根因是 **lwIP `ETH_PAD_SIZE` 与 pbuf 对齐**：
-- `ETH_PAD_SIZE=2` 时，lwIP 的 `struct eth_hdr` 在 MAC 字段前包含 2 字节填充
-- **RX 路径**：`PBUF_RAW` pbuf 必须在以太网帧前手动添加 `ETH_PAD_SIZE` 字节零填充
-- **TX 路径**：lwIP pbuf payload 前 `ETH_PAD_SIZE` 字节为填充，发送到线路上时必须跳过
-- 同时需要正确配置 QSPI SPI 模式（Mode 0：`shiftTransmitDataOnTrailingEdge`）和手动 CS 控制（`autoCS=0`）
+> STM32/HPM5361 基准约 8.7 Mbits/sec，TC387 在 20MHz SPI 下已达 8.3 Mbits/sec（~95%），
+> 剩余差距主要来自 CPU 架构差异和 10BASE-T1S 物理层开销。
+
+### 5.6 性能优化建议
+
+当前 `LAN8651_SPI_BAUDRATE = 20MHz`，LAN8651 最大 SPI 时钟为 25MHz。若需进一步提升：
+
+1. **提高 SPI 速率**：将 `Configuration.h` 中 `LAN8651_SPI_BAUDRATE` 设为 `25000000U`
+2. **调整 lwIP TCP 参数**（`lwipopts.h`）：
+   - `TCP_MSS`: 可尝试 1460
+   - `TCP_WND`: 增大窗口（如 `4 * TCP_MSS`）
+   - `MEM_SIZE`: 增大内存池
+3. **编译器优化**：改为 `-O2` 或 `-Os` 构建（当前为 Debug）
+4. **中断优化**：减少 QSPI ISR 中的处理延迟
 
 ## 6. 本次修改文件清单
 
@@ -193,11 +204,18 @@ cd C:\git\embedded\tc387\bak
 
 ## 7. 注意事项
 
-1. 当前驱动使用 QSPI2 + iLLD `IfxQspi_SpiMaster`，SPI 模式按 LAN8651 TC6 默认配置。
-2. 如果链路不通，优先检查：
+1. **SPI 模式**：须使用 Mode 0，即 `shiftTransmitDataOnTrailingEdge`，`autoCS=0`（手动 GPIO 控制 CS）。
+2. **lwIP ETH_PAD_SIZE**：`ETH_PAD_SIZE=2` 时 `struct eth_hdr` 含 2 字节填充：
+   - RX：`PBUF_RAW` pbuf 需在帧前手动添加 2 字节零填充
+   - TX：从 lwIP pbuf 复制帧到发送缓冲区时需跳过前 2 字节
+3. **PLCA**：Node ID 不可与对端（USB 适配器）冲突；默认 Node ID=1, Count=8。
+4. **中断优先级**：QSPI2 TX/RX/ER 三个 ISR 均需注册，优先级 110-112。
+5. 当前驱动使用 QSPI2 + iLLD `IfxQspi_SpiMaster`，SPI 模式按 LAN8651 TC6 默认配置。
+6. 如果链路不通，优先检查：
    - nRST/nINT 极性与接线
    - nCS 是否为 P15.2 且独占
    - USB-10BASE-T1S 适配器的 IPv4 配置
-3. PLCA 多节点测试时请避免 Node ID 冲突。
-4. 若需更高吞吐，可尝试提升 `LAN8651_SPI_BAUDRATE`（并结合逻辑分析仪验证时序裕量）。
-5. 若 COM9 被占用，串口抓日志会失败（`Access to the path 'COM9' is denied`）；请先关闭其他串口工具后再测试。
+7. PLCA 多节点测试时请避免 Node ID 冲突。
+8. 若需更高吞吐，可尝试提升 `LAN8651_SPI_BAUDRATE`（并结合逻辑分析仪验证时序裕量）。
+9. 若 COM9 被占用，串口抓日志会失败（`Access to the path 'COM9' is denied`）；请先关闭其他串口工具后再测试。
+10. **GCC 构建**：若出现 `ld.exe: cannot find @C:\WINDOWS\TEMP\ccXXXXXX` 错误，参考第 4.2 节 `TEMP` 环境变量解决方案。

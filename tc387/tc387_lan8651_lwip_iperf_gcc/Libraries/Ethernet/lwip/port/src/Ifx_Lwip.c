@@ -311,16 +311,15 @@ void Ifx_Lwip_pollTimerFlags(void)
 
     if (timerFlags & IFX_LWIP_FLAG_LINK)
     {
-        boolean linkUp = lan8651_link_up(&g_lan8651);
-
 #if LAN8651_FORCE_LINK_UP
-        linkUp = TRUE;
-#endif
-
+        netif_set_link_up(&g_Lwip.netif);
+#else
+        boolean linkUp = lan8651_link_up(&g_lan8651);
         if (linkUp == FALSE)
             netif_set_link_down(&g_Lwip.netif);
         else
             netif_set_link_up(&g_Lwip.netif);
+#endif
     }
 }
 
@@ -341,7 +340,7 @@ void Ifx_Lwip_pollReceiveFlags(void)
 static netif_ext_callback_t g_extCallback;
 
 void netif_state_changed(struct netif* netif, netif_nsc_reason_t reason, const netif_ext_callback_args_t* args) {
-    if(reason | LWIP_NSC_IPV4_ADDRESS_CHANGED) {
+    if (reason & LWIP_NSC_IPV4_ADDRESS_CHANGED) {
         LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE, ("netif: new ip address assigned: %"U16_F".%"U16_F".%"U16_F".%"U16_F"\n",
                         ip4_addr1_16(netif_ip4_addr(netif)),
                         ip4_addr2_16(netif_ip4_addr(netif)),

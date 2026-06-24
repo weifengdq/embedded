@@ -24,16 +24,7 @@ err_t ifx_netif_input(netif_t *netif)
 
 err_t ifx_netif_init(netif_t *netif)
 {
-    lan8651_t *ethernetif;
-
-    LWIP_ASSERT("netif != NULL", (netif != NULL));
-
-    ethernetif = IfxLan8651_get();
-
-    if (ethernetif == NULL_PTR)
-    {
-        return ERR_MEM;
-    }
+    lan8651_t *ethernetif = IfxLan8651_get();
 
 #if LWIP_NETIF_HOSTNAME
     netif->hostname = "lwip";

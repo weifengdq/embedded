@@ -69,7 +69,7 @@
 #define LAN8651_INT_PORT             (&MODULE_P15)
 #define LAN8651_INT_PIN              (5)
 
-#define LAN8651_SPI_BAUDRATE         (1000000U)
+#define LAN8651_SPI_BAUDRATE         (20000000U)
 
 #define LAN8651_FORCE_LINK_UP        (1U)
 

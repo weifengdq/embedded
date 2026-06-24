@@ -108,6 +108,12 @@ C:\Infineon\AURIX-Studio-1.10.28\tools\AurixFlasherSoftwareTool_v3.0.14\AURIXFla
 # ---- 仅清理 ----
 .\build.ps1 -Action clean              # 删除 build/gcc/
 .\build.ps1 -Compiler tasking -Action clean   # 删除 build/tasking/
+
+# 若出现 TriCore GCC 链接器临时响应文件错误（例如 `ld.exe: cannot find @C:\WINDOWS\TEMP\ccXXXXXX`），可在构建前指定临时目录后重试：
+New-Item -ItemType Directory -Path C:\Temp -Force | Out-Null
+$env:TEMP = "C:\Temp"
+$env:TMP  = "C:\Temp"
+./build.ps1 -Action rebuild -Compiler gcc
 ```
 
 ### 3.3 Action 含义

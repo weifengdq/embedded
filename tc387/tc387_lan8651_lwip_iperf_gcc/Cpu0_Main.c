@@ -115,7 +115,6 @@ void core0_main (void)
     char ipAddrText[16];
     char netMaskText[16];
     char gatewayText[16];
-    uint32_t lastDiagTick = 0U;
 
     /* Enable the global interrupts of this CPU */
     IfxCpu_enableInterrupts();
@@ -138,10 +137,8 @@ void core0_main (void)
     stmCompareConfig.typeOfService       = IfxSrc_Tos_cpu0;                 /* CPU0 serves the interrupts                   */
     IfxStm_initCompare(&MODULE_STM0, &stmCompareConfig);                    /* Initialize the Compare functionality         */
 
-#ifdef __LWIP_DEBUG__
     initUART();
     Ifx_Lwip_printf("Booting TC387 LAN8651 firmware");
-#endif
 
     {
         uint8_t mac[6] = {

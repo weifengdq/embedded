@@ -13,12 +13,9 @@
 #define LAN8651_RX_LOG 0
 #define LAN8651_TX_LOG 0
 
-#if LAN8651_RX_LOG
+#if LAN8651_RX_LOG || LAN8651_TX_LOG
 static uint32_t s_rx_log_count;
-#endif
-#if LAN8651_TX_LOG
 static uint32_t s_tx_log_count;
-#endif
 
 static void log_frame_summary(const char *tag, uint32_t index, const uint8_t *frame, uint16_t frame_len)
 {
@@ -62,6 +59,8 @@ static void log_frame_summary(const char *tag, uint32_t index, const uint8_t *fr
             (unsigned)ihl);
     }
 }
+
+#endif /* LAN8651_RX_LOG || LAN8651_TX_LOG */
 
 static err_t low_level_output(struct netif *netif, struct pbuf *p)
 {

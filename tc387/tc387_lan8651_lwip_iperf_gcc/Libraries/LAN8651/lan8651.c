@@ -667,10 +667,6 @@ lan8651_status_t lan8651_receive(lan8651_t *dev, uint8_t **frame, uint16_t *len)
             if (two_frames)
             {
                 uint16_t pending_len = (uint16_t)(LAN8651_TC6_CHUNK_SIZE - sbo);
-                if ((pending_len == 0U) || (pending_len > LAN8651_MAX_FRAME_SIZE))
-                {
-                    return kLan8651Status_RxError;
-                }
                 memcpy(dev->rx_frame, &dev->rx_buf[sbo], pending_len);
                 dev->rx_frame_len = pending_len;
                 start_found = TRUE;
@@ -699,10 +695,6 @@ lan8651_status_t lan8651_receive(lan8651_t *dev, uint8_t **frame, uint16_t *len)
         if (two_frames && sv)
         {
             uint16_t pending_len = (uint16_t)(LAN8651_TC6_CHUNK_SIZE - sbo);
-            if ((pending_len == 0U) || (pending_len > LAN8651_MAX_FRAME_SIZE))
-            {
-                return kLan8651Status_RxError;
-            }
             memcpy(dev->rx_pending_frame, &dev->rx_buf[sbo], pending_len);
             dev->rx_pending_frame_len = pending_len;
         }
