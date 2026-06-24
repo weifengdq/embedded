@@ -1,6 +1,6 @@
 # tc387_lan8651_lwip_iperf_gcc
 
-
+![image-20260624134401571](README.assets/image-20260624134401571.png)
 
 TC387 + LAN8651 (10BASE-T1S, OA-TC6 over SPI/QSPI2) + LwIP 示例工程。
 
