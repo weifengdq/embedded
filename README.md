@@ -31,7 +31,7 @@ HPM5E31:
 
 LAN9370, 5-Port 100BASE-T1 Gigabit Ethernet Switch:
 
-
+![image-20260630152255871](README.assets/image-20260630152255871.png)
 
 TJA1103, RMII-100BASE-T1:
 
