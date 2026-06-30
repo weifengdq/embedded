@@ -35,6 +35,7 @@
   - SPI, 用于 LAN9370 的管理和配置, 测试 12.5MHz 能用, 建议一开始先 1MHz 及以下试
   - SMI, 也就是 MDC MDIO, 可用于连接和配置外部 PHY
   - 3V3单电源供电
+- 原理图和测试工程开源到了 https://github.com/weifengdq/embedded, 欢迎 star
 
 LAN9370 特性如下表:
 
@@ -154,7 +155,7 @@ portgroup 4 0x10    # Port4只转发到Port5    (0x10=16=bit4)
 portgroup 4 0x1F    # Port4恢复全互通
 ```
 
-下面设置 `portgroup 4 0x10` 让 Port4只转发到Port5, 这样能ping通Port5的 192.168.0.108, 不再能ping通Port2的192.168.0.68, 之后 `ortgroup 4 0x1F`, Port4恢复全互通
+G下面设置 `portgroup 4 0x10` 让 Port4只转发到Port5, 这样能ping通Port5的 192.168.0.108, 不再能ping通Port2的192.168.0.68, 之后 `ortgroup 4 0x1F`, Port4恢复全互通
 
 ![image-20260630173112997](README.assets/image-20260630173112997.png)
 
@@ -162,7 +163,11 @@ portgroup 4 0x1F    # Port4恢复全互通
 
 对于 VLAN PTP gPTP Mirror StaticMAC 线缆诊断 信号质量SQI LED控制等, 只是命令占位, 没有详细的数据手册和寄存器说明, 也没有继续尝试, 这些功能暂时搁置.
 
+##  Github原理图与测试工程
 
+原理图和测试工程开源到以下链接的 lan9370 文件夹, 欢迎 Star:
+
+[https://github.com/weifengdq/embedded](https://github.com/weifengdq/embedded)
 
 
 
