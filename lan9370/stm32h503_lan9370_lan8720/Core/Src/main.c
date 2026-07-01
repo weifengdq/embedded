@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include "lan9370_driver.h"
 #include "lan9370_persist.h"
+#include "lan8720_driver.h"
 #include "shell_port.h"
 #include "app_extensions.h"
 #include <stdio.h>
@@ -105,6 +106,9 @@ int main(void)
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
 
+  /* Initialize shell UART output first so printf works during init */
+  Shell_Init(&hlpuart1);
+
   /* ======================================================================= */
   /* Initialize LAN9370 Switch                                              */
   /* ======================================================================= */
@@ -162,6 +166,18 @@ int main(void)
   }
   LAN9370_SetPortEnable(LAN9370_PORT_5, true);
 
+  /* ---- LAN8720 External PHY Init (via LAN9370 MIIM master) ---- */
+  {
+    LAN8720_Ret_t lan8720Ret = LAN8720_Init();
+    if (lan8720Ret == LAN8720_OK) {
+      printf("[LAN8720] Init OK\r\n");
+    } else if (lan8720Ret == LAN8720_NO_PHY) {
+      printf("[LAN8720] No PHY found (check MDIO wiring)\r\n");
+    } else {
+      printf("[LAN8720] Init failed (%d)\r\n", (int)lan8720Ret);
+    }
+  }
+
   /* ---- L2 Forwarding: all ports can forward to each other ---- */
   for (int port = 1; port <= 5; port++) {
     LAN9370_SetPortMembership((LAN9370_Port_t)port, 0x1F);
@@ -173,9 +189,8 @@ int main(void)
   printf("[LAN9370] Configuration complete\r\n");
 
   /* ======================================================================= */
-  /* Shell & Extensions                                                     */
+  /* Extensions                                                            */
   /* ======================================================================= */
-  Shell_Init(&hlpuart1);
   App_Extensions_Init();
 
   /* USER CODE END 2 */

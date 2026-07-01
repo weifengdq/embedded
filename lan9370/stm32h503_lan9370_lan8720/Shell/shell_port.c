@@ -900,6 +900,29 @@ static void Shell_AutoConfig(void)
     printf("Shell: T1 ports auto-configured (Port1=Slave, Port2=Master)\r\n");
 }
 
+int cmd_sysreset(int argc, char *argv[])
+{
+    (void)argc;
+    (void)argv;
+    printf("MCU software reset...\r\n");
+    HAL_Delay(50);
+    NVIC_SystemReset();
+    return 0;
+}
+
+/* =============================================================================
+ * MIIM Scan Command (LAN9370 SPI-based MIIM master)
+ * ===========================================================================*/
+
+int cmd_miimscan(int argc, char *argv[])
+{
+    (void)argc;
+    (void)argv;
+    printf("LAN9370 does not expose external PHY clause-22 register access over SPI.\r\n");
+    printf("Use 'lan8720' for Port5-derived link state, or connect MCU MDIO directly if register access is required.\r\n");
+    return 0;
+}
+
 /* =============================================================================
  * LAN8720 Shell Command
  * ===========================================================================*/
@@ -909,26 +932,17 @@ int cmd_lan8720(int argc, char *argv[])
     (void)argc;
     (void)argv;
 
-    printf("=== LAN8720 External PHY ===\r\n");
-    LAN8720_PrintStatus();
-
-    /* Also try raw SMI scan to help diagnose */
-    printf("\r\n--- MDIO Bus Scan (PHY 0-3) ---\r\n");
-    for (uint8_t addr = 0; addr <= 3; addr++) {
-        uint16_t id1, id2;
-        if (LAN9370_SMI_Read(addr, MII_PHYSID1, &id1) == LAN9370_SMI_OK &&
-            LAN9370_SMI_Read(addr, MII_PHYSID2, &id2) == LAN9370_SMI_OK) {
-            if (id1 != 0x0000 && id1 != 0xFFFF &&
-                id2 != 0x0000 && id2 != 0xFFFF) {
-                printf("PHY[%d]: ID=0x%04X%04X\r\n", addr, id1, id2);
-            } else {
-                printf("PHY[%d]: no response\r\n", addr);
-            }
-        } else {
-            printf("PHY[%d]: SMI error\r\n", addr);
+    /* Auto-init if not yet initialized */
+    {
+        LAN8720_Status_t st;
+        if (LAN8720_GetStatus(&st) != LAN8720_OK) {
+            printf("[LAN8720] Not initialized, trying LAN8720_Init()...\r\n");
+            LAN8720_Init();
         }
     }
-    printf("=============================\r\n");
+
+    printf("=== LAN8720 External PHY ===\r\n");
+    LAN8720_PrintStatus();
     return 0;
 }
 

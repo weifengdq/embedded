@@ -56,6 +56,8 @@ extern int cmd_spiprobe(int argc, char *argv[]);
 extern int cmd_spispeed(int argc, char *argv[]);
 extern int cmd_mib(int argc, char *argv[]);
 extern int cmd_config(int argc, char *argv[]);
+extern int cmd_sysreset(int argc, char *argv[]);
+extern int cmd_miimscan(int argc, char *argv[]);
 extern int cmd_lan8720(int argc, char *argv[]);
 
 SHELL_AGENCY_FUNC(shellRun, shellGetCurrent(), (const char *)p1);
@@ -160,6 +162,10 @@ const ShellCommand shellCommandList[] =
                    config, cmd_config, config save|load|show|erase),
     SHELL_CMD_ITEM(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN),
                    staticmac, cmd_staticmac, staticmac list|flush),
+    SHELL_CMD_ITEM(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN),
+                   sysreset, cmd_sysreset, software reset MCU),
+    SHELL_CMD_ITEM(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN),
+                   miimscan, cmd_miimscan, miimscan [from] [to] - scan via LAN9370 MIIM master),
     SHELL_CMD_ITEM(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN),
                    lan8720, cmd_lan8720, show LAN8720 PHY status),
 #if SHELL_EXEC_UNDEF_FUNC == 1

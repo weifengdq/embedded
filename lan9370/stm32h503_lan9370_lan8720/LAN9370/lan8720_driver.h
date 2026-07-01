@@ -128,6 +128,7 @@ typedef struct {
     bool fullDuplex;
     bool speed100M;
     bool anComplete;
+  bool registerAccess;
     uint16_t phyId1;
     uint16_t phyId2;
     uint8_t phyAddr;
