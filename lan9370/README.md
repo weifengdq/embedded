@@ -2,17 +2,25 @@
 
 - [LAN9370](#lan9370)
   - [板子简介](#板子简介)
-  - [STM32H723 基础配置](#stm32h723-基础配置)
+  - [STM32H503 SPI-LAN9370 模拟SMI-LAN8720](#stm32h503-spi-lan9370-模拟smi-lan8720)
     - [实际接线](#实际接线)
+    - [SPI-LAN9370](#spi-lan9370)
+    - [SMI-LAN8720](#smi-lan8720)
+    - [ping 和 iperf 测试](#ping-和-iperf-测试)
+    - [注意事项](#注意事项)
+  - [STM32H723 RMII交叉连接 LAN9370](#stm32h723-rmii交叉连接-lan9370)
+    - [实际接线](#实际接线-1)
     - [CubeMX](#cubemx)
     - [工程说明](#工程说明)
     - [编译和烧录](#编译和烧录)
-  - [测试](#测试)
     - [ping](#ping)
     - [iperf](#iperf)
     - [Master Slave](#master-slave)
     - [端口分组](#端口分组)
     - [其它功能说明](#其它功能说明)
+  - [Github开源链接 原理图与测试工程](#github开源链接-原理图与测试工程)
+  - [闲鱼购买与QQ交流群](#闲鱼购买与qq交流群)
+
 
 
 ## 板子简介
