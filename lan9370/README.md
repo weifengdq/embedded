@@ -19,9 +19,8 @@
     - [端口分组](#端口分组)
     - [其它功能说明](#其它功能说明)
   - [Github开源链接 原理图与测试工程](#github开源链接-原理图与测试工程)
+  - [立创开源平台](#立创开源平台)
   - [闲鱼购买与QQ交流群](#闲鱼购买与qq交流群)
-
-
 
 ## 板子简介
 
@@ -395,7 +394,11 @@ G下面设置 `portgroup 4 0x10` 让 Port4只转发到Port5, 这样能ping通Por
 
 [https://github.com/weifengdq/embedded](https://github.com/weifengdq/embedded)
 
+## 立创开源平台
 
+原理图和PCB都在立创开源了:
+
+[LAN9370 车载以太网交换机 - 立创开源硬件平台](https://oshwhub.com/weifengdq/project_ndzygzws)
 
 ## 闲鱼购买与QQ交流群
 
