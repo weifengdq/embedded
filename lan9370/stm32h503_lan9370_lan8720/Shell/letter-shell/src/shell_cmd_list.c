@@ -43,6 +43,8 @@ extern int cmd_disable(int argc, char *argv[]);
 extern int cmd_phyread(int argc, char *argv[]);
 extern int cmd_phywrite(int argc, char *argv[]);
 extern int cmd_vlan(int argc, char *argv[]);
+extern int cmd_portgroup(int argc, char *argv[]);
+extern int cmd_portrecover(int argc, char *argv[]);
 extern int cmd_mirror(int argc, char *argv[]);
 extern int cmd_ptp(int argc, char *argv[]);
 extern int cmd_staticmac(int argc, char *argv[]);
@@ -154,6 +156,10 @@ const ShellCommand shellCommandList[] =
                    mib, cmd_mib, mib <1-5>),
     SHELL_CMD_ITEM(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN),
                    vlan, cmd_vlan, vlan on|off|set <port> <vid>|show),
+    SHELL_CMD_ITEM(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN),
+                   portgroup, cmd_portgroup, portgroup <port> <memberMask>),
+    SHELL_CMD_ITEM(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN),
+                   portrecover, cmd_portrecover, portrecover <1-4>),
     SHELL_CMD_ITEM(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN),
                    mirror, cmd_mirror, mirror <src> <dst|off>),
     SHELL_CMD_ITEM(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN),

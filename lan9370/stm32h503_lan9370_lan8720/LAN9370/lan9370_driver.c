@@ -443,6 +443,59 @@ LAN9370_Status_t LAN9370_ConfigureT1Port(LAN9370_Port_t port, const LAN9370_T1_C
     return LAN9370_OK;
 }
 
+LAN9370_Status_t LAN9370_RecoverT1Port(LAN9370_Port_t port)
+{
+    uint16_t basicCtrl;
+    LAN9370_T1_Mode_t mode;
+
+    if (!isInitialized || port < LAN9370_PORT_1 || port > LAN9370_PORT_4) {
+        return LAN9370_INVALID_PARAM;
+    }
+
+    if (LAN9370_GetT1MasterSlave(port, &mode) != LAN9370_OK) {
+        return LAN9370_ERROR;
+    }
+
+    if (LAN9370_SetPortEnable(port, false) != LAN9370_OK) {
+        return LAN9370_ERROR;
+    }
+
+    HAL_Delay(10);
+
+    if (LAN9370_PHY_ReadReg(port, T1_PHY_BASIC_CTRL, &basicCtrl) != LAN9370_OK) {
+        return LAN9370_ERROR;
+    }
+
+    basicCtrl &= (uint16_t)~(T1_PHY_POWER_DOWN | T1_PHY_ISOLATE);
+    basicCtrl |= (uint16_t)(T1_PHY_AN_ENABLE | T1_PHY_RESTART_AN | T1_PHY_RESET);
+    if (LAN9370_PHY_WriteReg(port, T1_PHY_BASIC_CTRL, basicCtrl) != LAN9370_OK) {
+        return LAN9370_ERROR;
+    }
+
+    HAL_Delay(20);
+
+    if (LAN9370_SetT1MasterSlave(port, mode) != LAN9370_OK) {
+        return LAN9370_ERROR;
+    }
+
+    if (LAN9370_PHY_ReadReg(port, T1_PHY_BASIC_CTRL, &basicCtrl) != LAN9370_OK) {
+        return LAN9370_ERROR;
+    }
+
+    basicCtrl &= (uint16_t)~(T1_PHY_POWER_DOWN | T1_PHY_ISOLATE | T1_PHY_RESET);
+    basicCtrl |= (uint16_t)(T1_PHY_AN_ENABLE | T1_PHY_RESTART_AN);
+    if (LAN9370_PHY_WriteReg(port, T1_PHY_BASIC_CTRL, basicCtrl) != LAN9370_OK) {
+        return LAN9370_ERROR;
+    }
+
+    if (LAN9370_SetPortEnable(port, true) != LAN9370_OK) {
+        return LAN9370_ERROR;
+    }
+
+    (void)LAN9370_FlushDynamicMAC();
+    return LAN9370_OK;
+}
+
 /* =============================================================================
  * Public Functions - PHY Operations
  * ===========================================================================*/

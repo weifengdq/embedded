@@ -36,6 +36,15 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define STATUS_LED_PORT                    GPIOA
+#define STATUS_LED_PIN                     GPIO_PIN_5
+
+#define APP_MONITOR_POLL_MS                100U
+#define APP_LED_SLOW_BLINK_MS              500U
+#define APP_LED_FAST_BLINK_MS              100U
+#define APP_LED_ACTIVITY_HOLD_MS           150U
+#define APP_PORT2_RECOVERY_TRIGGER_MS      3000U
+#define APP_PORT2_RECOVERY_INTERVAL_MS     5000U
 
 /* USER CODE END PD */
 
@@ -51,6 +60,21 @@ UART_HandleTypeDef hlpuart1;
 SPI_HandleTypeDef hspi1;
 
 /* USER CODE BEGIN PV */
+typedef struct {
+  uint32_t lastPollMs;
+  uint32_t lastActivityMs;
+  uint32_t lastLedToggleMs;
+  uint32_t port2DownSinceMs;
+  uint32_t lastRecoveryMs;
+  uint32_t port2RxTotal;
+  uint32_t port2TxTotal;
+  uint32_t port5RxTotal;
+  uint32_t port5TxTotal;
+  uint8_t ledState;
+  uint8_t countersValid;
+} AppMonitorState_t;
+
+static AppMonitorState_t gAppMonitor = {0};
 
 /* USER CODE END PV */
 
@@ -62,11 +86,121 @@ static void MX_ICACHE_Init(void);
 static void MX_LPUART1_UART_Init(void);
 static void MX_SPI1_Init(void);
 /* USER CODE BEGIN PFP */
+static void App_StatusLed_Init(void);
+static void App_StatusLed_Write(uint8_t on);
+static void App_Port2Recover(void);
+static void App_MonitorProcess(void);
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+static void App_StatusLed_Init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+
+  GPIO_InitStruct.Pin = STATUS_LED_PIN;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(STATUS_LED_PORT, &GPIO_InitStruct);
+
+  App_StatusLed_Write(0U);
+}
+
+static void App_StatusLed_Write(uint8_t on)
+{
+  HAL_GPIO_WritePin(STATUS_LED_PORT, STATUS_LED_PIN, on ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  gAppMonitor.ledState = on;
+}
+
+static void App_Port2Recover(void)
+{
+  printf("[RECOVER] Port2 link down, restarting T1 PHY...\r\n");
+  (void)LAN9370_RecoverT1Port(LAN9370_PORT_2);
+}
+
+static void App_MonitorProcess(void)
+{
+  LAN9370_PortStatus_t port2Status;
+  LAN8720_Status_t lan8720Status;
+  uint32_t nowMs;
+  uint32_t port2Rx = 0;
+  uint32_t port2Tx = 0;
+  uint32_t port5Rx = 0;
+  uint32_t port5Tx = 0;
+  uint8_t port2Mstp = 0U;
+  uint8_t port2LinkUp;
+  uint8_t port5LinkUp;
+  uint8_t activityDetected = 0U;
+
+  nowMs = HAL_GetTick();
+  if ((nowMs - gAppMonitor.lastPollMs) < APP_MONITOR_POLL_MS) {
+    return;
+  }
+  gAppMonitor.lastPollMs = nowMs;
+
+  port2LinkUp = (LAN9370_GetPortStatus(LAN9370_PORT_2, &port2Status) == LAN9370_OK && port2Status.linkUp) ? 1U : 0U;
+  port5LinkUp = (LAN8720_GetStatus(&lan8720Status) == LAN8720_OK && lan8720Status.linkUp) ? 1U : 0U;
+  (void)LAN9370_SPI_ReadReg8(PORT_CTRL_ADDR(1U, REG_PORTn_MSTP_STATE), &port2Mstp);
+
+  if (LAN9370_ReadPortMibCounter(LAN9370_PORT_2, LAN9370_MIB_RX_TOTAL_IDX, &port2Rx) == LAN9370_OK &&
+      LAN9370_ReadPortMibCounter(LAN9370_PORT_2, LAN9370_MIB_TX_TOTAL_IDX, &port2Tx) == LAN9370_OK &&
+      LAN9370_ReadPortMibCounter(LAN9370_PORT_5, LAN9370_MIB_RX_TOTAL_IDX, &port5Rx) == LAN9370_OK &&
+      LAN9370_ReadPortMibCounter(LAN9370_PORT_5, LAN9370_MIB_TX_TOTAL_IDX, &port5Tx) == LAN9370_OK) {
+
+    if (gAppMonitor.countersValid != 0U) {
+      if (port2Rx != gAppMonitor.port2RxTotal ||
+          port2Tx != gAppMonitor.port2TxTotal ||
+          port5Rx != gAppMonitor.port5RxTotal ||
+          port5Tx != gAppMonitor.port5TxTotal) {
+        activityDetected = 1U;
+        gAppMonitor.lastActivityMs = nowMs;
+      }
+    } else {
+      gAppMonitor.countersValid = 1U;
+      gAppMonitor.lastActivityMs = nowMs;
+    }
+
+    gAppMonitor.port2RxTotal = port2Rx;
+    gAppMonitor.port2TxTotal = port2Tx;
+    gAppMonitor.port5RxTotal = port5Rx;
+    gAppMonitor.port5TxTotal = port5Tx;
+  }
+
+  if ((port2Mstp & (PORT_TX_ENABLE | PORT_RX_ENABLE)) == 0U) {
+    gAppMonitor.port2DownSinceMs = 0U;
+  } else if (port2LinkUp == 0U) {
+    if (gAppMonitor.port2DownSinceMs == 0U) {
+      gAppMonitor.port2DownSinceMs = nowMs;
+    } else if ((nowMs - gAppMonitor.port2DownSinceMs) >= APP_PORT2_RECOVERY_TRIGGER_MS &&
+               (nowMs - gAppMonitor.lastRecoveryMs) >= APP_PORT2_RECOVERY_INTERVAL_MS) {
+      App_Port2Recover();
+      gAppMonitor.lastRecoveryMs = HAL_GetTick();
+      gAppMonitor.port2DownSinceMs = gAppMonitor.lastRecoveryMs;
+    }
+  } else {
+    gAppMonitor.port2DownSinceMs = 0U;
+  }
+
+  if (port2LinkUp == 0U && port5LinkUp == 0U) {
+    App_StatusLed_Write(0U);
+  } else if (port2LinkUp == 0U || port5LinkUp == 0U) {
+    if ((nowMs - gAppMonitor.lastLedToggleMs) >= APP_LED_SLOW_BLINK_MS) {
+      gAppMonitor.lastLedToggleMs = nowMs;
+      App_StatusLed_Write((uint8_t)!gAppMonitor.ledState);
+    }
+  } else if (activityDetected != 0U || (nowMs - gAppMonitor.lastActivityMs) <= APP_LED_ACTIVITY_HOLD_MS) {
+    if ((nowMs - gAppMonitor.lastLedToggleMs) >= APP_LED_FAST_BLINK_MS) {
+      gAppMonitor.lastLedToggleMs = nowMs;
+      App_StatusLed_Write((uint8_t)!gAppMonitor.ledState);
+    }
+  } else {
+    App_StatusLed_Write(1U);
+  }
+}
 /* USER CODE END 0 */
 
 /**
@@ -101,6 +235,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  App_StatusLed_Init();
   MX_ICACHE_Init();
   MX_LPUART1_UART_Init();
   MX_SPI1_Init();
@@ -206,6 +341,7 @@ int main(void)
     /* USER CODE BEGIN 3 */
     /* Process shell commands */
     Shell_Process();
+    App_MonitorProcess();
     
   }
   /* USER CODE END 3 */

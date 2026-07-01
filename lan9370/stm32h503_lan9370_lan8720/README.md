@@ -55,6 +55,7 @@ flowchart LR
 - **直连 MDIO 驱动**：PB6/PB5 直接 bit-bang Clause 22，管理 LAN8720A
 - **双平面控制**：Switch 控制面和 external PHY 控制面彻底分离，避免后续误用
 - **端口裁剪**：Release 默认只打开 Port2 与 Port5，Port1/3/4 关闭
+- **状态灯**：PA5 板载 LED 显示链路状态，并在 Port2/Port5 有流量时快闪
 - **Letter-shell 命令行**：交互式控制和诊断
 - **持久化配置**：端口模式/VLAN/PTP 配置保存到 MCU Flash
 - **CMake + Ninja 构建**：一键编译和烧录
@@ -118,6 +119,7 @@ flowchart TB
 |             | PA2  | AF4  | SCK → LAN9370       | **SPI Mode 3** (CPOL=1, CPHA=1), 3.906 MHz |
 |             | PA3  | AF4  | MISO ← LAN9370      |                           |
 |             | PA4  | AF4  | MOSI → LAN9370      |                           |
+| **Status LED** | PA5 | GPIO | NUCLEO 板载 LED | 软件状态灯，见下方说明 |
 | **Direct MDIO** | PB6 | GPIO | MDC → LAN8720 | MCU 直接输出 Clause 22 时钟 |
 |               | PB5 | GPIO | MDIO ↔ LAN8720 | 开漏 + 上拉，双向数据线 |
 | **复位**     | PB7  | -    | nRST -> LAN9370      | 低电平有效，>=10ms 脉冲      |
@@ -159,6 +161,19 @@ flowchart TB
 | Port2 固定 Master | 当前对端设备角色已确定 | 避免链路配对歧义 |
 | Port1/3/4 默认禁用 | 当前台架无连接 | 减少调试噪声，状态更可预测 |
 | Port5 只保留 RMII | 把 MAC 数据面和 PHY 控制面拆开 | 数据通路更清楚，问题边界更清楚 |
+
+### LED 指示语义
+
+当前工程把 NUCLEO-H503RB 的板载 LED（按常见板卡定义使用 `PA5`）作为**整机链路/流量状态灯**：
+
+| LED 状态 | 含义 |
+|----------|------|
+| 熄灭 | Port2 与 LAN8720 两侧都未建立链路 |
+| 慢闪 | 只有一侧链路建立，另一侧未建立 |
+| 常亮 | Port2 与 LAN8720 两侧链路都建立，当前空闲 |
+| 快闪 | Port2/Port5 MIB 计数有变化，说明当前有收发流量 |
+
+> 说明：如果你的板子不是标准 NUCLEO-H503RB，`PA5` 可能没有接 LED，此时需要把 `main.c` 里的状态灯引脚改成你的实际灯脚。
 
 ---
 
@@ -586,12 +601,14 @@ cd stm32h503_lan9370_lan8720
 | `smiread`  | `<phy 0-31> <reg 0-31>`   | MCU 直连 MDIO 读 PHY 寄存器 |
 | `smiwrite` | `<phy 0-31> <reg> <val>`  | MCU 直连 MDIO 写 PHY 寄存器 |
 | `lan8720`  | -                         | 显示 LAN8720A 真实 PHY 状态（BMCR/BMSR/SCSR 等） |
+| `portrecover` | `<1-4>`                | 手动重启一个 T1 口的 PHY/AN/端口状态 |
 
 ### 高级功能
 | 命令         | 参数                       | 说明                       |
 |-------------|---------------------------|---------------------------|
 | `vlan`      | `on|off|show`            | VLAN 使能/状态              |
 | `vlan`      | `set <1-5> <1-4094>`      | 设置端口默认 VLAN ID         |
+| `portgroup` | `<port> <memberMask>`     | 直接设置端口 egress membership，做可靠端口隔离 |
 | `mirror`    | `<src> <dst|off>`        | 端口镜像配置                 |
 | `ptp`       | `on|off|status`          | PTP 配置                    |
 | `ptp`       | `gptp on|off|status`     | gPTP 配置                   |
@@ -634,6 +651,14 @@ cd stm32h503_lan9370_lan8720
    - 如果两边都是 Slave 或都是 Master，PHY 会一直处于 Link Down 状态
    - 通过 Shell `port <n>` 命令查看 T1_PHY_MS_CFG_VALUE 确认模式
 
+4. **Port2 空闲后偶发不通的判断**
+   - 从现象上看，更像是 **T1 链路侧** 在空闲后进入了某种低功耗/掉链路/重新协商状态，而不是纯交换平面“忘记转发”
+   - 如果只是二层转发表问题，通常 `ping` 不会在“空闲一段时间后稳定失联”，而且 `FlushDynamicMAC` 往往就能恢复
+   - 当前工程已经在交换机侧加入了两层恢复手段：
+   - 自动恢复：主循环检测到 Port2 持续掉链路数秒后，自动执行 PHY reset + restart AN + 重新使能端口
+   - 手动恢复：Shell 命令 `portrecover 2`
+   - 但如果**对端设备自己的 PHY/MAC 已进入更深的睡眠态**，单从交换机侧恢复并不保证一定能唤醒对端
+
 ### 软件相关
 
 11. **VPHY 间接访问使能**
@@ -649,24 +674,34 @@ cd stm32h503_lan9370_lan8720
    - `T1_PHY_BASIC_CTRL` bit14 是 loopback 控制位，不是 Master/Slave 状态
    - 正确读取：`T1_PHY_MASTER_SLAVE_CTRL` bit11 (`T1_PHY_MS_CFG_VALUE`)
 
-14. **寄存器字节序**
+14. **Port2 自动恢复策略**
+   - 当前 Release 在主循环中轮询 Port2 link 状态
+   - 如果 Port2 被管理员显式关闭（MSTP state = 0），自动恢复不会介入
+   - 如果 Port2 处于启用状态但持续掉链路，则执行：
+   - `SetPortEnable(false)`
+   - `T1_PHY_BASIC_CTRL` 写 `RESET + AN_ENABLE + RESTART_AN`
+   - 恢复 Master/Slave 模式（当前 Port2=Master）
+   - `SetPortEnable(true)`
+   - `FlushDynamicMAC()`
+
+15. **寄存器字节序**
    - LAN9370 寄存器为大端序（big-endian），16位寄存器的 MSB 在低地址
    - 使用 WriteReg8 按字节操作比 WriteReg16 更可靠
 
-15. **SMI 操作中断保护（MCU 直连 MDIO）**
+16. **SMI 操作中断保护（MCU 直连 MDIO）**
    - 当前 external PHY 管理使用 MCU bit-bang Clause 22，事务期间要关中断，避免时序抖动
    - 如果后续迁移到硬件 MDIO 外设，可再评估是否放开中断保护
 
-16. **持久化 Flash 区域保护**
+17. **持久化 Flash 区域保护**
    - 链接脚本 FLASH 限制为 120KB（而非完整的 128KB），保留最后 8KB
    - 固件超过 120KB 会导致持久化数据被覆盖
    - 当前固件约 45KB，有充足余量
 
-17. **LAN8720A 4B5B 编码**
+18. **LAN8720A 4B5B 编码**
     - LAN8720A 的 SCSR 寄存器 bit6 必须写 1，否则在某些模式下可能不正常工作
     - 这是 LAN8720A 特有的要求，其他 PHY 可能不需要
 
-18. **Shell 初始化顺序**
+19. **Shell 初始化顺序**
    - `Shell_Init()` 现在只负责 UART 和 shell 缓冲初始化
    - 不再允许在 `LAN9370_Init()` 之前访问 switch SPI 寄存器
    - 这样做是为了避免“日志能打印，但底层 SPI handle 还没绑定”的隐蔽顺序 bug
@@ -879,6 +914,7 @@ sequenceDiagram
 | SPI 不通 | `spiprobe` | `diagbus` | 确认 Mode 3 与芯片 ID |
 | T1 不通 | `port 2` | `phyread 2 0x09` | 确认 Master/Slave 和 PHY 状态 |
 | RJ45 不通 | `lan8720` | `smiread 1 1` | 确认 external PHY link / AN |
+| Port2 掉线后恢复 | `portrecover 2` | `ping 192.168.0.68` | 验证交换机侧 best-effort 恢复是否有效 |
 | 全路径不通 | `info` | `mib 2` / `mib 5` | 看转发路径两端是否有包 |
 
 ### 2. 建议的排障顺序

@@ -371,6 +371,58 @@ int cmd_vlan(int argc, char *argv[])
     return (LAN9370_SetPortDefaultVlan((LAN9370_Port_t)port, (uint16_t)vid) == LAN9370_OK) ? 0 : -1;
 }
 
+int cmd_portgroup(int argc, char *argv[])
+{
+    int port;
+    uint32_t mask;
+
+    if (argc < 3) {
+        printf("usage: portgroup <port> <memberMask>\r\n");
+        printf("  Sets which ports a given port can forward TO\r\n");
+        printf("  memberMask: bit0=Port1 bit1=Port2 bit2=Port3 bit3=Port4 bit4=Port5\r\n");
+        printf("  Examples:\r\n");
+        printf("    portgroup 2 0x10  -> Port2 can only forward to Port5\r\n");
+        printf("    portgroup 5 0x02  -> Port5 can only forward to Port2\r\n");
+        printf("    portgroup 2 0x1F  -> restore Port2 to full forwarding\r\n");
+        return -1;
+    }
+
+    if (parse_port(argv[1], 1, 5, &port) != 0) {
+        printf("port 1-5\r\n");
+        return -1;
+    }
+    if (parse_u32(argv[2], &mask) != 0 || mask > 0x1F) {
+        printf("mask 0-0x1F\r\n");
+        return -1;
+    }
+
+    if (LAN9370_SetPortMembership((LAN9370_Port_t)port, (uint8_t)mask) != LAN9370_OK) {
+        printf("portgroup failed\r\n");
+        return -1;
+    }
+
+    printf("Port%d egress members set to 0x%02lX\r\n", port, (unsigned long)mask);
+    return 0;
+}
+
+int cmd_portrecover(int argc, char *argv[])
+{
+    int port;
+
+    if (argc < 2 || parse_port(argv[1], 1, 4, &port) != 0) {
+        printf("usage: portrecover <1-4>\r\n");
+        return -1;
+    }
+
+    if (LAN9370_RecoverT1Port((LAN9370_Port_t)port) != LAN9370_OK) {
+        printf("portrecover failed\r\n");
+        return -1;
+    }
+
+    printf("Port%d recovery requested\r\n", port);
+    return 0;
+}
+
 int cmd_mirror(int argc, char *argv[])
 {
     int srcPort, dstPort;

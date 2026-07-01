@@ -154,6 +154,13 @@ LAN9370_Status_t LAN9370_GetPortStatus(LAN9370_Port_t port, LAN9370_PortStatus_t
  */
 LAN9370_Status_t LAN9370_ConfigureT1Port(LAN9370_Port_t port, const LAN9370_T1_Config_t *config);
 
+/**
+ * @brief Best-effort restart and reconfiguration of one T1 port
+ * @param port Port number (1-4)
+ * @return LAN9370_OK on success
+ */
+LAN9370_Status_t LAN9370_RecoverT1Port(LAN9370_Port_t port);
+
 /* =============================================================================
  * Function Prototypes - PHY Operations (via SPI)
  * ===========================================================================*/
