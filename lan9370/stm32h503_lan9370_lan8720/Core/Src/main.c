@@ -142,13 +142,14 @@ int main(void)
     }
   }
 
-  /* ---- 100BASE-T1 Port Configuration ---- */
-  LAN9370_SetT1MasterSlave(LAN9370_PORT_1, LAN9370_T1_SLAVE);
-  LAN9370_SetPortEnable(LAN9370_PORT_1, true);
+  /* ---- 100BASE-T1 Port Configuration ----
+   * Current bench wiring only uses Port2 <-> external 100BASE-T1 device.
+   * Port1/3/4 are left floating and should stay disabled in release builds. */
+  LAN9370_SetPortEnable(LAN9370_PORT_1, false);
   LAN9370_SetT1MasterSlave(LAN9370_PORT_2, LAN9370_T1_MASTER);
   LAN9370_SetPortEnable(LAN9370_PORT_2, true);
-  LAN9370_SetPortEnable(LAN9370_PORT_3, true);
-  LAN9370_SetPortEnable(LAN9370_PORT_4, true);
+  LAN9370_SetPortEnable(LAN9370_PORT_3, false);
+  LAN9370_SetPortEnable(LAN9370_PORT_4, false);
 
   /* ---- Port 5: RMII to LAN8720 ---- */
   {
@@ -160,13 +161,10 @@ int main(void)
     LAN9370_SPI_ReadReg8(0x5301, &xmii1);
     xmii1 |= 0xC0;  /* REFCLK input, 100M only */
     LAN9370_SPI_WriteReg8(0x5301, xmii1);
-
-    /* MDIO master: external PHY addr = 1 (LAN8720 PHYAD0 strapped) */
-    LAN9370_SPI_WriteReg8(0x5302, 0x01);
   }
   LAN9370_SetPortEnable(LAN9370_PORT_5, true);
 
-  /* ---- LAN8720 External PHY Init (via LAN9370 MIIM master) ---- */
+  /* ---- LAN8720 External PHY Init (MCU direct MDIO on PB6/PB5) ---- */
   {
     LAN8720_Ret_t lan8720Ret = LAN8720_Init();
     if (lan8720Ret == LAN8720_OK) {
@@ -178,10 +176,14 @@ int main(void)
     }
   }
 
-  /* ---- L2 Forwarding: all ports can forward to each other ---- */
-  for (int port = 1; port <= 5; port++) {
-    LAN9370_SetPortMembership((LAN9370_Port_t)port, 0x1F);
-  }
+  /* ---- L2 Forwarding ----
+   * Active datapath is Port2 <-> Port5 only.
+   * Isolate floating ports to reduce noise during release testing. */
+  LAN9370_SetPortMembership(LAN9370_PORT_1, 0x00);
+  LAN9370_SetPortMembership(LAN9370_PORT_2, 0x12);
+  LAN9370_SetPortMembership(LAN9370_PORT_3, 0x00);
+  LAN9370_SetPortMembership(LAN9370_PORT_4, 0x00);
+  LAN9370_SetPortMembership(LAN9370_PORT_5, 0x12);
 
   /* Enable MAC learning */
   LAN9370_SetMACLearning(true);

@@ -141,11 +141,6 @@ LAN9370_Status_t LAN9370_Init(SPI_HandleTypeDef *hspi)
         return LAN9370_ERROR;
     }
 
-    /* Initialize SMI interface */
-    if (LAN9370_SMI_Init() != LAN9370_SMI_OK) {
-        return LAN9370_ERROR;
-    }
-
     /* Configure RESET pin (PB7) as output */
     __HAL_RCC_GPIOB_CLK_ENABLE();
     GPIO_InitStruct.Pin = LAN9370_RESET_PIN;
@@ -499,113 +494,6 @@ LAN9370_Status_t LAN9370_PHY_WriteReg(LAN9370_Port_t port, uint8_t regAddr, uint
     }
 
     if (LAN9370_VphyWaitReady() != LAN9370_OK) {
-        return LAN9370_TIMEOUT;
-    }
-
-    return LAN9370_OK;
-}
-
-/* =============================================================================
- * Public Functions - MIIM (MDIO Master) for External PHY Access
- * ===========================================================================*/
-
-#define LAN9370_MIIM_TIMEOUT_MS 50
-
-/**
- * @brief Read external PHY register via LAN9370 MIIM master over SPI
- */
-LAN9370_Status_t LAN9370_MIIM_Read(uint8_t phyAddr, uint8_t regAddr, uint16_t *data)
-{
-    uint8_t ctrl;
-    uint32_t start;
-
-    if (!isInitialized || data == NULL) {
-        return LAN9370_INVALID_PARAM;
-    }
-    if (phyAddr > 31 || regAddr > 31) {
-        return LAN9370_INVALID_PARAM;
-    }
-
-    /* Set PHY address and register address */
-    {
-        uint16_t addrVal = (uint16_t)(((uint16_t)phyAddr << MIIM_PHY_ADDR_S) & MIIM_PHY_ADDR_MASK)
-                         | (uint16_t)(((uint16_t)regAddr << MIIM_REG_ADDR_S) & MIIM_REG_ADDR_MASK);
-        if (LAN9370_SPI_WriteReg16(REG_MIIM_PHY_ADDR, addrVal) != LAN9370_SPI_OK) {
-            return LAN9370_ERROR;
-        }
-    }
-
-    /* Start read operation */
-    if (LAN9370_SPI_WriteReg8(REG_MIIM_CTRL, MIIM_CTRL_READ | MIIM_CTRL_BUSY) != LAN9370_SPI_OK) {
-        return LAN9370_ERROR;
-    }
-
-    /* Wait for operation complete */
-    start = HAL_GetTick();
-    do {
-        if (LAN9370_SPI_ReadReg8(REG_MIIM_CTRL, &ctrl) != LAN9370_SPI_OK) {
-            return LAN9370_ERROR;
-        }
-        if (!(ctrl & MIIM_CTRL_BUSY)) {
-            break;
-        }
-    } while ((HAL_GetTick() - start) < LAN9370_MIIM_TIMEOUT_MS);
-
-    if (ctrl & MIIM_CTRL_BUSY) {
-        return LAN9370_TIMEOUT;
-    }
-
-    /* Read data */
-    return (LAN9370_SPI_ReadReg16(REG_MIIM_IND_DATA, data) == LAN9370_SPI_OK) ?
-           LAN9370_OK : LAN9370_ERROR;
-}
-
-/**
- * @brief Write external PHY register via LAN9370 MIIM master over SPI
- */
-LAN9370_Status_t LAN9370_MIIM_Write(uint8_t phyAddr, uint8_t regAddr, uint16_t data)
-{
-    uint8_t ctrl;
-    uint32_t start;
-
-    if (!isInitialized) {
-        return LAN9370_INVALID_PARAM;
-    }
-    if (phyAddr > 31 || regAddr > 31) {
-        return LAN9370_INVALID_PARAM;
-    }
-
-    /* Write data first */
-    if (LAN9370_SPI_WriteReg16(REG_MIIM_IND_DATA, data) != LAN9370_SPI_OK) {
-        return LAN9370_ERROR;
-    }
-
-    /* Set PHY address and register address */
-    {
-        uint16_t addrVal = (uint16_t)(((uint16_t)phyAddr << MIIM_PHY_ADDR_S) & MIIM_PHY_ADDR_MASK)
-                         | (uint16_t)(((uint16_t)regAddr << MIIM_REG_ADDR_S) & MIIM_REG_ADDR_MASK);
-        if (LAN9370_SPI_WriteReg16(REG_MIIM_PHY_ADDR, addrVal) != LAN9370_SPI_OK) {
-            return LAN9370_ERROR;
-        }
-    }
-
-    /* Start write operation */
-    if (LAN9370_SPI_WriteReg8(REG_MIIM_CTRL, MIIM_CTRL_WRITE | MIIM_CTRL_BUSY) != LAN9370_SPI_OK) {
-        return LAN9370_ERROR;
-    }
-
-    /* Wait for operation complete */
-    start = HAL_GetTick();
-    do {
-        if (LAN9370_SPI_ReadReg8(REG_MIIM_CTRL, &ctrl) != LAN9370_SPI_OK) {
-            return LAN9370_ERROR;
-        }
-        if (!(ctrl & MIIM_CTRL_BUSY)) {
-            break;
-        }
-    } while ((HAL_GetTick() - start) < LAN9370_MIIM_TIMEOUT_MS);
-
-    if (ctrl & MIIM_CTRL_BUSY) {
         return LAN9370_TIMEOUT;
     }
 

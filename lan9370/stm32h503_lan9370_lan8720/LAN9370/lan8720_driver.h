@@ -3,12 +3,8 @@
   * @file    lan8720_driver.h
   * @brief   LAN8720A 10/100 Ethernet PHY Driver Header
   * @details Driver for Microchip LAN8720A RMII Ethernet PHY.
-  *          Accesses PHY through LAN9370's internal MIIM (MDIO) master via SPI.
-  *          STM32 GPIO MDIO pins (PB5/PB6) are NOT used with new wiring.
-  *          - PHY Address: 1 (PHYAD0 strapped high, common on many boards)
-  *          - Interface: RMII only (no MII support)
-  *          - Speed: 10/100 Mbps
-  *          - MDIO bus: LAN9370 MDC/MDIO pins → LAN8720A MDC/MDIO pins
+  *          The MCU directly controls the PHY over PB6(MDC)/PB5(MDIO)
+  *          using software Clause-22 SMI bit-banging.
   *
   * Reference:
   *   - LAN8720A datasheet (Microchip/SMSC)
@@ -128,7 +124,6 @@ typedef struct {
     bool fullDuplex;
     bool speed100M;
     bool anComplete;
-  bool registerAccess;
     uint16_t phyId1;
     uint16_t phyId2;
     uint8_t phyAddr;

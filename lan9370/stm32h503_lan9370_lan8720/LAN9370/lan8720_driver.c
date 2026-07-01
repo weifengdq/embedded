@@ -2,14 +2,13 @@
   ******************************************************************************
   * @file    lan8720_driver.c
   * @brief   LAN8720A 10/100 Ethernet PHY Driver Implementation
-  * @details Accesses external PHY through LAN9370's internal MIIM (MDIO) master
-  *          via SPI. STM32 GPIO MDIO pins (PB5/PB6) are NOT used — the
-  *          LAN9370's MDC/MDIO pins connect directly to LAN8720A.
+    * @details Accesses external PHY through MCU direct Clause-22 MDIO
+    *          bit-banging on PB6(MDC)/PB5(MDIO).
   *
   * Hardware configuration:
   *   - RMII interface to LAN9370 Port 5
   *   - 50MHz reference clock from external oscillator
-  *   - MDC/MDIO: LAN9370 MDIO master ↔ LAN8720A (STM32 PB5/PB6 disconnected)
+    *   - MDC/MDIO: STM32 PB6/PB5 ↔ LAN8720A
   *   - PHY address: auto-detected (tries addr 1, then addr 0)
   *
   * Reference:
@@ -20,17 +19,15 @@
   */
 
 #include "lan8720_driver.h"
-#include "lan9370_driver.h"
+#include "lan9370_smi.h"
 #include "main.h"
 #include <stdio.h>
-
-#define LAN8720_P5_STATUS_ADDR     ((uint16_t)(0x5000U + 0x0030U))
 
 /* =============================================================================
  * Private Variables
  * ===========================================================================*/
 static bool s_initialized = false;
-static bool s_registerAccess = false;
+static bool s_smiInitialized = false;
 static uint8_t s_phyAddr = 0;
 static uint16_t s_phyId1 = 0;
 static uint16_t s_phyId2 = 0;
@@ -40,70 +37,52 @@ static uint16_t s_phyId2 = 0;
  * ===========================================================================*/
 
 /**
- * @brief Read a PHY register via LAN9370 MIIM master (SPI -> MDIO)
+ * @brief Ensure the direct MCU MDIO bus is initialized
+ */
+static LAN8720_Ret_t ensure_smi_ready(void)
+{
+    if (!s_smiInitialized) {
+        if (LAN9370_SMI_Init() != LAN9370_SMI_OK) {
+            return LAN8720_ERROR;
+        }
+        s_smiInitialized = true;
+    }
+
+    return LAN8720_OK;
+}
+
+/**
+ * @brief Read a PHY register via MCU direct SMI bit-banging
  */
 static LAN8720_Ret_t phy_read(uint8_t regAddr, uint16_t *data)
 {
-    (void)regAddr;
-    (void)data;
-
-    if (!s_registerAccess) {
+    if (data == NULL || ensure_smi_ready() != LAN8720_OK) {
         return LAN8720_ERROR;
     }
 
-    if (LAN9370_MIIM_Read(s_phyAddr, regAddr, data) != LAN9370_OK) {
+    if (LAN9370_SMI_Read(s_phyAddr, regAddr, data) != LAN9370_SMI_OK) {
         return LAN8720_ERROR;
     }
     return LAN8720_OK;
 }
 
 /**
- * @brief Write a PHY register via LAN9370 MIIM master (SPI -> MDIO)
+ * @brief Write a PHY register via MCU direct SMI bit-banging
  */
 static LAN8720_Ret_t phy_write(uint8_t regAddr, uint16_t data)
 {
-    (void)regAddr;
-    (void)data;
-
-    if (!s_registerAccess) {
+    if (ensure_smi_ready() != LAN8720_OK) {
         return LAN8720_ERROR;
     }
 
-    if (LAN9370_MIIM_Write(s_phyAddr, regAddr, data) != LAN9370_OK) {
+    if (LAN9370_SMI_Write(s_phyAddr, regAddr, data) != LAN9370_SMI_OK) {
         return LAN8720_ERROR;
     }
     return LAN8720_OK;
 }
 
-static bool lan8720_get_port5_status(uint8_t *statusReg)
-{
-    if (statusReg == NULL) {
-        return false;
-    }
-
-    return LAN9370_SPI_ReadReg8(LAN8720_P5_STATUS_ADDR, statusReg) == LAN9370_SPI_OK;
-}
-
-static void lan8720_fill_status_from_port5(LAN8720_Status_t *status, uint8_t p5status)
-{
-    if (status == NULL) {
-        return;
-    }
-
-    status->linkUp = ((p5status & PORT_INTF_SPEED_MASK) == PORT_INTF_SPEED_10) ||
-                     ((p5status & PORT_INTF_SPEED_MASK) == PORT_INTF_SPEED_100) ||
-                     ((p5status & PORT_INTF_SPEED_MASK) == PORT_INTF_SPEED_1000);
-    status->speed100M = ((p5status & PORT_INTF_SPEED_MASK) == PORT_INTF_SPEED_100);
-    status->fullDuplex = (p5status & PORT_INTF_FULL_DUPLEX) != 0U;
-    status->anComplete = status->linkUp;
-    status->registerAccess = false;
-    status->phyId1 = s_phyId1;
-    status->phyId2 = s_phyId2;
-    status->phyAddr = s_phyAddr;
-}
-
 /**
- * @brief Try to detect LAN8720 at a given PHY address via LAN9370 MIIM master
+ * @brief Try to detect LAN8720 at a given PHY address via direct MCU MDIO
  */
 static bool probe_phy(uint8_t addr, uint16_t *id1, uint16_t *id2)
 {
@@ -116,10 +95,14 @@ static bool probe_phy(uint8_t addr, uint16_t *id1, uint16_t *id2)
             HAL_Delay(10);
         }
 
-        if (LAN9370_MIIM_Read(addr, MII_PHYSID1, &tmp1) != LAN9370_OK) {
+        if (ensure_smi_ready() != LAN8720_OK) {
+            return false;
+        }
+
+        if (LAN9370_SMI_Read(addr, MII_PHYSID1, &tmp1) != LAN9370_SMI_OK) {
             continue;
         }
-        if (LAN9370_MIIM_Read(addr, MII_PHYSID2, &tmp2) != LAN9370_OK) {
+        if (LAN9370_SMI_Read(addr, MII_PHYSID2, &tmp2) != LAN9370_SMI_OK) {
             continue;
         }
 
@@ -158,29 +141,26 @@ static bool probe_phy(uint8_t addr, uint16_t *id1, uint16_t *id2)
 
 /**
  * @brief Auto-detect and initialize LAN8720A PHY
- *
- * NOTE: LAN9370 does not expose a SPI-to-MDIO bridge. The MIIM registers
- * at 0x006C-0x006E were assumed but do not exist in this chip family.
- * GPIO bitbang MDIO (PB5/PB6) is also not connected to LAN8720 MDIO on
- * this hardware.  As a fallback, PHY presence is inferred from LAN9370
- * Port 5 xMII status (register PORT_CTRL_ADDR(4, REG_PORTn_STATUS)).
- * Port 5 showing 100M/Full confirms LAN8720 is powered and linked via RMII.
  */
 LAN8720_Ret_t LAN8720_Init(void)
 {
-    printf("[LAN8720] Probing PHY via LAN9370 MIIM master...\r\n");
-    s_registerAccess = false;
+    if (ensure_smi_ready() != LAN8720_OK) {
+        printf("[LAN8720] ERROR: SMI init failed\r\n");
+        return LAN8720_ERROR;
+    }
+
+    printf("[LAN8720] Probing PHY via MCU direct MDIO...\r\n");
+    s_initialized = false;
+    s_phyId1 = 0;
+    s_phyId2 = 0;
 
     /* Try to detect LAN8720 at default address (1), then alternate (0) */
     if (probe_phy(LAN8720_PHY_ADDR_DEFAULT, &s_phyId1, &s_phyId2)) {
         s_phyAddr = LAN8720_PHY_ADDR_DEFAULT;
-        s_registerAccess = true;
     } else if (probe_phy(LAN8720_PHY_ADDR_ALT, &s_phyId1, &s_phyId2)) {
         s_phyAddr = LAN8720_PHY_ADDR_ALT;
-        s_registerAccess = true;
     } else {
-        /* Try scanning all addresses 0-31 */
-        printf("[LAN8720] MIIM probe failed. Scanning all addresses...\r\n");
+        printf("[LAN8720] Direct probe failed. Scanning all addresses...\r\n");
         bool found = false;
         for (uint8_t addr = 0; addr <= 31; addr++) {
             if (addr == LAN8720_PHY_ADDR_DEFAULT || addr == LAN8720_PHY_ADDR_ALT) {
@@ -189,53 +169,11 @@ LAN8720_Ret_t LAN8720_Init(void)
             if (probe_phy(addr, &s_phyId1, &s_phyId2)) {
                 s_phyAddr = addr;
                 found = true;
-                s_registerAccess = true;
                 break;
             }
         }
         if (!found) {
-            /* ----------------------------------------------------------------
-             * Fallback: LAN9370 has no SPI→MDIO bridge — MIIM registers
-             * 0x006C-0x006E do not exist in KSZ9370/LAN9370.
-             * Infer PHY presence from Port 5 xMII status register.
-             * Port 5 base = (5 << 12) = 0x5000, status offset = 0x0030.
-             * Bits: [3]=100M, [2]=Full-Duplex, [0]=RxFlowCtrl
-             * Seeing 0x0D (100M+Full+RxFC) confirms RMII link is active.
-             * ----------------------------------------------------------------
-             */
-            {
-                uint8_t p5status = 0;
-                bool port5_up = false;
-
-                if (lan8720_get_port5_status(&p5status)) {
-                    printf("[LAN8720] Port5 xMII status = 0x%02X\r\n", p5status);
-                    if (((p5status & PORT_INTF_SPEED_MASK) == PORT_INTF_SPEED_10) ||
-                        ((p5status & PORT_INTF_SPEED_MASK) == PORT_INTF_SPEED_100) ||
-                        ((p5status & PORT_INTF_SPEED_MASK) == PORT_INTF_SPEED_1000)) {
-                        port5_up = true;
-                    }
-                }
-
-                if (port5_up) {
-                    /* External PHY is reachable only through the switch's
-                     * own SMI_OUT state machine. The MCU cannot proxy clause-22
-                     * reads over SPI on LAN9370, so fall back to derived Port5
-                     * status and keep registerAccess disabled. */
-                    s_phyAddr = LAN8720_PHY_ADDR_DEFAULT;
-                    s_phyId1  = 0x0000;
-                    s_phyId2  = 0x0000;
-                    s_registerAccess = false;
-                    s_initialized = true;
-                    printf("[LAN8720] PHY detected via Port5 xMII status\r\n");
-                    printf("[LAN8720] PHY addr = %d (strapped, 0x5302=0x01)\r\n", s_phyAddr);
-                    printf("[LAN8720] NOTE: external PHY registers are not SPI-accessible on LAN9370\r\n");
-                    return LAN8720_OK;
-                }
-
-                printf("[LAN8720] ERROR: No LAN8720 detected (MIIM + Port5 status both fail)\r\n");
-                printf("[LAN8720] Port5 status = 0x%02X (expect 0x0C or 0x0D for 100M Full)\r\n",
-                       p5status);
-            }
+            printf("[LAN8720] ERROR: No PHY found on MCU MDIO bus\r\n");
             return LAN8720_NO_PHY;
         }
     }
@@ -368,32 +306,52 @@ LAN8720_Ret_t LAN8720_Init(void)
  */
 void LAN8720_PrintStatus(void)
 {
-    LAN8720_Status_t status;
-
     if (!s_initialized) {
         printf("[LAN8720] Not initialized\r\n");
         return;
     }
 
-    if (LAN8720_GetStatus(&status) != LAN8720_OK) {
-        printf("[LAN8720] Status unavailable\r\n");
-        return;
-    }
+    {
+        uint16_t bmsr, bmcr, sm, scsr, anar, anlpar;
 
-    printf("=== LAN8720 PHY Status (addr=%d) ===\r\n", s_phyAddr);
-    if (status.registerAccess) {
-        printf("  PHY ID: 0x%04X%04X\r\n", status.phyId1, status.phyId2);
-        printf("  Access: direct PHY register access\r\n");
-    } else {
-        printf("  PHY ID: unreadable via SPI on LAN9370\r\n");
-        printf("  Access: derived from Port5 xMII status\r\n");
-    }
+        printf("=== LAN8720 PHY Status (addr=%d) ===\r\n", s_phyAddr);
+        printf("  PHY ID: 0x%04X%04X\r\n", s_phyId1, s_phyId2);
 
-    printf("  Link:        %s\r\n", status.linkUp ? "UP" : "DOWN");
-    printf("  AN Complete: %s\r\n", status.anComplete ? "YES" : "NO/UNKNOWN");
-    printf("  Speed:       %s\r\n",
-           status.speed100M ? (status.fullDuplex ? "100M Full" : "100M Half")
-                            : (status.fullDuplex ? "10M Full/Unknown" : "10M Half/Unknown"));
+        if (phy_read(MII_BMCR, &bmcr) == LAN8720_OK) {
+            printf("  BMCR (0x00): 0x%04X\r\n", bmcr);
+        }
+
+        if (phy_read(MII_BMSR, &bmsr) == LAN8720_OK) {
+            printf("  BMSR (0x01): 0x%04X\r\n", bmsr);
+            printf("    Link:        %s\r\n", (bmsr & BMSR_LINK_STATUS) ? "UP" : "DOWN");
+            printf("    AN Complete: %s\r\n", (bmsr & BMSR_AN_COMPLETE) ? "YES" : "NO");
+        }
+
+        if (phy_read(MII_ANAR, &anar) == LAN8720_OK) {
+            printf("  ANAR (0x04): 0x%04X\r\n", anar);
+        }
+
+        if (phy_read(MII_ANLPAR, &anlpar) == LAN8720_OK) {
+            printf("  ANLPAR (0x05): 0x%04X\r\n", anlpar);
+        }
+
+        if (phy_read(LAN87XX_SM, &sm) == LAN8720_OK) {
+            printf("  SM (0x12): 0x%04X\r\n", sm);
+        }
+
+        if (phy_read(LAN87XX_SCSR, &scsr) == LAN8720_OK) {
+            uint8_t speed = (uint8_t)((scsr & LAN87XX_SCSR_SPEED_MASK) >> LAN87XX_SCSR_SPEED_SHIFT);
+            printf("  SCSR (0x1F): 0x%04X\r\n", scsr);
+            printf("    Speed:       ");
+            switch (speed) {
+                case 1: printf("10M Half\r\n"); break;
+                case 2: printf("100M Half\r\n"); break;
+                case 5: printf("10M Full\r\n"); break;
+                case 6: printf("100M Full\r\n"); break;
+                default: printf("Unknown (%u)\r\n", (unsigned int)speed); break;
+            }
+        }
+    }
 
     printf("=====================================\r\n");
 }
@@ -404,19 +362,9 @@ void LAN8720_PrintStatus(void)
 LAN8720_Ret_t LAN8720_GetStatus(LAN8720_Status_t *status)
 {
     uint16_t bmsr, scsr;
-    uint8_t p5status;
 
     if (!s_initialized || status == NULL) {
         return LAN8720_ERROR;
-    }
-
-    if (!s_registerAccess) {
-        if (!lan8720_get_port5_status(&p5status)) {
-            return LAN8720_ERROR;
-        }
-
-        lan8720_fill_status_from_port5(status, p5status);
-        return LAN8720_OK;
     }
 
     if (phy_read(MII_BMSR, &bmsr) != LAN8720_OK) {
@@ -425,7 +373,6 @@ LAN8720_Ret_t LAN8720_GetStatus(LAN8720_Status_t *status)
 
     status->linkUp = (bmsr & BMSR_LINK_STATUS) ? true : false;
     status->anComplete = (bmsr & BMSR_AN_COMPLETE) ? true : false;
-    status->registerAccess = true;
     status->phyId1 = s_phyId1;
     status->phyId2 = s_phyId2;
     status->phyAddr = s_phyAddr;

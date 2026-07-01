@@ -17,7 +17,6 @@ extern "C" {
 #include <stdbool.h>
 #include "lan9370_reg.h"
 #include "lan9370_spi.h"
-#include "lan9370_smi.h"
 
 /* =============================================================================
  * Type Definitions
@@ -334,28 +333,6 @@ LAN9370_Status_t LAN9370_GetPortDefaultVlan(LAN9370_Port_t port, uint16_t *vlanI
  * @return LAN9370_OK on success
  */
 LAN9370_Status_t LAN9370_PrintVlanConfig(void);
-
-/* =============================================================================
- * Function Prototypes - MIIM (MDIO Master) for External PHY Access
- * ===========================================================================*/
-
-/**
- * @brief Read external PHY register via LAN9370 MIIM master over SPI
- * @param phyAddr PHY address (0-31) on the MDIO bus
- * @param regAddr PHY register address (0-31)
- * @param data Pointer to store 16-bit register data
- * @return LAN9370_OK on success
- */
-LAN9370_Status_t LAN9370_MIIM_Read(uint8_t phyAddr, uint8_t regAddr, uint16_t *data);
-
-/**
- * @brief Write external PHY register via LAN9370 MIIM master over SPI
- * @param phyAddr PHY address (0-31) on the MDIO bus
- * @param regAddr PHY register address (0-31)
- * @param data 16-bit data to write
- * @return LAN9370_OK on success
- */
-LAN9370_Status_t LAN9370_MIIM_Write(uint8_t phyAddr, uint8_t regAddr, uint16_t data);
 
 /**
  * @brief Enable or disable PTP

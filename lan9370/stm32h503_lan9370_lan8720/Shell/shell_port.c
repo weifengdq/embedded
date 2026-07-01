@@ -16,6 +16,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define LAN8720_ACTIVE_PHY_ADDR    LAN8720_PHY_ADDR_DEFAULT
+
 static UART_HandleTypeDef *pHuart = NULL;
 extern SPI_HandleTypeDef hspi1;
 static Shell gShell;
@@ -619,6 +621,11 @@ int cmd_smiread(int argc, char *argv[])
         return -1;
     }
 
+    if (LAN9370_SMI_Init() != LAN9370_SMI_OK) {
+        printf("SMI init failed\r\n");
+        return -1;
+    }
+
     if (LAN9370_SMI_Read((uint8_t)phy, (uint8_t)reg, &value) != LAN9370_SMI_OK) {
         printf("SMI read failed\r\n");
         return -1;
@@ -636,6 +643,11 @@ int cmd_smiwrite(int argc, char *argv[])
 
     if (argc < 4 || parse_u32(argv[1], &phy) != 0 || parse_u32(argv[2], &reg) != 0 || parse_u32(argv[3], &value) != 0 || phy > 31 || reg > 31 || value > 0xFFFF) {
         printf("usage: smiwrite <phy 0-31> <reg 0-31> <value>\r\n");
+        return -1;
+    }
+
+    if (LAN9370_SMI_Init() != LAN9370_SMI_OK) {
+        printf("SMI init failed\r\n");
         return -1;
     }
 
@@ -664,6 +676,10 @@ int cmd_diagbus(int argc, char *argv[])
     printf("diagbus: reset -> probe SPI/SMI\r\n");
     LAN9370_HardwareReset();
 
+    if (LAN9370_SMI_Init() != LAN9370_SMI_OK) {
+        printf("SMI init failed\r\n");
+    }
+
     for (int i = 0; i < 5; i++) {
         HAL_Delay((uint32_t)(10 + (i * 40)));
         LAN9370_SPI_ReadReg8(REG_CHIP_ID0, &id[0]);
@@ -682,9 +698,10 @@ int cmd_diagbus(int argc, char *argv[])
         }
     }
 
-    if (LAN9370_SMI_Read(0, 2, &smi_id1) == LAN9370_SMI_OK &&
-        LAN9370_SMI_Read(0, 3, &smi_id2) == LAN9370_SMI_OK) {
-        printf("SMI PHY0 ID1=0x%04X ID2=0x%04X\r\n", smi_id1, smi_id2);
+    if (LAN9370_SMI_Read(LAN8720_ACTIVE_PHY_ADDR, MII_PHYSID1, &smi_id1) == LAN9370_SMI_OK &&
+        LAN9370_SMI_Read(LAN8720_ACTIVE_PHY_ADDR, MII_PHYSID2, &smi_id2) == LAN9370_SMI_OK) {
+        printf("SMI PHY%u ID1=0x%04X ID2=0x%04X\r\n",
+               (unsigned int)LAN8720_ACTIVE_PHY_ADDR, smi_id1, smi_id2);
         if (!((smi_id1 == 0x0000 && smi_id2 == 0x0000) ||
               (smi_id1 == 0xFFFF && smi_id2 == 0xFFFF))) {
             smi_ok = 1;
@@ -833,21 +850,6 @@ int Shell_Init(UART_HandleTypeDef *huart)
 
     Shell_PrintBanner();
 
-    /* Auto-configure T1 ports (VPHY re-enable + Master/Slave settings).
-     * This is done here because VPHY writes during early init may not persist. */
-    {
-        uint8_t vphyVal;
-        LAN9370_SPI_ReadReg8(0x077C, &vphyVal);
-        LAN9370_SPI_WriteReg8(0x077C, vphyVal | 0x10);
-        LAN9370_SetT1MasterSlave(LAN9370_PORT_1, LAN9370_T1_SLAVE);
-        LAN9370_SetPortEnable(LAN9370_PORT_1, true);
-        LAN9370_SetT1MasterSlave(LAN9370_PORT_2, LAN9370_T1_MASTER);
-        LAN9370_SetPortEnable(LAN9370_PORT_2, true);
-        LAN9370_SetPortEnable(LAN9370_PORT_3, true);
-        LAN9370_SetPortEnable(LAN9370_PORT_4, true);
-        printf("Shell: T1 ports auto-configured (P1=Slave, P2=Master)\r\n");
-    }
-
     return 0;
 }
 
@@ -877,29 +879,6 @@ void Shell_PrintBanner(void)
     printf("\r\nLAN9370 shell ready. type 'help'\r\n");
 }
 
-/* Forward declaration */
-static void Shell_AutoConfig(void);
-
-/* Auto-configure T1 ports on boot (VPHY may need re-enable after init) */
-static void Shell_AutoConfig(void)
-{
-    uint8_t vphyVal;
-
-    /* Re-enable VPHY indirect access */
-    LAN9370_SPI_ReadReg8(0x077C, &vphyVal);
-    LAN9370_SPI_WriteReg8(0x077C, vphyVal | 0x10);
-
-    /* Configure T1 ports */
-    LAN9370_SetT1MasterSlave(LAN9370_PORT_1, LAN9370_T1_SLAVE);
-    LAN9370_SetPortEnable(LAN9370_PORT_1, true);
-    LAN9370_SetT1MasterSlave(LAN9370_PORT_2, LAN9370_T1_MASTER);
-    LAN9370_SetPortEnable(LAN9370_PORT_2, true);
-    LAN9370_SetPortEnable(LAN9370_PORT_3, true);
-    LAN9370_SetPortEnable(LAN9370_PORT_4, true);
-
-    printf("Shell: T1 ports auto-configured (Port1=Slave, Port2=Master)\r\n");
-}
-
 int cmd_sysreset(int argc, char *argv[])
 {
     (void)argc;
@@ -911,15 +890,43 @@ int cmd_sysreset(int argc, char *argv[])
 }
 
 /* =============================================================================
- * MIIM Scan Command (LAN9370 SPI-based MIIM master)
+ * Direct MDIO Scan Command (MCU PB6/PB5)
  * ===========================================================================*/
 
-int cmd_miimscan(int argc, char *argv[])
+int cmd_mdioscan(int argc, char *argv[])
 {
-    (void)argc;
-    (void)argv;
-    printf("LAN9370 does not expose external PHY clause-22 register access over SPI.\r\n");
-    printf("Use 'lan8720' for Port5-derived link state, or connect MCU MDIO directly if register access is required.\r\n");
+    uint32_t from = 0;
+    uint32_t to = 31;
+
+    if (argc >= 2 && parse_u32(argv[1], &from) != 0) {
+        printf("usage: mdioscan [from] [to]\r\n");
+        return -1;
+    }
+    if (argc >= 3 && parse_u32(argv[2], &to) != 0) {
+        printf("usage: mdioscan [from] [to]\r\n");
+        return -1;
+    }
+    if (from > 31 || to > 31 || from > to) {
+        printf("invalid range\r\n");
+        return -1;
+    }
+
+    if (LAN9370_SMI_Init() != LAN9370_SMI_OK) {
+        printf("SMI init failed\r\n");
+        return -1;
+    }
+
+    printf("MDIO scan addr %lu..%lu\r\n", from, to);
+    for (uint32_t phy = from; phy <= to; phy++) {
+        uint16_t id1 = 0;
+        uint16_t id2 = 0;
+        if (LAN9370_SMI_Read((uint8_t)phy, MII_PHYSID1, &id1) == LAN9370_SMI_OK &&
+            LAN9370_SMI_Read((uint8_t)phy, MII_PHYSID2, &id2) == LAN9370_SMI_OK &&
+            id1 != 0x0000 && id1 != 0xFFFF &&
+            id2 != 0x0000 && id2 != 0xFFFF) {
+            printf("  PHY[%2lu]: ID=0x%04X%04X\r\n", phy, id1, id2);
+        }
+    }
     return 0;
 }
 

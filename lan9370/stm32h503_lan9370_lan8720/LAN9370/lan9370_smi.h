@@ -1,8 +1,10 @@
 /**
   ******************************************************************************
   * @file    lan9370_smi.h
-  * @brief   LAN9370 SMI/MDIO Interface Driver Header
-  * @details GPIO bit-banging implementation of SMI (Serial Management Interface)
+  * @brief   Direct Clause-22 SMI/MDIO bit-bang driver header
+  * @details Historical filename retained to minimize project churn.
+  *          The module now drives the external LAN8720 PHY directly from
+  *          the MCU over PB6(MDC)/PB5(MDIO).
   *          - PB5: MDIO (bidirectional data)
   *          - PB6: MDC (clock)
   ******************************************************************************

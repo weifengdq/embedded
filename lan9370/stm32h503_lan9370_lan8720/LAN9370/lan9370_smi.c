@@ -1,8 +1,10 @@
 /**
   ******************************************************************************
   * @file    lan9370_smi.c
-  * @brief   LAN9370 SMI/MDIO Interface Driver Implementation
-  * @details GPIO bit-banging implementation based on IEEE 802.3 Clause 22
+    * @brief   Direct Clause-22 SMI/MDIO bit-bang driver implementation
+    * @details Historical filename retained to minimize project churn.
+    *          The module now drives the external LAN8720 PHY directly from
+    *          the MCU over PB6(MDC)/PB5(MDIO), based on IEEE 802.3 Clause 22.
   *          - PB5: MDIO (bidirectional data)
   *          - PB6: MDC (clock, max 2.5MHz)
   *          
@@ -292,8 +294,8 @@ LAN9370_SMI_Status_t LAN9370_SMI_Init(void)
     HAL_GPIO_Init(SMI_MDC_PORT, &GPIO_InitStruct);
 
     /* Configure MDIO as input initially (high-impedance).
-     * This allows the LAN9370's MDIO master to access the external PHY
-     * before the STM32 takes over the bus. */
+     * External pull-up keeps the bus idle-high until the MCU starts a
+     * Clause-22 transaction. */
     GPIO_InitStruct.Pin = SMI_MDIO_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = GPIO_PULLUP;  /* Pull-up as per IEEE 802.3 */
