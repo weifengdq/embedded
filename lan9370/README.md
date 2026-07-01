@@ -40,7 +40,7 @@
       - RMII 命名和丝印的对应关系: CRS_DV -> RCTL, TX_EN -> TCTL, REFCLKI -> RCLK, REFCLKO -> TCLK
       - 如果 RMII 外部接PHY, 如 LAN8720, 是直连, 即 TX-TX, RX-RX
       - 如果 RMII 外部接MAC, 如 MCU, 是交叉连接, TX-RX, CRS_DV-TX_EN, 两个 REFCLKI 可以接到同一时钟源如 MCU 的 MCO 50MHz 输出
-  - SPI, 用于 LAN9370 的管理和配置, 测试 12.5MHz 能用, 建议一开始先 1MHz 及以下试
+  - SPI, 用于 LAN9370 的管理和配置, 测试 ~4MHz 能用
   - SMI, 也就是 MDC MDIO, 可用于连接和配置外部 PHY
   - 3V3单电源供电
 - 原理图和测试工程开源到了 https://github.com/weifengdq/embedded, 欢迎 star
