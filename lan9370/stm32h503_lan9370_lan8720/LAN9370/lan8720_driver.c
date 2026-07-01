@@ -19,7 +19,7 @@
   */
 
 #include "lan8720_driver.h"
-#include "lan9370_smi.h"
+#include "mdio_bitbang.h"
 #include "main.h"
 #include <stdio.h>
 
@@ -42,7 +42,7 @@ static uint16_t s_phyId2 = 0;
 static LAN8720_Ret_t ensure_smi_ready(void)
 {
     if (!s_smiInitialized) {
-        if (LAN9370_SMI_Init() != LAN9370_SMI_OK) {
+        if (MDIO_BitBang_Init() != MDIO_BITBANG_OK) {
             return LAN8720_ERROR;
         }
         s_smiInitialized = true;
@@ -60,7 +60,7 @@ static LAN8720_Ret_t phy_read(uint8_t regAddr, uint16_t *data)
         return LAN8720_ERROR;
     }
 
-    if (LAN9370_SMI_Read(s_phyAddr, regAddr, data) != LAN9370_SMI_OK) {
+    if (MDIO_BitBang_Read(s_phyAddr, regAddr, data) != MDIO_BITBANG_OK) {
         return LAN8720_ERROR;
     }
     return LAN8720_OK;
@@ -75,7 +75,7 @@ static LAN8720_Ret_t phy_write(uint8_t regAddr, uint16_t data)
         return LAN8720_ERROR;
     }
 
-    if (LAN9370_SMI_Write(s_phyAddr, regAddr, data) != LAN9370_SMI_OK) {
+    if (MDIO_BitBang_Write(s_phyAddr, regAddr, data) != MDIO_BITBANG_OK) {
         return LAN8720_ERROR;
     }
     return LAN8720_OK;
@@ -99,10 +99,10 @@ static bool probe_phy(uint8_t addr, uint16_t *id1, uint16_t *id2)
             return false;
         }
 
-        if (LAN9370_SMI_Read(addr, MII_PHYSID1, &tmp1) != LAN9370_SMI_OK) {
+        if (MDIO_BitBang_Read(addr, MII_PHYSID1, &tmp1) != MDIO_BITBANG_OK) {
             continue;
         }
-        if (LAN9370_SMI_Read(addr, MII_PHYSID2, &tmp2) != LAN9370_SMI_OK) {
+        if (MDIO_BitBang_Read(addr, MII_PHYSID2, &tmp2) != MDIO_BITBANG_OK) {
             continue;
         }
 

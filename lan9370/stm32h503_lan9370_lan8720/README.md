@@ -186,14 +186,26 @@ flowchart TB
 
 | 项目           | 状态 | 说明                                                |
 |---------------|------|----------------------------------------------------|
-| PHY 自动探测   | OK   | 优先探测 `addr=1`，失败后回退 `addr=0` 和全地址扫描 |
+| PHY 自动探测   | OK   | 实测 `addr=1` 命中，`mdioscan 0 3` 返回 `PHY[1]: ID=0x0007C0F1` |
 | PHY 直接访问   | OK   | 通过 PB6/PB5 直接读写 Clause 22 寄存器 |
-| PHY ID 读取   | 已实现 | 命令路径为 `mdioscan` / `smiread 1 2` / `smiread 1 3` |
-| 软复位        | 已实现 | `BMCR.RESET` 置位后轮询清零 |
-| RMII 模式      | 已实现 | `SM[14] = 1`，确保 LAN8720A 工作在 RMII |
-| 4B5B 编码      | 已实现 | `SCSR[6] = 1`，符合 LAN8720A 要求 |
-| 自动协商       | 已实现 | 广播 10/100 FD/HD 后重启协商 |
-| 链路状态读取   | 已实现 | `BMSR` + `SCSR` 读取 link / duplex / speed |
+| PHY ID 读取   | 已实现 | `PHYID1=0x0007`, `PHYID2=0xC0F1`，完整 ID = `0x0007C0F1` |
+| 软复位        | 已实现 | 实测复位完成时间约 `11 ms` |
+| RMII 模式      | 已实现 | `SM(0x12)=0x60E1`，bit14 已为 1 |
+| 4B5B 编码      | 已实现 | `SCSR(0x1F)=0x1058`，bit6 已为 1 |
+| 自动协商       | 已实现 | 实测协商完成时间约 `1616 ms` |
+| 链路状态读取   | 已实现 | `BMSR(0x01)=0x782D`，`SCSR(0x1F)=0x1058`，当前为 `100M Full` |
+
+### LAN8720A 实测寄存器快照（COM80 串口）
+
+| 命令 | 实测返回 | 说明 |
+|------|----------|------|
+| `mdioscan 0 3` | `PHY[1]: ID=0x0007C0F1` | 仅在地址 1 命中 |
+| `smiread 1 2` | `0x0007` | PHYID1 |
+| `smiread 1 3` | `0xC0F1` | PHYID2 |
+| `smiread 1 0` | `0x3100` | BMCR，AN 已启用 |
+| `smiread 1 1` | `0x782D` | BMSR，Link Up + AN Complete |
+| `smiread 1 18` | `0x60E1` | SM，RMII 模式 |
+| `smiread 1 31` | `0x1058` | SCSR，100M Full |
 
 ---
 
@@ -295,7 +307,7 @@ stm32h503_lan9370_lan8720/
 ├── LAN9370/                        # * LAN9370 驱动模块
 │   ├── lan9370_reg.h              # 完整寄存器定义 (>200个寄存器宏)
 │   ├── lan9370_spi.h / .c         # SPI 底层：读/写 8/16/32位 + Burst
-│   ├── lan9370_smi.h / .c         # MCU 直连 LAN8720 的 Clause-22 bit-bang MDIO（历史文件名保留）
+│   ├── mdio_bitbang.h / .c        # MCU 直连 LAN8720 的 Clause-22 bit-bang MDIO
 │   ├── lan9370_driver.h / .c      # 高层 API：初始化/端口/VLAN/PHY/MIB
 │   ├── lan9370_persist.h / .c     # 持久化：MCU Flash 存储配置
 │   └── lan8720_driver.h / .c      # * LAN8720A PHY 驱动（MCU direct MDIO）
@@ -390,7 +402,7 @@ LAN9370 通过 SPI 从接口进行所有寄存器配置：
 | 对象 | 访问路径 | 当前实现 | 文件 |
 |------|----------|----------|------|
 | LAN9370 内部 T1 PHY (Port1-4) | SPI → VPHY indirect window | `LAN9370_PHY_ReadReg/WriteReg` | `lan9370_driver.c` |
-| LAN8720 external PHY | MCU PB6/PB5 → Clause 22 MDIO | `LAN9370_SMI_Read/Write` | `lan9370_smi.c`, `lan8720_driver.c` |
+| LAN8720 external PHY | MCU PB6/PB5 → Clause 22 MDIO | `MDIO_BitBang_Read/Write` | `mdio_bitbang.c`, `lan8720_driver.c` |
 
 旧版本里曾经存在 `LAN9370_MIIM_Read/Write` 这套 API，假设 LAN9370 能作为 MCU 的 external PHY SPI 代理。
 该假设已经被彻底删除，原因如下：
@@ -442,6 +454,25 @@ T1 端口的 Master/Slave 状态应从 `T1_PHY_MASTER_SLAVE_CTRL` bit11 (`T1_PHY
    8. 写 ANAR，广播 10/100 FD/HD 能力
    9. 置 BMCR.AN_ENABLE + RESTART_AN
  10. 轮询 BMSR / SCSR，读取 link / duplex / speed
+```
+
+当前台架实测启动日志：
+
+```text
+[LAN8720] Probing PHY via MCU direct MDIO...
+[LAN8720] probe addr 1: ID=0x0007C0F1 - MATCH!
+[LAN8720] Found at PHY address 1, ID: 0x0007C0F1
+[LAN8720] Resetting PHY...
+[LAN8720] Reset complete after 11 ms
+[LAN8720] SM register (before): 0x60E1
+[LAN8720] SM register (after):  0x60E1
+[LAN8720] SCSR register (before): 0x0040
+[LAN8720] SCSR register (after):  0x0040
+[LAN8720] ANAR set to 0x01E1 (100FD/100HD/10FD/10HD)
+[LAN8720] BMCR set to 0x3200 (AN enabled, restarting)
+[LAN8720] Waiting for auto-negotiation...
+[LAN8720] Auto-negotiation complete after 1616 ms
+[LAN8720] Link: UP
 ```
 
 这意味着 `lan8720`、`smiread`、`smiwrite`、`mdioscan` 这几条 shell 命令现在都直接作用于 **MCU ↔ LAN8720** 的物理 MDIO 总线。
@@ -670,7 +701,7 @@ cd stm32h503_lan9370_lan8720
 | Port Enable | 端口是否允许进入转发态 | `LAN9370_SetPortEnable()` |
 | Master/Slave | 100BASE-T1 链路谁提供时钟基准 | `LAN9370_SetT1MasterSlave()`，当前 Port2=Master |
 | RMII MAC/PHY 分离 | Port5 只做 MAC，LAN8720 做外部 PHY | Port5 寄存器在 LAN9370，PHY 寄存器在 LAN8720 |
-| Clause 22 SMI | 经典 MDC/MDIO 管理协议 | `lan9370_smi.c` 中的软件时序实现 |
+| Clause 22 SMI | 经典 MDC/MDIO 管理协议 | `mdio_bitbang.c` 中的软件时序实现 |
 
 ### 4. 当前数据面和控制面的关系
 
@@ -735,7 +766,7 @@ flowchart LR
 | Port Enable | `LAN9370_SetPortEnable()` | `REG_PORTn_MSTP_STATE` | 关闭空口，只保留 Port2/5 |
 | L2 转发表边界 | `LAN9370_SetPortMembership()` | `REG_PORT_VLAN_MEMBERSHIP__4` | 仅开放 2 ↔ 5 |
 | External PHY Reset / AN | `LAN8720_Init()` | `BMCR/BMSR/ANAR/SCSR/SM` | 让 RJ45 侧 link 处于受控状态 |
-| External PHY 寄存器读写 | `LAN9370_SMI_Read/Write()` | MDC/MDIO Clause 22 | Shell 诊断与驱动初始化 |
+| External PHY 寄存器读写 | `MDIO_BitBang_Read/Write()` | MDC/MDIO Clause 22 | Shell 诊断与驱动初始化 |
 
 ### 2. 当前 Release 的 forwarding policy
 
@@ -760,7 +791,7 @@ Port5 membership = 0x12   // Port5 <-> Port2
 
 ### 1. Clause 22 基本帧格式
 
-`lan9370_smi.c` 里实现的是最传统的 IEEE 802.3 Clause 22 帧：
+`mdio_bitbang.c` 里实现的是最传统的 IEEE 802.3 Clause 22 帧：
 
 ```text
 PREAMBLE(32x1) | ST(01) | OP(10/01) | PHYAD[4:0] | REGAD[4:0] | TA | DATA[15:0]
@@ -827,12 +858,15 @@ sequenceDiagram
    end
 ```
 
-### 6. 为什么保留 `lan9370_smi.c` 这个历史文件名
+### 6. 为什么现在改名成 `mdio_bitbang.c`
 
-更理想的名字当然应该是 `mdio_bitbang.c`。
-当前仓库先保留旧文件名，原因只有一个：在不引入额外重命名 churn 的前提下，先保证 Release 工程稳定、文档一致、行为正确。
+当前模块负责的是 MCU 直连 external PHY 的通用 Clause 22 bit-bang，总体上并不属于 LAN9370 专有逻辑。
 
-如果后续仓库允许做一次纯整理型提交，再把它独立重命名会更干净。
+因此这次收尾把文件名从带强烈误导性的 `lan9370_smi.c` 改成了 `mdio_bitbang.c`，这样后续维护时更容易一眼看出：
+
+- 它不是 LAN9370 的 SPI/VPHY 驱动
+- 它也不是 switch fabric 的一部分
+- 它只是一个给 external PHY 用的直连 MDIO 工具层
 
 ---
 

@@ -9,7 +9,7 @@
 #include "lan9370_driver.h"
 #include "lan9370_persist.h"
 #include "lan9370_spi.h"
-#include "lan9370_smi.h"
+#include "mdio_bitbang.h"
 #include "lan8720_driver.h"
 #include "shell.h"
 #include <stdio.h>
@@ -621,12 +621,12 @@ int cmd_smiread(int argc, char *argv[])
         return -1;
     }
 
-    if (LAN9370_SMI_Init() != LAN9370_SMI_OK) {
+    if (MDIO_BitBang_Init() != MDIO_BITBANG_OK) {
         printf("SMI init failed\r\n");
         return -1;
     }
 
-    if (LAN9370_SMI_Read((uint8_t)phy, (uint8_t)reg, &value) != LAN9370_SMI_OK) {
+    if (MDIO_BitBang_Read((uint8_t)phy, (uint8_t)reg, &value) != MDIO_BITBANG_OK) {
         printf("SMI read failed\r\n");
         return -1;
     }
@@ -646,12 +646,12 @@ int cmd_smiwrite(int argc, char *argv[])
         return -1;
     }
 
-    if (LAN9370_SMI_Init() != LAN9370_SMI_OK) {
+    if (MDIO_BitBang_Init() != MDIO_BITBANG_OK) {
         printf("SMI init failed\r\n");
         return -1;
     }
 
-    if (LAN9370_SMI_Write((uint8_t)phy, (uint8_t)reg, (uint16_t)value) != LAN9370_SMI_OK) {
+    if (MDIO_BitBang_Write((uint8_t)phy, (uint8_t)reg, (uint16_t)value) != MDIO_BITBANG_OK) {
         printf("SMI write failed\r\n");
         return -1;
     }
@@ -676,7 +676,7 @@ int cmd_diagbus(int argc, char *argv[])
     printf("diagbus: reset -> probe SPI/SMI\r\n");
     LAN9370_HardwareReset();
 
-    if (LAN9370_SMI_Init() != LAN9370_SMI_OK) {
+    if (MDIO_BitBang_Init() != MDIO_BITBANG_OK) {
         printf("SMI init failed\r\n");
     }
 
@@ -698,8 +698,8 @@ int cmd_diagbus(int argc, char *argv[])
         }
     }
 
-    if (LAN9370_SMI_Read(LAN8720_ACTIVE_PHY_ADDR, MII_PHYSID1, &smi_id1) == LAN9370_SMI_OK &&
-        LAN9370_SMI_Read(LAN8720_ACTIVE_PHY_ADDR, MII_PHYSID2, &smi_id2) == LAN9370_SMI_OK) {
+    if (MDIO_BitBang_Read(LAN8720_ACTIVE_PHY_ADDR, MII_PHYSID1, &smi_id1) == MDIO_BITBANG_OK &&
+        MDIO_BitBang_Read(LAN8720_ACTIVE_PHY_ADDR, MII_PHYSID2, &smi_id2) == MDIO_BITBANG_OK) {
         printf("SMI PHY%u ID1=0x%04X ID2=0x%04X\r\n",
                (unsigned int)LAN8720_ACTIVE_PHY_ADDR, smi_id1, smi_id2);
         if (!((smi_id1 == 0x0000 && smi_id2 == 0x0000) ||
@@ -911,7 +911,7 @@ int cmd_mdioscan(int argc, char *argv[])
         return -1;
     }
 
-    if (LAN9370_SMI_Init() != LAN9370_SMI_OK) {
+    if (MDIO_BitBang_Init() != MDIO_BITBANG_OK) {
         printf("SMI init failed\r\n");
         return -1;
     }
@@ -920,8 +920,8 @@ int cmd_mdioscan(int argc, char *argv[])
     for (uint32_t phy = from; phy <= to; phy++) {
         uint16_t id1 = 0;
         uint16_t id2 = 0;
-        if (LAN9370_SMI_Read((uint8_t)phy, MII_PHYSID1, &id1) == LAN9370_SMI_OK &&
-            LAN9370_SMI_Read((uint8_t)phy, MII_PHYSID2, &id2) == LAN9370_SMI_OK &&
+        if (MDIO_BitBang_Read((uint8_t)phy, MII_PHYSID1, &id1) == MDIO_BITBANG_OK &&
+            MDIO_BitBang_Read((uint8_t)phy, MII_PHYSID2, &id2) == MDIO_BITBANG_OK &&
             id1 != 0x0000 && id1 != 0xFFFF &&
             id2 != 0x0000 && id2 != 0xFFFF) {
             printf("  PHY[%2lu]: ID=0x%04X%04X\r\n", phy, id1, id2);

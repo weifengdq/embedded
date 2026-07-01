@@ -48,7 +48,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
     # LAN9370 Driver
     LAN9370/lan9370_spi.c
-    LAN9370/lan9370_smi.c
+    LAN9370/mdio_bitbang.c
     LAN9370/lan9370_driver.c
     LAN9370/lan9370_persist.c
     LAN9370/lan8720_driver.c
