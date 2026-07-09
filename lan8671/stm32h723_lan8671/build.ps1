@@ -8,7 +8,7 @@ param(
     [ValidateSet('Debug', 'Release')]
     [string]$Preset = 'Debug',
 
-    [string]$ProjectName = 'stm32h723_tja1103',
+    [string]$ProjectName = 'stm32h723_lan8671',
     [string]$BuildDir,
     [string]$ElfPath,
     [string]$ToolchainBinDir,

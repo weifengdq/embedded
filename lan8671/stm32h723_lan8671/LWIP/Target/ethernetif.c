@@ -157,7 +157,6 @@ static int32_t ETH_PHY_IO_DeInit(void);
 static int32_t ETH_PHY_IO_ReadReg(uint32_t dev_addr, uint32_t reg_addr, uint32_t *reg_value);
 static int32_t ETH_PHY_IO_WriteReg(uint32_t dev_addr, uint32_t reg_addr, uint32_t reg_value);
 static int32_t ETH_PHY_IO_GetTick(void);
-static const char *ethernetif_cable_test_result_name(uint32_t cable_test_result);
 
 static user_phy_IOCtx_t USER_PHY_IOCtx =
 {
@@ -212,7 +211,6 @@ static void low_level_init(struct netif *netif)
 {
   HAL_StatusTypeDef hal_eth_init_status = HAL_OK;
   int32_t phy_status = USER_PHY_STATUS_OK;
-  uint32_t cable_test_result = 0U;
   /* Start ETH HAL Init */
 
   heth.Instance = ETH;
@@ -221,6 +219,10 @@ static void low_level_init(struct netif *netif)
   heth.Init.TxDesc = DMATxDscrTab;
   heth.Init.RxDesc = DMARxDscrTab;
   heth.Init.RxBuffLen = 1536;
+
+  __HAL_RCC_SYSCFG_CLK_ENABLE();
+  HAL_SYSCFG_ETHInterfaceSelect(SYSCFG_ETH_RMII);
+  CLEAR_BIT(SYSCFG->PMCR, SYSCFG_PMCR_PA1SO);
 
   /* USER CODE BEGIN MACADDRESS */
 
@@ -267,41 +269,21 @@ static void low_level_init(struct netif *netif)
   phy_status = USER_PHY_Init(&USER_PHY);
   if (phy_status != USER_PHY_STATUS_OK)
   {
-    debug_printf("TJA1103 init failed, status=%ld\r\n", (long)phy_status);
+    debug_printf("LAN8671 init failed, status=%ld\r\n", (long)phy_status);
     netif_set_link_down(netif);
     netif_set_down(netif);
     return;
   }
 
-  if (USER_PHY.DevAddr != 5U)
-  {
-    debug_printf("TJA1103 PHYAD warning: expected 5, detected %lu\r\n", (unsigned long)USER_PHY.DevAddr);
-  }
+  debug_printf("LAN8671 PHYAD=%lu\r\n", (unsigned long)USER_PHY.DevAddr);
 
   phy_status = USER_PHY_Configure(&USER_PHY);
   if (phy_status != USER_PHY_STATUS_OK)
   {
-    debug_printf("TJA1103 configure failed, status=%ld\r\n", (long)phy_status);
+    debug_printf("LAN8671 configure failed, status=%ld\r\n", (long)phy_status);
     netif_set_link_down(netif);
     netif_set_down(netif);
     return;
-  }
-
-  if (USER_PHY_GetLinkState(&USER_PHY) <= USER_PHY_STATUS_LINK_DOWN)
-  {
-    phy_status = USER_PHY_RunCableTest(&USER_PHY, &cable_test_result);
-    if (phy_status == USER_PHY_STATUS_OK)
-    {
-      debug_printf("TJA1103 cable-test: raw=0x%04lX result=%s\r\n",
-                   (unsigned long)(cable_test_result & 0xFFFFU),
-                   ethernetif_cable_test_result_name(cable_test_result));
-    }
-    else
-    {
-      debug_printf("TJA1103 cable-test failed, status=%ld raw=0x%04lX\r\n",
-                   (long)phy_status,
-                   (unsigned long)(cable_test_result & 0xFFFFU));
-    }
   }
 
 /* USER CODE END low_level_init Code 1 for User BSP */
@@ -560,9 +542,9 @@ u32_t sys_now(void)
 /* USER CODE BEGIN PHI IO Functions for User BSP */
 static int32_t ETH_PHY_IO_Init(void)
 {
-  HAL_GPIO_WritePin(PHY_NRST_GPIO_Port, PHY_NRST_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LAN8671_RESET_N_GPIO_Port, LAN8671_RESET_N_Pin, GPIO_PIN_RESET);
   HAL_Delay(2);
-  HAL_GPIO_WritePin(PHY_NRST_GPIO_Port, PHY_NRST_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(LAN8671_RESET_N_GPIO_Port, LAN8671_RESET_N_Pin, GPIO_PIN_SET);
   HAL_Delay(10);
   HAL_ETH_SetMDIOClockRange(&heth);
   return 0;
@@ -598,30 +580,6 @@ static int32_t ETH_PHY_IO_GetTick(void)
   return (int32_t)HAL_GetTick();
 }
 
-static const char *ethernetif_cable_test_result_name(uint32_t cable_test_result)
-{
-  if ((cable_test_result & USER_PHY_VEND1_CABLE_TEST_VALID) == 0U)
-  {
-    return "pending";
-  }
-
-  switch ((uint16_t)cable_test_result & USER_PHY_VEND1_CABLE_TEST_RESULT_MASK)
-  {
-    case USER_PHY_VEND1_CABLE_TEST_RESULT_OK:
-      return "ok";
-
-    case USER_PHY_VEND1_CABLE_TEST_RESULT_SHORT:
-      return "short";
-
-    case USER_PHY_VEND1_CABLE_TEST_RESULT_OPEN:
-      return "open";
-
-    case USER_PHY_VEND1_CABLE_TEST_RESULT_UNKNOWN:
-    default:
-      return "unknown";
-  }
-}
-
 /* USER CODE END PHI IO Functions for User BSP */
 
 /**
@@ -642,16 +600,16 @@ void ethernet_link_check_state(struct netif *netif)
     netif_set_link_down(netif);
     debug_printf("ETH link down\r\n");
   }
-  else if (!netif_is_link_up(netif) && (phy_link_state == USER_PHY_STATUS_100MBITS_FULLDUPLEX))
+  else if (!netif_is_link_up(netif) && (phy_link_state == USER_PHY_STATUS_10MBITS_HALFDUPLEX))
   {
     HAL_ETH_GetMACConfig(&heth, &mac_config);
-    mac_config.DuplexMode = ETH_FULLDUPLEX_MODE;
-    mac_config.Speed = ETH_SPEED_100M;
+    mac_config.DuplexMode = ETH_HALFDUPLEX_MODE;
+    mac_config.Speed = ETH_SPEED_10M;
     HAL_ETH_SetMACConfig(&heth, &mac_config);
     HAL_ETH_Start(&heth);
     netif_set_up(netif);
     netif_set_link_up(netif);
-    debug_printf("ETH link up: 100M/full PHYAD=%lu\r\n", (unsigned long)USER_PHY.DevAddr);
+    debug_printf("ETH link up: 10M/half PHYAD=%lu\r\n", (unsigned long)USER_PHY.DevAddr);
     (void)etharp_gratuitous(netif);
   }
 }

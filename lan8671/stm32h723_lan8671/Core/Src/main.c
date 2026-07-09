@@ -61,6 +61,7 @@ static void *lwiperf_session;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void PeriphCommonClock_Config(void);
 static void MPU_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_LPUART1_UART_Init(void);
@@ -116,6 +117,9 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
+  /* Configure the peripherals common clocks */
+  PeriphCommonClock_Config();
+
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
@@ -125,7 +129,7 @@ int main(void)
   MX_LPUART1_UART_Init();
   MX_LWIP_Init();
   /* USER CODE BEGIN 2 */
-  debug_printf("\r\nstm32h723_tja1103 boot\r\n");
+  debug_printf("\r\nstm32h723_lan8671 boot\r\n");
   Shell_Init(&hlpuart1);
   Shell_PrintBanner();
   App_NetworkServicesInit();
@@ -205,6 +209,29 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+
+  __HAL_RCC_PLL2CLKOUT_ENABLE(RCC_PLL2_DIVP);
+  HAL_RCC_MCOConfig(RCC_MCO2, RCC_MCO2SOURCE_PLL2PCLK, RCC_MCODIV_1);
+}
+
+void PeriphCommonClock_Config(void)
+{
+  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SPI1;
+  PeriphClkInitStruct.PLL2.PLL2M = 5;
+  PeriphClkInitStruct.PLL2.PLL2N = 40;
+  PeriphClkInitStruct.PLL2.PLL2P = 4;
+  PeriphClkInitStruct.PLL2.PLL2Q = 2;
+  PeriphClkInitStruct.PLL2.PLL2R = 2;
+  PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_3;
+  PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOWIDE;
+  PeriphClkInitStruct.PLL2.PLL2FRACN = 0;
+  PeriphClkInitStruct.Spi123ClockSelection = RCC_SPI123CLKSOURCE_PLL2;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
 }
 
 /**
@@ -276,14 +303,30 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(PHY_NRST_GPIO_Port, PHY_NRST_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LAN8671_RESET_N_GPIO_Port, LAN8671_RESET_N_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PHY_NRST_Pin */
-  GPIO_InitStruct.Pin = PHY_NRST_Pin;
+  /*Configure GPIO pin : LAN8671_RESET_N_Pin */
+  GPIO_InitStruct.Pin = LAN8671_RESET_N_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(PHY_NRST_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(LAN8671_RESET_N_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : LAN8671_IRQ_N_Pin */
+  GPIO_InitStruct.Pin = LAN8671_IRQ_N_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(LAN8671_IRQ_N_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PC9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF0_MCO;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  HAL_SYSCFG_AnalogSwitchConfig(SYSCFG_SWITCH_PC3, SYSCFG_SWITCH_PC3_OPEN);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 

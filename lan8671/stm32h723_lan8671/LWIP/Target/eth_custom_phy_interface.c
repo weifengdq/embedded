@@ -1,60 +1,141 @@
-/* USER CODE BEGIN Header */
-/**
-  ******************************************************************************
-  * @file    eth_custom_phy_interface.c
-  * @author  MCD Application Team
-  * @brief   This file provides a set of functions needed to manage
-  *			 the ethernet phy.
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2024 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
-/* Private includes ----------------------------------------------------------*/
 #include "eth_custom_phy_interface.h"
+
 #include <stddef.h>
 
-/* Private define ------------------------------------------------------------*/
-#define USER_PHY_SW_RESET_TO                     ((uint32_t)500U)
-#define USER_PHY_CABLE_TEST_TO                   ((uint32_t)250U)
-#define USER_PHY_MAX_DEV_ADDR                    ((uint32_t)31U)
+#define USER_PHY_SW_RESET_TIMEOUT_MS            ((uint32_t)500U)
+#define USER_PHY_MAX_DEV_ADDR                   ((uint32_t)31U)
 
-/* Private function prototypes -----------------------------------------------*/
-static int32_t user_phy_c45_read(user_phy_Object_t *pObj, uint16_t devad, uint16_t reg, uint32_t *value);
-static int32_t user_phy_c45_write(user_phy_Object_t *pObj, uint16_t devad, uint16_t reg, uint16_t value);
-static int32_t user_phy_c45_modify(user_phy_Object_t *pObj, uint16_t devad, uint16_t reg, uint16_t clear_mask, uint16_t set_mask);
-static uint16_t user_phy_get_phy_config_value(void);
-static uint16_t user_phy_get_an_adv_l_value(void);
-static uint16_t user_phy_get_an_adv_m_value(void);
-static uint16_t user_phy_get_gpio_func_value(void);
-static uint16_t user_phy_get_ptp_config_value(void);
+static user_phy_plca_config_t g_user_phy_plca_config = {
+  USER_PHY_DEFAULT_PLCA_ENABLED,
+  USER_PHY_DEFAULT_PLCA_NODE_ID,
+  USER_PHY_DEFAULT_PLCA_NODE_COUNT,
+  USER_PHY_DEFAULT_PLCA_TOTMR,
+  USER_PHY_DEFAULT_PLCA_BURST_COUNT,
+  USER_PHY_DEFAULT_PLCA_BURST_TIMER,
+  USER_PHY_DEFAULT_PSTC_IRQ_ENABLED,
+  USER_PHY_DEFAULT_COLLISION_AUTO
+};
 
-static int32_t user_phy_c45_read(user_phy_Object_t *pObj, uint16_t devad, uint16_t reg, uint32_t *value)
+typedef struct
 {
-  if ((pObj->IO.WriteReg(pObj->DevAddr, USER_PHY_MMD_CTRL, devad | USER_PHY_MMD_CTRL_ADDR) < 0) ||
-      (pObj->IO.WriteReg(pObj->DevAddr, USER_PHY_MMD_DATA, reg) < 0) ||
-      (pObj->IO.WriteReg(pObj->DevAddr, USER_PHY_MMD_CTRL, devad | USER_PHY_MMD_CTRL_DATA_NO_POST_INC) < 0) ||
-      (pObj->IO.ReadReg(pObj->DevAddr, USER_PHY_MMD_DATA, value) < 0))
+  uint16_t reg;
+  uint16_t value;
+} user_phy_reg_write_t;
+
+static const user_phy_reg_write_t g_user_phy_rev_c2_writes[] = {
+  {USER_PHY_CFG_D0, 0x3F31U},
+  {USER_PHY_CFG_E0, 0xC000U},
+  {USER_PHY_CFG_E9, 0x9E50U},
+  {USER_PHY_CFG_F5, 0x1CF8U},
+  {USER_PHY_CFG_F4, 0xC020U},
+  {USER_PHY_CFG_F8, 0xB900U},
+  {USER_PHY_CFG_F9, 0x4E53U},
+  {USER_PHY_CFG_81, 0x0080U},
+  {USER_PHY_CFG_91, 0x9660U}
+};
+
+static const user_phy_reg_write_t g_user_phy_sqi_writes[] = {
+  {USER_PHY_SQI_B0, 0x0103U},
+  {USER_PHY_SQI_B1, 0x0910U},
+  {USER_PHY_SQI_B2, 0x1D26U},
+  {USER_PHY_SQI_B3, 0x002AU},
+  {USER_PHY_SQI_B4, 0x0103U},
+  {USER_PHY_SQI_B5, 0x070DU},
+  {USER_PHY_SQI_B6, 0x1720U},
+  {USER_PHY_SQI_B7, 0x0027U},
+  {USER_PHY_SQI_B8, 0x0509U},
+  {USER_PHY_SQI_B9, 0x0E13U},
+  {USER_PHY_SQI_BA, 0x1C25U},
+  {USER_PHY_SQI_BB, 0x002BU}
+};
+
+static int32_t USER_PHY_ReadMmdReg(user_phy_Object_t *pObj, uint32_t devAddr,
+    uint32_t regAddr, uint32_t *value);
+static int32_t USER_PHY_WriteMmdReg(user_phy_Object_t *pObj, uint32_t devAddr,
+    uint32_t regAddr, uint32_t value);
+static int32_t USER_PHY_ModifyMmdReg(user_phy_Object_t *pObj, uint32_t devAddr,
+    uint32_t regAddr, uint32_t mask, uint32_t value);
+static int32_t USER_PHY_ProbeAddress(user_phy_Object_t *pObj);
+static int32_t user_phy_apply_rev_c2_config(user_phy_Object_t *pObj);
+static int32_t user_phy_apply_sqi_config(user_phy_Object_t *pObj, int8_t offset1);
+static int32_t user_phy_apply_plca_config(user_phy_Object_t *pObj,
+    const user_phy_plca_config_t *config);
+static int32_t user_phy_update_pstc_irq(user_phy_Object_t *pObj, uint8_t enabled);
+static int32_t user_phy_set_collision_detect(user_phy_Object_t *pObj, uint8_t enabled);
+static int8_t user_phy_decode_signed5(uint32_t raw_value);
+
+static int8_t user_phy_decode_signed5(uint32_t raw_value)
+{
+  uint8_t value = (uint8_t)(raw_value & 0x1FU);
+
+  if ((value & 0x10U) != 0U)
+  {
+    return (int8_t)(value - 0x20U);
+  }
+
+  return (int8_t)value;
+}
+
+static int32_t USER_PHY_ReadMmdReg(user_phy_Object_t *pObj, uint32_t devAddr,
+    uint32_t regAddr, uint32_t *value)
+{
+  if ((pObj == NULL) || (value == NULL))
+  {
+    return USER_PHY_STATUS_ERROR;
+  }
+
+  if (pObj->IO.WriteReg(pObj->DevAddr, USER_PHY_MMDCTRL,
+      USER_PHY_MMDCTRL_FUNC_ADDR | (devAddr & USER_PHY_MMDCTRL_DEVAD_MASK)) < 0)
+  {
+    return USER_PHY_STATUS_WRITE_ERROR;
+  }
+
+  if (pObj->IO.WriteReg(pObj->DevAddr, USER_PHY_MMDAD, regAddr) < 0)
+  {
+    return USER_PHY_STATUS_WRITE_ERROR;
+  }
+
+  if (pObj->IO.WriteReg(pObj->DevAddr, USER_PHY_MMDCTRL,
+      USER_PHY_MMDCTRL_FUNC_DATA_NO_POST_INC | (devAddr & USER_PHY_MMDCTRL_DEVAD_MASK)) < 0)
+  {
+    return USER_PHY_STATUS_WRITE_ERROR;
+  }
+
+  if (pObj->IO.ReadReg(pObj->DevAddr, USER_PHY_MMDAD, value) < 0)
   {
     return USER_PHY_STATUS_READ_ERROR;
   }
 
+  *value &= 0xFFFFU;
   return USER_PHY_STATUS_OK;
 }
 
-static int32_t user_phy_c45_write(user_phy_Object_t *pObj, uint16_t devad, uint16_t reg, uint16_t value)
+static int32_t USER_PHY_WriteMmdReg(user_phy_Object_t *pObj, uint32_t devAddr,
+    uint32_t regAddr, uint32_t value)
 {
-  if ((pObj->IO.WriteReg(pObj->DevAddr, USER_PHY_MMD_CTRL, devad | USER_PHY_MMD_CTRL_ADDR) < 0) ||
-      (pObj->IO.WriteReg(pObj->DevAddr, USER_PHY_MMD_DATA, reg) < 0) ||
-      (pObj->IO.WriteReg(pObj->DevAddr, USER_PHY_MMD_CTRL, devad | USER_PHY_MMD_CTRL_DATA_NO_POST_INC) < 0) ||
-      (pObj->IO.WriteReg(pObj->DevAddr, USER_PHY_MMD_DATA, value) < 0))
+  if (pObj == NULL)
+  {
+    return USER_PHY_STATUS_ERROR;
+  }
+
+  if (pObj->IO.WriteReg(pObj->DevAddr, USER_PHY_MMDCTRL,
+      USER_PHY_MMDCTRL_FUNC_ADDR | (devAddr & USER_PHY_MMDCTRL_DEVAD_MASK)) < 0)
+  {
+    return USER_PHY_STATUS_WRITE_ERROR;
+  }
+
+  if (pObj->IO.WriteReg(pObj->DevAddr, USER_PHY_MMDAD, regAddr) < 0)
+  {
+    return USER_PHY_STATUS_WRITE_ERROR;
+  }
+
+  if (pObj->IO.WriteReg(pObj->DevAddr, USER_PHY_MMDCTRL,
+      USER_PHY_MMDCTRL_FUNC_DATA_NO_POST_INC | (devAddr & USER_PHY_MMDCTRL_DEVAD_MASK)) < 0)
+  {
+    return USER_PHY_STATUS_WRITE_ERROR;
+  }
+
+  if (pObj->IO.WriteReg(pObj->DevAddr, USER_PHY_MMDAD, value & 0xFFFFU) < 0)
   {
     return USER_PHY_STATUS_WRITE_ERROR;
   }
@@ -62,88 +143,252 @@ static int32_t user_phy_c45_write(user_phy_Object_t *pObj, uint16_t devad, uint1
   return USER_PHY_STATUS_OK;
 }
 
-static int32_t user_phy_c45_modify(user_phy_Object_t *pObj, uint16_t devad, uint16_t reg, uint16_t clear_mask, uint16_t set_mask)
+static int32_t USER_PHY_ModifyMmdReg(user_phy_Object_t *pObj, uint32_t devAddr,
+    uint32_t regAddr, uint32_t mask, uint32_t value)
 {
-  uint32_t value = 0;
+  uint32_t reg_value;
+  int32_t status;
 
-  if (user_phy_c45_read(pObj, devad, reg, &value) != USER_PHY_STATUS_OK)
+  status = USER_PHY_ReadMmdReg(pObj, devAddr, regAddr, &reg_value);
+  if (status != USER_PHY_STATUS_OK)
   {
-    return USER_PHY_STATUS_READ_ERROR;
+    return status;
   }
 
-  value &= ~clear_mask;
-  value |= set_mask;
-
-  return user_phy_c45_write(pObj, devad, reg, (uint16_t)value);
+  reg_value = (reg_value & ~mask) | value;
+  return USER_PHY_WriteMmdReg(pObj, devAddr, regAddr, reg_value);
 }
 
-static uint16_t user_phy_get_phy_config_value(void)
+static int32_t USER_PHY_ProbeAddress(user_phy_Object_t *pObj)
 {
-  return (USER_PHY_CFG_AUTONOMOUS_MODE == USER_PHY_AUTONOMOUS_MODE_ENABLED) ? USER_PHY_VEND1_PHY_CONFIG_AUTO : 0U;
-}
+  uint32_t addr;
 
-static uint16_t user_phy_get_an_adv_l_value(void)
-{
-  switch (USER_PHY_CFG_MASTER_SLAVE)
+  for (addr = 0U; addr <= USER_PHY_MAX_DEV_ADDR; ++addr)
   {
-    case USER_PHY_MASTER_SLAVE_SLAVE_FORCE:
-    case USER_PHY_MASTER_SLAVE_MASTER_FORCE:
-      return USER_PHY_MDIO_AN_T1_ADV_L_FORCE_MS;
+    uint32_t id1;
+    uint32_t id2;
 
-    case USER_PHY_MASTER_SLAVE_SLAVE_PREFERRED:
-    case USER_PHY_MASTER_SLAVE_MASTER_PREFERRED:
-    default:
-      return 0U;
-  }
-}
+    if (pObj->IO.ReadReg(addr, USER_PHY_PHYID1, &id1) < 0)
+    {
+      continue;
+    }
 
-static uint16_t user_phy_get_an_adv_m_value(void)
-{
-  uint16_t adv = USER_PHY_MDIO_AN_T1_ADV_M_100BT1;
+    if (pObj->IO.ReadReg(addr, USER_PHY_PHYID2, &id2) < 0)
+    {
+      continue;
+    }
 
-  switch (USER_PHY_CFG_MASTER_SLAVE)
-  {
-    case USER_PHY_MASTER_SLAVE_MASTER_PREFERRED:
-    case USER_PHY_MASTER_SLAVE_MASTER_FORCE:
-      adv |= USER_PHY_MDIO_AN_T1_ADV_M_MST;
-      break;
+    id1 &= 0xFFFFU;
+    id2 &= 0xFFFFU;
 
-    case USER_PHY_MASTER_SLAVE_SLAVE_PREFERRED:
-    case USER_PHY_MASTER_SLAVE_SLAVE_FORCE:
-    default:
-      break;
+    if ((id1 == USER_PHY_LAN8671_ID1) &&
+        ((id2 & USER_PHY_LAN8671_ID2_MASK) == USER_PHY_LAN8671_ID2_VALUE))
+    {
+      pObj->DevAddr = addr;
+      return USER_PHY_STATUS_OK;
+    }
   }
 
-  return adv;
+  return USER_PHY_STATUS_ADDRESS_ERROR;
 }
 
-static uint16_t user_phy_get_gpio_func_value(void)
+static int32_t user_phy_update_pstc_irq(user_phy_Object_t *pObj, uint8_t enabled)
 {
-  return (uint16_t)(USER_PHY_VEND1_GPIO_FUNC_ENABLE | USER_PHY_VEND1_GPIO_FUNC_PTP | USER_PHY_VEND1_GPIO_FUNC_PPS_OUT);
+  return USER_PHY_ModifyMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_IMSK1,
+      USER_PHY_IMSK1_PSTCM,
+      (enabled != 0U) ? 0U : USER_PHY_IMSK1_PSTCM);
 }
 
-static uint16_t user_phy_get_ptp_config_value(void)
+static int32_t user_phy_set_collision_detect(user_phy_Object_t *pObj, uint8_t enabled)
 {
-  if (USER_PHY_CFG_PPS_ENABLE == 0U)
+  return USER_PHY_ModifyMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_CDCTL0,
+      USER_PHY_CDCTL0_CDEN,
+      (enabled != 0U) ? USER_PHY_CDCTL0_CDEN : 0U);
+}
+
+static int32_t user_phy_apply_rev_c2_config(user_phy_Object_t *pObj)
+{
+  uint32_t index;
+  uint32_t raw_offset1;
+  uint32_t raw_offset2;
+  int8_t offset1;
+  int8_t offset2;
+  uint16_t cfgparam1;
+  uint16_t cfgparam2;
+  int32_t status;
+
+  status = USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, 0x0004U, &raw_offset1);
+  if (status != USER_PHY_STATUS_OK)
   {
-    return 0U;
+    return status;
   }
 
-  return (USER_PHY_CFG_PPS_PHASE_NS == USER_PHY_PPS_PHASE_500MS_NS) ?
-         (uint16_t)(USER_PHY_VEND1_PTP_CONFIG_PPS_ENABLE | USER_PHY_VEND1_PTP_CONFIG_PPS_POLARITY) :
-         USER_PHY_VEND1_PTP_CONFIG_PPS_ENABLE;
+  status = USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, 0x0008U, &raw_offset2);
+  if (status != USER_PHY_STATUS_OK)
+  {
+    return status;
+  }
+
+  offset1 = user_phy_decode_signed5(raw_offset1);
+  offset2 = user_phy_decode_signed5(raw_offset2);
+
+  cfgparam1 = (uint16_t)((((uint16_t)((9 + offset1) & 0x3F)) << 10) |
+                         (((uint16_t)((14 + offset1) & 0x3F)) << 4) |
+                         0x0003U);
+  cfgparam2 = (uint16_t)(((uint16_t)((40 + offset2) & 0x3F)) << 10);
+
+  status = USER_PHY_WriteMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_CFG_84, cfgparam1);
+  if (status != USER_PHY_STATUS_OK)
+  {
+    return status;
+  }
+
+  status = USER_PHY_WriteMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_CFG_8A, cfgparam2);
+  if (status != USER_PHY_STATUS_OK)
+  {
+    return status;
+  }
+
+  for (index = 0U; index < (sizeof(g_user_phy_rev_c2_writes) / sizeof(g_user_phy_rev_c2_writes[0])); ++index)
+  {
+    status = USER_PHY_WriteMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE,
+        g_user_phy_rev_c2_writes[index].reg,
+        g_user_phy_rev_c2_writes[index].value);
+    if (status != USER_PHY_STATUS_OK)
+    {
+      return status;
+    }
+  }
+
+  if (USER_PHY_ENABLE_SQI_CONFIG != 0U)
+  {
+    status = user_phy_apply_sqi_config(pObj, offset1);
+    if (status != USER_PHY_STATUS_OK)
+    {
+      return status;
+    }
+  }
+
+  return USER_PHY_STATUS_OK;
 }
 
-/**
-  * @brief  Register IO functions to component object
-  * @param  pObj: device object of user_phy_Object_t.
-  * @param  ioctx: holds device IO functions.
-  * @retval USER_PHY_STATUS_OK  if OK
-  *         USER_PHY_STATUS_ERROR if missing mandatory function
-  */
-int32_t  USER_PHY_RegisterBusIO(user_phy_Object_t *pObj, user_phy_IOCtx_t *ioctx)
+static int32_t user_phy_apply_sqi_config(user_phy_Object_t *pObj, int8_t offset1)
 {
-  if(!pObj || !ioctx->ReadReg || !ioctx->WriteReg || !ioctx->GetTick)
+  uint16_t cfgparam3;
+  uint16_t cfgparam4;
+  uint16_t cfgparam5;
+  uint32_t index;
+  int32_t status;
+
+  cfgparam3 = (uint16_t)((((uint16_t)((5 + offset1) & 0x3F)) << 8) |
+                         ((uint16_t)((9 + offset1) & 0x3F)));
+  cfgparam4 = (uint16_t)((((uint16_t)((9 + offset1) & 0x3F)) << 8) |
+                         ((uint16_t)((14 + offset1) & 0x3F)));
+  cfgparam5 = (uint16_t)((((uint16_t)((17 + offset1) & 0x3F)) << 8) |
+                         ((uint16_t)((22 + offset1) & 0x3F)));
+
+  status = USER_PHY_WriteMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_SQI_AD, cfgparam3);
+  if (status != USER_PHY_STATUS_OK)
+  {
+    return status;
+  }
+
+  status = USER_PHY_WriteMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_SQI_AE, cfgparam4);
+  if (status != USER_PHY_STATUS_OK)
+  {
+    return status;
+  }
+
+  status = USER_PHY_WriteMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_SQI_AF, cfgparam5);
+  if (status != USER_PHY_STATUS_OK)
+  {
+    return status;
+  }
+
+  for (index = 0U; index < (sizeof(g_user_phy_sqi_writes) / sizeof(g_user_phy_sqi_writes[0])); ++index)
+  {
+    status = USER_PHY_WriteMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE,
+        g_user_phy_sqi_writes[index].reg,
+        g_user_phy_sqi_writes[index].value);
+    if (status != USER_PHY_STATUS_OK)
+    {
+      return status;
+    }
+  }
+
+  return USER_PHY_STATUS_OK;
+}
+
+static int32_t user_phy_apply_plca_config(user_phy_Object_t *pObj,
+    const user_phy_plca_config_t *config)
+{
+  uint16_t ctrl0;
+  uint16_t ctrl1;
+  uint16_t burst;
+  int32_t status;
+
+  if (config == NULL)
+  {
+    return USER_PHY_STATUS_ERROR;
+  }
+
+  ctrl0 = (config->enabled != 0U) ? USER_PHY_PLCA_CTRL0_EN : 0U;
+  if (config->node_id == 0U)
+  {
+    ctrl1 = (uint16_t)((uint16_t)config->node_count << 8);
+  }
+  else
+  {
+    ctrl1 = (uint16_t)config->node_id;
+  }
+  burst = (uint16_t)(((uint16_t)config->burst_count << 8) | config->burst_timer);
+
+  status = USER_PHY_WriteMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE,
+      USER_PHY_PLCA_TOTMR, config->totmr);
+  if (status != USER_PHY_STATUS_OK)
+  {
+    return status;
+  }
+
+  status = USER_PHY_WriteMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE,
+      USER_PHY_PLCA_BURST, burst);
+  if (status != USER_PHY_STATUS_OK)
+  {
+    return status;
+  }
+
+  status = USER_PHY_WriteMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE,
+      USER_PHY_PLCA_CTRL1, ctrl1);
+  if (status != USER_PHY_STATUS_OK)
+  {
+    return status;
+  }
+
+  status = USER_PHY_WriteMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE,
+      USER_PHY_PLCA_CTRL0, ctrl0);
+  if (status != USER_PHY_STATUS_OK)
+  {
+    return status;
+  }
+
+  status = user_phy_update_pstc_irq(pObj, config->pstc_irq_enabled);
+  if (status != USER_PHY_STATUS_OK)
+  {
+    return status;
+  }
+
+  if (config->collision_auto == 0U)
+  {
+    return user_phy_set_collision_detect(pObj, (config->enabled != 0U) ? 0U : 1U);
+  }
+
+  return USER_PHY_STATUS_OK;
+}
+
+int32_t USER_PHY_RegisterBusIO(user_phy_Object_t *pObj, user_phy_IOCtx_t *ioctx)
+{
+  if ((pObj == NULL) || (ioctx == NULL) || (ioctx->ReadReg == NULL) ||
+      (ioctx->WriteReg == NULL) || (ioctx->GetTick == NULL))
   {
     return USER_PHY_STATUS_ERROR;
   }
@@ -159,367 +404,6 @@ int32_t  USER_PHY_RegisterBusIO(user_phy_Object_t *pObj, user_phy_IOCtx_t *ioctx
 
 int32_t USER_PHY_Init(user_phy_Object_t *pObj)
 {
-  uint32_t regvalue = 0;
-  uint32_t regvalue2 = 0;
-  uint32_t addr = 0;
-  int32_t status = USER_PHY_STATUS_OK;
-
-  if(pObj->Is_Initialized == 0)
-  {
-    if(pObj->IO.Init != 0)
-    {
-      /* GPIO and Clocks initialization */
-      if (pObj->IO.Init() < 0)
-      {
-        return USER_PHY_STATUS_ERROR;
-      }
-    }
-
-    /* for later check */
-    pObj->DevAddr = USER_PHY_MAX_DEV_ADDR + 1;
-
-    /* Search the PHY address by standard Clause 22 identifier registers. */
-    for(addr = 0; addr <= USER_PHY_MAX_DEV_ADDR; addr ++)
-    {
-      if(pObj->IO.ReadReg(addr, USER_PHY_PHYI1R, &regvalue) < 0)
-      {
-        continue;
-      }
-
-      if(pObj->IO.ReadReg(addr, USER_PHY_PHYI2R, &regvalue2) < 0)
-      {
-        continue;
-      }
-
-      if((regvalue == USER_PHY_PHYI1R_OUI_3_18) &&
-         ((regvalue2 & USER_PHY_PHYI2R_EXPECTED_MASK) == USER_PHY_PHYI2R_EXPECTED))
-      {
-        pObj->DevAddr = addr;
-        status = USER_PHY_STATUS_OK;
-        break;
-      }
-    }
-
-    if(pObj->DevAddr > USER_PHY_MAX_DEV_ADDR)
-    {
-      status = USER_PHY_STATUS_ADDRESS_ERROR;
-    }
-
-    /* if device address is matched */
-    if(status == USER_PHY_STATUS_OK)
-    {
-      pObj->Is_Initialized = 1;
-    }
-  }
-
-  return status;
-}
-
-/**
-  * @brief  De-Initialize the USER_PHY and it's hardware resources
-  * @param  pObj: device object user_phy_Object_t.
-  * @retval None
-  */
-int32_t USER_PHY_DeInit(user_phy_Object_t *pObj)
-{
-  if(pObj->Is_Initialized)
-  {
-    if(pObj->IO.DeInit != 0)
-    {
-      if(pObj->IO.DeInit() < 0)
-      {
-        return USER_PHY_STATUS_ERROR;
-      }
-    }
-
-    pObj->Is_Initialized = 0;
-  }
-
-  return USER_PHY_STATUS_OK;
-}
-
-/**
-  * @brief  Perform a software reset of the USER_PHY and wait for its completion
-  * @param  pObj: device object user_phy_Object_t.
-  * @retval USER_PHY_STATUS_OK           if the reset completed successfully
-  *         USER_PHY_STATUS_WRITE_ERROR  if writing the reset command failed
-  *         USER_PHY_STATUS_READ_ERROR   if reading the register failed during reset
-  *         USER_PHY_STATUS_RESET_TIMEOUT if the reset did not complete within the timeout period
-  */
-int32_t USER_PHY_SoftwareReset(user_phy_Object_t *pObj)
-{
-  int32_t status = USER_PHY_STATUS_OK;
-  uint32_t tickstart = 0;
-  uint32_t regvalue = 0;
-
-  /* Set software reset bit */
-  if (pObj->IO.WriteReg(pObj->DevAddr, USER_PHY_BCR, USER_PHY_BCR_SOFT_RESET) < 0)
-  {
-    return USER_PHY_STATUS_WRITE_ERROR;
-  }
-
-  /* Read register to check reset status */
-  if (pObj->IO.ReadReg(pObj->DevAddr, USER_PHY_BCR, &regvalue) < 0)
-  {
-    return USER_PHY_STATUS_READ_ERROR;
-  }
-
-  tickstart = pObj->IO.GetTick();
-
-  /* Wait until reset bit is cleared or timeout */
-  while (regvalue & USER_PHY_BCR_SOFT_RESET)
-  {
-    if ((pObj->IO.GetTick() - tickstart) > USER_PHY_SW_RESET_TO)
-    {
-      status = USER_PHY_STATUS_RESET_TIMEOUT;
-      break;
-    }
-
-    if (pObj->IO.ReadReg(pObj->DevAddr, USER_PHY_BCR, &regvalue) < 0)
-    {
-      status = USER_PHY_STATUS_READ_ERROR;
-      break;
-    }
-  }
-
-  return status;
-}
-
-int32_t USER_PHY_Configure(user_phy_Object_t *pObj)
-{
-  int32_t status = USER_PHY_STATUS_OK;
-  uint32_t delay_start = 0U;
-  uint16_t phy_config_value = user_phy_get_phy_config_value();
-  uint16_t an_adv_l_value = user_phy_get_an_adv_l_value();
-  uint16_t an_adv_m_value = user_phy_get_an_adv_m_value();
-  uint16_t ptp_config_value = user_phy_get_ptp_config_value();
-
-  status = user_phy_c45_write(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_DEVICE_CONTROL,
-                              (uint16_t)(USER_PHY_VEND1_DEVICE_CONTROL_GLOBAL_EN | USER_PHY_VEND1_DEVICE_CONTROL_ALL_EN));
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  delay_start = pObj->IO.GetTick();
-  while ((pObj->IO.GetTick() - delay_start) < 1U)
-  {
-  }
-
-  status = user_phy_c45_write(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_PORT_CONTROL,
-                              USER_PHY_VEND1_PORT_CONTROL_EN);
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  status = user_phy_c45_write(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_PHY_CONTROL,
-                              USER_PHY_VEND1_PHY_CONTROL_CONFIG_EN);
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  status = user_phy_c45_write(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_PORT_INFRA_CONTROL,
-                              USER_PHY_VEND1_PORT_INFRA_CONTROL_EN);
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  status = user_phy_c45_modify(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_PHY_CONFIG,
-                               USER_PHY_VEND1_PHY_CONFIG_AUTO,
-                               phy_config_value);
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  status = user_phy_c45_modify(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_MII_BASIC_CONFIG,
-                               (uint16_t)(USER_PHY_VEND1_MII_BASIC_CONFIG_MODE | USER_PHY_VEND1_MII_BASIC_CONFIG_REV),
-                               (uint16_t)(USER_PHY_VEND1_MII_BASIC_CONFIG_RMII | USER_PHY_VEND1_MII_BASIC_CONFIG_REV));
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  status = user_phy_c45_modify(pObj, USER_PHY_DEVAD_PMAPMD, USER_PHY_MDIO_CTRL1,
-                               USER_PHY_MDIO_CTRL1_SPEEDSEL,
-                               (uint16_t)(USER_PHY_MDIO_CTRL1_SPEED100 | USER_PHY_MDIO_CTRL1_FULLDUPLEX));
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  status = user_phy_c45_modify(pObj, USER_PHY_DEVAD_PMAPMD, USER_PHY_MDIO_CTRL2,
-                               USER_PHY_MDIO_PMA_CTRL2_TYPE_MASK,
-                               USER_PHY_MDIO_PMA_CTRL2_100BTX);
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  status = user_phy_c45_write(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_PTP_RX_TS_METHOD, 0x0002U);
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  status = user_phy_c45_modify(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_LINK_DROP_COUNTER,
-                               USER_PHY_VEND1_COUNTER_EN,
-                               USER_PHY_VEND1_COUNTER_EN);
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  status = user_phy_c45_modify(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_RX_PREAMBLE_COUNT,
-                               USER_PHY_VEND1_COUNTER_EN,
-                               USER_PHY_VEND1_COUNTER_EN);
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  status = user_phy_c45_modify(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_TX_PREAMBLE_COUNT,
-                               USER_PHY_VEND1_COUNTER_EN,
-                               USER_PHY_VEND1_COUNTER_EN);
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  status = user_phy_c45_modify(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_RX_IPG_LENGTH,
-                               USER_PHY_VEND1_COUNTER_EN,
-                               USER_PHY_VEND1_COUNTER_EN);
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  status = user_phy_c45_modify(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_TX_IPG_LENGTH,
-                               USER_PHY_VEND1_COUNTER_EN,
-                               USER_PHY_VEND1_COUNTER_EN);
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  status = user_phy_c45_write(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_PTP_CLK_PERIOD, 15U);
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  status = user_phy_c45_modify(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_PORT_FUNC_ENABLES,
-                               USER_PHY_VEND1_PORT_FUNC_PTP_ENABLE,
-                               (USER_PHY_CFG_PPS_ENABLE != 0U) ? USER_PHY_VEND1_PORT_FUNC_PTP_ENABLE : 0U);
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  status = user_phy_c45_modify(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_PORT_PTP_CONTROL,
-                               USER_PHY_VEND1_PORT_PTP_BYPASS,
-                               (USER_PHY_CFG_PPS_ENABLE != 0U) ? 0U : USER_PHY_VEND1_PORT_PTP_BYPASS);
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  status = user_phy_c45_write(pObj, USER_PHY_DEVAD_VEND1,
-                              (uint16_t)(USER_PHY_VEND1_GPIO_FUNC_CONFIG_BASE + USER_PHY_CFG_PPS_GPIO_INDEX),
-                              (USER_PHY_CFG_PPS_ENABLE != 0U) ? user_phy_get_gpio_func_value() : 0U);
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  status = user_phy_c45_modify(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_PTP_CONFIG,
-                               (uint16_t)(USER_PHY_VEND1_PTP_CONFIG_PPS_ENABLE | USER_PHY_VEND1_PTP_CONFIG_PPS_POLARITY),
-                               ptp_config_value);
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  status = user_phy_c45_modify(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_PHY_CONTROL,
-                               0U,
-                               USER_PHY_VEND1_PHY_CONTROL_START_OP);
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  status = user_phy_c45_modify(pObj, USER_PHY_DEVAD_AN, USER_PHY_MDIO_AN_T1_ADV_L,
-                               USER_PHY_MDIO_AN_T1_ADV_L_FORCE_MS,
-                               an_adv_l_value);
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  status = user_phy_c45_modify(pObj, USER_PHY_DEVAD_AN, USER_PHY_MDIO_AN_T1_ADV_M,
-                               (uint16_t)(USER_PHY_MDIO_AN_T1_ADV_M_100BT1 | USER_PHY_MDIO_AN_T1_ADV_M_MST),
-                               an_adv_m_value);
-  if (status != USER_PHY_STATUS_OK)
-  {
-    return status;
-  }
-
-  status = user_phy_c45_modify(pObj, USER_PHY_DEVAD_AN, USER_PHY_MDIO_AN_CTRL1,
-                               (uint16_t)(USER_PHY_MDIO_AN_CTRL1_ENABLE | USER_PHY_MDIO_AN_CTRL1_RESTART),
-                               (uint16_t)(USER_PHY_MDIO_AN_CTRL1_ENABLE | USER_PHY_MDIO_AN_CTRL1_RESTART));
-
-  return status;
-}
-
-int32_t USER_PHY_ReadReport(user_phy_Object_t *pObj, user_phy_Report_t *pReport)
-{
-  if ((pObj == NULL) || (pReport == NULL))
-  {
-    return USER_PHY_STATUS_ERROR;
-  }
-
-  if ((pObj->IO.ReadReg(pObj->DevAddr, USER_PHY_PHYI1R, &pReport->phy_id1) < 0) ||
-      (pObj->IO.ReadReg(pObj->DevAddr, USER_PHY_PHYI2R, &pReport->phy_id2) < 0) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_PMAPMD, USER_PHY_MDIO_CTRL1, &pReport->pma_ctrl1) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_PMAPMD, USER_PHY_MDIO_CTRL2, &pReport->pma_ctrl2) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_PMAPMD, USER_PHY_MDIO_STAT1, &pReport->pma_stat1) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_PMAPMD, USER_PHY_MDIO_STAT2, &pReport->pma_stat2) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_PMAPMD, USER_PHY_MDIO_PMA_RXDET, &pReport->pma_rxdet) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_ALWAYS_ACCESSIBLE, &pReport->always_accessible) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_SIGNAL_QUALITY, &pReport->signal_quality) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_CABLE_TEST, &pReport->cable_test) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_SYMBOL_ERROR_COUNTER, &pReport->symbol_error_counter) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_LINK_DROP_COUNTER, &pReport->link_drop_counter) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_LINK_LOSSES_AND_FAILURES, &pReport->link_losses_and_failures) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_MII_BASIC_CONFIG, &pReport->mii_basic_config) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_PORT_CONTROL, &pReport->port_control) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_PHY_CONTROL, &pReport->phy_control) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_PHY_CONFIG, &pReport->phy_config) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_PORT_INFRA_CONTROL, &pReport->port_infra_control) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_PORT_FUNC_ENABLES, &pReport->port_func_enables) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_RX_PREAMBLE_COUNT, &pReport->rx_preamble_count) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_TX_PREAMBLE_COUNT, &pReport->tx_preamble_count) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_RX_IPG_LENGTH, &pReport->rx_ipg_length) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_TX_IPG_LENGTH, &pReport->tx_ipg_length) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_PMAPMD, USER_PHY_MDIO_PMA_PMD_BT1_CTRL, &pReport->bt1_ctrl) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_AN, USER_PHY_MDIO_AN_CTRL1, &pReport->an_ctrl1) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_AN, USER_PHY_MDIO_AN_STAT1, &pReport->an_stat1) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_AN, USER_PHY_MDIO_AN_T1_ADV_L, &pReport->an_adv_l) != USER_PHY_STATUS_OK) ||
-      (user_phy_c45_read(pObj, USER_PHY_DEVAD_AN, USER_PHY_MDIO_AN_T1_ADV_M, &pReport->an_adv_m) != USER_PHY_STATUS_OK))
-  {
-    return USER_PHY_STATUS_READ_ERROR;
-  }
-
-  return USER_PHY_STATUS_OK;
-}
-
-int32_t USER_PHY_RunCableTest(user_phy_Object_t *pObj, uint32_t *pCableTestResult)
-{
-  uint32_t regvalue = 0U;
-  uint32_t tickstart = 0U;
   int32_t status;
 
   if (pObj == NULL)
@@ -527,263 +411,365 @@ int32_t USER_PHY_RunCableTest(user_phy_Object_t *pObj, uint32_t *pCableTestResul
     return USER_PHY_STATUS_ERROR;
   }
 
-  if (pCableTestResult != NULL)
+  if (pObj->Is_Initialized != 0U)
   {
-    *pCableTestResult = 0U;
+    return USER_PHY_STATUS_OK;
   }
 
-  status = user_phy_c45_modify(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_PORT_FUNC_ENABLES,
-                               USER_PHY_VEND1_PORT_FUNC_PHY_TEST_ENABLE,
-                               USER_PHY_VEND1_PORT_FUNC_PHY_TEST_ENABLE);
+  if ((pObj->IO.Init != NULL) && (pObj->IO.Init() < 0))
+  {
+    return USER_PHY_STATUS_ERROR;
+  }
+
+  status = USER_PHY_ProbeAddress(pObj);
   if (status != USER_PHY_STATUS_OK)
   {
     return status;
   }
 
-  status = user_phy_c45_write(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_CABLE_TEST,
-                              (uint16_t)(USER_PHY_VEND1_CABLE_TEST_ENABLE | USER_PHY_VEND1_CABLE_TEST_START));
-  if (status != USER_PHY_STATUS_OK)
-  {
-    goto cleanup;
-  }
-
-  tickstart = pObj->IO.GetTick();
-
-  do
-  {
-    status = user_phy_c45_read(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_CABLE_TEST, &regvalue);
-    if (status != USER_PHY_STATUS_OK)
-    {
-      goto cleanup;
-    }
-
-    if ((regvalue & USER_PHY_VEND1_CABLE_TEST_VALID) != 0U)
-    {
-      if (pCableTestResult != NULL)
-      {
-        *pCableTestResult = regvalue;
-      }
-
-      status = USER_PHY_STATUS_OK;
-      goto cleanup;
-    }
-  } while ((pObj->IO.GetTick() - tickstart) < USER_PHY_CABLE_TEST_TO);
-
-  if (pCableTestResult != NULL)
-  {
-    *pCableTestResult = regvalue;
-  }
-
-  status = USER_PHY_STATUS_TIMEOUT;
-
-cleanup:
-  (void)user_phy_c45_modify(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_CABLE_TEST,
-                            USER_PHY_VEND1_CABLE_TEST_ENABLE,
-                            0U);
-  (void)user_phy_c45_modify(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_PORT_FUNC_ENABLES,
-                            USER_PHY_VEND1_PORT_FUNC_PHY_TEST_ENABLE,
-                            0U);
-  (void)user_phy_c45_modify(pObj, USER_PHY_DEVAD_VEND1, USER_PHY_VEND1_PHY_CONTROL,
-                            0U,
-                            USER_PHY_VEND1_PHY_CONTROL_START_OP);
-
-  return status;
+  pObj->Is_Initialized = 1U;
+  return USER_PHY_STATUS_OK;
 }
 
-/**
-  * @brief  Get the link state of USER_PHY device.
-  * @param  pObj: Pointer to device object.
-  * @param  pLinkState: Pointer to link state
-  * @retval USER_PHY_STATUS_LINK_DOWN  if link is down
-  *         USER_PHY_STATUS_AUTONEGO_NOTDONE if Auto nego not completed
-  *         USER_PHY_STATUS_100MBITS_FULLDUPLEX if 100Mb/s FD
-  *         USER_PHY_STATUS_100MBITS_HALFDUPLEX if 100Mb/s HD
-  *         USER_PHY_STATUS_10MBITS_FULLDUPLEX  if 10Mb/s FD
-  *         USER_PHY_STATUS_10MBITS_HALFDUPLEX  if 10Mb/s HD
-  *         USER_PHY_STATUS_READ_ERROR if cannot read register
-  *         USER_PHY_STATUS_WRITE_ERROR if cannot write to register
-  */
-int32_t USER_PHY_GetLinkState(user_phy_Object_t *pObj)
+int32_t USER_PHY_DeInit(user_phy_Object_t *pObj)
 {
-  uint32_t readval = 0;
-
-  if(user_phy_c45_read(pObj, USER_PHY_DEVAD_PMAPMD, USER_PHY_MDIO_STAT1, &readval) != USER_PHY_STATUS_OK)
-  {
-    return USER_PHY_STATUS_READ_ERROR;
-  }
-
-  if(user_phy_c45_read(pObj, USER_PHY_DEVAD_PMAPMD, USER_PHY_MDIO_STAT1, &readval) != USER_PHY_STATUS_OK)
-  {
-    return USER_PHY_STATUS_READ_ERROR;
-  }
-
-  if((readval & USER_PHY_MDIO_STAT1_LINK_STATUS) == 0U)
-  {
-    return USER_PHY_STATUS_LINK_DOWN;
-  }
-
-  if(user_phy_c45_read(pObj, USER_PHY_DEVAD_AN, USER_PHY_MDIO_AN_CTRL1, &readval) != USER_PHY_STATUS_OK)
-  {
-    return USER_PHY_STATUS_READ_ERROR;
-  }
-
-  if((readval & USER_PHY_MDIO_AN_CTRL1_ENABLE) != 0U)
-  {
-    if(user_phy_c45_read(pObj, USER_PHY_DEVAD_AN, USER_PHY_MDIO_AN_STAT1, &readval) != USER_PHY_STATUS_OK)
-    {
-      return USER_PHY_STATUS_READ_ERROR;
-    }
-
-    if((readval & USER_PHY_MDIO_AN_STAT1_COMPLETE) == 0U)
-    {
-      return USER_PHY_STATUS_AUTONEGO_NOTDONE;
-    }
-  }
-
-  return USER_PHY_STATUS_100MBITS_FULLDUPLEX;
-}
-
-/**
-  * @brief  Set the link state of USER_PHY device.
-  * @param  pObj: Pointer to device object.
-  * @param  LinkState: link state can be one of the following
-  *         USER_PHY_STATUS_100MBITS_FULLDUPLEX if 100Mb/s FD
-  *         USER_PHY_STATUS_100MBITS_HALFDUPLEX if 100Mb/s HD
-  *         USER_PHY_STATUS_10MBITS_FULLDUPLEX  if 10Mb/s FD
-  *         USER_PHY_STATUS_10MBITS_HALFDUPLEX  if 10Mb/s HD
-  * @retval USER_PHY_STATUS_OK  if OK
-  *         USER_PHY_STATUS_ERROR  if parameter error
-  *         USER_PHY_STATUS_READ_ERROR if cannot read register
-  *         USER_PHY_STATUS_WRITE_ERROR if cannot write to register
-  */
-int32_t USER_PHY_SetLinkState(user_phy_Object_t *pObj, uint32_t LinkState)
-{
-  uint32_t ctrl1 = 0U;
-  uint32_t ctrl2 = 0U;
-
-  if (LinkState != USER_PHY_STATUS_100MBITS_FULLDUPLEX)
+  if (pObj == NULL)
   {
     return USER_PHY_STATUS_ERROR;
   }
 
-  if (user_phy_c45_read(pObj, USER_PHY_DEVAD_PMAPMD, USER_PHY_MDIO_CTRL1, &ctrl1) != USER_PHY_STATUS_OK)
+  if ((pObj->Is_Initialized != 0U) && (pObj->IO.DeInit != NULL) &&
+      (pObj->IO.DeInit() < 0))
   {
-    return USER_PHY_STATUS_READ_ERROR;
+    return USER_PHY_STATUS_ERROR;
   }
 
-  ctrl1 &= (uint32_t)(~USER_PHY_MDIO_CTRL1_SPEEDSEL);
-  ctrl1 |= (uint32_t)(USER_PHY_MDIO_CTRL1_SPEED100 | USER_PHY_MDIO_CTRL1_FULLDUPLEX);
+  pObj->Is_Initialized = 0U;
+  return USER_PHY_STATUS_OK;
+}
 
-  if (user_phy_c45_write(pObj, USER_PHY_DEVAD_PMAPMD, USER_PHY_MDIO_CTRL1, (uint16_t)ctrl1) != USER_PHY_STATUS_OK)
+int32_t USER_PHY_SoftwareReset(user_phy_Object_t *pObj)
+{
+  uint32_t reg_value;
+  uint32_t tick_start;
+
+  if ((pObj == NULL) || (pObj->IO.ReadReg == NULL) || (pObj->IO.WriteReg == NULL))
+  {
+    return USER_PHY_STATUS_ERROR;
+  }
+
+  if (pObj->IO.WriteReg(pObj->DevAddr, USER_PHY_BCR, USER_PHY_BCR_SOFT_RESET) < 0)
   {
     return USER_PHY_STATUS_WRITE_ERROR;
   }
 
-  if (user_phy_c45_read(pObj, USER_PHY_DEVAD_PMAPMD, USER_PHY_MDIO_CTRL2, &ctrl2) != USER_PHY_STATUS_OK)
+  tick_start = (uint32_t)pObj->IO.GetTick();
+
+  do
   {
-    return USER_PHY_STATUS_READ_ERROR;
+    if (pObj->IO.ReadReg(pObj->DevAddr, USER_PHY_BCR, &reg_value) < 0)
+    {
+      return USER_PHY_STATUS_READ_ERROR;
+    }
+
+    if ((reg_value & USER_PHY_BCR_SOFT_RESET) == 0U)
+    {
+      return USER_PHY_STATUS_OK;
+    }
+  } while (((uint32_t)pObj->IO.GetTick() - tick_start) <= USER_PHY_SW_RESET_TIMEOUT_MS);
+
+  return USER_PHY_STATUS_RESET_TIMEOUT;
+}
+
+int32_t USER_PHY_Configure(user_phy_Object_t *pObj)
+{
+  int32_t status;
+
+  if ((pObj == NULL) || (pObj->Is_Initialized == 0U))
+  {
+    return USER_PHY_STATUS_ERROR;
   }
 
-  ctrl2 &= (uint32_t)(~USER_PHY_MDIO_PMA_CTRL2_TYPE_MASK);
-  ctrl2 |= USER_PHY_MDIO_PMA_CTRL2_100BTX;
-
-  if (user_phy_c45_write(pObj, USER_PHY_DEVAD_PMAPMD, USER_PHY_MDIO_CTRL2, (uint16_t)ctrl2) != USER_PHY_STATUS_OK)
+  status = user_phy_apply_rev_c2_config(pObj);
+  if (status != USER_PHY_STATUS_OK)
   {
-    return USER_PHY_STATUS_WRITE_ERROR;
+    return status;
   }
 
-  if (user_phy_c45_modify(pObj, USER_PHY_DEVAD_AN, USER_PHY_MDIO_AN_CTRL1,
-                          (uint16_t)(USER_PHY_MDIO_AN_CTRL1_ENABLE | USER_PHY_MDIO_AN_CTRL1_RESTART),
-                          0U) != USER_PHY_STATUS_OK)
+  status = user_phy_apply_plca_config(pObj, &g_user_phy_plca_config);
+  if (status != USER_PHY_STATUS_OK)
   {
-    return USER_PHY_STATUS_WRITE_ERROR;
+    return status;
   }
 
-  if (user_phy_c45_modify(pObj, USER_PHY_DEVAD_PMAPMD, USER_PHY_MDIO_PMA_PMD_BT1_CTRL,
-                          (uint16_t)(USER_PHY_MDIO_PMA_PMD_BT1_CTRL_CFG_MST | USER_PHY_MDIO_PMA_PMD_BT1_CTRL_STRAP),
-                          0U) != USER_PHY_STATUS_OK)
+  if (g_user_phy_plca_config.collision_auto != 0U)
   {
-    return USER_PHY_STATUS_WRITE_ERROR;
+    return USER_PHY_SyncCollisionDetection(pObj, 1U, NULL, NULL, NULL);
   }
 
   return USER_PHY_STATUS_OK;
 }
 
-/**
-  * @brief  Enable loopback mode.
-  * @param  pObj: Pointer to device object.
-  * @retval USER_PHY_STATUS_OK  if OK
-  *         USER_PHY_STATUS_READ_ERROR if cannot read register
-  *         USER_PHY_STATUS_WRITE_ERROR if cannot write to register
-  */
-int32_t USER_PHY_EnableLoopbackMode(user_phy_Object_t *pObj)
+int32_t USER_PHY_GetLinkState(user_phy_Object_t *pObj)
 {
-  uint32_t readval = 0;
-  int32_t status = USER_PHY_STATUS_OK;
+  uint32_t bsr;
 
-  if(pObj->IO.ReadReg(pObj->DevAddr, USER_PHY_BCR, &readval) >= 0)
+  if ((pObj == NULL) || (pObj->Is_Initialized == 0U))
   {
-    readval |= USER_PHY_BCR_LOOPBACK;
-
-    /* Apply configuration */
-    if(pObj->IO.WriteReg(pObj->DevAddr, USER_PHY_BCR, readval) < 0)
-    {
-      status = USER_PHY_STATUS_WRITE_ERROR;
-    }
-  }
-  else
-  {
-    status = USER_PHY_STATUS_READ_ERROR;
+    return USER_PHY_STATUS_ADDRESS_ERROR;
   }
 
-  return status;
+  if (pObj->IO.ReadReg(pObj->DevAddr, USER_PHY_BSR, &bsr) < 0)
+  {
+    return USER_PHY_STATUS_READ_ERROR;
+  }
+
+  if (pObj->IO.ReadReg(pObj->DevAddr, USER_PHY_BSR, &bsr) < 0)
+  {
+    return USER_PHY_STATUS_READ_ERROR;
+  }
+
+  if ((bsr & USER_PHY_BSR_LINK_STATUS) == 0U)
+  {
+    return USER_PHY_STATUS_LINK_DOWN;
+  }
+
+  if (g_user_phy_plca_config.collision_auto != 0U)
+  {
+    (void)USER_PHY_SyncCollisionDetection(pObj, 0U, NULL, NULL, NULL);
+  }
+
+  return USER_PHY_STATUS_10MBITS_HALFDUPLEX;
 }
 
-/**
-  * @brief  Disable loopback mode.
-  * @param  pObj: Pointer to device object.
-  * @retval USER_PHY_STATUS_OK  if OK
-  *         USER_PHY_STATUS_READ_ERROR if cannot read register
-  *         USER_PHY_STATUS_WRITE_ERROR if cannot write to register
-  */
+int32_t USER_PHY_SetLinkState(user_phy_Object_t *pObj, uint32_t LinkState)
+{
+  (void)pObj;
+
+  if ((LinkState != USER_PHY_STATUS_10MBITS_HALFDUPLEX) &&
+      (LinkState != USER_PHY_STATUS_10MBITS_FULLDUPLEX))
+  {
+    return USER_PHY_STATUS_ERROR;
+  }
+
+  return USER_PHY_STATUS_OK;
+}
+
+int32_t USER_PHY_EnableLoopbackMode(user_phy_Object_t *pObj)
+{
+  return USER_PHY_ModifyMmdReg(pObj, USER_PHY_PCS_MMD_DEVICE, USER_PHY_T1SPCSCTL,
+      USER_PHY_T1SPCSCTL_LBE, USER_PHY_T1SPCSCTL_LBE);
+}
+
 int32_t USER_PHY_DisableLoopbackMode(user_phy_Object_t *pObj)
 {
-  uint32_t readval = 0;
-  int32_t status = USER_PHY_STATUS_OK;
-
-  if(pObj->IO.ReadReg(pObj->DevAddr, USER_PHY_BCR, &readval) >= 0)
-  {
-    readval &= ~USER_PHY_BCR_LOOPBACK;
-
-    /* Apply configuration */
-    if(pObj->IO.WriteReg(pObj->DevAddr, USER_PHY_BCR, readval) < 0)
-    {
-      status =  USER_PHY_STATUS_WRITE_ERROR;
-    }
-  }
-  else
-  {
-    status = USER_PHY_STATUS_READ_ERROR;
-  }
-
-  return status;
+  return USER_PHY_ModifyMmdReg(pObj, USER_PHY_PCS_MMD_DEVICE, USER_PHY_T1SPCSCTL,
+      USER_PHY_T1SPCSCTL_LBE, 0U);
 }
 
 int32_t USER_PHY_ReadC45(user_phy_Object_t *pObj, uint16_t devad, uint16_t reg, uint32_t *value)
 {
-  return user_phy_c45_read(pObj, devad, reg, value);
+  return USER_PHY_ReadMmdReg(pObj, devad, reg, value);
 }
 
 int32_t USER_PHY_WriteC45(user_phy_Object_t *pObj, uint16_t devad, uint16_t reg, uint16_t value)
 {
-  return user_phy_c45_write(pObj, devad, reg, value);
+  return USER_PHY_WriteMmdReg(pObj, devad, reg, value);
 }
 
-int32_t USER_PHY_ModifyC45(user_phy_Object_t *pObj, uint16_t devad, uint16_t reg, uint16_t clear_mask, uint16_t set_mask)
+int32_t USER_PHY_ModifyC45(user_phy_Object_t *pObj, uint16_t devad, uint16_t reg,
+    uint16_t clear_mask, uint16_t set_mask)
 {
-  return user_phy_c45_modify(pObj, devad, reg, clear_mask, set_mask);
+  return USER_PHY_ModifyMmdReg(pObj, devad, reg, clear_mask, set_mask);
 }
 
-/* USER CODE BEGIN 1 */
+int32_t USER_PHY_ReadStatusSnapshot(user_phy_Object_t *pObj, user_phy_status_snapshot_t *snapshot)
+{
+  if ((pObj == NULL) || (snapshot == NULL))
+  {
+    return USER_PHY_STATUS_ERROR;
+  }
 
-/* USER CODE END 1 */
+  if ((pObj->IO.ReadReg(pObj->DevAddr, USER_PHY_PHYID1, &snapshot->phy_id1) < 0) ||
+      (pObj->IO.ReadReg(pObj->DevAddr, USER_PHY_PHYID2, &snapshot->phy_id2) < 0) ||
+      (pObj->IO.ReadReg(pObj->DevAddr, USER_PHY_BCR, &snapshot->bcr) < 0) ||
+      (pObj->IO.ReadReg(pObj->DevAddr, USER_PHY_BSR, &snapshot->bsr) < 0) ||
+      (USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_STS1, &snapshot->status1) != USER_PHY_STATUS_OK) ||
+      (USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_STS2, &snapshot->status2) != USER_PHY_STATUS_OK) ||
+      (USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_STS3, &snapshot->status3) != USER_PHY_STATUS_OK) ||
+      (USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_IMSK1, &snapshot->imsk1) != USER_PHY_STATUS_OK) ||
+      (USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_SQISTS0, &snapshot->sqi_status) != USER_PHY_STATUS_OK) ||
+      (USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_PLCA_CTRL0, &snapshot->plca_ctrl0) != USER_PHY_STATUS_OK) ||
+      (USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_PLCA_CTRL1, &snapshot->plca_ctrl1) != USER_PHY_STATUS_OK) ||
+      (USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_PLCA_STS, &snapshot->plca_status) != USER_PHY_STATUS_OK) ||
+      (USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_PLCA_TOTMR, &snapshot->plca_totmr) != USER_PHY_STATUS_OK) ||
+      (USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_PLCA_BURST, &snapshot->plca_burst) != USER_PHY_STATUS_OK) ||
+      (USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_CDCTL0, &snapshot->cdctl0) != USER_PHY_STATUS_OK))
+  {
+    return USER_PHY_STATUS_READ_ERROR;
+  }
+
+  snapshot->phy_id1 &= 0xFFFFU;
+  snapshot->phy_id2 &= 0xFFFFU;
+  snapshot->bcr &= 0xFFFFU;
+  snapshot->bsr &= 0xFFFFU;
+  return USER_PHY_STATUS_OK;
+}
+
+int32_t USER_PHY_GetPlcaConfig(user_phy_Object_t *pObj, user_phy_plca_config_t *config)
+{
+  if (config == NULL)
+  {
+    return USER_PHY_STATUS_ERROR;
+  }
+
+  *config = g_user_phy_plca_config;
+
+  if ((pObj == NULL) || (pObj->Is_Initialized == 0U))
+  {
+    return USER_PHY_STATUS_OK;
+  }
+
+  {
+    uint32_t ctrl0;
+    uint32_t ctrl1;
+    uint32_t totmr;
+    uint32_t burst;
+    uint32_t imsk1;
+
+    if ((USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_PLCA_CTRL0, &ctrl0) != USER_PHY_STATUS_OK) ||
+        (USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_PLCA_CTRL1, &ctrl1) != USER_PHY_STATUS_OK) ||
+        (USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_PLCA_TOTMR, &totmr) != USER_PHY_STATUS_OK) ||
+        (USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_PLCA_BURST, &burst) != USER_PHY_STATUS_OK) ||
+        (USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_IMSK1, &imsk1) != USER_PHY_STATUS_OK))
+    {
+      return USER_PHY_STATUS_READ_ERROR;
+    }
+
+    config->enabled = ((ctrl0 & USER_PHY_PLCA_CTRL0_EN) != 0U) ? 1U : 0U;
+    config->node_id = (uint8_t)(ctrl1 & 0x00FFU);
+    if (config->node_id == 0U)
+    {
+      config->node_count = (uint8_t)((ctrl1 >> 8) & 0x00FFU);
+    }
+    config->totmr = (uint8_t)(totmr & 0x00FFU);
+    config->burst_count = (uint8_t)((burst >> 8) & 0x00FFU);
+    config->burst_timer = (uint8_t)(burst & 0x00FFU);
+    config->pstc_irq_enabled = ((imsk1 & USER_PHY_IMSK1_PSTCM) == 0U) ? 1U : 0U;
+  }
+
+  return USER_PHY_STATUS_OK;
+}
+
+int32_t USER_PHY_SetPlcaConfig(user_phy_Object_t *pObj, const user_phy_plca_config_t *config,
+    uint8_t apply_now)
+{
+  user_phy_plca_config_t candidate;
+  int32_t status;
+
+  if (config == NULL)
+  {
+    return USER_PHY_STATUS_ERROR;
+  }
+
+  candidate = *config;
+
+  if (candidate.node_count == 0U)
+  {
+    candidate.node_count = 1U;
+  }
+
+  if ((candidate.enabled != 0U) && (candidate.node_id == 0U) && (candidate.node_count == 0U))
+  {
+    return USER_PHY_STATUS_ERROR;
+  }
+
+  if (apply_now != 0U)
+  {
+    status = user_phy_apply_plca_config(pObj, &candidate);
+    if (status != USER_PHY_STATUS_OK)
+    {
+      return status;
+    }
+
+    if (candidate.collision_auto != 0U)
+    {
+      status = USER_PHY_SyncCollisionDetection(pObj, 1U, NULL, NULL, NULL);
+      if (status != USER_PHY_STATUS_OK)
+      {
+        return status;
+      }
+    }
+  }
+
+  g_user_phy_plca_config = candidate;
+  return USER_PHY_STATUS_OK;
+}
+
+int32_t USER_PHY_SyncCollisionDetection(user_phy_Object_t *pObj, uint8_t force,
+    uint32_t *status1, uint32_t *plca_status, uint32_t *cdctl0)
+{
+  uint32_t sts1_value;
+  uint32_t plca_value;
+  uint32_t cdctl0_value;
+  uint8_t want_collision_detect;
+  int32_t status;
+
+  if ((pObj == NULL) || (pObj->Is_Initialized == 0U))
+  {
+    return USER_PHY_STATUS_ERROR;
+  }
+
+  status = USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_STS1, &sts1_value);
+  if (status != USER_PHY_STATUS_OK)
+  {
+    return status;
+  }
+
+  if (status1 != NULL)
+  {
+    *status1 = sts1_value;
+  }
+
+  if ((force == 0U) && ((sts1_value & USER_PHY_STS1_PSTC) == 0U))
+  {
+    return USER_PHY_STATUS_OK;
+  }
+
+  status = USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_PLCA_STS, &plca_value);
+  if (status != USER_PHY_STATUS_OK)
+  {
+    return status;
+  }
+
+  status = USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_CDCTL0, &cdctl0_value);
+  if (status != USER_PHY_STATUS_OK)
+  {
+    return status;
+  }
+
+  if (plca_status != NULL)
+  {
+    *plca_status = plca_value;
+  }
+
+  if (cdctl0 != NULL)
+  {
+    *cdctl0 = cdctl0_value;
+  }
+
+  if (g_user_phy_plca_config.collision_auto == 0U)
+  {
+    return USER_PHY_STATUS_OK;
+  }
+
+  want_collision_detect = ((g_user_phy_plca_config.enabled == 0U) ||
+                           ((plca_value & USER_PHY_PLCA_STS_PST) == 0U)) ? 1U : 0U;
+
+  if (((cdctl0_value & USER_PHY_CDCTL0_CDEN) != 0U) == (want_collision_detect != 0U))
+  {
+    return USER_PHY_STATUS_OK;
+  }
+
+  return user_phy_set_collision_detect(pObj, want_collision_detect);
+}

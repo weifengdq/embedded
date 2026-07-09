@@ -57,8 +57,10 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define PHY_NRST_Pin GPIO_PIN_0
-#define PHY_NRST_GPIO_Port GPIOC
+#define LAN8671_IRQ_N_Pin GPIO_PIN_2
+#define LAN8671_IRQ_N_GPIO_Port GPIOC
+#define LAN8671_RESET_N_Pin GPIO_PIN_3
+#define LAN8671_RESET_N_GPIO_Port GPIOC
 
 /* USER CODE BEGIN Private defines */
 
