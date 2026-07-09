@@ -591,6 +591,11 @@ void ethernet_link_check_state(struct netif *netif)
   ETH_MACConfigTypeDef mac_config = {0};
   int32_t phy_link_state;
 
+  if (USER_PHY.Is_Initialized != 0U)
+  {
+    (void)USER_PHY_PollEventStatus(&USER_PHY);
+  }
+
   phy_link_state = USER_PHY_GetLinkState(&USER_PHY);
 
   if (netif_is_link_up(netif) && (phy_link_state <= USER_PHY_STATUS_LINK_DOWN))

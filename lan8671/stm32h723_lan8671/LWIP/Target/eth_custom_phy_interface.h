@@ -203,6 +203,33 @@ typedef struct
   uint32_t cdctl0;
 } user_phy_status_snapshot_t;
 
+typedef struct
+{
+  uint32_t latched_status1;
+  uint32_t latched_status2;
+  uint32_t last_status3;
+  uint32_t poll_count;
+  uint32_t sqi_count;
+  uint32_t pstc_count;
+  uint32_t txcol_count;
+  uint32_t txjab_count;
+  uint32_t tssi_count;
+  uint32_t empcyc_count;
+  uint32_t rxinto_count;
+  uint32_t unexpb_count;
+  uint32_t bcnbfto_count;
+  uint32_t uncrs_count;
+  uint32_t plcasym_count;
+  uint32_t esderr_count;
+  uint32_t dec5b_count;
+  uint32_t resetc_count;
+  uint32_t wkemdi_count;
+  uint32_t wkei_count;
+  uint32_t uv33_count;
+  uint32_t ot_count;
+  uint32_t iwdto_count;
+} user_phy_event_stats_t;
+
 int32_t USER_PHY_RegisterBusIO(user_phy_Object_t *pObj, user_phy_IOCtx_t *ioctx);
 int32_t USER_PHY_Init(user_phy_Object_t *pObj);
 int32_t USER_PHY_DeInit(user_phy_Object_t *pObj);
@@ -218,6 +245,9 @@ int32_t USER_PHY_ModifyC45(user_phy_Object_t *pObj, uint16_t devad, uint16_t reg
 int32_t USER_PHY_ReadStatusSnapshot(user_phy_Object_t *pObj, user_phy_status_snapshot_t *snapshot);
 int32_t USER_PHY_GetPlcaConfig(user_phy_Object_t *pObj, user_phy_plca_config_t *config);
 int32_t USER_PHY_SetPlcaConfig(user_phy_Object_t *pObj, const user_phy_plca_config_t *config, uint8_t apply_now);
+int32_t USER_PHY_PollEventStatus(user_phy_Object_t *pObj);
+int32_t USER_PHY_GetEventStats(user_phy_event_stats_t *stats);
+int32_t USER_PHY_ClearEventStats(user_phy_Object_t *pObj, uint8_t clear_counters);
 int32_t USER_PHY_SyncCollisionDetection(user_phy_Object_t *pObj, uint8_t force, uint32_t *status1, uint32_t *plca_status, uint32_t *cdctl0);
 
 #ifdef __cplusplus

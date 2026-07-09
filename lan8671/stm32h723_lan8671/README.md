@@ -194,11 +194,15 @@ Type 'help' for command list
 - `sqi`
   - 读取或控制 `SQICTL` / `SQISTS0`
 - `irq`
-  - 读取 `STS1/STS2/STS3/IMSK1` 和 IRQ 引脚状态
+  - 读取缓存后的 `STS1/STS2/STS3/IMSK1` 和 IRQ 引脚状态
+- `irqclr [all]`
+  - 清除缓存的状态位；加 `all` 同时清空长期累计计数
 - `plcadiag`
   - 读取 PLCA 相关诊断位和 `ERRTOID`
 - `pcsdiag`
   - 读取 PCS 计数寄存器，如 remote jabber / corrupted tx
+- `evcnt [clear]`
+  - 读取长期累计事件计数；`clear` 清空累计值
 - `collision`
   - 查看或控制 Collision Detect 自动策略
 - `loopback`
@@ -236,7 +240,17 @@ plca bursttmr 0x80
 plca enable on
 plca irq on
 plca collauto on
+
+# 辅助命令
+plca follower 3 8
+plca coordinator 8
 ```
+
+说明：
+
+- `plca follower <node_id> [node_count]` 适合快速切回 follower 配置
+- `plca coordinator <node_count>` 会把本节点设为 Node 0
+- 当前这套测试网络里 PC 侧转换板已经是 coordinator，通常不要同时再把板子切成 coordinator
 
 ### 5.4 `irq` 示例
 
@@ -247,7 +261,19 @@ STS1 flags: EMPCYC
 STS2 flags: none
 ```
 
-### 5.5 `sqi` 示例
+`irq` 显示的是后台轮询后缓存的状态，不会像直接读 RC 位那样把排查现场立刻清掉。
+
+### 5.5 `irqclr` 示例
+
+```text
+letter:/$ irqclr
+IRQ latched status cleared
+
+letter:/$ irqclr all
+IRQ latched status cleared and counters reset
+```
+
+### 5.6 `sqi` 示例
 
 默认上电后 `SQI` 已经使能，但通常需要一段接收流量统计窗口后才会 `valid=1`。
 
@@ -283,6 +309,26 @@ letter:/$ pcsdiag
 PCS status=0x0000 fault=0
 PCS remote_jabber_count=0 corrupted_tx_count=0
 ```
+
+### 5.8 `evcnt` 示例
+
+```text
+letter:/$ evcnt
+poll=45 last_errtoid=2 latched_sts1=0x0080 latched_sts2=0x0000
+SQI=0 PSTC=1 TXCOL=0 TXJAB=0 TSSI=0 EMPCYC=45
+RXINTO=0 UNEXPB=0 BCNBFTO=0 UNCRS=0 PLCASYM=1 ESDERR=0 DEC5B=0
+RESETC=1 WKEMDI=0 WKEWI=0 UV33=0 OT=0 IWDTO=0
+```
+
+这个命令适合看长期运行趋势，尤其是：
+
+- `EMPCYC`
+- `RXINTO`
+- `UNEXPB`
+- `BCNBFTO`
+- `UNCRS`
+- `PLCASYM`
+- `DEC5B`
 
 ## 6. 网络测试步骤
 
@@ -398,6 +444,17 @@ SQI ctl=0x5402 raw=0x9F7B valid=1 value=7 err=0 errcode=3
 - `SQI` 需要一定统计窗口，不是上电立刻有效
 - 当前这套接线和链路下可以得到 `SQI value = 7`
 
+### 7.7 事件计数与显式清状态
+
+当前工程已经把 LAN8671 的 RC 事件位改成：
+
+- 后台周期轮询并累计
+- `irq` 只显示缓存
+- `irqclr` 单独负责清缓存状态
+- `evcnt` 单独负责看长期统计
+
+这样排查时不会出现“刚读一次 `irq`，现场就没了”的问题。
+
 ## 8. 注意事项
 
 ### 8.1 PHY 地址
@@ -436,7 +493,17 @@ SQI ctl=0x5400 raw=0x0000 valid=0 value=0 err=0 errcode=0
 
 先不要急着判定为异常，先制造一段持续接收流量，再重新读取。
 
-### 8.5 不建议再用 CubeMX 覆盖生成
+### 8.5 `irq` 与 `irqclr` 的职责分离
+
+当前工程里：
+
+- `irq` 用来观察当前缓存的状态现场
+- `irqclr` 用来显式清缓存状态
+- `evcnt` 用来看累计事件趋势
+
+这样更适合长时间挂着跑，再回来定位问题。
+
+### 8.6 不建议再用 CubeMX 覆盖生成
 
 当前工程已经有多处手工修正：
 
@@ -450,7 +517,7 @@ SQI ctl=0x5400 raw=0x0000 valid=0 value=0 err=0 errcode=0
 
 ## 9. 参考资料
 
-- 官网: https://www.microchip.com/en-us/product/LAN8671
+- 官网: [LAN8671 | Microchip Technology](https://www.microchip.com/en-us/product/LAN8671)
 - 数据手册: `C:\git\embedded\lan8671\ref\LAN8670-1-2-Data-Sheet-60001573.pdf`
 - 配置应用笔记: `C:\git\embedded\lan8671\ref\LAN8670-1-2-Configuration-Appnote-60001699.pdf`
 - 已跑通参考工程: `C:\git\embedded\lan8671\stm32f407_lan8671`

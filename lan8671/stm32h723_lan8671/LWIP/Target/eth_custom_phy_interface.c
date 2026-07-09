@@ -1,6 +1,7 @@
 #include "eth_custom_phy_interface.h"
 
 #include <stddef.h>
+#include <string.h>
 
 #define USER_PHY_SW_RESET_TIMEOUT_MS            ((uint32_t)500U)
 #define USER_PHY_MAX_DEV_ADDR                   ((uint32_t)31U)
@@ -15,6 +16,8 @@ static user_phy_plca_config_t g_user_phy_plca_config = {
   USER_PHY_DEFAULT_PSTC_IRQ_ENABLED,
   USER_PHY_DEFAULT_COLLISION_AUTO
 };
+
+static user_phy_event_stats_t g_user_phy_event_stats;
 
 typedef struct
 {
@@ -63,6 +66,9 @@ static int32_t user_phy_apply_plca_config(user_phy_Object_t *pObj,
 static int32_t user_phy_update_pstc_irq(user_phy_Object_t *pObj, uint8_t enabled);
 static int32_t user_phy_set_collision_detect(user_phy_Object_t *pObj, uint8_t enabled);
 static int8_t user_phy_decode_signed5(uint32_t raw_value);
+static int32_t user_phy_read_event_registers(user_phy_Object_t *pObj,
+  uint32_t *status1, uint32_t *status2, uint32_t *status3);
+static void user_phy_accumulate_events(uint32_t status1, uint32_t status2, uint32_t status3);
 
 static int8_t user_phy_decode_signed5(uint32_t raw_value)
 {
@@ -74,6 +80,84 @@ static int8_t user_phy_decode_signed5(uint32_t raw_value)
   }
 
   return (int8_t)value;
+}
+
+static int32_t user_phy_read_event_registers(user_phy_Object_t *pObj,
+    uint32_t *status1, uint32_t *status2, uint32_t *status3)
+{
+  uint32_t local_status1;
+  uint32_t local_status2;
+  uint32_t local_status3;
+  int32_t status;
+
+  if (pObj == NULL)
+  {
+    return USER_PHY_STATUS_ERROR;
+  }
+
+  status = USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_STS3, &local_status3);
+  if (status != USER_PHY_STATUS_OK)
+  {
+    return status;
+  }
+
+  status = USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_STS1, &local_status1);
+  if (status != USER_PHY_STATUS_OK)
+  {
+    return status;
+  }
+
+  status = USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_STS2, &local_status2);
+  if (status != USER_PHY_STATUS_OK)
+  {
+    return status;
+  }
+
+  if (status1 != NULL)
+  {
+    *status1 = local_status1;
+  }
+
+  if (status2 != NULL)
+  {
+    *status2 = local_status2;
+  }
+
+  if (status3 != NULL)
+  {
+    *status3 = local_status3;
+  }
+
+  return USER_PHY_STATUS_OK;
+}
+
+static void user_phy_accumulate_events(uint32_t status1, uint32_t status2, uint32_t status3)
+{
+  g_user_phy_event_stats.poll_count++;
+  g_user_phy_event_stats.latched_status1 |= status1;
+  g_user_phy_event_stats.latched_status2 |= status2;
+  g_user_phy_event_stats.last_status3 = (status3 & 0xFFU);
+
+  if ((status1 & USER_PHY_STS1_SQI) != 0U) g_user_phy_event_stats.sqi_count++;
+  if ((status1 & USER_PHY_STS1_PSTC) != 0U) g_user_phy_event_stats.pstc_count++;
+  if ((status1 & USER_PHY_STS1_TXCOL) != 0U) g_user_phy_event_stats.txcol_count++;
+  if ((status1 & USER_PHY_STS1_TXJAB) != 0U) g_user_phy_event_stats.txjab_count++;
+  if ((status1 & USER_PHY_STS1_TSSI) != 0U) g_user_phy_event_stats.tssi_count++;
+  if ((status1 & USER_PHY_STS1_EMPCYC) != 0U) g_user_phy_event_stats.empcyc_count++;
+  if ((status1 & USER_PHY_STS1_RXINTO) != 0U) g_user_phy_event_stats.rxinto_count++;
+  if ((status1 & USER_PHY_STS1_UNEXPB) != 0U) g_user_phy_event_stats.unexpb_count++;
+  if ((status1 & USER_PHY_STS1_BCNBFTO) != 0U) g_user_phy_event_stats.bcnbfto_count++;
+  if ((status1 & USER_PHY_STS1_UNCRS) != 0U) g_user_phy_event_stats.uncrs_count++;
+  if ((status1 & USER_PHY_STS1_PLCASYM) != 0U) g_user_phy_event_stats.plcasym_count++;
+  if ((status1 & USER_PHY_STS1_ESDERR) != 0U) g_user_phy_event_stats.esderr_count++;
+  if ((status1 & USER_PHY_STS1_DEC5B) != 0U) g_user_phy_event_stats.dec5b_count++;
+
+  if ((status2 & USER_PHY_STS2_RESETC) != 0U) g_user_phy_event_stats.resetc_count++;
+  if ((status2 & USER_PHY_STS2_WKEMDI) != 0U) g_user_phy_event_stats.wkemdi_count++;
+  if ((status2 & USER_PHY_STS2_WKEWI) != 0U) g_user_phy_event_stats.wkei_count++;
+  if ((status2 & USER_PHY_STS2_UV33) != 0U) g_user_phy_event_stats.uv33_count++;
+  if ((status2 & USER_PHY_STS2_OT) != 0U) g_user_phy_event_stats.ot_count++;
+  if ((status2 & USER_PHY_STS2_IWDTO) != 0U) g_user_phy_event_stats.iwdto_count++;
 }
 
 static int32_t USER_PHY_ReadMmdReg(user_phy_Object_t *pObj, uint32_t devAddr,
@@ -428,6 +512,8 @@ int32_t USER_PHY_Init(user_phy_Object_t *pObj)
     return USER_PHY_STATUS_ERROR;
   }
 
+  memset(&g_user_phy_event_stats, 0, sizeof(g_user_phy_event_stats));
+
   status = USER_PHY_ProbeAddress(pObj);
   if (status != USER_PHY_STATUS_OK)
   {
@@ -452,6 +538,7 @@ int32_t USER_PHY_DeInit(user_phy_Object_t *pObj)
   }
 
   pObj->Is_Initialized = 0U;
+  memset(&g_user_phy_event_stats, 0, sizeof(g_user_phy_event_stats));
   return USER_PHY_STATUS_OK;
 }
 
@@ -541,11 +628,6 @@ int32_t USER_PHY_GetLinkState(user_phy_Object_t *pObj)
     return USER_PHY_STATUS_LINK_DOWN;
   }
 
-  if (g_user_phy_plca_config.collision_auto != 0U)
-  {
-    (void)USER_PHY_SyncCollisionDetection(pObj, 0U, NULL, NULL, NULL);
-  }
-
   return USER_PHY_STATUS_10MBITS_HALFDUPLEX;
 }
 
@@ -601,9 +683,6 @@ int32_t USER_PHY_ReadStatusSnapshot(user_phy_Object_t *pObj, user_phy_status_sna
       (pObj->IO.ReadReg(pObj->DevAddr, USER_PHY_PHYID2, &snapshot->phy_id2) < 0) ||
       (pObj->IO.ReadReg(pObj->DevAddr, USER_PHY_BCR, &snapshot->bcr) < 0) ||
       (pObj->IO.ReadReg(pObj->DevAddr, USER_PHY_BSR, &snapshot->bsr) < 0) ||
-      (USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_STS1, &snapshot->status1) != USER_PHY_STATUS_OK) ||
-      (USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_STS2, &snapshot->status2) != USER_PHY_STATUS_OK) ||
-      (USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_STS3, &snapshot->status3) != USER_PHY_STATUS_OK) ||
       (USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_IMSK1, &snapshot->imsk1) != USER_PHY_STATUS_OK) ||
       (USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_SQISTS0, &snapshot->sqi_status) != USER_PHY_STATUS_OK) ||
       (USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_PLCA_CTRL0, &snapshot->plca_ctrl0) != USER_PHY_STATUS_OK) ||
@@ -620,6 +699,9 @@ int32_t USER_PHY_ReadStatusSnapshot(user_phy_Object_t *pObj, user_phy_status_sna
   snapshot->phy_id2 &= 0xFFFFU;
   snapshot->bcr &= 0xFFFFU;
   snapshot->bsr &= 0xFFFFU;
+  snapshot->status1 = g_user_phy_event_stats.latched_status1;
+  snapshot->status2 = g_user_phy_event_stats.latched_status2;
+  snapshot->status3 = g_user_phy_event_stats.last_status3 & 0xFFU;
   return USER_PHY_STATUS_OK;
 }
 
@@ -713,6 +795,81 @@ int32_t USER_PHY_SetPlcaConfig(user_phy_Object_t *pObj, const user_phy_plca_conf
   return USER_PHY_STATUS_OK;
 }
 
+int32_t USER_PHY_PollEventStatus(user_phy_Object_t *pObj)
+{
+  uint32_t status1;
+  uint32_t status2;
+  uint32_t status3;
+  int32_t status;
+
+  if ((pObj == NULL) || (pObj->Is_Initialized == 0U))
+  {
+    return USER_PHY_STATUS_ERROR;
+  }
+
+  status = user_phy_read_event_registers(pObj, &status1, &status2, &status3);
+  if (status != USER_PHY_STATUS_OK)
+  {
+    return status;
+  }
+
+  user_phy_accumulate_events(status1, status2, status3);
+
+  if ((g_user_phy_plca_config.collision_auto != 0U) && ((status1 & USER_PHY_STS1_PSTC) != 0U))
+  {
+    status = USER_PHY_SyncCollisionDetection(pObj, 1U, NULL, NULL, NULL);
+    if (status != USER_PHY_STATUS_OK)
+    {
+      return status;
+    }
+  }
+
+  return USER_PHY_STATUS_OK;
+}
+
+int32_t USER_PHY_GetEventStats(user_phy_event_stats_t *stats)
+{
+  if (stats == NULL)
+  {
+    return USER_PHY_STATUS_ERROR;
+  }
+
+  *stats = g_user_phy_event_stats;
+  return USER_PHY_STATUS_OK;
+}
+
+int32_t USER_PHY_ClearEventStats(user_phy_Object_t *pObj, uint8_t clear_counters)
+{
+  uint32_t status1;
+  uint32_t status2;
+  uint32_t status3;
+  int32_t status;
+
+  if ((pObj == NULL) || (pObj->Is_Initialized == 0U))
+  {
+    return USER_PHY_STATUS_ERROR;
+  }
+
+  status = user_phy_read_event_registers(pObj, &status1, &status2, &status3);
+  if (status != USER_PHY_STATUS_OK)
+  {
+    return status;
+  }
+
+  if (clear_counters != 0U)
+  {
+    memset(&g_user_phy_event_stats, 0, sizeof(g_user_phy_event_stats));
+  }
+  else
+  {
+    g_user_phy_event_stats.latched_status1 = 0U;
+    g_user_phy_event_stats.latched_status2 = 0U;
+    g_user_phy_event_stats.last_status3 = 0U;
+  }
+
+  return USER_PHY_STATUS_OK;
+}
+
 int32_t USER_PHY_SyncCollisionDetection(user_phy_Object_t *pObj, uint8_t force,
     uint32_t *status1, uint32_t *plca_status, uint32_t *cdctl0)
 {
@@ -727,20 +884,19 @@ int32_t USER_PHY_SyncCollisionDetection(user_phy_Object_t *pObj, uint8_t force,
     return USER_PHY_STATUS_ERROR;
   }
 
-  status = USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_STS1, &sts1_value);
-  if (status != USER_PHY_STATUS_OK)
+  if (force == 0U)
   {
-    return status;
-  }
+    sts1_value = g_user_phy_event_stats.latched_status1;
 
-  if (status1 != NULL)
-  {
-    *status1 = sts1_value;
-  }
+    if (status1 != NULL)
+    {
+      *status1 = sts1_value;
+    }
 
-  if ((force == 0U) && ((sts1_value & USER_PHY_STS1_PSTC) == 0U))
-  {
-    return USER_PHY_STATUS_OK;
+    if ((sts1_value & USER_PHY_STS1_PSTC) == 0U)
+    {
+      return USER_PHY_STATUS_OK;
+    }
   }
 
   status = USER_PHY_ReadMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_PLCA_STS, &plca_value);

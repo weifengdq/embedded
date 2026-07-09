@@ -187,6 +187,16 @@ static int shell_write_c45(uint16_t devad, uint16_t reg, uint16_t value)
     return USER_PHY_WriteC45(phy, devad, reg, value);
 }
 
+static int shell_poll_events(user_phy_Object_t *phy)
+{
+    if (phy == NULL)
+    {
+        return USER_PHY_STATUS_ERROR;
+    }
+
+    return USER_PHY_PollEventStatus(phy);
+}
+
 static void shell_print_sts1_flags(uint32_t value)
 {
     printf("STS1 flags:");
@@ -314,18 +324,14 @@ static int cmd_phyinfo(int argc, char *argv[])
         return -1;
     }
 
+    (void)shell_poll_events(phy);
+
     memset(&snapshot, 0, sizeof(snapshot));
     status = USER_PHY_ReadStatusSnapshot(phy, &snapshot);
     if (status != USER_PHY_STATUS_OK)
     {
         printf("read status failed: %ld\r\n", (long)status);
         return -1;
-    }
-
-    if ((snapshot.status1 & USER_PHY_STS1_PSTC) != 0U)
-    {
-        (void)USER_PHY_SyncCollisionDetection(phy, 1U, NULL, NULL, NULL);
-        (void)USER_PHY_ReadStatusSnapshot(phy, &snapshot);
     }
 
     status = USER_PHY_GetPlcaConfig(phy, &config);
@@ -429,6 +435,8 @@ static int shell_show_plca(user_phy_Object_t *phy)
         printf("read plca config failed: %ld\r\n", (long)status);
         return -1;
     }
+
+    (void)shell_poll_events(phy);
 
     memset(&snapshot, 0, sizeof(snapshot));
     status = USER_PHY_ReadStatusSnapshot(phy, &snapshot);
@@ -554,12 +562,42 @@ static int cmd_plca(int argc, char *argv[])
         }
         config.collision_auto = enabled;
     }
+    else if ((argc == 3) && (strcmp(argv[1], "coordinator") == 0))
+    {
+        if ((shell_parse_u32(argv[2], &value) != 0) || (value == 0U) || (value > 0xFFU))
+        {
+            printf("usage: plca coordinator <node_count>\r\n");
+            return -1;
+        }
+        config.enabled = 1U;
+        config.node_id = 0U;
+        config.node_count = (uint8_t)value;
+    }
+    else if ((argc >= 3) && (strcmp(argv[1], "follower") == 0))
+    {
+        if ((shell_parse_u32(argv[2], &value) != 0) || (value == 0U) || (value > 0xFEU))
+        {
+            printf("usage: plca follower <node_id> [node_count]\r\n");
+            return -1;
+        }
+        config.enabled = 1U;
+        config.node_id = (uint8_t)value;
+        if (argc >= 4)
+        {
+            if ((shell_parse_u32(argv[3], &value) != 0) || (value == 0U) || (value > 0xFFU))
+            {
+                printf("usage: plca follower <node_id> [node_count]\r\n");
+                return -1;
+            }
+            config.node_count = (uint8_t)value;
+        }
+    }
     else if ((argc == 2) && (strcmp(argv[1], "apply") == 0))
     {
     }
     else
     {
-        printf("usage: plca [show|apply|enable on|off|nodeid <n>|nodecount <n>|totmr <n>|burstcnt <n>|bursttmr <n>|irq on|off|collauto on|off]\r\n");
+        printf("usage: plca [show|apply|enable on|off|nodeid <n>|nodecount <n>|totmr <n>|burstcnt <n>|bursttmr <n>|irq on|off|collauto on|off|coordinator <count>|follower <id> [count]]\r\n");
         return -1;
     }
 
@@ -585,6 +623,8 @@ static int cmd_sqi(int argc, char *argv[])
     {
         return -1;
     }
+
+    (void)shell_poll_events(phy);
 
     if (argc >= 2)
     {
@@ -671,6 +711,16 @@ static int cmd_irq(int argc, char *argv[])
         return -1;
     }
 
+    if ((argc >= 2) && (strcmp(argv[1], "poll") == 0))
+    {
+        status = shell_poll_events(phy);
+        if (status != USER_PHY_STATUS_OK)
+        {
+            printf("poll irq status failed: %ld\r\n", (long)status);
+            return -1;
+        }
+    }
+
     memset(&snapshot, 0, sizeof(snapshot));
     status = USER_PHY_ReadStatusSnapshot(phy, &snapshot);
     if (status != USER_PHY_STATUS_OK)
@@ -691,6 +741,42 @@ static int cmd_irq(int argc, char *argv[])
     return 0;
 }
 
+static int cmd_irqclr(int argc, char *argv[])
+{
+    user_phy_Object_t *phy;
+    uint8_t clear_counts = 0U;
+    int32_t status;
+
+    phy = shell_get_phy();
+    if (phy == NULL)
+    {
+        return -1;
+    }
+
+    if (argc >= 2)
+    {
+        if (strcmp(argv[1], "all") == 0)
+        {
+            clear_counts = 1U;
+        }
+        else
+        {
+            printf("usage: irqclr [all]\r\n");
+            return -1;
+        }
+    }
+
+    status = USER_PHY_ClearEventStats(phy, clear_counts);
+    if (status != USER_PHY_STATUS_OK)
+    {
+        printf("clear irq status failed: %ld\r\n", (long)status);
+        return -1;
+    }
+
+    printf("IRQ latched status cleared%s\r\n", (clear_counts != 0U) ? " and counters reset" : "");
+    return 0;
+}
+
 static int cmd_plcadiag(int argc, char *argv[])
 {
     user_phy_Object_t *phy;
@@ -705,6 +791,8 @@ static int cmd_plcadiag(int argc, char *argv[])
     {
         return -1;
     }
+
+    (void)shell_poll_events(phy);
 
     memset(&snapshot, 0, sizeof(snapshot));
     status = USER_PHY_ReadStatusSnapshot(phy, &snapshot);
@@ -725,6 +813,70 @@ static int cmd_plcadiag(int argc, char *argv[])
            (unsigned long)(((snapshot.status1 & USER_PHY_STS1_BCNBFTO) != 0U) ? 1UL : 0UL),
            (unsigned long)(((snapshot.status1 & USER_PHY_STS1_UNCRS) != 0U) ? 1UL : 0UL),
            (unsigned long)(((snapshot.status1 & USER_PHY_STS1_PLCASYM) != 0U) ? 1UL : 0UL));
+    return 0;
+}
+
+static int cmd_evcnt(int argc, char *argv[])
+{
+    user_phy_Object_t *phy;
+    user_phy_event_stats_t stats;
+    int32_t status;
+
+    phy = shell_get_phy();
+    if (phy == NULL)
+    {
+        return -1;
+    }
+
+    if ((argc >= 2) && (strcmp(argv[1], "clear") == 0))
+    {
+        status = USER_PHY_ClearEventStats(phy, 1U);
+        if (status != USER_PHY_STATUS_OK)
+        {
+            printf("clear event counters failed: %ld\r\n", (long)status);
+            return -1;
+        }
+    }
+    else
+    {
+        (void)shell_poll_events(phy);
+    }
+
+    memset(&stats, 0, sizeof(stats));
+    status = USER_PHY_GetEventStats(&stats);
+    if (status != USER_PHY_STATUS_OK)
+    {
+        printf("read event counters failed: %ld\r\n", (long)status);
+        return -1;
+    }
+
+    printf("poll=%lu last_errtoid=%lu latched_sts1=0x%04lX latched_sts2=0x%04lX\r\n",
+           (unsigned long)stats.poll_count,
+           (unsigned long)(stats.last_status3 & 0xFFU),
+           (unsigned long)stats.latched_status1,
+           (unsigned long)stats.latched_status2);
+    printf("SQI=%lu PSTC=%lu TXCOL=%lu TXJAB=%lu TSSI=%lu EMPCYC=%lu\r\n",
+           (unsigned long)stats.sqi_count,
+           (unsigned long)stats.pstc_count,
+           (unsigned long)stats.txcol_count,
+           (unsigned long)stats.txjab_count,
+           (unsigned long)stats.tssi_count,
+           (unsigned long)stats.empcyc_count);
+    printf("RXINTO=%lu UNEXPB=%lu BCNBFTO=%lu UNCRS=%lu PLCASYM=%lu ESDERR=%lu DEC5B=%lu\r\n",
+           (unsigned long)stats.rxinto_count,
+           (unsigned long)stats.unexpb_count,
+           (unsigned long)stats.bcnbfto_count,
+           (unsigned long)stats.uncrs_count,
+           (unsigned long)stats.plcasym_count,
+           (unsigned long)stats.esderr_count,
+           (unsigned long)stats.dec5b_count);
+    printf("RESETC=%lu WKEMDI=%lu WKEWI=%lu UV33=%lu OT=%lu IWDTO=%lu\r\n",
+           (unsigned long)stats.resetc_count,
+           (unsigned long)stats.wkemdi_count,
+           (unsigned long)stats.wkei_count,
+           (unsigned long)stats.uv33_count,
+           (unsigned long)stats.ot_count,
+           (unsigned long)stats.iwdto_count);
     return 0;
 }
 
@@ -957,8 +1109,10 @@ SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), 
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), plca, cmd_plca, show or set PLCA parameters);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), sqi, cmd_sqi, show signal quality indicator);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), irq, cmd_irq, read IRQ and status registers);
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), irqclr, cmd_irqclr, clear latched IRQ status and optional counters);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), plcadiag, cmd_plcadiag, show PLCA diagnostic status);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), pcsdiag, cmd_pcsdiag, show PCS diagnostic counters);
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), evcnt, cmd_evcnt, show accumulated LAN8671 event counters);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), collision, cmd_collision, control collision detect policy);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), loopback, cmd_loopback, control PCS loopback);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), ethdiag, cmd_ethdiag, show ETH DMA and RX pool state);
