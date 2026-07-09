@@ -316,6 +316,13 @@ static int32_t user_phy_apply_sqi_config(user_phy_Object_t *pObj, int8_t offset1
     }
   }
 
+  status = USER_PHY_WriteMmdReg(pObj, USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_SQICTL,
+      (uint16_t)(USER_PHY_SQICTL_SQIEN | 0x1400U));
+  if (status != USER_PHY_STATUS_OK)
+  {
+    return status;
+  }
+
   return USER_PHY_STATUS_OK;
 }
 

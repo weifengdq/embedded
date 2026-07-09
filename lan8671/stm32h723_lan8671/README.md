@@ -192,9 +192,13 @@ Type 'help' for command list
 - `plca`
   - 查看或修改 PLCA 参数
 - `sqi`
-  - 读取 `SQISTS0`
+  - 读取或控制 `SQICTL` / `SQISTS0`
 - `irq`
   - 读取 `STS1/STS2/STS3/IMSK1` 和 IRQ 引脚状态
+- `plcadiag`
+  - 读取 PLCA 相关诊断位和 `ERRTOID`
+- `pcsdiag`
+  - 读取 PCS 计数寄存器，如 remote jabber / corrupted tx
 - `collision`
   - 查看或控制 Collision Detect 自动策略
 - `loopback`
@@ -241,6 +245,43 @@ letter:/$ irq
 IRQ_N=1 STS1=0x0080 STS2=0x0000 STS3=0x0000 IMSK1=0xF7FF
 STS1 flags: EMPCYC
 STS2 flags: none
+```
+
+### 5.5 `sqi` 示例
+
+默认上电后 `SQI` 已经使能，但通常需要一段接收流量统计窗口后才会 `valid=1`。
+
+```text
+letter:/$ sqi
+SQI ctl=0x5400 raw=0x0000 valid=0 value=0 err=0 errcode=0
+
+# 跑一段 ping 或 iperf 后
+letter:/$ sqi
+SQI ctl=0x5402 raw=0x9F7B valid=1 value=7 err=0 errcode=3
+```
+
+也可以手工控制：
+
+```text
+sqi on
+sqi off
+sqi reset
+```
+
+### 5.6 `plcadiag` 示例
+
+```text
+letter:/$ plcadiag
+PLCA diag STS1=0x0080 STS3(ERRTOID)=0x03 active=1
+EMPCYC=1 RXINTO=0 UNEXPB=0 BCNBFTO=0 UNCRS=0 PLCASYM=0
+```
+
+### 5.7 `pcsdiag` 示例
+
+```text
+letter:/$ pcsdiag
+PCS status=0x0000 fault=0
+PCS remote_jabber_count=0 corrupted_tx_count=0
 ```
 
 ## 6. 网络测试步骤
@@ -342,6 +383,21 @@ ETHDIAG rx_desc_idx=2 rx_build_desc_idx=2 rx_build_desc_cnt=0 dmacsr=0x00000C04
 
 当前没有出现 RX pool 耗尽。
 
+### 7.6 SQI 实测
+
+初始上电后如果尚未积累足够接收统计，`SQIVLD` 可能为 0。跑一段持续流量后，当前实测可得到：
+
+```text
+letter:/$ sqi
+SQI ctl=0x5402 raw=0x9F7B valid=1 value=7 err=0 errcode=3
+```
+
+可以确认：
+
+- 当前工程里 `SQI` 已默认使能
+- `SQI` 需要一定统计窗口，不是上电立刻有效
+- 当前这套接线和链路下可以得到 `SQI value = 7`
+
 ## 8. 注意事项
 
 ### 8.1 PHY 地址
@@ -368,19 +424,17 @@ PC 侧 USB-10BASE-T1S 转换板需要配置为：
 - PHY 能扫到，但链路不起来
 - 网络完全不通
 
-### 8.4 `SQI` 当前仍显示 invalid
+### 8.4 `SQI` 需要流量窗口
 
-当前实测通信已经正常，但 `SQI` 命令返回：
+`SQI` 默认已经使能，但通常不会在刚上电时马上 `valid=1`。当前实测是在跑过一段 ping / iperf 流量后，`SQI` 才变为有效。
+
+如果你看到：
 
 ```text
-SQI raw=0x0000 valid=0 value=0 err=0 errcode=0
+SQI ctl=0x5400 raw=0x0000 valid=0 value=0 err=0 errcode=0
 ```
 
-这不影响当前 ping / UDP / iperf，但后续如果要继续深挖 LAN8671 诊断功能，建议优先再核一下：
-
-- Rev C2 SQI 配置写表是否还需要额外触发条件
-- 当前 USB-10BASE-T1S 转换板侧是否对 SQI 统计有影响
-- 是否需要补更多 `STS1.SQI` 相关处理
+先不要急着判定为异常，先制造一段持续接收流量，再重新读取。
 
 ### 8.5 不建议再用 CubeMX 覆盖生成
 

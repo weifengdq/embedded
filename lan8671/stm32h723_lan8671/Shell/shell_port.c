@@ -190,17 +190,15 @@ static int shell_write_c45(uint16_t devad, uint16_t reg, uint16_t value)
 static void shell_print_sts1_flags(uint32_t value)
 {
     printf("STS1 flags:");
-    if ((value & USER_PHY_STS1_SLPFAIL) != 0U) printf(" SLPFAIL");
-    if ((value & USER_PHY_STS1_TDD) != 0U) printf(" TDD");
-    if ((value & USER_PHY_STS1_LNKSTSC) != 0U) printf(" LNKSTSC");
     if ((value & USER_PHY_STS1_SQI) != 0U) printf(" SQI");
     if ((value & USER_PHY_STS1_PSTC) != 0U) printf(" PSTC");
     if ((value & USER_PHY_STS1_TXCOL) != 0U) printf(" TXCOL");
     if ((value & USER_PHY_STS1_TXJAB) != 0U) printf(" TXJAB");
     if ((value & USER_PHY_STS1_TSSI) != 0U) printf(" TSSI");
     if ((value & USER_PHY_STS1_EMPCYC) != 0U) printf(" EMPCYC");
-    if ((value & USER_PHY_STS1_HDDD) != 0U) printf(" HDDD");
-    if ((value & USER_PHY_STS1_PLCADIAG) != 0U) printf(" PLCADIAG");
+    if ((value & USER_PHY_STS1_RXINTO) != 0U) printf(" RXINTO");
+    if ((value & USER_PHY_STS1_UNEXPB) != 0U) printf(" UNEXPB");
+    if ((value & USER_PHY_STS1_BCNBFTO) != 0U) printf(" BCNBFTO");
     if ((value & USER_PHY_STS1_UNCRS) != 0U) printf(" UNCRS");
     if ((value & USER_PHY_STS1_PLCASYM) != 0U) printf(" PLCASYM");
     if ((value & USER_PHY_STS1_ESDERR) != 0U) printf(" ESDERR");
@@ -577,11 +575,68 @@ static int cmd_plca(int argc, char *argv[])
 
 static int cmd_sqi(int argc, char *argv[])
 {
+    user_phy_Object_t *phy;
+    uint32_t ctrl;
     uint32_t value;
     int32_t status;
 
-    (void)argc;
-    (void)argv;
+    phy = shell_get_phy();
+    if (phy == NULL)
+    {
+        return -1;
+    }
+
+    if (argc >= 2)
+    {
+        if (strcmp(argv[1], "on") == 0)
+        {
+            status = shell_write_c45(USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_SQICTL,
+                                     (uint16_t)(USER_PHY_SQICTL_SQIEN | 0x1400U));
+            if (status != USER_PHY_STATUS_OK)
+            {
+                printf("enable sqi failed: %ld\r\n", (long)status);
+                return -1;
+            }
+        }
+        else if (strcmp(argv[1], "off") == 0)
+        {
+            status = shell_write_c45(USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_SQICTL, 0x1400U);
+            if (status != USER_PHY_STATUS_OK)
+            {
+                printf("disable sqi failed: %ld\r\n", (long)status);
+                return -1;
+            }
+        }
+        else if (strcmp(argv[1], "reset") == 0)
+        {
+            status = shell_write_c45(USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_SQICTL,
+                                     (uint16_t)(USER_PHY_SQICTL_SQIRST | USER_PHY_SQICTL_SQIEN | 0x1400U));
+            if (status != USER_PHY_STATUS_OK)
+            {
+                printf("reset sqi failed: %ld\r\n", (long)status);
+                return -1;
+            }
+            status = shell_write_c45(USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_SQICTL,
+                                     (uint16_t)(USER_PHY_SQICTL_SQIEN | 0x1400U));
+            if (status != USER_PHY_STATUS_OK)
+            {
+                printf("restart sqi failed: %ld\r\n", (long)status);
+                return -1;
+            }
+        }
+        else
+        {
+            printf("usage: sqi [on|off|reset]\r\n");
+            return -1;
+        }
+    }
+
+    status = shell_read_c45(USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_SQICTL, &ctrl);
+    if (status != USER_PHY_STATUS_OK)
+    {
+        printf("read sqi control failed: %ld\r\n", (long)status);
+        return -1;
+    }
 
     status = shell_read_c45(USER_PHY_VENDOR_MMD_DEVICE, USER_PHY_SQISTS0, &value);
     if (status != USER_PHY_STATUS_OK)
@@ -590,7 +645,8 @@ static int cmd_sqi(int argc, char *argv[])
         return -1;
     }
 
-    printf("SQI raw=0x%04lX valid=%lu value=%lu err=%lu errcode=%lu\r\n",
+    printf("SQI ctl=0x%04lX raw=0x%04lX valid=%lu value=%lu err=%lu errcode=%lu\r\n",
+           (unsigned long)ctrl,
            (unsigned long)value,
            (unsigned long)(((value & USER_PHY_SQISTS0_SQIVLD) != 0U) ? 1UL : 0UL),
            (unsigned long)((value & USER_PHY_SQISTS0_SQIVAL_MASK) >> USER_PHY_SQISTS0_SQIVAL_SHIFT),
@@ -632,6 +688,83 @@ static int cmd_irq(int argc, char *argv[])
            (unsigned long)snapshot.imsk1);
     shell_print_sts1_flags(snapshot.status1);
     shell_print_sts2_flags(snapshot.status2);
+    return 0;
+}
+
+static int cmd_plcadiag(int argc, char *argv[])
+{
+    user_phy_Object_t *phy;
+    user_phy_status_snapshot_t snapshot;
+    int32_t status;
+
+    (void)argc;
+    (void)argv;
+
+    phy = shell_get_phy();
+    if (phy == NULL)
+    {
+        return -1;
+    }
+
+    memset(&snapshot, 0, sizeof(snapshot));
+    status = USER_PHY_ReadStatusSnapshot(phy, &snapshot);
+    if (status != USER_PHY_STATUS_OK)
+    {
+        printf("read plca diag failed: %ld\r\n", (long)status);
+        return -1;
+    }
+
+    printf("PLCA diag STS1=0x%04lX STS3(ERRTOID)=0x%02lX active=%lu\r\n",
+           (unsigned long)snapshot.status1,
+           (unsigned long)(snapshot.status3 & 0xFFU),
+           (unsigned long)(((snapshot.plca_status & USER_PHY_PLCA_STS_PST) != 0U) ? 1UL : 0UL));
+    printf("EMPCYC=%lu RXINTO=%lu UNEXPB=%lu BCNBFTO=%lu UNCRS=%lu PLCASYM=%lu\r\n",
+           (unsigned long)(((snapshot.status1 & USER_PHY_STS1_EMPCYC) != 0U) ? 1UL : 0UL),
+           (unsigned long)(((snapshot.status1 & USER_PHY_STS1_RXINTO) != 0U) ? 1UL : 0UL),
+           (unsigned long)(((snapshot.status1 & USER_PHY_STS1_UNEXPB) != 0U) ? 1UL : 0UL),
+           (unsigned long)(((snapshot.status1 & USER_PHY_STS1_BCNBFTO) != 0U) ? 1UL : 0UL),
+           (unsigned long)(((snapshot.status1 & USER_PHY_STS1_UNCRS) != 0U) ? 1UL : 0UL),
+           (unsigned long)(((snapshot.status1 & USER_PHY_STS1_PLCASYM) != 0U) ? 1UL : 0UL));
+    return 0;
+}
+
+static int cmd_pcsdiag(int argc, char *argv[])
+{
+    uint32_t t1spcssts;
+    uint32_t rmtjab;
+    uint32_t cortx;
+    int32_t status;
+
+    (void)argc;
+    (void)argv;
+
+    status = shell_read_c45(USER_PHY_PCS_MMD_DEVICE, 0x08F4U, &t1spcssts);
+    if (status != USER_PHY_STATUS_OK)
+    {
+        printf("read pcs status failed: %ld\r\n", (long)status);
+        return -1;
+    }
+
+    status = shell_read_c45(USER_PHY_PCS_MMD_DEVICE, 0x08F5U, &rmtjab);
+    if (status != USER_PHY_STATUS_OK)
+    {
+        printf("read pcs diag1 failed: %ld\r\n", (long)status);
+        return -1;
+    }
+
+    status = shell_read_c45(USER_PHY_PCS_MMD_DEVICE, 0x08F6U, &cortx);
+    if (status != USER_PHY_STATUS_OK)
+    {
+        printf("read pcs diag2 failed: %ld\r\n", (long)status);
+        return -1;
+    }
+
+    printf("PCS status=0x%04lX fault=%lu\r\n",
+           (unsigned long)t1spcssts,
+           (unsigned long)(((t1spcssts & 0x0080U) != 0U) ? 1UL : 0UL));
+    printf("PCS remote_jabber_count=%lu corrupted_tx_count=%lu\r\n",
+           (unsigned long)rmtjab,
+           (unsigned long)cortx);
     return 0;
 }
 
@@ -824,6 +957,8 @@ SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), 
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), plca, cmd_plca, show or set PLCA parameters);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), sqi, cmd_sqi, show signal quality indicator);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), irq, cmd_irq, read IRQ and status registers);
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), plcadiag, cmd_plcadiag, show PLCA diagnostic status);
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), pcsdiag, cmd_pcsdiag, show PCS diagnostic counters);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), collision, cmd_collision, control collision detect policy);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), loopback, cmd_loopback, control PCS loopback);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), ethdiag, cmd_ethdiag, show ETH DMA and RX pool state);
