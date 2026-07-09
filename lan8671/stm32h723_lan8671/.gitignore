@@ -1,0 +1,13 @@
+build/
+compile_commands.json
+*.bin
+*.elf
+*.hex
+*.map
+*.su
+*.tmp
+*.log
+*.launch
+cmake-build-*/
+CMakeUserPresets.json
+Testing/
