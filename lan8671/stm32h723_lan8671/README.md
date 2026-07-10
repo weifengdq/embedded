@@ -1,5 +1,7 @@
 # stm32h723_lan8671
 
+![image-20260710133252565](README.assets/image-20260710133252565.png)
+
 STM32H723ZG + Microchip LAN8671 Rev C2 的 10BASE-T1S 裸机 LwIP 示例工程，使用 CMake + GCC 构建。
 
 当前工程已经完成以下内容：
