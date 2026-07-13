@@ -34,6 +34,7 @@ set(AURIX_EXCLUDED_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/.settings"
     "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/.ads"
     "${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/Third_Party/flexPTP"
+    "${CMAKE_CURRENT_SOURCE_DIR}/PTP"
     "${CMAKE_CURRENT_SOURCE_DIR}/TriCore Debug (TASKING)"
     "${CMAKE_CURRENT_SOURCE_DIR}/TriCore Release (TASKING)"
     "${CMAKE_CURRENT_SOURCE_DIR}/TriCore Debug (GCC)"
@@ -69,19 +70,6 @@ if(NOT AURIX_SOURCE_FILES)
     message(FATAL_ERROR "No C source files were found after applying exclusions.")
 endif()
 
-set(FLEXPTP_HWPORT_SRC
-    "${CMAKE_CURRENT_SOURCE_DIR}/PTP/flexptp_port.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/PTP/flexptp_port.h"
-)
-set(FLEXPTP_NSD "LWIP")
-set(FLEXPTP_SERVO "PID")
-set(FLEXPTP_DONT_LINK_NETWORK_LIB ON)
-set(FLEXPTP_INCLUDES ${AURIX_INCLUDE_DIRS})
-set(FLEXPTP_COMPILE_DEFS "")
-set(FLEXPTP_CPU_PARAMS "")
-
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/Third_Party/flexPTP")
-
 # ---------- 构建目标 ----------
 add_executable(${PROJECT_NAME} ${AURIX_SOURCE_FILES} ${AURIX_HEADER_FILES})
 
@@ -94,8 +82,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     LINKER_LANGUAGE C
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${AURIX_INCLUDE_DIRS} ${FLEXPTP_INCLUDE_EXPORT})
-target_link_libraries(${PROJECT_NAME} PRIVATE flexptp)
+target_include_directories(${PROJECT_NAME} PRIVATE ${AURIX_INCLUDE_DIRS})
 
 # ---------- 工具链特定选项 ----------
 if(AURIX_TOOLCHAIN_TYPE STREQUAL "TASKING")

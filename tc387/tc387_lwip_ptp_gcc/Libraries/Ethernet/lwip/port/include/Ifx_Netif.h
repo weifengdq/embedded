@@ -47,6 +47,5 @@
 
 err_t ifx_netif_init(struct netif *netif);
 err_t ifx_netif_input(struct netif *netif);
-void  ifx_netif_poll_ptp_tx_timestamps(void);
 
 #endif

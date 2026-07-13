@@ -35,55 +35,33 @@
 /*********************************************************************************************************************/
 /*------------------------------------------------------Macros-------------------------------------------------------*/
 /*********************************************************************************************************************/
-#define SERIAL_BAUDRATE         921600                                      /* Baud rate in bit/s                   */
+#define SERIAL_BAUDRATE         115200                                      /* Baud rate in bit/s                   */
 
 #define SERIAL_PIN_RX           IfxAsclin4_RXA_P00_12_IN                     /* RX pin of the board                  */
 #define SERIAL_PIN_TX           IfxAsclin4_TX_P00_9_OUT                     /* TX pin of the board                  */
 
 #define INTPRIO_ASCLIN4_TX      29                                          /* Priority of the ISR                  */
-#define INTPRIO_ASCLIN4_RX      28                                          /* Priority of the ISR                  */
-#define INTPRIO_ASCLIN4_ERR     27                                          /* Priority of the ISR                  */
 
 #define ASC_TX_BUFFER_SIZE      256                                         /* Definition of the buffer size        */
-#define ASC_RX_BUFFER_SIZE      256                                         /* Definition of the buffer size        */
 
 /*********************************************************************************************************************/
 /*-------------------------------------------------Global variables--------------------------------------------------*/
 /*********************************************************************************************************************/
 IfxAsclin_Asc g_asc;                                                        /* Declaration of the ASC handle        */
 uint8 g_ascTxBuffer[ASC_TX_BUFFER_SIZE + sizeof(Ifx_Fifo) + 8];             /* Declaration of the FIFO parameters   */
-static uint8 g_ascRxBuffer[ASC_RX_BUFFER_SIZE + sizeof(Ifx_Fifo) + 8];      /* Declaration of the FIFO parameters   */
-static boolean g_uartInitialized;                                           /* UART init guard                      */
 
 /*********************************************************************************************************************/
 /*---------------------------------------------Function Implementations----------------------------------------------*/
 /*********************************************************************************************************************/
 IFX_INTERRUPT(asclin4TxISR, 0, INTPRIO_ASCLIN4_TX);                     /* Adding the Interrupt Service Routine     */
-IFX_INTERRUPT(asclin4RxISR, 0, INTPRIO_ASCLIN4_RX);
-IFX_INTERRUPT(asclin4ErrISR, 0, INTPRIO_ASCLIN4_ERR);
 
 void asclin4TxISR(void)
 {
     IfxAsclin_Asc_isrTransmit(&g_asc);
 }
 
-void asclin4RxISR(void)
-{
-    IfxAsclin_Asc_isrReceive(&g_asc);
-}
-
-void asclin4ErrISR(void)
-{
-    IfxAsclin_Asc_isrError(&g_asc);
-}
-
 void initUART(void)
 {
-    if (g_uartInitialized)
-    {
-        return;
-    }
-
     /* Initialize an instance of IfxAsclin_Asc_Config with default values */
     IfxAsclin_Asc_Config ascConfig;
     IfxAsclin_Asc_initModuleConfig(&ascConfig, SERIAL_PIN_TX.module);
@@ -93,15 +71,11 @@ void initUART(void)
 
     /* ISR priorities and interrupt target */
     ascConfig.interrupt.txPriority = INTPRIO_ASCLIN4_TX;
-    ascConfig.interrupt.rxPriority = INTPRIO_ASCLIN4_RX;
-    ascConfig.interrupt.erPriority = INTPRIO_ASCLIN4_ERR;
     ascConfig.interrupt.typeOfService = IfxCpu_Irq_getTos(IfxCpu_getCoreIndex());
 
     /* FIFO configuration */
     ascConfig.txBuffer = &g_ascTxBuffer;
     ascConfig.txBufferSize = ASC_TX_BUFFER_SIZE;
-    ascConfig.rxBuffer = &g_ascRxBuffer;
-    ascConfig.rxBufferSize = ASC_RX_BUFFER_SIZE;
 
     /* Port pins configuration */
     const IfxAsclin_Asc_Pins pins =
@@ -115,18 +89,6 @@ void initUART(void)
     ascConfig.pins = &pins;
 
     IfxAsclin_Asc_initModule(&g_asc, &ascConfig);                       /* Initialize module with above parameters  */
-    g_uartInitialized = TRUE;
-}
-
-boolean initUARTConsole(IfxStdIf_DPipe *io)
-{
-    if (io == NULL_PTR)
-    {
-        return FALSE;
-    }
-
-    initUART();
-    return IfxStdIf_DPipe_ascInit(io, &g_asc);
 }
 
 void sendUARTMessage(char * msg, Ifx_SizeT count)
