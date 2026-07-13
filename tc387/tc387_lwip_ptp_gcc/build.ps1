@@ -58,7 +58,7 @@ param(
 
     [string]$BuildDir = "",
 
-    [string]$TargetName = "tc387_lwip_iperf_gcc",
+    [string]$TargetName = "tc387_lwip_ptp_gcc",
 
     # ---- 高层路径（推导 GCC/TASKING/Flasher/make 子路径）----
     [string]$AurixStudioPath = "C:\Infineon\AURIX-Studio-1.10.28",

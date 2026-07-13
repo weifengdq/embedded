@@ -84,10 +84,12 @@
 #include "lwip/opt.h"
 
 #include "lwip/def.h"
+#include "lwip/err.h"
 #include "lwip/mem.h"
 #include "lwip/pbuf.h"
 #include <lwip/stats.h>
 #include <lwip/snmp.h>
+#include "lwip/prot/ieee.h"
 #include "netif/etharp.h"
 #include "netif/ppp/pppoe.h"
 
@@ -96,6 +98,8 @@
 #include "Ifx_Netif.h"
 #include "IfxGeth_Phy_Rtl8211f.h"
 #include "Configuration.h"
+#include "flexptp/ptp_defs.h"
+#include "flexptp/task_ptp.h"
 #include <string.h>
 
 /* Define those to better describe your network interface. */
@@ -113,6 +117,12 @@ struct ethernetif
     eth_addr_t *ethaddr;
     /* Add whatever per-interface state that is needed here. */
 };
+
+typedef struct
+{
+    pbuf_t                   *pbuf;
+    volatile IfxGeth_TxDescr *txDescr;
+} Ifx_Netif_PtpTxPending;
 
 /* pin configuration RTL8211F */
 const IfxGeth_Eth_RgmiiPins rtl8211f_pins = {
@@ -132,6 +142,67 @@ const IfxGeth_Eth_RgmiiPins rtl8211f_pins = {
                                    .mdio = &ETH_MDIO_PIN,       /* MDIO */
 		                           .grefClk = &ETH_GREFCLK_PIN  /* GREFCLK */
 };
+
+static Ifx_Netif_PtpTxPending g_ifxPtpTxPending[IFXGETH_MAX_TX_DESCRIPTORS];
+
+static uint32 ifx_netif_get_rx_descriptor_index(IfxGeth_Eth *ethernetif, volatile IfxGeth_RxDescr *descr)
+{
+    volatile IfxGeth_RxDescr *base = IfxGeth_Eth_getBaseRxDescriptor(ethernetif, IfxGeth_RxDmaChannel_0);
+    return (uint32)(descr - base);
+}
+
+static volatile IfxGeth_RxDescr *ifx_netif_next_rx_descriptor(IfxGeth_Eth *ethernetif, volatile IfxGeth_RxDescr *descr)
+{
+    volatile IfxGeth_RxDescr *base = IfxGeth_Eth_getBaseRxDescriptor(ethernetif, IfxGeth_RxDmaChannel_0);
+    uint32 index = ifx_netif_get_rx_descriptor_index(ethernetif, descr);
+    index = (index + 1U) % IFXGETH_MAX_RX_DESCRIPTORS;
+    return &base[index];
+}
+
+static void ifx_netif_prepare_rx_descriptor(volatile IfxGeth_RxDescr *descr, uint32 index)
+{
+    descr->RDES0.U = (uint32)&channel0RxBuffer1[index][0];
+    descr->RDES1.U = 0U;
+    descr->RDES2.U = 0U;
+    descr->RDES3.U = 0U;
+    descr->RDES3.R.BUF1V = 1U;
+    descr->RDES3.R.BUF2V = 0U;
+    descr->RDES3.R.IOC = 1U;
+    descr->RDES3.R.OWN = 1U;
+}
+
+static void ifx_netif_release_rx_descriptors(IfxGeth_Eth *ethernetif,
+                                             volatile IfxGeth_RxDescr *firstDescr,
+                                             boolean hasContextDescriptor)
+{
+    volatile IfxGeth_RxDescr *nextDescr = ifx_netif_next_rx_descriptor(ethernetif, firstDescr);
+
+    ifx_netif_prepare_rx_descriptor(firstDescr, ifx_netif_get_rx_descriptor_index(ethernetif, firstDescr));
+
+    if (hasContextDescriptor)
+    {
+        ifx_netif_prepare_rx_descriptor(nextDescr, ifx_netif_get_rx_descriptor_index(ethernetif, nextDescr));
+        nextDescr = ifx_netif_next_rx_descriptor(ethernetif, nextDescr);
+    }
+
+    ethernetif->rxChannel[IfxGeth_RxDmaChannel_0].rxDescrPtr = nextDescr;
+    IfxGeth_Eth_wakeupReceiver(ethernetif, IfxGeth_RxDmaChannel_0);
+}
+
+static Ifx_Netif_PtpTxPending *ifx_netif_alloc_ptp_pending(void)
+{
+    uint32 index;
+
+    for (index = 0U; index < IFXGETH_MAX_TX_DESCRIPTORS; ++index)
+    {
+        if (g_ifxPtpTxPending[index].pbuf == NULL_PTR)
+        {
+            return &g_ifxPtpTxPending[index];
+        }
+    }
+
+    return NULL_PTR;
+}
 
 /**
  * In this function, the hardware should be initialized.
@@ -298,10 +369,18 @@ static void low_level_init(netif_t *netif)
 static err_t low_level_output(netif_t *netif, pbuf_t *p)
 {
     IfxGeth_Eth      *ethernetif = netif->state;
-    struct pbuf *q;
+    struct pbuf      *q;
+    boolean           usePtpTimestamp = FALSE;
+    Ifx_Netif_PtpTxPending *ptpPending = NULL_PTR;
 
     u16_t        length = p->tot_len;
     LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_TRACE, ("low_level_output (p=%#x)\n", p));
+
+    if ((p != NULL_PTR) && (p->tx_cb != NULL_PTR) && (p->tot_len >= SIZEOF_ETH_HDR))
+    {
+        eth_hdr_t *ethhdr = (eth_hdr_t *)p->payload;
+        usePtpTimestamp = (lwip_htons(ethhdr->type) == ETHTYPE_PTP) ? TRUE : FALSE;
+    }
 
 #if ETH_PAD_SIZE
     pbuf_header(p, -ETH_PAD_SIZE); /* drop the padding word */
@@ -334,6 +413,27 @@ static err_t low_level_output(netif_t *netif, pbuf_t *p)
         pactTxDescriptor = (IfxGeth_TxDescr *)IfxGeth_Eth_getActualTxDescriptor(ethernetif, IfxGeth_TxDmaChannel_0);
         /* set the buffer length to the max. available */
         pactTxDescriptor->TDES2.R.B1L = IFXGETH_MAX_TX_BUFFER_SIZE;
+
+        if (usePtpTimestamp && (l <= ethernetif->txChannel[IfxGeth_TxDmaChannel_0].txBuf1Size))
+        {
+            ptpPending = ifx_netif_alloc_ptp_pending();
+            if (ptpPending != NULL_PTR)
+            {
+                pactTxDescriptor->TDES2.R.TTSE_TMWD = 1U;
+                pbuf_ref(p);
+                ptpPending->pbuf = p;
+                ptpPending->txDescr = pactTxDescriptor;
+            }
+            else
+            {
+                pactTxDescriptor->TDES2.R.TTSE_TMWD = 0U;
+            }
+        }
+        else
+        {
+            pactTxDescriptor->TDES2.R.TTSE_TMWD = 0U;
+        }
+
         IfxGeth_Eth_sendTransmitBuffer(ethernetif, l, IfxGeth_TxDmaChannel_0);
     }
 
@@ -386,16 +486,44 @@ static pbuf_t *low_level_input(netif_t *netif)
     IfxGeth_Eth *ethernetif = netif->state;
     pbuf_t *p, *q;
     u16_t   len;
+    uint32  timeSeconds = 0U;
+    uint32  timeNanoseconds = 0U;
+    volatile IfxGeth_RxDescr *rxDescr;
+    volatile IfxGeth_RxDescr *contextDescr = NULL_PTR;
+    boolean hasContextDescriptor = FALSE;
 
     len = 0;
     if (IfxGeth_Eth_isRxDataAvailable(ethernetif, IfxGeth_RxDmaChannel_0) != FALSE)
     {
-        len = GetRxFrameSize((IfxGeth_RxDescr *)IfxGeth_Eth_getActualRxDescriptor(ethernetif, IfxGeth_RxDmaChannel_0));
+        rxDescr = IfxGeth_Eth_getActualRxDescriptor(ethernetif, IfxGeth_RxDmaChannel_0);
+        len = GetRxFrameSize((IfxGeth_RxDescr *)rxDescr);
+    }
+    else
+    {
+        return (pbuf_t *)0;
     }
 
     if (len == 0)
     {
         return (pbuf_t *)0;
+    }
+
+    if (len == 0xFFFFU)
+    {
+        ifx_netif_release_rx_descriptors(ethernetif, rxDescr, FALSE);
+        LINK_STATS_INC(link.drop);
+        return (pbuf_t *)0;
+    }
+
+    if (rxDescr->RDES1.W.TSA != 0U)
+    {
+        contextDescr = ifx_netif_next_rx_descriptor(ethernetif, rxDescr);
+        if ((contextDescr->RDES3.C.CTXT != 0U) && (contextDescr->RDES3.C.OWN == 0U))
+        {
+            hasContextDescriptor = TRUE;
+            timeSeconds = contextDescr->RDES1.C.RTSH;
+            timeNanoseconds = contextDescr->RDES0.C.RTSL & 0x7FFFFFFFU;
+        }
     }
 
 #if ETH_PAD_SIZE
@@ -408,10 +536,11 @@ static pbuf_t *low_level_input(netif_t *netif)
     if (p != NULL)
     {
 #if ETH_PAD_SIZE
+        memset(p->payload, 0, ETH_PAD_SIZE);
         pbuf_header(p, -ETH_PAD_SIZE); /* drop the padding word */
 #endif
 
-        u8_t *src = IfxGeth_Eth_getReceiveBuffer(ethernetif, IfxGeth_RxDmaChannel_0);
+        u8_t *src = (u8_t *)rxDescr->RDES0.U;
 
         /* We iterate over the pbuf chain until we have read the entire
          * packet into the pbuf. */
@@ -432,18 +561,19 @@ static pbuf_t *low_level_input(netif_t *netif)
             LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_TRACE, ("low_level_input: payload=0x%x, len=%d\n", q->payload, q->len));
         }
 
-        //acknowledge that packet has been read();
-        IfxGeth_Eth_freeReceiveBuffer(ethernetif, IfxGeth_RxDmaChannel_0);
+        ifx_netif_release_rx_descriptors(ethernetif, rxDescr, hasContextDescriptor);
 
 #if ETH_PAD_SIZE
         pbuf_header(p, ETH_PAD_SIZE); /* reclaim the padding word */
 #endif
 
+        p->time_s = timeSeconds;
+        p->time_ns = timeNanoseconds;
         LINK_STATS_INC(link.recv);
     }
     else
     {
-        //TODO: drop packet();
+        ifx_netif_release_rx_descriptors(ethernetif, rxDescr, hasContextDescriptor);
         LINK_STATS_INC(link.memerr);
         LINK_STATS_INC(link.drop);
     }
@@ -463,8 +593,6 @@ static pbuf_t *low_level_input(netif_t *netif)
  */
 err_t ifx_netif_input(netif_t *netif)
 {
-    //Ifx_GETH *ethernetif = netif->state;
-    eth_hdr_t *ethhdr;
     pbuf_t    *p;
 
     /* move received packet into a new pbuf */
@@ -477,38 +605,48 @@ err_t ifx_netif_input(netif_t *netif)
         return ERR_OK;
     }
 
-    /* points to packet payload, which starts with an Ethernet header */
-    ethhdr = p->payload;
-
-    switch (htons(ethhdr->type))
+    if (netif->input(p, netif) != ERR_OK)
     {
-    /* IP or ARP packet? */
-    case ETHTYPE_IP:
-    case ETHTYPE_ARP:
-#if PPPOE_SUPPORT
-    /* PPPoE packet? */
-    case ETHTYPE_PPPOEDISC:
-    case ETHTYPE_PPPOE:
-#endif /* PPPOE_SUPPORT */
-
-        /* full packet send to tcpip_thread to process */
-        if (netif->input(p, netif) != ERR_OK)
-        {
-            LWIP_DEBUGF(NETIF_DEBUG, ("ifx_netif_input: IP input error\n"));
-            pbuf_free(p);
-        }
-
-        break;
-
-    default:
-        LWIP_DEBUGF(NETIF_DEBUG, ("ifx_netif_input: type unknown\n"));
+        LWIP_DEBUGF(NETIF_DEBUG, ("ifx_netif_input: ethernet input error\n"));
         pbuf_free(p);
-        break;
     }
 
     return ERR_OK;
 }
 
+void ifx_netif_poll_ptp_tx_timestamps(void)
+{
+    uint32 index;
+
+    for (index = 0U; index < IFXGETH_MAX_TX_DESCRIPTORS; ++index)
+    {
+        Ifx_Netif_PtpTxPending *pending = &g_ifxPtpTxPending[index];
+
+        if ((pending->pbuf != NULL_PTR) &&
+            (pending->txDescr != NULL_PTR) &&
+            (pending->txDescr->TDES3.R.OWN == 0U))
+        {
+            pending->txDescr->TDES2.R.TTSE_TMWD = 0U;
+
+            if ((pending->txDescr->TDES3.W.LD != 0U) && (pending->txDescr->TDES3.W.TTSS != 0U))
+            {
+                pending->pbuf->time_s = pending->txDescr->TDES1.W.TTSH;
+                pending->pbuf->time_ns = pending->txDescr->TDES0.W.TTSL & 0x7FFFFFFFU;
+
+                if (pending->pbuf->tx_cb != NULL_PTR)
+                {
+                    pending->pbuf->tx_cb(pending->pbuf->time_s, pending->pbuf->time_ns, pending->pbuf->tag);
+                    pending->pbuf->tx_cb = NULL_PTR;
+                    pending->pbuf->tag = NULL_PTR;
+                }
+            }
+
+            pbuf_free(pending->pbuf);
+            pending->pbuf = NULL_PTR;
+            pending->txDescr = NULL_PTR;
+        }
+    }
+}
 
 /**
  * Should be called at the beginning of the program to set up the

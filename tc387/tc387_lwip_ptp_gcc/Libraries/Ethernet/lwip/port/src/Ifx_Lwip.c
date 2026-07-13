@@ -353,6 +353,7 @@ void Ifx_Lwip_pollReceiveFlags(void)
     //while (ethernetif_tc29x_timerFlags_interrupt())
     {
         ifx_netif_input(&g_Lwip.netif);
+        ifx_netif_poll_ptp_tx_timestamps();
     }
 }
 

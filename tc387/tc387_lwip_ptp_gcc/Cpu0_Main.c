@@ -33,28 +33,15 @@
 #include "Configuration.h"
 #include "ConfigurationIsr.h"
 #include "Ifx_Lwip.h"
-#include "lwip/apps/lwiperf.h"
+#include "PTP/flexptp_app.h"
+#include "PTP/flexptp_port.h"
+#include "PTP/ptp_shell.h"
 #include "Bsp.h"
 
 /*********************************************************************************************************************/
 /*-------------------------------------------------Global variables--------------------------------------------------*/
 /*********************************************************************************************************************/
 IfxCpu_syncEvent cpuSyncEvent = 0;
-
-#if LWIP_TCP
-static void
-lwiperf_report(void *arg, enum lwiperf_report_type report_type,
-  const ip_addr_t* local_addr, u16_t local_port, const ip_addr_t* remote_addr, u16_t remote_port,
-  u32_t bytes_transferred, u32_t ms_duration, u32_t bandwidth_kbitpsec)
-{
-  LWIP_UNUSED_ARG(arg);
-  LWIP_UNUSED_ARG(local_addr);
-  LWIP_UNUSED_ARG(local_port);
-
-  Ifx_Lwip_printf("IPERF report: type=%d, remote: %s:%d, total bytes: %"U32_F", duration in ms: %"U32_F", kbits/s: %"U32_F"\n",
-    (int)report_type, ipaddr_ntoa(remote_addr), (int)remote_port, bytes_transferred, ms_duration, bandwidth_kbitpsec);
-}
-#endif /* LWIP_TCP */
 
 /*********************************************************************************************************************/
 /*---------------------------------------------Function Implementations----------------------------------------------*/
@@ -106,14 +93,16 @@ void core0_main (void)
 
     Ifx_Lwip_init_with_ip(ethAddr, ipAddr, netMask, gateway);     /* Initialize LwIP with static IP */
 
-#if LWIP_TCP
-    lwiperf_start_tcp_server_default(lwiperf_report, NULL);
-#endif
+    (void)PtpShell_Init();
+    (void)FlexPTP_AppInit();
 
     while (1)
     {
         Ifx_Lwip_pollTimerFlags();                          /* Poll LwIP timers and trigger protocols execution if required */
         Ifx_Lwip_pollReceiveFlags();                        /* Receive data package through ETH                             */
+        FlexPTP_AppProcess();                               /* Run flexPTP heartbeat + message pump                         */
+        ptphw_pps_poll_fast();                              /* Low-latency PPS event handling                               */
+        PtpShell_Process();                                 /* Poll UART shell                                              */
     }
 }
 
