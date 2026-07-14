@@ -84,27 +84,27 @@ static PtpTlvPreset sTlvPresets[PTP_TLVP_N] = {
 static PtpProfilePreset sPtpProfiles[PTP_PROFILE_N] = {
     {"default",
         {
-            PTP_TP_IPv4,
+            PTP_TP_802_3,
             PTP_TSPEC_UNKNOWN_DEF,
             PTP_DM_E2E,
             0,
             0,
             1,
             0,
-            PTP_PF_NO_FLAGS,
+            PTP_PF_SLAVE_ONLY,   /* Slave-only: send Delay_Req, don't run BMCA */
             ""
         }
     },
     {"gPTP",
         {
             PTP_TP_802_3,
-            PTP_TSPEC_GPTP_8021AS,
+            PTP_TSPEC_UNKNOWN_DEF,   /* transportSpecific=0: match ptp4l default */
             PTP_DM_P2P,
-            0,
-            -3,
-            0,
-            0,
-            PTP_PF_ISSUE_SYNC_FOR_COMPLIANT_SLAVE_ONLY_IN_P2P,
+            0,                       /* logDelayReqPeriod = 1s */
+            0,                       /* logSyncPeriod = 1s */
+            1,                       /* logAnnouncePeriod = 2s */
+            0,                       /* domainNumber = 0 */
+            PTP_PF_ISSUE_SYNC_FOR_COMPLIANT_SLAVE_ONLY_IN_P2P | PTP_PF_SLAVE_ONLY,
             "gptp"
         }
     },

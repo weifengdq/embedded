@@ -9,9 +9,19 @@
 #include "lwip/ip_addr.h"
 #include "lwip/netif.h"
 #include "lwip/udp.h"
+#include "lwip/etharp.h"
 #include "netif/ethernet.h"
 
 #include <string.h>
+
+/* ── PTP diagnostics counters (readable from outside) ── */
+volatile uint32_t g_ptp_rx_hook_called;      /* times hook_unknown_ethertype was called for any ethertype */
+volatile uint32_t g_ptp_rx_ethertype_match;  /* times ethertype matched 0x88F7 */
+volatile uint32_t g_ptp_rx_mac_match;        /* times dest MAC matched PTP multicast */
+volatile uint32_t g_ptp_rx_enqueued;         /* times ptp_receive_enqueue was called */
+volatile uint32_t g_ptp_tx_attempts;         /* times ptp_nsd_transmit_msg was called */
+volatile uint32_t g_ptp_tx_sent;             /* times ethernet_output returned OK */
+volatile uint32_t g_ptp_operating;           /* cached is_flexPTP_operating() snapshot */
 
 // initialize connection blocks to invalid states
 static struct udp_pcb *PTP_L4_EVENT = NULL;
@@ -103,6 +113,7 @@ static void ptp_transmit_cb(uint32_t ts_s, uint32_t ts_ns, void * tag) {
 }
 
 void ptp_nsd_transmit_msg(RawPtpMessage *pMsg, uint32_t uid) {
+    g_ptp_tx_attempts++;
     if (pMsg == NULL) {
         MSG("NULL!!!\n");
         return;
@@ -139,6 +150,7 @@ void ptp_nsd_transmit_msg(RawPtpMessage *pMsg, uint32_t uid) {
     } else if (TP == PTP_TP_802_3) {
         const uint8_t *ethaddr = (DM == PTP_DM_E2E) ? PTP_ETHERNET_PRIMARY : PTP_ETHERNET_PEER_DELAY; // select destination address by delmech.
         ethernet_output(netif_default, p, (struct eth_addr *)netif_default->hwaddr, (struct eth_addr *)ethaddr, ETHERTYPE_PTP);
+        g_ptp_tx_sent++;
     }
 
     // unlock LWIP core
@@ -159,26 +171,23 @@ void ptp_nsd_get_interface_address(uint8_t *hwa) {
 
 // hook for L2 PTP messages
 err_t hook_unknown_ethertype(struct pbuf *pbuf, struct netif *netif) {
-    struct eth_hdr *ethhdr = (struct eth_hdr *)pbuf->payload;
-
     LWIP_UNUSED_ARG(netif);
 
-    if (lwip_htons(ethhdr->type) == ETHERTYPE_PTP) {
-        // DBG: print first few PTP frames to confirm reception
-        static uint32_t ptp_rx_count = 0;
-        if (ptp_rx_count < 5U) {
-            MSG("PTP RX: dst=%02X:%02X:%02X:%02X:%02X:%02X len=%u\r\n",
-                ethhdr->dest.addr[0], ethhdr->dest.addr[1],
-                ethhdr->dest.addr[2], ethhdr->dest.addr[3],
-                ethhdr->dest.addr[4], ethhdr->dest.addr[5],
-                (unsigned int)pbuf->len);
-            ptp_rx_count++;
-        }
-        // verify Ethernet address
-        if (!memcmp(PTP_ETHERNET_PRIMARY, ethhdr->dest.addr, ETH_HWADDR_LEN) ||
-            !memcmp(PTP_ETHERNET_PEER_DELAY, ethhdr->dest.addr, ETH_HWADDR_LEN)) {
-            ptp_receive_enqueue(((uint8_t *)pbuf->payload) + SIZEOF_ETH_HDR,
-                                pbuf->len - SIZEOF_ETH_HDR,
+    g_ptp_rx_hook_called++;
+
+    uint16_t etherType = 0;
+    memcpy(&etherType, ((uint8_t *)pbuf->payload) + 12 + ETH_PAD_SIZE, 2);
+    etherType = FLEXPTP_ntohs(etherType);
+
+    if (etherType == ETHERTYPE_PTP) {
+        g_ptp_rx_ethertype_match++;
+
+        if (!memcmp(PTP_ETHERNET_PRIMARY, (uint8_t*)pbuf->payload + ETH_PAD_SIZE, 6) ||
+            !memcmp(PTP_ETHERNET_PEER_DELAY, (uint8_t*)pbuf->payload + ETH_PAD_SIZE, 6)) {
+            g_ptp_rx_mac_match++;
+            g_ptp_rx_enqueued++;
+            ptp_receive_enqueue(((uint8_t *)pbuf->payload) + ETH_PAD_SIZE + 14,
+                                pbuf->len - ETH_PAD_SIZE - 14,
                                 pbuf->time_s,
                                 pbuf->time_ns,
                                 PTP_TP_802_3);
@@ -186,6 +195,5 @@ err_t hook_unknown_ethertype(struct pbuf *pbuf, struct netif *netif) {
     }
 
     pbuf_free(pbuf);
-
     return ERR_OK;
 }

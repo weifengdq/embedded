@@ -28,6 +28,8 @@
 #ifndef __LWIPOPTS_H__
 #define __LWIPOPTS_H__
 
+#include <stdint.h>
+
 /*********************************************************************************************************************/
 /*------------------------------------------------------Macros-------------------------------------------------------*/
 /*********************************************************************************************************************/
@@ -55,9 +57,21 @@
 
 #define ETH_PAD_SIZE            2                   /* Add 2 bytes before the Ethernet header to ensure payload alignment   */
 
-#define __LWIP_DEBUG__                              /* Enable debugging through UART interface                              */
+#define LWIP_SUPPORT_CUSTOM_PBUF 1
+#define LWIP_PBUF_CUSTOM_DATA                       \
+    uint32_t time_s;                               \
+    uint32_t time_ns;                              \
+    void (*tx_cb)(uint32_t ts_s, uint32_t ts_ns, void *tag); \
+    void *tag;
+
+#define __LWIP_DEBUG__                              /* Enable debugging through UART interface (required by cc.h)        */
 
 #define LWIP_NETIF_EXT_STATUS_CALLBACK  1           /* Enable an extended callback function for netif                       */
+#define LWIP_HOOK_UNKNOWN_ETH_PROTOCOL(pbuf, netif) hook_unknown_ethertype((pbuf), (netif))
+
+struct netif;
+struct pbuf;
+extern int8_t hook_unknown_ethertype(struct pbuf *pbuf, struct netif *netif);
 
 #ifdef __LWIP_DEBUG__
 #define LWIP_DEBUG                                  /* Enable LwIP debugging                                                */

@@ -34,14 +34,13 @@ set(AURIX_EXCLUDED_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/.settings"
     "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/.ads"
     "${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/Third_Party/flexPTP"
-    "${CMAKE_CURRENT_SOURCE_DIR}/PTP"
     "${CMAKE_CURRENT_SOURCE_DIR}/TriCore Debug (TASKING)"
     "${CMAKE_CURRENT_SOURCE_DIR}/TriCore Release (TASKING)"
     "${CMAKE_CURRENT_SOURCE_DIR}/TriCore Debug (GCC)"
     "${CMAKE_CURRENT_SOURCE_DIR}/TriCore Release (GCC)"
     CACHE STRING "Directories excluded from recursive source scan"
 )
-set(AURIX_EXCLUDED_FILES "" CACHE STRING "Files excluded from recursive source scan")
+set(AURIX_EXCLUDED_FILES "PTP/ptp_shell.c;Shell/letter-shell/src/shell_cmd_list.c.lib_disabled" CACHE STRING "Files excluded from recursive source scan")
 
 aurix_extract_cproject_excluded_dirs(
     CPROJECT_FILE "${AURIX_CPROJECT_FILE}"
@@ -70,6 +69,24 @@ if(NOT AURIX_SOURCE_FILES)
     message(FATAL_ERROR "No C source files were found after applying exclusions.")
 endif()
 
+set(FLEXPTP_HWPORT_SRC
+    "${CMAKE_CURRENT_SOURCE_DIR}/PTP/flexptp_port.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/PTP/flexptp_port.h"
+)
+# Additional PTP application files compiled as part of the main executable
+list(APPEND AURIX_SOURCE_FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/PTP/flexptp_cli_bridge.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/PTP/flexptp_app.c"
+)
+set(FLEXPTP_NSD "LWIP")
+set(FLEXPTP_SERVO "PID")
+set(FLEXPTP_DONT_LINK_NETWORK_LIB ON)
+set(FLEXPTP_INCLUDES ${AURIX_INCLUDE_DIRS} "${CMAKE_CURRENT_SOURCE_DIR}/PTP")
+set(FLEXPTP_COMPILE_DEFS "")
+set(FLEXPTP_CPU_PARAMS "")
+
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/Third_Party/flexPTP")
+
 # ---------- 构建目标 ----------
 add_executable(${PROJECT_NAME} ${AURIX_SOURCE_FILES} ${AURIX_HEADER_FILES})
 
@@ -82,7 +99,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     LINKER_LANGUAGE C
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${AURIX_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PRIVATE ${AURIX_INCLUDE_DIRS} "${CMAKE_CURRENT_SOURCE_DIR}/PTP" "${CMAKE_CURRENT_SOURCE_DIR}/Shell" "${CMAKE_CURRENT_SOURCE_DIR}/Shell/letter-shell/src" ${FLEXPTP_INCLUDE_EXPORT})
+target_compile_definitions(${PROJECT_NAME} PRIVATE "SHELL_CFG_USER=\"shell_cfg_user.h\"")
+target_link_libraries(${PROJECT_NAME} PRIVATE flexptp)
 
 # ---------- 工具链特定选项 ----------
 if(AURIX_TOOLCHAIN_TYPE STREQUAL "TASKING")

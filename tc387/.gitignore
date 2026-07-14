@@ -5,3 +5,4 @@ winIDEAWorkspaces
 *.launch
 bak
 build
+*.bak

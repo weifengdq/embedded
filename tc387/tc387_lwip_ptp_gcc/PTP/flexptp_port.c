@@ -11,8 +11,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#define FLEXPTP_PPS_PIN_PORT (&MODULE_P14)
-#define FLEXPTP_PPS_PIN_INDEX 4
+#define FLEXPTP_PPS_HW_PIN_PORT (&MODULE_P14)
+#define FLEXPTP_PPS_HW_PIN_INDEX 4
+#define FLEXPTP_PPS_SW_PIN_PORT (&MODULE_P20)
+#define FLEXPTP_PPS_SW_PIN_INDEX 2
 #define FLEXPTP_PPS_ALIGN_GUARD_NS 100000000ULL
 
 typedef struct
@@ -99,15 +101,15 @@ static uint64_t ptphw_gettime_total_ns(void)
     return ((uint64_t)timestamp.sec * 1000000000ULL) + (uint64_t)timestamp.nanosec;
 }
 
-static void ptphw_pps_set_pin(boolean high)
+static void ptphw_pps_set_sw_pin(boolean high)
 {
     if (high)
     {
-        IfxPort_setPinHigh(FLEXPTP_PPS_PIN_PORT, FLEXPTP_PPS_PIN_INDEX);
+        IfxPort_setPinHigh(FLEXPTP_PPS_SW_PIN_PORT, FLEXPTP_PPS_SW_PIN_INDEX);
     }
     else
     {
-        IfxPort_setPinLow(FLEXPTP_PPS_PIN_PORT, FLEXPTP_PPS_PIN_INDEX);
+        IfxPort_setPinLow(FLEXPTP_PPS_SW_PIN_PORT, FLEXPTP_PPS_SW_PIN_INDEX);
     }
 }
 
@@ -151,7 +153,7 @@ static void ptphw_pps_arm_initial_target(void)
     nextTargetNs += periodNs;
     ptphw_pps_arm_target_total_ns(nextTargetNs);
     g_ppsOutputHigh = 0U;
-    ptphw_pps_set_pin(FALSE);
+    ptphw_pps_set_sw_pin(FALSE);
 }
 
 static void ptphw_pps_handle_event(void)
@@ -161,13 +163,13 @@ static void ptphw_pps_handle_event(void)
     if (g_ppsOutputHigh == 0U)
     {
         g_ppsOutputHigh = 1U;
-        ptphw_pps_set_pin(TRUE);
+        ptphw_pps_set_sw_pin(TRUE);
         deltaNs = g_ppsHighNs;
     }
     else
     {
         g_ppsOutputHigh = 0U;
-        ptphw_pps_set_pin(FALSE);
+        ptphw_pps_set_sw_pin(FALSE);
         deltaNs = g_ppsPeriodNs - g_ppsHighNs;
     }
 
@@ -187,7 +189,7 @@ static void ptphw_pps_hw_configure(void)
     g_ppsNeedReconfig = 0U;
     g_ppsLastEventTick = g_TickCount_1ms;
 
-    flexptp_printf("PPS: P14.4 armed freq=%luHz duty=%lu%% target=%lu.%09lu\n",
+    flexptp_printf("PPS: hw=P14.4 sw=P20.2 freq=%luHz duty=%lu%% target=%lu.%09lu\n",
                    (unsigned long)g_ppsFreqHz,
                    (unsigned long)g_ppsDutyPct,
                    (unsigned long)(g_ppsTargetTotalNs / 1000000000ULL),
@@ -306,7 +308,14 @@ void ptphw_init(uint32_t increment, uint32_t addend)
     flexptp_ptp_set_clock(0, 0);
     GETH_MAC_TIMESTAMP_CONTROL.B.TSCFUPDT = 1U;
     flexptp_write_addend(addend);
-    GETH_MAC_SUB_SECOND_INCREMENT.U = increment;
+    /* SUB_SECOND_INCREMENT is not a linear register:
+     *   SNSINC = bits [15:8]
+     *   SSINC  = bits [23:16]
+     * Writing .U = increment only touches reserved low bits and leaves the
+     * timestamp counter stalled.  Program the actual fields explicitly. */
+    GETH_MAC_SUB_SECOND_INCREMENT.U = 0U;
+    GETH_MAC_SUB_SECOND_INCREMENT.B.SNSINC = 0U;
+    GETH_MAC_SUB_SECOND_INCREMENT.B.SSINC = (uint8)increment;
 
     IfxGeth_mac_setAllMulticastPassing(&MODULE_GETH, TRUE);
 
@@ -333,11 +342,18 @@ void ptphw_gettime(TimestampU *time_value)
 
 void ptphw_pps_init_gpio(void)
 {
-    IfxPort_setPinModeOutput(FLEXPTP_PPS_PIN_PORT,
-                             FLEXPTP_PPS_PIN_INDEX,
+    /* Hardware PPS output: GETH PPS on P14.4 (alt6) */
+    IfxPort_setPinModeOutput(FLEXPTP_PPS_HW_PIN_PORT,
+                             FLEXPTP_PPS_HW_PIN_INDEX,
+                             IfxPort_OutputMode_pushPull,
+                             IfxPort_OutputIdx_alt6);
+
+    /* Software mirror PPS output: GPIO on P20.2 */
+    IfxPort_setPinModeOutput(FLEXPTP_PPS_SW_PIN_PORT,
+                             FLEXPTP_PPS_SW_PIN_INDEX,
                              IfxPort_OutputMode_pushPull,
                              IfxPort_OutputIdx_general);
-    ptphw_pps_set_pin(FALSE);
+    ptphw_pps_set_sw_pin(FALSE);
 }
 
 void ptphw_pps_set_freq_duty(uint32_t freq_hz, uint32_t duty_pct)
@@ -395,8 +411,8 @@ void ptphw_pps_enable(int enable)
         g_ppsEnabled = 0U;
         g_ppsNeedReconfig = 0U;
         GETH_MAC_PPS_CONTROL.B.PPSEN0 = 0U;
-        ptphw_pps_set_pin(FALSE);
-        flexptp_printf("PPS: P14.4 OFF\n");
+        ptphw_pps_set_sw_pin(FALSE);
+        flexptp_printf("PPS: hw=P14.4 sw=P20.2 OFF\n");
     }
 }
 

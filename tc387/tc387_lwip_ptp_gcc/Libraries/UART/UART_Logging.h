@@ -32,11 +32,16 @@
 /*-----------------------------------------------------Includes------------------------------------------------------*/
 /*********************************************************************************************************************/
 #include "Ifx_Types.h"
+#include "IfxStdIf_DPipe.h"
+#include "IfxAsclin_Asc.h"
 
 /*********************************************************************************************************************/
 /*------------------------------------------------Function Prototypes------------------------------------------------*/
 /*********************************************************************************************************************/
 void initUART(void);                                    /* Initialization function  */
 void sendUARTMessage(char * msg, Ifx_SizeT count);      /* Send function            */
+boolean initUARTConsole(IfxStdIf_DPipe *io);            /* Init UART for console DPipe */
+
+extern IfxAsclin_Asc g_asc;                             /* ASC handle for console use */
 
 #endif /* UART_LOGGING_H_ */

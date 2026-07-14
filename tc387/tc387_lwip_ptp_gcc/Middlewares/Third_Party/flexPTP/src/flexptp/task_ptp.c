@@ -341,15 +341,13 @@ bool reg_task_ptp() {
         return false;
     }
 
-    // initialize PTP subsystem
+    /* initialize PTP subsystem */
     ptp_init();
 
     // load config if provided
 #ifdef PTP_CONFIG_PTR
     MSG("Loading the PTP-configuration!\n");
     ptp_load_config_from_dump(PTP_CONFIG_PTR());
-
-    // print profile summary
     MSG("\n\n----\n");
     ptp_print_profile();
     MSG("----\n\n");

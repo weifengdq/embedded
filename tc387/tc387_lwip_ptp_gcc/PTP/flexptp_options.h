@@ -66,7 +66,7 @@ typedef _ssize_t ssize_t;
 #define PTP_HW_GET_TIME(pt) ptphw_gettime((pt))
 
 #define PTP_MAIN_OSCILLATOR_FREQ_HZ (150000000UL)
-#define PTP_INCREMENT_NSEC (7UL)
+#define PTP_INCREMENT_NSEC (6UL)
 
 #define PTP_SERVO_INIT() pid_ctrl_init()
 #define PTP_SERVO_DEINIT() pid_ctrl_deinit()

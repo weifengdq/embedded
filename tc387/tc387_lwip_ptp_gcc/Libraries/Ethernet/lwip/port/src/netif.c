@@ -304,14 +304,21 @@ static err_t low_level_output(netif_t *netif, pbuf_t *p)
     LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_TRACE, ("low_level_output (p=%#x)\n", p));
 
 #if ETH_PAD_SIZE
-    pbuf_header(p, -ETH_PAD_SIZE); /* drop the padding word */
+    /* Skip ETH_PAD_SIZE padding bytes from the first pbuf's payload.
+     * pbuf_header(p, -ETH_PAD_SIZE) may fail when payload is at offset 0,
+     * so we handle it explicitly in the copy loop below. */
 #endif
 
     if ((p->type_internal == PBUF_REF) || (p->type_internal == PBUF_ROM))
     {
         // if PBUF_REF or PBUF_ROM, no copy into ethernet RAM buffer is needed.
         // see pbuf_alloc_special()
-        IfxGeth_Eth_sendTransmitBuffer(ethernetif, p->tot_len, IfxGeth_TxDmaChannel_0);
+        /* With ETH_PAD_SIZE: PBUF_REF/ROM payload also has padding — skip it */
+        u16_t tx_len = p->tot_len;
+#if ETH_PAD_SIZE
+        tx_len -= ETH_PAD_SIZE;
+#endif
+        IfxGeth_Eth_sendTransmitBuffer(ethernetif, tx_len, IfxGeth_TxDmaChannel_0);
     }
     else
     {
@@ -321,12 +328,20 @@ static err_t low_level_output(netif_t *netif, pbuf_t *p)
 
         for (q = p; q != NULL; q = q->next)
         {
+#if ETH_PAD_SIZE
+            /* First pbuf in the chain contains ETH_PAD_SIZE bytes of padding
+             * at the start — skip them so the Ethernet frame on the wire
+             * starts with the Dest MAC, not with padding garbage. */
+            u16_t skip = (q == p) ? (u16_t)ETH_PAD_SIZE : 0U;
+#else
+            u16_t skip = 0U;
+#endif
             /* Send the data from the pbuf to the interface, one pbuf at a
              * time. The size of the data in each pbuf is kept in the ->len
              * variable. */
-            memcpy((u8_t *)&tbuf[l], q->payload, q->len);
-            l = l + q->len;
-            LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_TRACE, ("low_level_output: data=%#x, %d\n", q->payload, q->len));
+            memcpy((u8_t *)&tbuf[l], (u8_t *)q->payload + skip, q->len - skip);
+            l = l + q->len - skip;
+            LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_TRACE, ("low_level_output: data=%#x, %d (skip=%d)\n", q->payload, q->len, skip));
             LWIP_ASSERT("low_level_output: length overflow the buffer\n", (l < 2048));
         }
         /* we correct the buffer 1 size (maybe overwritten in earlier packet */
@@ -340,7 +355,10 @@ static err_t low_level_output(netif_t *netif, pbuf_t *p)
     LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_TRACE, ("low_level_output: signal length: %d\n", length));
 
 #if ETH_PAD_SIZE
-    pbuf_header(p, ETH_PAD_SIZE); /* reclaim the padding word */
+    /* Reclaim padding — safely using pbuf_header which may fail harmlessly */
+    pbuf_header(p, ETH_PAD_SIZE);
+#else
+    /* No padding to reclaim */
 #endif
 
     LINK_STATS_INC(link.xmit);
@@ -353,15 +371,19 @@ static err_t low_level_output(netif_t *netif, pbuf_t *p)
 static uint16 GetRxFrameSize(IfxGeth_RxDescr *descr)
 {
   uint16 len;
-
   uint32 rdes3 = descr->RDES3.U;
   uint32 rdes1 = descr->RDES1.U;
 
-  if (((rdes3 & (1UL << 15)) != 0U) ||
-      ((rdes1 & (1UL << 7)) != 0U) ||
-      ((rdes3 & (1UL << 28)) == 0U))
+  /* Accept frames even with non-fatal errors (e.g., multicast filter mismatch
+   * when promiscuous mode is active). Only reject frames with:
+   * - RDES3[15] OE (Own Error): buffer unavailable
+   * - RDES1[7]  DB  (Dribble Bit): framing error
+   * - RDES3[28] LD  (Last Descriptor) not set: incomplete frame */
+  if (((rdes3 & (1UL << 15)) != 0U) ||   /* OE: Overflow Error */
+      ((rdes1 & (1UL << 7)) != 0U) ||    /* DB: Dribble Bit Error */
+      ((rdes3 & (1UL << 28)) == 0U))     /* LD: Last Descriptor */
   {
-    /* Error, this block is invalid */
+    /* Fatal error — skip this frame */
     len = 0xFFFFU;
   }
   else
@@ -440,6 +462,10 @@ static pbuf_t *low_level_input(netif_t *netif)
 #endif
 
         LINK_STATS_INC(link.recv);
+
+        /* Diagnostic: count all received frames for PTP debugging */
+        extern volatile uint32_t g_rx_frame_count;
+        g_rx_frame_count++;
     }
     else
     {
@@ -502,7 +528,12 @@ err_t ifx_netif_input(netif_t *netif)
 
     default:
         LWIP_DEBUGF(NETIF_DEBUG, ("ifx_netif_input: type unknown\n"));
+#ifdef LWIP_HOOK_UNKNOWN_ETH_PROTOCOL
+        /* Forward to flexPTP hook which handles PTP (0x88F7) frames */
+        LWIP_HOOK_UNKNOWN_ETH_PROTOCOL(p, netif);
+#else
         pbuf_free(p);
+#endif
         break;
     }
 

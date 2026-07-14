@@ -233,6 +233,10 @@ ethernet_input(struct pbuf *p, struct netif *netif)
 
     default:
 #ifdef LWIP_HOOK_UNKNOWN_ETH_PROTOCOL
+      {
+        extern void flexptp_printf(const char *fmt, ...);
+        flexptp_printf("eth_rx: type=0x%04X len=%u\n", (unsigned)lwip_htons(type), (unsigned)p->tot_len);
+      }
       if (LWIP_HOOK_UNKNOWN_ETH_PROTOCOL(p, netif) == ERR_OK) {
         break;
       }

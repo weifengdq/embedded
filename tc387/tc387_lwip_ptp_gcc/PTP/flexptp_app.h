@@ -1,6 +1,8 @@
 #ifndef FLEXPTP_APP_H
 #define FLEXPTP_APP_H
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -27,6 +29,14 @@ void FlexPTP_PrintCommands(const char *prefix);
 int  FlexPTP_DispatchCommand(int argc, char *argv[]);
 int  FlexPTP_ShellPtp(int argc, char *argv[]);
 int  FlexPTP_ShellTime(int argc, char *argv[]);
+
+/* PTP diagnostics counters (defined in nsd_lwip.c, incremented from hook/TX) */
+extern volatile uint32_t g_ptp_rx_hook_called;
+extern volatile uint32_t g_ptp_rx_ethertype_match;
+extern volatile uint32_t g_ptp_rx_mac_match;
+extern volatile uint32_t g_ptp_rx_enqueued;
+extern volatile uint32_t g_ptp_tx_attempts;
+extern volatile uint32_t g_ptp_tx_sent;
 
 #ifdef __cplusplus
 }

@@ -24,6 +24,8 @@ void     ptphw_pps_init_gpio(void);
 void     ptphw_pps_enable(int enable);
 void     ptphw_pps_toggle(void);
 void     ptphw_pps_poll_fast(void);
+void     ptphw_pps_sw_init(void);
+void     ptphw_pps_sw_poll(void);
 int      ptphw_pps_is_enabled(void);
 void     ptphw_pps_set_freq_duty(uint32_t freq_hz, uint32_t duty_pct);
 uint32_t ptphw_pps_get_freq(void);

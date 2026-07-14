@@ -35,8 +35,12 @@
 #include "Ifx_Lwip.h"
 #include "PTP/flexptp_app.h"
 #include "PTP/flexptp_port.h"
-#include "PTP/ptp_shell.h"
+#include "Shell/shell_port.h"
+#include "UART_Logging.h"
 #include "Bsp.h"
+
+/* ── RX diagnostic counter (incremented in low_level_input) ── */
+volatile uint32_t g_rx_frame_count = 0;
 
 /*********************************************************************************************************************/
 /*-------------------------------------------------Global variables--------------------------------------------------*/
@@ -93,8 +97,11 @@ void core0_main (void)
 
     Ifx_Lwip_init_with_ip(ethAddr, ipAddr, netMask, gateway);     /* Initialize LwIP with static IP */
 
-    (void)PtpShell_Init();
+    /* UART is already initialized by Ifx_Lwip_init_with_ip() when __LWIP_DEBUG__ is enabled. */
+    (void)Shell_Init();
+    Shell_PrintBanner();
     (void)FlexPTP_AppInit();
+    (void)FlexPTP_Start();                                  /* Auto-start PTP (E2E L2, slave) */
 
     while (1)
     {
@@ -102,7 +109,7 @@ void core0_main (void)
         Ifx_Lwip_pollReceiveFlags();                        /* Receive data package through ETH                             */
         FlexPTP_AppProcess();                               /* Run flexPTP heartbeat + message pump                         */
         ptphw_pps_poll_fast();                              /* Low-latency PPS event handling                               */
-        PtpShell_Process();                                 /* Poll UART shell                                              */
+        Shell_Process();                                    /* Letter-shell interactive console                             */
     }
 }
 

@@ -31,33 +31,73 @@
 #include "UART_Logging.h"
 #include "IfxAsclin_Asc.h"
 #include "IfxCpu_Irq.h"
+#include "IfxStdIf_DPipe.h"
+#include "IfxPort.h"
 
 /*********************************************************************************************************************/
 /*------------------------------------------------------Macros-------------------------------------------------------*/
 /*********************************************************************************************************************/
-#define SERIAL_BAUDRATE         115200                                      /* Baud rate in bit/s                   */
+#define SERIAL_BAUDRATE         921600                                      /* Baud rate in bit/s                   */
 
 #define SERIAL_PIN_RX           IfxAsclin4_RXA_P00_12_IN                     /* RX pin of the board                  */
 #define SERIAL_PIN_TX           IfxAsclin4_TX_P00_9_OUT                     /* TX pin of the board                  */
 
 #define INTPRIO_ASCLIN4_TX      29                                          /* Priority of the ISR                  */
+#define INTPRIO_ASCLIN4_RX      30                                          /* Priority of the RX ISR               */
+#define INTPRIO_ASCLIN4_ERR     31                                          /* Priority of the Error ISR            */
 
 #define ASC_TX_BUFFER_SIZE      256                                         /* Definition of the buffer size        */
+#define ASC_RX_BUFFER_SIZE      256                                         /* Definition of the RX buffer size     */
 
 /*********************************************************************************************************************/
 /*-------------------------------------------------Global variables--------------------------------------------------*/
 /*********************************************************************************************************************/
+IfxStdIf_DPipe *g_uartDPipePtr = NULL_PTR;                                 /* Optional DPipe binding for legacy users */
 IfxAsclin_Asc g_asc;                                                        /* Declaration of the ASC handle        */
 uint8 g_ascTxBuffer[ASC_TX_BUFFER_SIZE + sizeof(Ifx_Fifo) + 8];             /* Declaration of the FIFO parameters   */
+static uint8 g_ascRxBuffer[ASC_RX_BUFFER_SIZE + sizeof(Ifx_Fifo) + 8];      /* Declaration of the RX FIFO           */
 
 /*********************************************************************************************************************/
 /*---------------------------------------------Function Implementations----------------------------------------------*/
 /*********************************************************************************************************************/
 IFX_INTERRUPT(asclin4TxISR, 0, INTPRIO_ASCLIN4_TX);                     /* Adding the Interrupt Service Routine     */
+IFX_INTERRUPT(asclin4RxISR, 0, INTPRIO_ASCLIN4_RX);
+IFX_INTERRUPT(asclin4ErrISR, 0, INTPRIO_ASCLIN4_ERR);
 
 void asclin4TxISR(void)
 {
-    IfxAsclin_Asc_isrTransmit(&g_asc);
+    if (g_uartDPipePtr != NULL_PTR)
+    {
+        IfxStdIf_DPipe_onTransmit(g_uartDPipePtr);
+    }
+    else
+    {
+        IfxAsclin_Asc_isrTransmit(&g_asc);
+    }
+}
+
+void asclin4RxISR(void)
+{
+    if (g_uartDPipePtr != NULL_PTR)
+    {
+        IfxStdIf_DPipe_onReceive(g_uartDPipePtr);
+    }
+    else
+    {
+        IfxAsclin_Asc_isrReceive(&g_asc);
+    }
+}
+
+void asclin4ErrISR(void)
+{
+    if (g_uartDPipePtr != NULL_PTR)
+    {
+        IfxStdIf_DPipe_onError(g_uartDPipePtr);
+    }
+    else
+    {
+        IfxAsclin_Asc_isrError(&g_asc);
+    }
 }
 
 void initUART(void)
@@ -66,16 +106,24 @@ void initUART(void)
     IfxAsclin_Asc_Config ascConfig;
     IfxAsclin_Asc_initModuleConfig(&ascConfig, SERIAL_PIN_TX.module);
 
-    /* Set the desired baud rate */
+    /* High-speed UART: explicit 16x oversampling with center sampling. */
     ascConfig.baudrate.baudrate = SERIAL_BAUDRATE;
+    ascConfig.baudrate.oversampling = IfxAsclin_OversamplingFactor_16;
+    ascConfig.baudrate.prescaler = 1;
+    ascConfig.bitTiming.medianFilter = IfxAsclin_SamplesPerBit_three;
+    ascConfig.bitTiming.samplePointPosition = IfxAsclin_SamplePointPosition_8;
 
     /* ISR priorities and interrupt target */
     ascConfig.interrupt.txPriority = INTPRIO_ASCLIN4_TX;
+    ascConfig.interrupt.rxPriority = INTPRIO_ASCLIN4_RX;
+    ascConfig.interrupt.erPriority = INTPRIO_ASCLIN4_ERR;
     ascConfig.interrupt.typeOfService = IfxCpu_Irq_getTos(IfxCpu_getCoreIndex());
 
     /* FIFO configuration */
     ascConfig.txBuffer = &g_ascTxBuffer;
     ascConfig.txBufferSize = ASC_TX_BUFFER_SIZE;
+    ascConfig.rxBuffer = &g_ascRxBuffer;
+    ascConfig.rxBufferSize = ASC_RX_BUFFER_SIZE;
 
     /* Port pins configuration */
     const IfxAsclin_Asc_Pins pins =
@@ -93,5 +141,23 @@ void initUART(void)
 
 void sendUARTMessage(char * msg, Ifx_SizeT count)
 {
-    IfxAsclin_Asc_write(&g_asc, msg, &count, TIME_INFINITE);            /* Transfer of data                         */
+    (void)IfxAsclin_Asc_write(&g_asc, msg, &count, 0);                  /* Non-blocking debug output                */
+}
+
+boolean initUARTConsole(IfxStdIf_DPipe *io)
+{
+    if (io == NULL_PTR)
+    {
+        return FALSE;
+    }
+
+    initUART();
+
+    if (!IfxStdIf_DPipe_ascInit(io, &g_asc))
+    {
+        return FALSE;
+    }
+
+    g_uartDPipePtr = io;
+    return TRUE;
 }
