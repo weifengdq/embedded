@@ -90,9 +90,31 @@
 #include <lwip/snmp.h>
 #include "netif/etharp.h"
 #include "netif/ppp/pppoe.h"
+#include "lwip/prot/ip4.h"
 
 #include "IfxGeth_Eth.h"
 #include "Ifx_Lwip.h"
+
+/* Helper: check if an Ethernet frame contains a TCP segment suitable for TSO.
+ * Uses lwIP protocol structs (already included via netif/etharp.h). */
+static boolean is_tcp_segment(const uint8_t *frame, uint16_t len)
+{
+    struct eth_hdr *eth;
+    struct ip_hdr  *iph;
+
+    if (len < (SIZEOF_ETH_HDR + IP_HLEN))
+        return FALSE;
+
+    eth = (struct eth_hdr *)frame;
+    if (htons(eth->type) != ETHTYPE_IP)
+        return FALSE;
+
+    iph = (struct ip_hdr *)(frame + SIZEOF_ETH_HDR);
+    if (IPH_PROTO(iph) != 6)  /* IP_PROTO_TCP */
+        return FALSE;
+
+    return TRUE;
+}
 #include "Ifx_Netif.h"
 #include "IfxGeth_Phy_Rtl8211f.h"
 #include "Configuration.h"
@@ -195,14 +217,14 @@ static void low_level_init(netif_t *netif)
     GethConfig.dma.fixedBurstEnabled = FALSE;
     GethConfig.dma.mixedBurstEnabled = TRUE;
         GethConfig.dma.txChannel[0].channelId = IfxGeth_TxDmaChannel_0;
-        GethConfig.dma.txChannel[0].txDescrList = (IfxGeth_TxDescrList *)&IfxGeth_Eth_txDescrList[0];
+        GethConfig.dma.txChannel[0].txDescrList = (IfxGeth_TxDescrList *)&lmu_txDescrList[0];
         GethConfig.dma.txChannel[0].txBuffer1StartAddress = (uint32 *)&channel0TxBuffer1[0][0]; // user buffer
     GethConfig.dma.txChannel[0].txBuffer1Size = IFXGETH_MAX_TX_BUFFER_SIZE; // used to calculate the next descriptor  buffer offset
     GethConfig.dma.txChannel[0].maxBurstLength = IfxGeth_DmaBurstLength_32;
     GethConfig.dma.txChannel[0].enableOSF = TRUE;
 
         GethConfig.dma.rxChannel[0].channelId = IfxGeth_RxDmaChannel_0;
-        GethConfig.dma.rxChannel[0].rxDescrList = (IfxGeth_RxDescrList *)&IfxGeth_Eth_rxDescrList[0];
+        GethConfig.dma.rxChannel[0].rxDescrList = (IfxGeth_RxDescrList *)&lmu_rxDescrList[0];
         GethConfig.dma.rxChannel[0].rxBuffer1StartAddress = (uint32 *)&channel0RxBuffer1[0][0]; // user buffer
     GethConfig.dma.rxChannel[0].rxBuffer1Size = IFXGETH_MAX_RX_BUFFER_SIZE; // user defined variable
     GethConfig.dma.rxChannel[0].maxBurstLength = IfxGeth_DmaBurstLength_32;
@@ -297,56 +319,113 @@ static void low_level_init(netif_t *netif)
  */
 static err_t low_level_output(netif_t *netif, pbuf_t *p)
 {
-    IfxGeth_Eth      *ethernetif = netif->state;
+    IfxGeth_Eth *ethernetif = netif->state;
     struct pbuf *q;
-
-    u16_t        length = p->tot_len;
+    u16_t length = p->tot_len;
     LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_TRACE, ("low_level_output (p=%#x)\n", p));
-
-#if ETH_PAD_SIZE
-    pbuf_header(p, -ETH_PAD_SIZE); /* drop the padding word */
-#endif
 
     if ((p->type_internal == PBUF_REF) || (p->type_internal == PBUF_ROM))
     {
-        // if PBUF_REF or PBUF_ROM, no copy into ethernet RAM buffer is needed.
-        // see pbuf_alloc_special()
         IfxGeth_Eth_sendTransmitBuffer(ethernetif, p->tot_len, IfxGeth_TxDmaChannel_0);
     }
     else
     {
-        //initiate transfer();
+        /* Copy pbuf chain to contiguous DMA TX buffer */
         u8_t *tbuf = IfxGeth_Eth_waitTransmitBuffer(ethernetif, IfxGeth_TxDmaChannel_0);
         u16_t l    = 0;
 
         for (q = p; q != NULL; q = q->next)
         {
-            /* Send the data from the pbuf to the interface, one pbuf at a
-             * time. The size of the data in each pbuf is kept in the ->len
-             * variable. */
             memcpy((u8_t *)&tbuf[l], q->payload, q->len);
             l = l + q->len;
-            LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_TRACE, ("low_level_output: data=%#x, %d\n", q->payload, q->len));
-            LWIP_ASSERT("low_level_output: length overflow the buffer\n", (l < 2048));
+            LWIP_ASSERT("low_level_output: length overflow the buffer\n", (l < IFXGETH_MAX_TX_BUFFER_SIZE));
         }
-        /* we correct the buffer 1 size (maybe overwritten in earlier packet */
-        IfxGeth_TxDescr *pactTxDescriptor;
-        pactTxDescriptor = (IfxGeth_TxDescr *)IfxGeth_Eth_getActualTxDescriptor(ethernetif, IfxGeth_TxDmaChannel_0);
-        /* set the buffer length to the max. available */
-        pactTxDescriptor->TDES2.R.B1L = IFXGETH_MAX_TX_BUFFER_SIZE;
-        IfxGeth_Eth_sendTransmitBuffer(ethernetif, l, IfxGeth_TxDmaChannel_0);
+
+        /* Check if TSO is beneficial: TCP segment larger than MSS.
+         * TSO uses a context descriptor + data descriptor with TSE=1 and
+         * TCP checksum offload (CIC_TPL=2). Hardware splits into MSS-sized
+         * segments, dramatically reducing per-packet CPU overhead. */
+        if ((l > TCP_MSS) && is_tcp_segment(tbuf, l))
+        {
+            volatile IfxGeth_TxDescr *ctxDesc;
+            volatile IfxGeth_TxDescr *dataDesc;
+            volatile IfxGeth_TxDescr *nextDescr;
+            uint32  remaining, offset, chunk;
+            uint8  *src;
+
+            /* Copy the entire large frame to TSO scratch buffer (LMURAM, 48KB).
+             * The regular DMA TX buffer is only 2576 bytes — too small for TSO. */
+            memcpy(tso_tx_buffer, tbuf, l);
+
+            /* Context descriptor: provides MSS for TSO hardware */
+            ctxDesc = IfxGeth_Eth_getActualTxDescriptor(ethernetif, IfxGeth_TxDmaChannel_0);
+            ctxDesc->TDES3.U         = 0;
+            ctxDesc->TDES3.C.TCMSSV  = 1;
+            ctxDesc->TDES3.C.CTXT    = 1;
+            ctxDesc->TDES3.C.OWN     = 1;
+            ctxDesc->TDES2.U         = 0;
+            ctxDesc->TDES2.C.MSS     = TCP_MSS;
+            ctxDesc->TDES0.U         = 0;
+            IfxGeth_Eth_shuffleTxDescriptor(ethernetif, IfxGeth_TxDmaChannel_0);
+
+            /* Data descriptors: chain through the large TSO buffer.
+             * Each descriptor points to a chunk of up to bufferLength bytes. */
+            remaining = l;
+            offset    = 0;
+            src       = tso_tx_buffer;
+            {
+                uint32 bufferLength = ethernetif->txChannel[IfxGeth_TxDmaChannel_0].txBuf1Size;
+                uint32 numOfDesc    = remaining / bufferLength;
+                if (remaining % bufferLength) numOfDesc++;
+                uint32 di;
+                for (di = 0; di < numOfDesc; di++)
+                {
+                    dataDesc = IfxGeth_Eth_getActualTxDescriptor(ethernetif, IfxGeth_TxDmaChannel_0);
+                    chunk = (remaining > bufferLength) ? bufferLength : remaining;
+
+                    dataDesc->TDES0.U     = (uint32)(src + offset);
+                    dataDesc->TDES2.R.B1L = chunk;
+                    dataDesc->TDES2.R.IOC = (di == (numOfDesc - 1)) ? 1 : 0;
+                    dataDesc->TDES3.U     = 0;
+                    if (di == 0)
+                    {
+                        dataDesc->TDES3.R.FL_TPL = l;  /* total frame length on first desc */
+                    }
+                    dataDesc->TDES3.R.TSE     = 1;
+                    dataDesc->TDES3.R.CIC_TPL = 2;
+                    dataDesc->TDES3.R.SAIC    = 0;
+                    dataDesc->TDES3.R.CPC     = 0;
+                    dataDesc->TDES3.R.FD      = (di == 0) ? 1 : 0;
+                    dataDesc->TDES3.R.LD      = (di == (numOfDesc - 1)) ? 1 : 0;
+                    dataDesc->TDES3.R.CTXT    = 0;
+                    dataDesc->TDES3.R.OWN     = 1;
+
+                    offset    += chunk;
+                    remaining -= chunk;
+                    IfxGeth_Eth_shuffleTxDescriptor(ethernetif, IfxGeth_TxDmaChannel_0);
+                }
+                nextDescr = IfxGeth_Eth_getActualTxDescriptor(ethernetif, IfxGeth_TxDmaChannel_0);
+            }
+
+            /* Trigger DMA transmission */
+            IfxGeth_dma_setTxDescriptorTailPointer(ethernetif->gethSFR, IfxGeth_TxDmaChannel_0, (uint32)nextDescr);
+            IfxGeth_Eth_wakeupTransmitter(ethernetif, IfxGeth_TxDmaChannel_0);
+            ethernetif->txChannel[IfxGeth_TxDmaChannel_0].txCount++;
+            ethernetif->txChannel[IfxGeth_TxDmaChannel_0].txDescrPtr = nextDescr;
+        }
+        else
+        {
+            /* Normal path: no TSO, standard checksum (CIC_TPL=3).
+             * Fixup B1L then use standard send function. */
+            IfxGeth_TxDescr *txd;
+            txd = (IfxGeth_TxDescr *)IfxGeth_Eth_getActualTxDescriptor(ethernetif, IfxGeth_TxDmaChannel_0);
+            txd->TDES2.R.B1L = IFXGETH_MAX_TX_BUFFER_SIZE;
+            IfxGeth_Eth_sendTransmitBuffer(ethernetif, l, IfxGeth_TxDmaChannel_0);
+        }
     }
 
     LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_TRACE, ("low_level_output: signal length: %d\n", length));
-
-#if ETH_PAD_SIZE
-    pbuf_header(p, ETH_PAD_SIZE); /* reclaim the padding word */
-#endif
-
     LINK_STATS_INC(link.xmit);
-
-    LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_TRACE, ("low_level_output: return OK\n"));
-
     return ERR_OK;
 }
 
@@ -384,7 +463,7 @@ static uint16 GetRxFrameSize(IfxGeth_RxDescr *descr)
 static pbuf_t *low_level_input(netif_t *netif)
 {
     IfxGeth_Eth *ethernetif = netif->state;
-    pbuf_t *p, *q;
+    pbuf_t *p;
     u16_t   len;
 
     len = 0;
@@ -395,55 +474,33 @@ static pbuf_t *low_level_input(netif_t *netif)
 
     if (len == 0)
     {
-        return (pbuf_t *)0;
+        return NULL;
     }
 
-#if ETH_PAD_SIZE
-    len += ETH_PAD_SIZE; /* allow room for Ethernet padding */
-#endif
+    /* Error frame — release DMA buffer and return NULL */
+    if (len == 0xFFFFU)
+    {
+        IfxGeth_Eth_freeReceiveBuffer(ethernetif, IfxGeth_RxDmaChannel_0);
+        return NULL;
+    }
 
-    /* We allocate a pbuf chain of pbufs from the pool. */
-    p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
+    /* Zero-copy RX: use PBUF_REF pointing directly to DMA buffer.
+     * The DMA buffer is released in ifx_netif_input after lwIP processes the packet. */
+    p = pbuf_alloc(PBUF_RAW, 0, PBUF_REF);
 
     if (p != NULL)
     {
-#if ETH_PAD_SIZE
-        pbuf_header(p, -ETH_PAD_SIZE); /* drop the padding word */
-#endif
-
         u8_t *src = IfxGeth_Eth_getReceiveBuffer(ethernetif, IfxGeth_RxDmaChannel_0);
-
-        /* We iterate over the pbuf chain until we have read the entire
-         * packet into the pbuf. */
-        for (q = p; q != NULL; q = q->next)
-        {
-            /* Read enough bytes to fill this pbuf in the chain. The
-             * available data in the pbuf is given by the q->len
-             * variable.
-             * This does not necessarily have to be a memcpy, you can also preallocate
-             * pbufs for a DMA-enabled MAC and after receiving truncate it to the
-             * actually received size. In this case, ensure the tot_len member of the
-             * pbuf is the sum of the chained pbuf len members.
-             */
-            //read data into(q->payload, q->len);
-            memcpy(q->payload, src, q->len);
-            src = &src[q->len];
-
-            LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_TRACE, ("low_level_input: payload=0x%x, len=%d\n", q->payload, q->len));
-        }
-
-        //acknowledge that packet has been read();
-        IfxGeth_Eth_freeReceiveBuffer(ethernetif, IfxGeth_RxDmaChannel_0);
-
-#if ETH_PAD_SIZE
-        pbuf_header(p, ETH_PAD_SIZE); /* reclaim the padding word */
-#endif
+        p->payload = src;
+        p->len     = len;
+        p->tot_len = len;
 
         LINK_STATS_INC(link.recv);
     }
     else
     {
-        //TODO: drop packet();
+        /* Out of pbuf headers — release the DMA buffer so we don't stall */
+        IfxGeth_Eth_freeReceiveBuffer(ethernetif, IfxGeth_RxDmaChannel_0);
         LINK_STATS_INC(link.memerr);
         LINK_STATS_INC(link.drop);
     }
@@ -463,7 +520,7 @@ static pbuf_t *low_level_input(netif_t *netif)
  */
 err_t ifx_netif_input(netif_t *netif)
 {
-    //Ifx_GETH *ethernetif = netif->state;
+    IfxGeth_Eth *ethernetif = netif->state;
     eth_hdr_t *ethhdr;
     pbuf_t    *p;
 
@@ -473,7 +530,6 @@ err_t ifx_netif_input(netif_t *netif)
     /* no packet could be read, silently ignore this */
     if (p == NULL)
     {
-        //LWIP_DEBUGF(NETIF_DEBUG, ("ifx_netif_input: p == NULL!\n"));
         return ERR_OK;
     }
 
@@ -486,18 +542,15 @@ err_t ifx_netif_input(netif_t *netif)
     case ETHTYPE_IP:
     case ETHTYPE_ARP:
 #if PPPOE_SUPPORT
-    /* PPPoE packet? */
     case ETHTYPE_PPPOEDISC:
     case ETHTYPE_PPPOE:
 #endif /* PPPOE_SUPPORT */
-
         /* full packet send to tcpip_thread to process */
         if (netif->input(p, netif) != ERR_OK)
         {
             LWIP_DEBUGF(NETIF_DEBUG, ("ifx_netif_input: IP input error\n"));
             pbuf_free(p);
         }
-
         break;
 
     default:
@@ -505,6 +558,12 @@ err_t ifx_netif_input(netif_t *netif)
         pbuf_free(p);
         break;
     }
+
+    /* Release DMA buffer back to hardware.
+     * Since ETH_PAD_SIZE=0 and we use PBUF_REF, the DMA buffer is not
+     * owned by the pbuf. lwIP has finished processing by now (NO_SYS=1,
+     * synchronous path), so it's safe to release. */
+    IfxGeth_Eth_freeReceiveBuffer(ethernetif, IfxGeth_RxDmaChannel_0);
 
     return ERR_OK;
 }

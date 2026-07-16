@@ -112,8 +112,8 @@ void core0_main (void)
 
     while (1)
     {
-        Ifx_Lwip_pollTimerFlags();                          /* Poll LwIP timers and trigger protocols execution if required */
-        Ifx_Lwip_pollReceiveFlags();                        /* Receive data package through ETH                             */
+        Ifx_Lwip_pollTimerFlags();
+        Ifx_Lwip_pollReceiveFlags();
     }
 }
 

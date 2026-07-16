@@ -37,23 +37,21 @@
 #define BOARDNAME               "AURIX_TC387"     /* Board name, also used as hostname                                    */
 
 #define MEM_ALIGNMENT           4                   /* Set memory alignment to 4 byte (32-bit machine)                      */
-#define MEM_SIZE                (32 * 1024)        /* Size of the Heap (grow to hold larger TCP windows)                   */
+#define MEM_SIZE                (48 * 1024)        /* Size of the Heap (larger window for 600+Mbps)                      */
+#define LWIP_RAM_HEAP_POINTER   lwip_lmuram_heap   /* Heap in LMURAM for multi-core access                                 */
 #define LWIP_DHCP               0                   /* Enable DHCP protocol                                                 */
 #define LWIP_NETCONN            0                   /* Disable Netconn API                                                  */
 #define LWIP_SOCKET             0                   /* Disable the Socket API                                               */
-#define SYS_LIGHTWEIGHT_PROT    0                   /* Disable inter-task protection                                        */
 
 // iperf tcp optimizations
-#define TCP_MSS                 1024
-// #define TCP_SND_BUF             (14 * TCP_MSS)
-// #define TCP_WND                 (14 * TCP_MSS)
-// #define TCP_SND_QUEUELEN        ((2 * TCP_SND_BUF) / TCP_MSS)
-// #define TCP_SNDLOWAT            (TCP_SND_BUF / 4)
-// #define TCP_SNDQUEUELOWAT       (TCP_SND_QUEUELEN / 2)
-// #define MEMP_NUM_TCP_SEG        28
-// #define PBUF_POOL_SIZE          16
+#define TCP_MSS                 1460
+#define TCP_WND                 (12 * TCP_MSS)      /* RX window: 17.5KB (~280Mbps BDP) */
+#define TCP_SND_BUF             (8 * TCP_MSS)       /* TX buffer: 11.7KB */
+#define MEMP_NUM_TCP_SEG        32
+#define PBUF_POOL_SIZE          32
+#define LWIP_DISABLE_TCP_SANITY_CHECKS 1
 
-#define ETH_PAD_SIZE            2                   /* Add 2 bytes before the Ethernet header to ensure payload alignment   */
+#define ETH_PAD_SIZE            0                   /* No padding needed - zero-copy RX compatible                         */
 
 #define __LWIP_DEBUG__                              /* Enable debugging through UART interface                              */
 

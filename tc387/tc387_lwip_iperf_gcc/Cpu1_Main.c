@@ -28,6 +28,7 @@
 #include "IfxCpu.h"
 #include "IfxScuWdt.h"
 #include "Ifx_Cfg_Ssw.h"
+#include "Ifx_Lwip.h"
 
 extern IfxCpu_syncEvent cpuSyncEvent;
 
@@ -46,5 +47,6 @@ void core1_main(void)
     
     while(1)
     {
+        Ifx_Lwip_pollReceiveFlags();
     }
 }

@@ -80,7 +80,34 @@
 #define LWIP_NO_STDINT_H 1
 
 #include <Cpu/Std/Ifx_Types.h>
+#include <Cpu/Std/IfxCpu.h>
 #include "lwipopts.h"
+
+/* LMURAM lwIP heap for multi-core access (defined in Ifx_Lwip.c) */
+extern unsigned char lwip_lmuram_heap[];
+
+/* Forward declarations for multi-core spinlock functions (defined in Ifx_Lwip.c).
+ * For single-core operation, we use only local interrupt disable for speed.
+ * For multi-core, uncomment USE_MULTICORE_LOCK and restore the combined version. */
+#define USE_MULTICORE_LOCK
+#ifdef USE_MULTICORE_LOCK
+extern void Ifx_Lwip_lock(void);
+extern void Ifx_Lwip_unlock(void);
+#define SYS_ARCH_DECL_PROTECT(lev)  volatile uint32 lev = 0
+#define SYS_ARCH_PROTECT(lev)       do { \
+    lev = IfxCpu_disableInterrupts(); \
+    Ifx_Lwip_lock(); \
+} while(0)
+#define SYS_ARCH_UNPROTECT(lev)     do { \
+    Ifx_Lwip_unlock(); \
+    IfxCpu_restoreInterrupts(lev); \
+} while(0)
+#else
+/* Single-core: fast path with only local interrupt disable */
+#define SYS_ARCH_DECL_PROTECT(lev)  volatile uint32 lev
+#define SYS_ARCH_PROTECT(lev)       lev = IfxCpu_disableInterrupts()
+#define SYS_ARCH_UNPROTECT(lev)     IfxCpu_restoreInterrupts(lev)
+#endif
 
 typedef uint8  u8_t;
 typedef uint16 u16_t;

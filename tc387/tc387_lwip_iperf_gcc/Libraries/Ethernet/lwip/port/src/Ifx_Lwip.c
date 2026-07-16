@@ -88,6 +88,55 @@
 /******************************************************************************/
 /*------------------------------Global variables------------------------------*/
 /******************************************************************************/
+
+/* ===== LMURAM shared data (accessible from all cores, 0x90040000+) ===== */
+/* All GETH driver data MUST be in LMURAM for multi-core access.
+ * DSPR is core-private on TC3xx; Core1 cannot access DSPR0. */
+
+#if defined(__TASKING__)
+#pragma section fardata "lmudata"
+#elif defined(__GNUC__)
+#pragma section ".data.lmudata"
+#endif
+
+/* Multi-core spinlock */
+volatile uint32 lwip_global_lock = 0;
+
+/* GETH driver handle */
+IfxGeth_Eth g_IfxGeth;
+
+/* LMURAM descriptor lists (replace the DSPR0 defaults in IfxGeth_Eth.c) */
+IfxGeth_RxDescrList lmu_rxDescrList[IFXGETH_NUM_MODULES][IFXGETH_NUM_RX_CHANNELS];
+IfxGeth_TxDescrList lmu_txDescrList[IFXGETH_NUM_MODULES][IFXGETH_NUM_TX_CHANNELS];
+
+/* DMA buffers in LMURAM */
+uint8 channel0TxBuffer1[IFXGETH_MAX_TX_DESCRIPTORS][IFXGETH_MAX_TX_BUFFER_SIZE];
+uint8 channel0RxBuffer1[IFXGETH_MAX_RX_DESCRIPTORS][IFXGETH_MAX_RX_BUFFER_SIZE];
+
+/* TSO scratch buffer: large enough for a single TSO frame (TCP_SND_BUF + headers).
+ * Regular DMA TX buffers are only 2576 bytes; TSO needs up to ~36KB contiguous. */
+#define TSO_TX_BUFFER_SIZE  (16 * 1024)
+uint8 tso_tx_buffer[TSO_TX_BUFFER_SIZE];
+
+/* lwIP memory heap in LMURAM for multi-core access.
+ * Must be >= MEM_SIZE_ALIGNED + 2*SIZEOF_STRUCT_MEM bytes.
+ * MEM_SIZE=32KB, so 32KB + 8 = 32776 bytes, round up to 32800. */
+#define LWIP_LMURAM_HEAP_SIZE    49200u
+uint8 lwip_lmuram_heap[LWIP_LMURAM_HEAP_SIZE];
+
+/* Resume DSPR0 for remaining data */
+#if defined(__TASKING__)
+#pragma section fardata "data_cpu0"
+#elif defined(__GNUC__)
+#pragma section ".data_cpu0"
+#endif
+
+/* Timer/counter (not shared) */
+volatile uint32 g_TickCount_1ms;
+Ifx_Lwip    g_Lwip;
+uint32 isrTxCount=0;
+uint32 isrRxCount=0;
+
 #if CPU_WHICH_SERVICE_ETHERNET == 0
     #if defined(__GNUC__)
     #pragma section ".text_cpu0" ax
@@ -206,13 +255,8 @@
 #error "Set CPU_WHICH_SERVICE_ETHERNET to a valid value!"
 #endif
 
-volatile uint32 g_TickCount_1ms;
-Ifx_Lwip    g_Lwip;
-IfxGeth_Eth g_IfxGeth;
-uint32 isrTxCount=0;
-uint32 isrRxCount=0;
-uint8 channel0TxBuffer1[IFXGETH_MAX_TX_DESCRIPTORS][IFXGETH_MAX_TX_BUFFER_SIZE];
-uint8 channel0RxBuffer1[IFXGETH_MAX_RX_DESCRIPTORS][IFXGETH_MAX_RX_BUFFER_SIZE];
+/* Note: g_IfxGeth, channel0TxBuffer1, channel0RxBuffer1 are now in LMURAM
+ * (defined above before the CPU-specific section pragmas). */
 
 
 /******************************************************************************/
@@ -344,13 +388,30 @@ void Ifx_Lwip_pollTimerFlags(void)
 }
 
 
+/** \brief Acquire the multi-core spinlock (LMURAM).
+ *  Uses IfxCpu_setSpinLock for atomic test-and-set.
+ *  Busy-waits until lock is acquired. */
+void Ifx_Lwip_lock(void)
+{
+    while (IfxCpu_setSpinLock((IfxCpu_spinLock *)&lwip_global_lock, 0xFFFFFFFFu) == FALSE)
+    {
+        /* spin */
+    }
+}
+
+/** \brief Release the multi-core spinlock */
+void Ifx_Lwip_unlock(void)
+{
+    IfxCpu_resetSpinLock((IfxCpu_spinLock *)&lwip_global_lock);
+}
+
+
 /** \brief Polling the ETH receive event flags */
 void Ifx_Lwip_pollReceiveFlags(void)
 {
-    /**
-     * We are assuming that the only interrupt source is an incoming packet
-     */
-    //while (ethernetif_tc29x_timerFlags_interrupt())
+    /* Drain up to 8 packets per main loop iteration for better throughput */
+    int max_pkts = 8;
+    while ((max_pkts-- > 0) && (IfxGeth_Eth_isRxDataAvailable(&g_IfxGeth, IfxGeth_RxDmaChannel_0) != FALSE))
     {
         ifx_netif_input(&g_Lwip.netif);
     }
@@ -483,6 +544,11 @@ IFX_INTERRUPT(ISR_Geth_Tx, CPU_WHICH_SERVICE_ETHERNET, ISR_PRIORITY_GETH_TX)
 IFX_INTERRUPT(ISR_Geth_Rx, CPU_WHICH_SERVICE_ETHERNET, ISR_PRIORITY_GETH_RX)
 {
     isrRxCount++;
+    int max_pkts = 16;
+    while ((max_pkts-- > 0) && (IfxGeth_Eth_isRxDataAvailable(&g_IfxGeth, IfxGeth_RxDmaChannel_0) != FALSE))
+    {
+        ifx_netif_input(&g_Lwip.netif);
+    }
 }
 
 //________________________________________________________________________________________
