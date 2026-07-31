@@ -90,9 +90,69 @@
 #include <lwip/snmp.h>
 #include "netif/etharp.h"
 #include "netif/ppp/pppoe.h"
+#include "lwip/prot/ip4.h"
 
 #include "IfxGeth_Eth.h"
 #include "Ifx_Lwip.h"
+
+/* Addresses shared with the GETH DMA (descriptors + buffers) must never be
+ * accessed through the CPU data cache. DSPR (0x7...) is scratchpad and
+ * always coherent. LMU segment 9 (0x9...) is cacheable, so remap it to the
+ * non-cached segment B view (0xB...). Identity for all other segments. */
+#define GETH_DMA_ADDR(addr) \
+    (((((uint32)(addr)) & 0xF0000000u) == 0x90000000u) \
+         ? (void *)(((uint32)(addr)) | 0x20000000u)    \
+         : (void *)(addr))
+
+/* Inverse of GETH_DMA_ADDR: non-cached LMU view (0xB...) -> cached view
+ * (0x9...). Reading the RX payload through the cached view turns the copy
+ * into 256-bit SRI burst line fills instead of word-by-word uncached reads.
+ * Identity for DSPR/other segments. */
+#define GETH_CACHED_ADDR(addr) \
+    (((((uint32)(addr)) & 0xF0000000u) == 0xB0000000u) \
+         ? (void *)(((uint32)(addr)) & ~0x20000000u)   \
+         : (void *)(addr))
+
+#if defined(__TASKING__)
+#define DCACHE_INV_LINE(p)  __asm volatile ("cachea.i [%0]0" : : "a"(p) : "memory")
+#else
+#define DCACHE_INV_LINE(p)  __asm__ volatile ("cachea.i [%0]0" : : "a"(p) : "memory")
+#endif
+
+/* Invalidate (no write-back) the data cache lines covering [addr, addr+len).
+ * Only used on RX DMA buffers, which the CPU never writes through the cached
+ * view, so discarding the lines can never lose data. */
+static void geth_dcache_invalidate(const uint8 *addr, uint32 len)
+{
+    uint32 p   = (uint32)addr & ~31u;
+    uint32 end = ((uint32)addr + len + 31u) & ~31u;
+
+    for (; p < end; p += 32)
+    {
+        DCACHE_INV_LINE(p);
+    }
+}
+
+/* Helper: check if an Ethernet frame contains a TCP segment suitable for TSO.
+ * Uses lwIP protocol structs (already included via netif/etharp.h). */
+static boolean is_tcp_segment(const uint8_t *frame, uint16_t len)
+{
+    struct eth_hdr *eth;
+    struct ip_hdr  *iph;
+
+    if (len < (SIZEOF_ETH_HDR + IP_HLEN))
+        return FALSE;
+
+    eth = (struct eth_hdr *)frame;
+    if (htons(eth->type) != ETHTYPE_IP)
+        return FALSE;
+
+    iph = (struct ip_hdr *)(frame + SIZEOF_ETH_HDR);
+    if (IPH_PROTO(iph) != 6)  /* IP_PROTO_TCP */
+        return FALSE;
+
+    return TRUE;
+}
 #include "Ifx_Netif.h"
 #include "IfxGeth_Phy_Rtl8211f.h"
 #include "Configuration.h"
@@ -101,6 +161,44 @@
 /* Define those to better describe your network interface. */
 #define IFNAME0 'e'
 #define IFNAME1 'n'
+
+/* ---- 802.3x flow control tuning (override from CMake if needed) ----
+ * The MTL RX FIFO is 8KB. RFA/RFD select the fill levels at which the MAC
+ * emits XOFF / XON pause frames:
+ *   pause  when free space <  (RFA+1) * 0.5KB + 0.5KB
+ *   resume when free space >  (RFD+1) * 0.5KB + 0.5KB
+ * GETH_FC_PAUSE_TIME is in 512-bit-time quanta (0x10 = 8.2us @1Gbps).
+ * Keep it SHORT: an over-long XOFF throttles the link far below line rate
+ * even though the FIFO has already drained. */
+#ifndef GETH_FC_ENABLE
+#define GETH_FC_ENABLE      1
+#endif
+#ifndef GETH_FC_RFA
+#define GETH_FC_RFA         1
+#endif
+#ifndef GETH_FC_RFD
+#define GETH_FC_RFD         4
+#endif
+#ifndef GETH_FC_PAUSE_TIME
+#define GETH_FC_PAUSE_TIME  0x1000u
+#endif
+
+/* Diagnostic counters (read via UDP diag service, port 5002) */
+volatile uint32 g_diag_rx_ok    = 0;  /* frames delivered to lwIP */
+volatile uint32 g_diag_rx_err   = 0;  /* frames dropped: descriptor error */
+volatile uint32 g_diag_rx_nobuf = 0;  /* frames dropped: pbuf_alloc failed */
+volatile uint32 g_diag_tx_pkts  = 0;  /* frames handed to TX DMA */
+
+/* Cycle-level profiling (STM ticks, read via UDP diag service) */
+#include "IfxStm.h"
+volatile uint32 g_prof_copy_ticks  = 0; /* RX: memcpy out of DMA buffer  */
+volatile uint32 g_prof_copy_cnt    = 0;
+volatile uint32 g_prof_input_ticks = 0; /* lwIP stack processing (netif->input) */
+volatile uint32 g_prof_input_cnt   = 0;
+volatile uint32 g_prof_tx_ticks    = 0; /* TX: total low_level_output    */
+volatile uint32 g_prof_tx_cnt      = 0;
+volatile uint32 g_prof_alloc_ticks = 0; /* RX: pbuf_alloc(PBUF_POOL)     */
+#define PROF_NOW()  IfxStm_getLower(&MODULE_STM0)
 
 /**
  * Helper struct to hold private data used to operate your ethernet interface.
@@ -191,19 +289,26 @@ static void low_level_init(netif_t *netif)
 
         GethConfig.dma.numOfTxChannels = 1;
         GethConfig.dma.numOfRxChannels = 1;
+    /* NOTE: FB=1 (fixed burst, per Infineon gigabit appnote) locks up the
+     * GETH DMA on this board with LMU-based buffers - verified with FB+MB,
+     * FB alone, FB+PBLX8 and runtime writes. Keep AAL+MB and use PBLX8
+     * instead to lengthen bursts. */
     GethConfig.dma.addressAlignedBeatsEnabled = TRUE;
     GethConfig.dma.fixedBurstEnabled = FALSE;
     GethConfig.dma.mixedBurstEnabled = TRUE;
+        /* NOTE: descriptor lists and DMA buffers are passed via the LMU
+         * non-cached view (0xB...) so CPU accesses bypass the data cache
+         * and stay coherent with the GETH DMA. */
         GethConfig.dma.txChannel[0].channelId = IfxGeth_TxDmaChannel_0;
-        GethConfig.dma.txChannel[0].txDescrList = (IfxGeth_TxDescrList *)&IfxGeth_Eth_txDescrList[0];
-        GethConfig.dma.txChannel[0].txBuffer1StartAddress = (uint32 *)&channel0TxBuffer1[0][0]; // user buffer
+        GethConfig.dma.txChannel[0].txDescrList = (IfxGeth_TxDescrList *)GETH_DMA_ADDR(&lmu_txDescrList[0]);
+        GethConfig.dma.txChannel[0].txBuffer1StartAddress = (uint32 *)GETH_DMA_ADDR(&channel0TxBuffer1[0][0]); // user buffer
     GethConfig.dma.txChannel[0].txBuffer1Size = IFXGETH_MAX_TX_BUFFER_SIZE; // used to calculate the next descriptor  buffer offset
     GethConfig.dma.txChannel[0].maxBurstLength = IfxGeth_DmaBurstLength_32;
     GethConfig.dma.txChannel[0].enableOSF = TRUE;
 
         GethConfig.dma.rxChannel[0].channelId = IfxGeth_RxDmaChannel_0;
-        GethConfig.dma.rxChannel[0].rxDescrList = (IfxGeth_RxDescrList *)&IfxGeth_Eth_rxDescrList[0];
-        GethConfig.dma.rxChannel[0].rxBuffer1StartAddress = (uint32 *)&channel0RxBuffer1[0][0]; // user buffer
+        GethConfig.dma.rxChannel[0].rxDescrList = (IfxGeth_RxDescrList *)GETH_DMA_ADDR(&lmu_rxDescrList[0]);
+        GethConfig.dma.rxChannel[0].rxBuffer1StartAddress = (uint32 *)GETH_DMA_ADDR(&channel0RxBuffer1[0][0]); // user buffer
     GethConfig.dma.rxChannel[0].rxBuffer1Size = IFXGETH_MAX_RX_BUFFER_SIZE; // user defined variable
     GethConfig.dma.rxChannel[0].maxBurstLength = IfxGeth_DmaBurstLength_32;
 
@@ -221,6 +326,17 @@ static void low_level_init(netif_t *netif)
 
     	/* first we reset our phy manually, to make sure that the phy is ready when we init our module */
         {
+            /* Raise fGETH from the iLLD default 150MHz (GETHDIV=2) to
+             * 300MHz (GETHDIV=1, synchronous to fSRI/fSOURCE0). The GETH
+             * kernel clock feeds the DMA/MTL engines; at 150MHz the RX DMA
+             * drain rate capped iperf at ~730Mbps (with PBLX8) even though
+             * the CPU was idle. At 300MHz the board sustains ~945Mbps
+             * (TCP theoretical max for 1460-byte MSS on GigE) with zero
+             * FIFO overflows and zero PAUSE frames. */
+            {
+                extern float32 IfxScuCcu_setGethFrequency(float32 gethFreq);
+                IfxScuCcu_setGethFrequency(300000000.0f);
+            }
         	IfxGeth_enableModule(&MODULE_GETH);
         	IfxPort_setPinModeOutput(ETH_MDC_PIN.pin.port, ETH_MDC_PIN.pin.pinIndex, IfxPort_OutputMode_pushPull, ETH_MDC_PIN.select);
             GETH_GPCTL.B.ALTI0  = ETH_MDIO_PIN.inSelect;
@@ -248,11 +364,55 @@ static void low_level_init(netif_t *netif)
         // initialize the module
     	IfxGeth_Eth_initModule(ethernetif, &GethConfig);
 
+        /* 802.3x hardware flow control: pause the sender before the 8KB MTL
+         * RX FIFO overflows (line-rate bursts exceed the drain rate).
+         *  - EHFC: enable hardware flow control based on FIFO fill level
+         *  - RFA=2: send PAUSE when fill >= 8KB - (1 + 2*0.5)KB = 6KB
+         *           (2KB headroom = ~16us at 1Gbps covers pause reaction time)
+         *  - RFD=6: release when fill <= 8KB - (1 + 6*0.5)KB = 4KB
+         *  - PT=0x1000: moderate pause quanta (~2ms); the MAC sends a
+         *    zero-quanta pause when fill drops below RFD, so the link
+         *    resumes as soon as the FIFO drains. PLT=4: re-send early. */
+        GETH_MTL_RXQ0_OPERATION_MODE.B.EHFC = GETH_FC_ENABLE;
+        GETH_MTL_RXQ0_OPERATION_MODE.B.RFA  = GETH_FC_RFA;
+        GETH_MTL_RXQ0_OPERATION_MODE.B.RFD  = GETH_FC_RFD;
+#if GETH_FC_ENABLE
+        GETH_MAC_Q0_TX_FLOW_CTRL.U = ((uint32)GETH_FC_PAUSE_TIME << 16) | (4u << 4) | (1u << 1);
+#else
+        GETH_MAC_Q0_TX_FLOW_CTRL.U = 0;
+#endif
+
+        /* DMA burst tuning: with plain PBL=32 (128B bursts) the RX DMA tops
+         * out at ~620Mbps while the MTL FIFO overflows and the CPU idles,
+         * i.e. the per-SRI-transaction latency dominates. PBLX8 multiplies
+         * the programmed PBL by 8. NOTE: PBLX8 must NOT be combined with
+         * FB=1 (256-beat fixed bursts lock up the SRI/AHB bridge). */
+#ifndef GETH_DMA_PBLX8
+#define GETH_DMA_PBLX8      1
+#endif
+#ifndef GETH_DMA_RXPBL
+#define GETH_DMA_RXPBL      32
+#endif
+#ifndef GETH_DMA_TXPBL
+#define GETH_DMA_TXPBL      32
+#endif
+        GETH_DMA_CH0_CONTROL.B.PBLX8    = GETH_DMA_PBLX8;
+        GETH_DMA_CH0_RX_CONTROL.B.RXPBL = GETH_DMA_RXPBL;
+        GETH_DMA_CH0_TX_CONTROL.B.TXPBL = GETH_DMA_TXPBL;
+
    		IfxGeth_Eth_Phy_Rtl8211f_init();
 
     	// and enable transmitter/receiver
     	IfxGeth_Eth_startTransmitters(ethernetif, 1);
     	IfxGeth_Eth_startReceivers(ethernetif, 1);
+
+        /* Pure polling data path: the main loop drains the RX ring at full
+         * speed, so per-packet RX/TX DMA interrupts (80k+/s at 600Mbps) are
+         * pure overhead. Disable both the DMA interrupt generation and the
+         * SRC service request nodes. All error conditions are polled. */
+        GETH_DMA_CH0_INTERRUPT_ENABLE.U = 0;
+        IfxSrc_disable(IfxGeth_getSrcPointer(&MODULE_GETH, IfxGeth_ServiceRequest_2)); /* TX ch0 */
+        IfxSrc_disable(IfxGeth_getSrcPointer(&MODULE_GETH, IfxGeth_ServiceRequest_6)); /* RX ch0 */
 
     	// The ETH is ready for use now!
         /* we set the LINK_UP flag if we have a valid link */
@@ -297,56 +457,115 @@ static void low_level_init(netif_t *netif)
  */
 static err_t low_level_output(netif_t *netif, pbuf_t *p)
 {
-    IfxGeth_Eth      *ethernetif = netif->state;
+    IfxGeth_Eth *ethernetif = netif->state;
     struct pbuf *q;
-
-    u16_t        length = p->tot_len;
+    u16_t length = p->tot_len;
+    uint32 prof_t0 = PROF_NOW();
     LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_TRACE, ("low_level_output (p=%#x)\n", p));
 
-#if ETH_PAD_SIZE
-    pbuf_header(p, -ETH_PAD_SIZE); /* drop the padding word */
-#endif
-
-    if ((p->type_internal == PBUF_REF) || (p->type_internal == PBUF_ROM))
+    /* TSO path only for genuinely oversized TCP segments (payload > MSS).
+     * Standard lwIP segments (<= MSS payload, frame <= 1514) always take the
+     * normal path: single copy + full HW checksum insertion (CIC_TPL=3). */
+    if ((length > (TCP_MSS + SIZEOF_ETH_HDR + 40)) &&
+        (p->len >= (SIZEOF_ETH_HDR + 20)) &&
+        is_tcp_segment((uint8 *)p->payload, p->len))
     {
-        // if PBUF_REF or PBUF_ROM, no copy into ethernet RAM buffer is needed.
-        // see pbuf_alloc_special()
-        IfxGeth_Eth_sendTransmitBuffer(ethernetif, p->tot_len, IfxGeth_TxDmaChannel_0);
+            volatile IfxGeth_TxDescr *ctxDesc;
+            volatile IfxGeth_TxDescr *dataDesc;
+            volatile IfxGeth_TxDescr *nextDescr;
+            uint32  remaining, offset, chunk;
+            uint8  *src;
+            u16_t   l = length;
+
+            /* Single copy: pbuf chain directly into TSO scratch buffer
+             * (LMU non-cached view for DMA coherency). */
+            uint8 *tso_dst = (uint8 *)GETH_DMA_ADDR(tso_tx_buffer);
+            u16_t  off     = 0;
+            for (q = p; q != NULL; q = q->next)
+            {
+                memcpy(&tso_dst[off], q->payload, q->len);
+                off = off + q->len;
+            }
+
+            /* Context descriptor: provides MSS for TSO hardware */
+            ctxDesc = IfxGeth_Eth_getActualTxDescriptor(ethernetif, IfxGeth_TxDmaChannel_0);
+            ctxDesc->TDES3.U         = 0;
+            ctxDesc->TDES3.C.TCMSSV  = 1;
+            ctxDesc->TDES3.C.CTXT    = 1;
+            ctxDesc->TDES3.C.OWN     = 1;
+            ctxDesc->TDES2.U         = 0;
+            ctxDesc->TDES2.C.MSS     = TCP_MSS;
+            ctxDesc->TDES0.U         = 0;
+            IfxGeth_Eth_shuffleTxDescriptor(ethernetif, IfxGeth_TxDmaChannel_0);
+
+            /* Data descriptors: chain through the large TSO buffer.
+             * Each descriptor points to a chunk of up to bufferLength bytes. */
+            remaining = l;
+            offset    = 0;
+            src       = tso_dst;
+            {
+                uint32 bufferLength = ethernetif->txChannel[IfxGeth_TxDmaChannel_0].txBuf1Size;
+                uint32 numOfDesc    = remaining / bufferLength;
+                if (remaining % bufferLength) numOfDesc++;
+                uint32 di;
+                for (di = 0; di < numOfDesc; di++)
+                {
+                    dataDesc = IfxGeth_Eth_getActualTxDescriptor(ethernetif, IfxGeth_TxDmaChannel_0);
+                    chunk = (remaining > bufferLength) ? bufferLength : remaining;
+
+                    dataDesc->TDES0.U     = (uint32)(src + offset);
+                    dataDesc->TDES2.R.B1L = chunk;
+                    dataDesc->TDES2.R.IOC = (di == (numOfDesc - 1)) ? 1 : 0;
+                    dataDesc->TDES3.U     = 0;
+                    if (di == 0)
+                    {
+                        dataDesc->TDES3.R.FL_TPL = l;  /* total frame length on first desc */
+                    }
+                    dataDesc->TDES3.R.TSE     = 1;
+                    dataDesc->TDES3.R.CIC_TPL = 2;
+                    dataDesc->TDES3.R.SAIC    = 0;
+                    dataDesc->TDES3.R.CPC     = 0;
+                    dataDesc->TDES3.R.FD      = (di == 0) ? 1 : 0;
+                    dataDesc->TDES3.R.LD      = (di == (numOfDesc - 1)) ? 1 : 0;
+                    dataDesc->TDES3.R.CTXT    = 0;
+                    dataDesc->TDES3.R.OWN     = 1;
+
+                    offset    += chunk;
+                    remaining -= chunk;
+                    IfxGeth_Eth_shuffleTxDescriptor(ethernetif, IfxGeth_TxDmaChannel_0);
+                }
+                nextDescr = IfxGeth_Eth_getActualTxDescriptor(ethernetif, IfxGeth_TxDmaChannel_0);
+            }
+
+            /* Trigger DMA transmission */
+            IfxGeth_dma_setTxDescriptorTailPointer(ethernetif->gethSFR, IfxGeth_TxDmaChannel_0, (uint32)nextDescr);
+            IfxGeth_Eth_wakeupTransmitter(ethernetif, IfxGeth_TxDmaChannel_0);
+            ethernetif->txChannel[IfxGeth_TxDmaChannel_0].txCount++;
+            ethernetif->txChannel[IfxGeth_TxDmaChannel_0].txDescrPtr = nextDescr;
     }
     else
     {
-        //initiate transfer();
+        /* Normal path: single copy into the descriptor's DMA buffer, then
+         * send with full HW checksum insertion (CIC_TPL=3, set in
+         * IfxGeth_Eth_sendTransmitBuffer). */
         u8_t *tbuf = IfxGeth_Eth_waitTransmitBuffer(ethernetif, IfxGeth_TxDmaChannel_0);
         u16_t l    = 0;
 
         for (q = p; q != NULL; q = q->next)
         {
-            /* Send the data from the pbuf to the interface, one pbuf at a
-             * time. The size of the data in each pbuf is kept in the ->len
-             * variable. */
             memcpy((u8_t *)&tbuf[l], q->payload, q->len);
             l = l + q->len;
-            LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_TRACE, ("low_level_output: data=%#x, %d\n", q->payload, q->len));
-            LWIP_ASSERT("low_level_output: length overflow the buffer\n", (l < 2048));
+            LWIP_ASSERT("low_level_output: length overflow the buffer\n", (l <= IFXGETH_MAX_TX_BUFFER_SIZE));
         }
-        /* we correct the buffer 1 size (maybe overwritten in earlier packet */
-        IfxGeth_TxDescr *pactTxDescriptor;
-        pactTxDescriptor = (IfxGeth_TxDescr *)IfxGeth_Eth_getActualTxDescriptor(ethernetif, IfxGeth_TxDmaChannel_0);
-        /* set the buffer length to the max. available */
-        pactTxDescriptor->TDES2.R.B1L = IFXGETH_MAX_TX_BUFFER_SIZE;
+
         IfxGeth_Eth_sendTransmitBuffer(ethernetif, l, IfxGeth_TxDmaChannel_0);
     }
 
+    g_diag_tx_pkts++;
+    g_prof_tx_ticks += (PROF_NOW() - prof_t0);
+    g_prof_tx_cnt++;
     LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_TRACE, ("low_level_output: signal length: %d\n", length));
-
-#if ETH_PAD_SIZE
-    pbuf_header(p, ETH_PAD_SIZE); /* reclaim the padding word */
-#endif
-
     LINK_STATS_INC(link.xmit);
-
-    LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_TRACE, ("low_level_output: return OK\n"));
-
     return ERR_OK;
 }
 
@@ -357,6 +576,11 @@ static uint16 GetRxFrameSize(IfxGeth_RxDescr *descr)
   uint32 rdes3 = descr->RDES3.U;
   uint32 rdes1 = descr->RDES1.U;
 
+  /* Drop on: ES (error summary), IPCE (payload checksum error), or
+   * !LD (multi-buffer frame). Mirrors the original Infineon port.
+   * RX COE (MAC_CONFIGURATION.IPC) is intentionally NOT enabled, and the
+   * IPHE bit is intentionally NOT used for dropping: with COE off the MAC
+   * does not compute these flags, so leaving them out avoids spurious drops. */
   if (((rdes3 & (1UL << 15)) != 0U) ||
       ((rdes1 & (1UL << 7)) != 0U) ||
       ((rdes3 & (1UL << 28)) == 0U))
@@ -384,7 +608,8 @@ static uint16 GetRxFrameSize(IfxGeth_RxDescr *descr)
 static pbuf_t *low_level_input(netif_t *netif)
 {
     IfxGeth_Eth *ethernetif = netif->state;
-    pbuf_t *p, *q;
+    pbuf_t *p;
+    pbuf_t *q;
     u16_t   len;
 
     len = 0;
@@ -395,58 +620,60 @@ static pbuf_t *low_level_input(netif_t *netif)
 
     if (len == 0)
     {
-        return (pbuf_t *)0;
+        return NULL;
     }
 
-#if ETH_PAD_SIZE
-    len += ETH_PAD_SIZE; /* allow room for Ethernet padding */
-#endif
+    /* Error frame — release DMA buffer and return NULL */
+    if (len == 0xFFFFU)
+    {
+        g_diag_rx_err++;
+        IfxGeth_Eth_freeReceiveBuffer(ethernetif, IfxGeth_RxDmaChannel_0);
+        return NULL;
+    }
 
-    /* We allocate a pbuf chain of pbufs from the pool. */
+    /* Copy-based RX: allocate a pbuf from the pool and memcpy the frame out of
+     * the DMA buffer. This is the safe, proven approach for NO_SYS + TCP, which
+     * keeps references to received pbufs (retransmits, window) — giving the DMA
+     * buffer back to hardware while the stack still references it would corrupt
+     * data. The DMA buffer is released immediately after the copy. */
+    uint32 ta = PROF_NOW();
     p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
+    g_prof_alloc_ticks += (PROF_NOW() - ta);
 
     if (p != NULL)
     {
-#if ETH_PAD_SIZE
-        pbuf_header(p, -ETH_PAD_SIZE); /* drop the padding word */
-#endif
+        uint8 *buffer = IfxGeth_Eth_getReceiveBuffer(ethernetif, IfxGeth_RxDmaChannel_0);
+        /* The driver hands out the non-cached alias. Read the payload through
+         * the cached view so the copy uses burst line fills, after discarding
+         * the stale lines the DMA just wrote behind the cache's back. */
+        uint8 *cbuf   = (uint8 *)GETH_CACHED_ADDR(buffer);
+        u16_t  l      = 0;
+        uint32 t0     = PROF_NOW();
 
-        u8_t *src = IfxGeth_Eth_getReceiveBuffer(ethernetif, IfxGeth_RxDmaChannel_0);
+        geth_dcache_invalidate(cbuf, len);
 
-        /* We iterate over the pbuf chain until we have read the entire
-         * packet into the pbuf. */
         for (q = p; q != NULL; q = q->next)
         {
-            /* Read enough bytes to fill this pbuf in the chain. The
-             * available data in the pbuf is given by the q->len
-             * variable.
-             * This does not necessarily have to be a memcpy, you can also preallocate
-             * pbufs for a DMA-enabled MAC and after receiving truncate it to the
-             * actually received size. In this case, ensure the tot_len member of the
-             * pbuf is the sum of the chained pbuf len members.
-             */
-            //read data into(q->payload, q->len);
-            memcpy(q->payload, src, q->len);
-            src = &src[q->len];
-
-            LWIP_DEBUGF(NETIF_DEBUG | LWIP_DBG_TRACE, ("low_level_input: payload=0x%x, len=%d\n", q->payload, q->len));
+            memcpy((u8_t *)q->payload, (u8_t *)&cbuf[l], q->len);
+            l = l + q->len;
         }
 
-        //acknowledge that packet has been read();
-        IfxGeth_Eth_freeReceiveBuffer(ethernetif, IfxGeth_RxDmaChannel_0);
-
-#if ETH_PAD_SIZE
-        pbuf_header(p, ETH_PAD_SIZE); /* reclaim the padding word */
-#endif
+        g_prof_copy_ticks += (PROF_NOW() - t0);
+        g_prof_copy_cnt++;
 
         LINK_STATS_INC(link.recv);
+        g_diag_rx_ok++;
     }
     else
     {
-        //TODO: drop packet();
+        /* Out of pool pbufs — drop the frame and free the DMA buffer. */
         LINK_STATS_INC(link.memerr);
         LINK_STATS_INC(link.drop);
+        g_diag_rx_nobuf++;
     }
+
+    /* Frame copied; release the DMA buffer back to hardware right away. */
+    IfxGeth_Eth_freeReceiveBuffer(ethernetif, IfxGeth_RxDmaChannel_0);
 
     return p;
 }
@@ -463,7 +690,7 @@ static pbuf_t *low_level_input(netif_t *netif)
  */
 err_t ifx_netif_input(netif_t *netif)
 {
-    //Ifx_GETH *ethernetif = netif->state;
+    IfxGeth_Eth *ethernetif = netif->state;
     eth_hdr_t *ethhdr;
     pbuf_t    *p;
 
@@ -473,7 +700,6 @@ err_t ifx_netif_input(netif_t *netif)
     /* no packet could be read, silently ignore this */
     if (p == NULL)
     {
-        //LWIP_DEBUGF(NETIF_DEBUG, ("ifx_netif_input: p == NULL!\n"));
         return ERR_OK;
     }
 
@@ -486,18 +712,20 @@ err_t ifx_netif_input(netif_t *netif)
     case ETHTYPE_IP:
     case ETHTYPE_ARP:
 #if PPPOE_SUPPORT
-    /* PPPoE packet? */
     case ETHTYPE_PPPOEDISC:
     case ETHTYPE_PPPOE:
 #endif /* PPPOE_SUPPORT */
-
         /* full packet send to tcpip_thread to process */
-        if (netif->input(p, netif) != ERR_OK)
         {
-            LWIP_DEBUGF(NETIF_DEBUG, ("ifx_netif_input: IP input error\n"));
-            pbuf_free(p);
+            uint32 t0 = PROF_NOW();
+            if (netif->input(p, netif) != ERR_OK)
+            {
+                LWIP_DEBUGF(NETIF_DEBUG, ("ifx_netif_input: IP input error\n"));
+                pbuf_free(p);
+            }
+            g_prof_input_ticks += (PROF_NOW() - t0);
+            g_prof_input_cnt++;
         }
-
         break;
 
     default:
@@ -505,6 +733,11 @@ err_t ifx_netif_input(netif_t *netif)
         pbuf_free(p);
         break;
     }
+
+    /* NOTE: the DMA buffer was already released inside low_level_input()
+     * (after the frame was copied into a pool pbuf). Do NOT release it
+     * again here — that would hand the same descriptor back to the GETH
+     * DMA twice and corrupt the ring. */
 
     return ERR_OK;
 }

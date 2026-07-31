@@ -122,7 +122,7 @@ typedef struct _lwiperf_state_tcp {
   u8_t next_num;
   /* 1=start server when client is closed */
   u8_t client_tradeoff_mode;
-  u32_t bytes_transferred;
+  u64_t bytes_transferred;
   lwiperf_settings_t settings;
   u8_t have_settings_buf;
   u8_t specific_remote;
@@ -235,7 +235,11 @@ lwip_tcp_conn_report(lwiperf_state_tcp_t *conn, enum lwiperf_report_type report_
     if (duration_ms == 0) {
       bandwidth_kbitpsec = 0;
     } else {
-      bandwidth_kbitpsec = (conn->bytes_transferred / duration_ms) * 8U;
+      /* Use 64-bit arithmetic: at line rate the byte count exceeds 4 GiB well
+       * before a long iperf run finishes (e.g. ~36 s at 945 Mbit/s), so a 32-bit
+       * accumulator would wrap and make the reported kbit/s collapse. Multiply
+       * first then divide to keep the full resolution of the 64-bit byte count. */
+      bandwidth_kbitpsec = (u32_t)((conn->bytes_transferred * 8ULL) / duration_ms);
     }
     conn->report_fn(conn->report_arg, report_type,
                     &conn->conn_pcb->local_ip, conn->conn_pcb->local_port,

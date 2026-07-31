@@ -49,11 +49,11 @@
 // INCLUDES
 
 #ifndef IFXGETH_MAX_TX_DESCRIPTORS
-#define IFXGETH_MAX_TX_DESCRIPTORS 32
+#define IFXGETH_MAX_TX_DESCRIPTORS 8
 #endif
 
 #ifndef IFXGETH_MAX_RX_DESCRIPTORS
-#define IFXGETH_MAX_RX_DESCRIPTORS 32
+#define IFXGETH_MAX_RX_DESCRIPTORS 8
 #endif
 
 #include "lwip/opt.h"
@@ -133,8 +133,10 @@ typedef struct
 } Ifx_Lwip_Config;
 
 #define IFXGETH_HEADER_LENGTH 14 // words
-#define IFXGETH_MAX_TX_BUFFER_SIZE (2560+IFXGETH_HEADER_LENGTH+2) // bytes
-#define IFXGETH_MAX_RX_BUFFER_SIZE (2560+IFXGETH_HEADER_LENGTH+2) // bytes
+/* 1536 bytes: max standard frame (1522 + CRC 4 = 1526) fits, 32-byte aligned.
+ * Smaller buffers allow more RX descriptors in LMURAM (burst tolerance). */
+#define IFXGETH_MAX_TX_BUFFER_SIZE 1536 // bytes
+#define IFXGETH_MAX_RX_BUFFER_SIZE 1536 // bytes
 
 //________________________________________________________________________________________
 // GLOBAL VARIABLES
@@ -143,6 +145,17 @@ IFX_EXTERN Ifx_Lwip g_Lwip;
 IFX_EXTERN IfxGeth_Eth g_IfxGeth;
 IFX_EXTERN uint8 channel0TxBuffer1[IFXGETH_MAX_TX_DESCRIPTORS][IFXGETH_MAX_TX_BUFFER_SIZE];
 IFX_EXTERN uint8 channel0RxBuffer1[IFXGETH_MAX_RX_DESCRIPTORS][IFXGETH_MAX_RX_BUFFER_SIZE];
+
+/* Multi-core spinlock in LMURAM (shared across cores) */
+IFX_EXTERN volatile uint32 lwip_global_lock;
+
+/* LMURAM descriptor lists (multi-core safe, replaces DSPR0 defaults) */
+IFX_EXTERN IfxGeth_RxDescrList lmu_rxDescrList[IFXGETH_NUM_MODULES][IFXGETH_NUM_RX_CHANNELS];
+IFX_EXTERN IfxGeth_TxDescrList lmu_txDescrList[IFXGETH_NUM_MODULES][IFXGETH_NUM_TX_CHANNELS];
+
+/* TSO scratch buffer (shared, for large TX frames up to ~4KB).
+ * Matches the definition in Ifx_Lwip.c (TSO_TX_BUFFER_SIZE). */
+IFX_EXTERN uint8 tso_tx_buffer[4 * 1024];
 
 //________________________________________________________________________________________
 // FUNCTION PROTOTYPES
@@ -154,6 +167,8 @@ IFX_EXTERN void     Ifx_Lwip_init_with_ip(eth_addr_t ethAddr, ip_addr_t ipAddr, 
 IFX_EXTERN void     Ifx_Lwip_onTimerTick(void);
 IFX_EXTERN void     Ifx_Lwip_pollTimerFlags(void);
 IFX_EXTERN void     Ifx_Lwip_pollReceiveFlags(void);
+IFX_EXTERN void     Ifx_Lwip_lock(void);
+IFX_EXTERN void     Ifx_Lwip_unlock(void);
 IFX_INLINE netif_t *Ifx_Lwip_getNetIf(void);
 IFX_INLINE uint8   *Ifx_Lwip_getIpAddrPtr(void);
 IFX_INLINE uint8   *Ifx_Lwip_getHwAddrPtr(void);

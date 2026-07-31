@@ -37,25 +37,44 @@
 #define BOARDNAME               "AURIX_TC387"     /* Board name, also used as hostname                                    */
 
 #define MEM_ALIGNMENT           4                   /* Set memory alignment to 4 byte (32-bit machine)                      */
-#define MEM_SIZE                (32 * 1024)        /* Size of the Heap (grow to hold larger TCP windows)                   */
+#define MEM_SIZE                (76 * 1024)         /* Heap: PBUF_POOL(32*~1.5KB) + TCP segs + margin, fits DSPR0            */
+#define LWIP_RAM_HEAP_POINTER   lwip_lmuram_heap   /* Heap in LMURAM for multi-core access                                 */
 #define LWIP_DHCP               0                   /* Enable DHCP protocol                                                 */
 #define LWIP_NETCONN            0                   /* Disable Netconn API                                                  */
 #define LWIP_SOCKET             0                   /* Disable the Socket API                                               */
-#define SYS_LIGHTWEIGHT_PROT    0                   /* Disable inter-task protection                                        */
 
 // iperf tcp optimizations
-#define TCP_MSS                 1024
-// #define TCP_SND_BUF             (14 * TCP_MSS)
-// #define TCP_WND                 (14 * TCP_MSS)
-// #define TCP_SND_QUEUELEN        ((2 * TCP_SND_BUF) / TCP_MSS)
-// #define TCP_SNDLOWAT            (TCP_SND_BUF / 4)
-// #define TCP_SNDQUEUELOWAT       (TCP_SND_QUEUELEN / 2)
-// #define MEMP_NUM_TCP_SEG        28
-// #define PBUF_POOL_SIZE          16
+#define TCP_MSS                 1460
+#define TCP_WND                 (44 * TCP_MSS)      /* RX window: 64240 (max without RFC1323 scaling) */
+#define TCP_SND_BUF             (44 * TCP_MSS)      /* TX buffer: 64240 */
+#define MEMP_NUM_TCP_SEG        44                  /* in-flight segments for one stream (window/MSS) */
+#define MEMP_NUM_PBUF           64                  /* PBUF headers available */
+#define PBUF_POOL_SIZE          32                  /* PBUF_POOL: copy-based RX needs one pbuf per frame */
+#define TCP_QUEUE_OOSEQ         1                   /* queue OOO segs: one lost pkt must NOT discard the rest of the window */
+#define TCP_OOSEQ_MAX_PBUFS     16                  /* cap OOO queue so PBUF_POOL is not exhausted */
+#define LWIP_DISABLE_TCP_SANITY_CHECKS 1
+#define LWIP_STATS              0                   /* No statistic counters in hot path */
+#define LWIP_NOASSERT           1                   /* tcp_input runs dozens of asserts per packet - too hot for 1Gbps */
 
-#define ETH_PAD_SIZE            2                   /* Add 2 bytes before the Ethernet header to ensure payload alignment   */
+/* GETH COE: HW verifies/inserts IP/TCP/UDP/ICMP checksums (MAC_CONFIGURATION.IPC + TDES3.CIC) */
+#define CHECKSUM_GEN_IP         0
+#define CHECKSUM_GEN_UDP        0
+#define CHECKSUM_GEN_TCP        0
+#define CHECKSUM_GEN_ICMP       0
+#define CHECKSUM_CHECK_IP       0
+#define CHECKSUM_CHECK_UDP      0
+#define CHECKSUM_CHECK_TCP      0
+#define CHECKSUM_CHECK_ICMP     0
 
-#define __LWIP_DEBUG__                              /* Enable debugging through UART interface                              */
+#define ETH_PAD_SIZE            0                   /* No padding needed                                                    */
+
+/* IMPORTANT: LwIP debug printing goes through the UART. At 115200 baud that is
+ * only ~275 lines/s, so a per-packet LWIP_DEBUGF() in the RX path throttles
+ * throughput to a few Mbit/s. The port (arch/cc.h) REQUIRES LWIP_DEBUG to be
+ * defined (else #error), so we keep __LWIP_DEBUG__ defined but set every
+ * specific debug level (esp. NETIF_DEBUG) to LWIP_DBG_OFF below, which makes
+ * LWIP_DEBUGF() a no-op (zero overhead, no UART traffic). */
+#define __LWIP_DEBUG__                              /* Required by arch/cc.h (do NOT remove) */
 
 #define LWIP_NETIF_EXT_STATUS_CALLBACK  1           /* Enable an extended callback function for netif                       */
 
@@ -67,7 +86,7 @@
 #define IFX_LWIP_DEBUG          LWIP_DBG_OFF        /* IFX LwIP debug level set to OFF                                      */
 #endif
 #define DHCP_DEBUG              LWIP_DBG_OFF        /* Enable DHCP Debug                                                    */
-#define NETIF_DEBUG             LWIP_DBG_ON         /* Enable NETIF Debug                                                   */
+#define NETIF_DEBUG             LWIP_DBG_OFF        /* DISABLED: per-packet UART print kills throughput                    */
 #define LWIP_DBG_TYPES_ON       LWIP_DBG_STATE      /* Enable only module state debug messages                              */
 
 #ifdef __GNUC__

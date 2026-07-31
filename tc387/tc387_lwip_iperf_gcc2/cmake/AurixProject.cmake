@@ -45,7 +45,10 @@ function(aurix_path_is_excluded candidate_path excluded_dirs excluded_files resu
 endfunction()
 
 function(aurix_collect_directory_entries current_dir excluded_dirs excluded_files out_sources out_headers out_include_dirs)
-    file(GLOB directory_entries CONFIGURE_DEPENDS "${current_dir}/*")
+    # 注意: 不使用 CONFIGURE_DEPENDS —— ninja >= 1.13 原生 glob 重检与
+    # LIST_DIRECTORIES 形式不兼容 (FindFirstFileExA 报路径语法错误)。
+    # 新增/删除源文件后请手动重新运行 CMake 配置。
+    file(GLOB directory_entries "${current_dir}/*")
 
     set(local_sources)
     set(local_headers)

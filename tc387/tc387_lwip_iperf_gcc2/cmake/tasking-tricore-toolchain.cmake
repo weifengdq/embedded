@@ -34,6 +34,13 @@ set(CMAKE_ASM_COMPILER_WORKS TRUE CACHE BOOL "Skip ASM compiler test for TASKING
 # 只扫描项目内部文件的依赖，避免 cmake_depends 尝试扫描 TASKING 系统头文件时报错。
 set(CMAKE_DEPENDS_IN_PROJECT_ONLY ON)
 
+# cctc 的 --dep-file 输出带引号路径，ninja >= 1.13 无法处理（FindFirstFileExA 报错）。
+# 编译后追加一步去除 dep 文件中的引号。
+set(CMAKE_C_COMPILE_OBJECT
+    "<CMAKE_C_COMPILER> <DEFINES> <INCLUDES> <FLAGS> --dep-file=<DEP_FILE> -o <OBJECT> -c <SOURCE>"
+    "\"${CMAKE_COMMAND}\" -DDEP_FILE=<DEP_FILE> -P \"${CMAKE_CURRENT_LIST_DIR}/tasking-strip-depfile-quotes.cmake\""
+)
+
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE NEVER)

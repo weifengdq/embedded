@@ -88,10 +88,92 @@
 /******************************************************************************/
 /*------------------------------Global variables------------------------------*/
 /******************************************************************************/
+
+/* ===== Memory layout (performance critical!) =====
+ * GETH DMA shared data (descriptors + frame buffers) lives in LMURAM.
+ *
+ * Rationale (measured): with the buffers in CPU0 DSPR the GETH DMA has to
+ * reach them over SRI through the core's slave port, where it arbitrates
+ * against the core itself. The DMA then cannot drain the 8KB MTL RX FIFO
+ * fast enough and the MAC throttles the link with 802.3x PAUSE frames even
+ * while the CPU sits 70% idle (~21k pause frames per 6s at 550Mbps).
+ * LMURAM is a plain SRI slave with full burst bandwidth and no core
+ * contention, so the DMA runs at line rate.
+ *
+ * The CPU still needs fast access to the RX payload, so it reads the frames
+ * through the CACHED LMU view (0x9xxxxxxx) after invalidating the lines the
+ * DMA just overwrote; descriptors are touched through the NON-CACHED view
+ * (0xBxxxxxxx) so ownership flags are always coherent (see netif.c).
+ *
+ * The lwIP heap is CPU-only, so it stays in zero-waitstate DSPR0. */
+
+#if defined(__TASKING__)
+#pragma section fardata "lmudata"
+#pragma section farbss "lmubss"
+#elif defined(__GNUC__)
+#pragma section ".lmudata" aw
+#endif
+
+/* Multi-core spinlock */
+volatile uint32 lwip_global_lock = 0;
+
+#if defined(__GNUC__)
+#pragma section
+#pragma section ".lmubss" aw
+#endif
+
+/* DMA descriptor lists in LMURAM */
+IfxGeth_RxDescrList lmu_rxDescrList[IFXGETH_NUM_MODULES][IFXGETH_NUM_RX_CHANNELS];
+IfxGeth_TxDescrList lmu_txDescrList[IFXGETH_NUM_MODULES][IFXGETH_NUM_TX_CHANNELS];
+
+/* DMA frame buffers in LMURAM.
+ * 64-byte aligned so that the per-frame cache invalidation done before the
+ * RX copy (netif.c) never covers a neighbouring row: the 1536-byte row
+ * stride is a multiple of the 32-byte cache line. */
+IFX_ALIGN(64) uint8 channel0TxBuffer1[IFXGETH_MAX_TX_DESCRIPTORS][IFXGETH_MAX_TX_BUFFER_SIZE];
+IFX_ALIGN(64) uint8 channel0RxBuffer1[IFXGETH_MAX_RX_DESCRIPTORS][IFXGETH_MAX_RX_BUFFER_SIZE];
+
+/* TSO scratch buffer for oversized TCP segments (payload > MSS).
+ * lwIP sends MSS-sized segments, so the TSO path is inert for iperf. */
+#define TSO_TX_BUFFER_SIZE  (4 * 1024)
+uint8 tso_tx_buffer[TSO_TX_BUFFER_SIZE];
+
+#if defined(__GNUC__)
+#pragma section
+#endif
+
+/* Back to DSPR0 for the CPU-only data */
+#if defined(__TASKING__)
+#pragma section fardata "data_cpu0"
+#pragma section farbss "bss_cpu0"
+#elif defined(__GNUC__)
+#pragma section ".bss_cpu0" aw
+#endif
+
+/* lwIP memory heap: CPU-only (DMA never touches pbuf RAM — TX copies into
+ * DMA buffers, RX copies out of DMA buffers). Zero-waitstate DSPR0.
+ * Must be >= MEM_SIZE_ALIGNED + 2*SIZEOF_STRUCT_MEM. */
+#define LWIP_LMURAM_HEAP_SIZE    (84 * 1024)
+uint8 lwip_lmuram_heap[LWIP_LMURAM_HEAP_SIZE];
+
+/* GETH driver handle: CPU-only software state (never accessed by DMA),
+ * lives in fast core0 DSPR (single-core servicing, see
+ * CPU_WHICH_SERVICE_ETHERNET == 0). */
+IfxGeth_Eth g_IfxGeth;
+
+/* Timer/counter (not shared) */
+volatile uint32 g_TickCount_1ms;
+Ifx_Lwip    g_Lwip;
+uint32 isrTxCount=0;
+uint32 isrRxCount=0;
+
+#if defined(__GNUC__)
+#pragma section
+#endif
+
 #if CPU_WHICH_SERVICE_ETHERNET == 0
     #if defined(__GNUC__)
     #pragma section ".text_cpu0" ax
-    #pragma section ".bss_cpu0" awc0
     #endif
     #if defined(__TASKING__)
     #pragma section code    "text_cpu0"
@@ -206,13 +288,8 @@
 #error "Set CPU_WHICH_SERVICE_ETHERNET to a valid value!"
 #endif
 
-volatile uint32 g_TickCount_1ms;
-Ifx_Lwip    g_Lwip;
-IfxGeth_Eth g_IfxGeth;
-uint32 isrTxCount=0;
-uint32 isrRxCount=0;
-uint8 channel0TxBuffer1[IFXGETH_MAX_TX_DESCRIPTORS][IFXGETH_MAX_TX_BUFFER_SIZE];
-uint8 channel0RxBuffer1[IFXGETH_MAX_RX_DESCRIPTORS][IFXGETH_MAX_RX_BUFFER_SIZE];
+/* Note: g_IfxGeth, channel0TxBuffer1, channel0RxBuffer1 are now in LMURAM
+ * (defined above before the CPU-specific section pragmas). */
 
 
 /******************************************************************************/
@@ -274,8 +351,10 @@ void Ifx_Lwip_pollTimerFlags(void)
     timerFlags       = lwip->timerFlags;
     lwip->timerFlags = 0;
 
-    /* enable interrupts again */
-    IfxCpu_restoreInterrupts(interruptState);
+    /* NOTE: interrupts stay disabled while running the lwIP timer functions:
+     * the RX ISR calls into the (non re-entrant) lwIP core, so tcp timers
+     * must not run concurrently. All handlers below are short (<<100us);
+     * the 32-entry RX ring absorbs line-rate bursts of ~390us. */
 
 #if LWIP_DHCP
     if (timerFlags & IFX_LWIP_FLAG_DHCP_COARSE)
@@ -316,44 +395,136 @@ void Ifx_Lwip_pollTimerFlags(void)
 
     if (timerFlags & IFX_LWIP_FLAG_LINK)
     {
+        static uint8 prevLinkUp = 0xFF; /* 0xFF forces a report on the first poll */
         Ifx_GETH_MAC_PHYIF_CONTROL_STATUS ctrl_status;
         ctrl_status.U = GETH_MAC_PHYIF_CONTROL_STATUS.U;
-        if (ctrl_status.B.LNKSTS == 0)
-            netif_set_link_down(&g_Lwip.netif);
-        else {
-            IfxGeth_Eth *ethernetif = g_Lwip.netif.state;
-            // we set the correct duplexMode
-            if (ctrl_status.B.LNKMOD == 1)
-                IfxGeth_mac_setDuplexMode(ethernetif->gethSFR, IfxGeth_DuplexMode_fullDuplex);
+        uint8 linkUp = (ctrl_status.B.LNKSTS == 0) ? 0 : 1;
+        if (linkUp != prevLinkUp)
+        {
+            prevLinkUp = linkUp;
+            if (linkUp == 0)
+            {
+                netif_set_link_down(&g_Lwip.netif);
+                Ifx_Lwip_printf("LINK   : DOWN");
+            }
             else
-                IfxGeth_mac_setDuplexMode(ethernetif->gethSFR, IfxGeth_DuplexMode_halfDuplex);
-            // we set the correct speed
-            if (ctrl_status.B.LNKSPEED == 0)
-                // 10MBit speed
-                IfxGeth_mac_setLineSpeed(ethernetif->gethSFR, IfxGeth_LineSpeed_10Mbps);
-            else
-                if (ctrl_status.B.LNKSPEED == 1)
-                    // 100MBit speed
-                    IfxGeth_mac_setLineSpeed(ethernetif->gethSFR, IfxGeth_LineSpeed_100Mbps);
+            {
+                IfxGeth_Eth *ethernetif = g_Lwip.netif.state;
+                const char *speedStr;
+                const char *duplexStr;
+
+                /* configure the MAC duplex mode from the PHY status */
+                if (ctrl_status.B.LNKMOD == 1)
+                {
+                    IfxGeth_mac_setDuplexMode(ethernetif->gethSFR, IfxGeth_DuplexMode_fullDuplex);
+                    duplexStr = "full";
+                }
                 else
-                    // 1000MBit speed
+                {
+                    IfxGeth_mac_setDuplexMode(ethernetif->gethSFR, IfxGeth_DuplexMode_halfDuplex);
+                    duplexStr = "half";
+                }
+
+                /* configure the MAC line speed from the PHY status */
+                if (ctrl_status.B.LNKSPEED == 0)
+                {
+                    IfxGeth_mac_setLineSpeed(ethernetif->gethSFR, IfxGeth_LineSpeed_10Mbps);
+                    speedStr = "10M";
+                }
+                else if (ctrl_status.B.LNKSPEED == 1)
+                {
+                    IfxGeth_mac_setLineSpeed(ethernetif->gethSFR, IfxGeth_LineSpeed_100Mbps);
+                    speedStr = "100M";
+                }
+                else
+                {
                     IfxGeth_mac_setLineSpeed(ethernetif->gethSFR, IfxGeth_LineSpeed_1000Mbps);
-            netif_set_link_up(&g_Lwip.netif);
+                    speedStr = "1000M";
+                }
+
+                netif_set_link_up(&g_Lwip.netif);
+                Ifx_Lwip_printf("LINK   : UP   %s %s-duplex", speedStr, duplexStr);
+            }
         }
     }
+
+    /* enable interrupts again */
+    IfxCpu_restoreInterrupts(interruptState);
 }
 
 
-/** \brief Polling the ETH receive event flags */
+/** \brief Acquire the multi-core spinlock (LMURAM).
+ *  Uses IfxCpu_setSpinLock for atomic test-and-set.
+ *  Busy-waits until lock is acquired. */
+void Ifx_Lwip_lock(void)
+{
+    while (IfxCpu_setSpinLock((IfxCpu_spinLock *)&lwip_global_lock, 0xFFFFFFFFu) == FALSE)
+    {
+        /* spin */
+    }
+}
+
+/** \brief Release the multi-core spinlock */
+void Ifx_Lwip_unlock(void)
+{
+    IfxCpu_resetSpinLock((IfxCpu_spinLock *)&lwip_global_lock);
+}
+
+
+/** \brief Polling the ETH receive event flags (original Infineon behavior).
+ *  Added as a safety net alongside the RX ISR. */
+/* Main-loop stall watchdog: tracks the largest gap between two consecutive
+ * polls (STM ticks). A large max gap means something blocked the main loop
+ * long enough to overflow the RX ring. */
+volatile uint32 g_prof_poll_gap_max = 0;
+volatile uint32 g_prof_poll_gap_1ms = 0;   /* gaps > 1 ms */
+volatile uint32 g_diag_rbu = 0;            /* receive-buffer-unavailable events */
+volatile uint32 g_prof_busy_ticks = 0;     /* STM ticks spent draining the RX ring */
+volatile uint32 g_prof_idle_polls = 0;     /* polls that found an empty ring */
+
 void Ifx_Lwip_pollReceiveFlags(void)
 {
-    /**
-     * We are assuming that the only interrupt source is an incoming packet
-     */
-    //while (ethernetif_tc29x_timerFlags_interrupt())
+    static uint32 s_lastPoll = 0;
+    uint32 now = IfxStm_getLower(&MODULE_STM0);
+
+    if (s_lastPoll != 0)
     {
-        ifx_netif_input(&g_Lwip.netif);
+        uint32 gap = now - s_lastPoll;
+        if (gap > g_prof_poll_gap_max)
+        {
+            g_prof_poll_gap_max = gap;
+        }
+        if (gap > IFX_CFG_STM_TICKS_PER_MS)
+        {
+            g_prof_poll_gap_1ms++;
+        }
     }
+
+    int max_pkts = 64;
+    if (IfxGeth_Eth_isRxDataAvailable(&g_IfxGeth, IfxGeth_RxDmaChannel_0) == FALSE)
+    {
+        g_prof_idle_polls++;
+    }
+    else
+    {
+        uint32 tb = IfxStm_getLower(&MODULE_STM0);
+        do
+        {
+            ifx_netif_input(&g_Lwip.netif);
+        } while ((max_pkts-- > 0) && (IfxGeth_Eth_isRxDataAvailable(&g_IfxGeth, IfxGeth_RxDmaChannel_0) != FALSE));
+        g_prof_busy_ticks += (IfxStm_getLower(&MODULE_STM0) - tb);
+    }
+
+    /* If the RX DMA ran out of descriptors (RBU) it may suspend and silently
+     * drop frames at the FIFO. Detect, count and kick it back to life. */
+    if (MODULE_GETH.DMA_CH[0].STATUS.U & (1u << 7)) /* RBU (W1C) */
+    {
+        g_diag_rbu++;
+        MODULE_GETH.DMA_CH[0].STATUS.U = (1u << 7);
+        IfxGeth_Eth_wakeupReceiver(&g_IfxGeth, IfxGeth_RxDmaChannel_0);
+    }
+
+    s_lastPoll = IfxStm_getLower(&MODULE_STM0);
 }
 
 #if LWIP_NETIF_EXT_STATUS_CALLBACK
@@ -436,6 +607,13 @@ void Ifx_Lwip_init_with_ip(eth_addr_t ethAddr, ip_addr_t ipAddr, ip_addr_t netMa
     netif_set_default(&g_Lwip.netif);
     netif_set_up(&g_Lwip.netif);
 
+    Ifx_Lwip_printf("\r\nLWIP   : MAC %02X:%02X:%02X:%02X:%02X:%02X",
+        ethAddr.addr[0], ethAddr.addr[1], ethAddr.addr[2],
+        ethAddr.addr[3], ethAddr.addr[4], ethAddr.addr[5]);
+    Ifx_Lwip_printf("LWIP   : IP  %s", ipaddr_ntoa(&ipAddr));
+    Ifx_Lwip_printf("LWIP   : NM  %s", ipaddr_ntoa(&netMask));
+    Ifx_Lwip_printf("LWIP   : GW  %s", ipaddr_ntoa(&gateway));
+
 #if LWIP_NETIF_HOSTNAME
     g_Lwip.netif.hostname = BOARDNAME;
 #endif
@@ -471,6 +649,12 @@ inline u32_t sys_now(void)
 IFX_INTERRUPT(ISR_Geth_Tx, CPU_WHICH_SERVICE_ETHERNET, ISR_PRIORITY_GETH_TX)
 {
     isrTxCount++;
+
+    /* DMA_CH0_STATUS bits are write-1-clear. TI (bit 0) and NIS (bit 15)
+     * MUST be cleared here, otherwise the GETH keeps its interrupt request
+     * line asserted and this ISR re-fires forever (interrupt storm that
+     * starves the STM tick and the main loop). */
+    MODULE_GETH.DMA_CH[0].STATUS.U = ((1u << 0) | (1u << 15));
 }
 
 /**
@@ -483,6 +667,16 @@ IFX_INTERRUPT(ISR_Geth_Tx, CPU_WHICH_SERVICE_ETHERNET, ISR_PRIORITY_GETH_TX)
 IFX_INTERRUPT(ISR_Geth_Rx, CPU_WHICH_SERVICE_ETHERNET, ISR_PRIORITY_GETH_RX)
 {
     isrRxCount++;
+
+    /* DMA_CH0_STATUS bits are write-1-clear. RI (bit 6) and NIS (bit 15)
+     * MUST be cleared, otherwise the GETH keeps its interrupt request line
+     * asserted and this ISR re-fires forever (interrupt storm that starves
+     * the STM tick and the main loop -> throughput collapse).
+     *
+     * NOTE: no lwIP calls here. The lwIP core is not reentrant; packets are
+     * drained from the RX ring by Ifx_Lwip_pollReceiveFlags() in the main
+     * loop, which spins fast enough to keep up with line rate. */
+    MODULE_GETH.DMA_CH[0].STATUS.U = ((1u << 6) | (1u << 15));
 }
 
 //________________________________________________________________________________________

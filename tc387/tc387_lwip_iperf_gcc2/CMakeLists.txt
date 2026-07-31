@@ -1,5 +1,5 @@
 ﻿cmake_minimum_required(VERSION 3.24)
-project(tc387_lwip_iperf_gcc LANGUAGES C ASM)
+project(tc387_lwip_iperf_gcc2 LANGUAGES C ASM)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
@@ -39,6 +39,12 @@ set(AURIX_EXCLUDED_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/TriCore Release (GCC)"
     CACHE STRING "Directories excluded from recursive source scan"
 )
+# sync_on_halt.c 是 Debug 专用的 "halt 同步" 文件（多核调试时冻结各核），
+# 仅 Debug 构建需要；Release 构建包含它既无意义，又会引入 Configurations/Debug
+# 这个 include 目录，触发 ninja >= 1.13 加载 deps 时对目录路径 stat 报错。
+if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    list(APPEND AURIX_EXCLUDED_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/Configurations/Debug")
+endif()
 set(AURIX_EXCLUDED_FILES "" CACHE STRING "Files excluded from recursive source scan")
 
 aurix_extract_cproject_excluded_dirs(
@@ -82,6 +88,14 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${AURIX_INCLUDE_DIRS})
 
+# GETH DMA 描述符数量（必须全局定义，保证 iLLD 与 lwIP port 编译单元一致）
+# RX 环必须大于 TCP 窗口内的最大在途包数（44），否则线速突发下必然丢包，
+# 触发 Go-Back-N + 客户端 RTO，吞吐崩溃。64 x 1536 = 96KB，放 LMU。
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    IFXGETH_MAX_RX_DESCRIPTORS=64
+    IFXGETH_MAX_TX_DESCRIPTORS=8
+)
+
 # ---------- 工具链特定选项 ----------
 if(AURIX_TOOLCHAIN_TYPE STREQUAL "TASKING")
     # CMake 自动识别 Tasking 6.3 会在 CMAKE_C_FLAGS 中注入 "-O0 -g --iso=99 --strict"，
@@ -100,7 +114,11 @@ if(AURIX_TOOLCHAIN_TYPE STREQUAL "TASKING")
         -D__CPU__=${AURIX_CPU}
         --language=+volatile
         --fp-model=3
-        --tradeoff=4
+        # Release 用速度优先优化。早期怀疑 -O3 重排 DMA 寄存器写导致低吞吐，
+        # 后证实元凶是 ISR 不清中断标志 + MTL FIFO 溢出（已修复），与优化级别无关。
+        $<$<CONFIG:Release>:-O3>
+        $<$<CONFIG:Release>:--tradeoff=0>
+        $<$<NOT:$<CONFIG:Release>>:--tradeoff=4>
         --compact-max-size=200
         -Wc-w544
         -Wc-w557
@@ -146,6 +164,7 @@ else()
         $<$<CONFIG:Debug>:-gdwarf-3>
         $<$<CONFIG:Release>:-O3>
         $<$<CONFIG:Release>:-DNDEBUG>
+        $<$<CONFIG:Release>:-flto>
         $<$<CONFIG:RelWithDebInfo>:-O2>
         $<$<CONFIG:RelWithDebInfo>:-g>
         $<$<CONFIG:RelWithDebInfo>:-DNDEBUG>
@@ -168,6 +187,7 @@ else()
         -T${AURIX_LINKER_SCRIPT}
         -nocrt0
         -mcpu=${AURIX_CPU}
+        $<$<CONFIG:Release>:-flto>
         -Wl,--gc-sections
         -Wl,-Map,${AURIX_MAP_FILE}
     )

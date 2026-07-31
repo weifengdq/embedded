@@ -114,7 +114,6 @@
 #if CPU_WHICH_SERVICE_ETHERNET == 0
     #if defined(__GNUC__)
     #pragma section ".text_cpu0" ax
-    #pragma section ".bss_cpu0" awc0
     #endif
     #if defined(__TASKING__)
     #pragma section code    "text_cpu0"
@@ -274,6 +273,13 @@ uint32 IfxGeth_Eth_Phy_Rtl8211f_init(void)
     IfxGeth_Eth_Phy_Rtl8211f_write_mdio_reg(0, IFXGETH_PHY_RTL8211F_MDIO_LCR, 0x8170);
     IfxGeth_Eth_Phy_Rtl8211f_write_mdio_reg(0, IFXGETH_PHY_RTL8211F_MDIO_EEELCR, 0x0);   // EEE off for all leds
     IfxGeth_Eth_Phy_Rtl8211f_write_mdio_reg(0, IFXGETH_PHY_RTL8211F_MDIO_PAGSR, 0x0);
+
+    /* Advertise IEEE 802.3x PAUSE (+asymmetric) so the link partner honors
+     * the pause frames the MAC sends when its 8KB RX FIFO fills up. Without
+     * this, line-rate bursts overflow the FIFO and packets are lost. */
+    IfxGeth_Eth_Phy_Rtl8211f_read_mdio_reg(0, IFXGETH_PHY_RTL8211F_MDIO_ANAR, &value);
+    value |= 0x0C00;                                                               // PAUSE + ASM_DIR
+    IfxGeth_Eth_Phy_Rtl8211f_write_mdio_reg(0, IFXGETH_PHY_RTL8211F_MDIO_ANAR, value);
 
     IfxGeth_Eth_Phy_Rtl8211f_write_mdio_reg(0, IFXGETH_PHY_RTL8211F_MDIO_BMCR, 0x1200);    // enable auto-negotiation, restart auto-negotiation
 

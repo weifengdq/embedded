@@ -1779,13 +1779,13 @@ SECTIONS
         *(.lmudata)
         *(.lmudata.*)
         . = ALIGN(2);
-    } > lmuram AT> pfls0
+    } > lmuram_nc AT> pfls0
     
     CORE_SEC(.lmubss) : FLAGS(aw)
     {
         *(.lmubss)
         *(.lmubss.*)
-    } > lmuram
+    } > lmuram_nc
 }
 /*Far Const Sections, selectable with patterns and user defined sections*/
 CORE_ID = CPU0;
