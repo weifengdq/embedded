@@ -1,9 +1,9 @@
 <#
 .SYNOPSIS
-    tc364_uart0_gcc CMake 命令行构建脚本（TriCore GCC + TASKING 双工具链）。
+    tc364_can_x8_gcc CMake 命令行构建脚本（TriCore GCC + TASKING 双工具链）。
 
 .PARAMETER Action
-    执行操作: configure | build（默认）| rebuild | clean | download | reset | monitor | all
+    执行操作: configure | build（默认）| rebuild | clean | download | reset | all
 
 .PARAMETER Compiler
     工具链: gcc（默认）| tasking
@@ -32,32 +32,22 @@
 .PARAMETER DasPort
     DAP/DAS 端口索引，默认 0（第一个下载器）。
 
-.PARAMETER SerialPort
-    调试串口名，默认 COM127（Cpu0_Main.c 中 ASCLIN0 波特率 4000000）。
-
-.PARAMETER BaudRate
-    串口波特率，默认 4000000，需与固件 init_uart0() 保持一致。
-
-.PARAMETER MonitorSeconds
-    monitor 动作的读取时长（秒），默认 5。
-
 .EXAMPLE
     .\build.ps1                                        # GCC Debug 编译
     .\build.ps1 -Action download                       # GCC Debug 编译并烧录
-    .\build.ps1 -Action monitor                        # 读取 COM127 输出
     .\build.ps1 -Action reset                          # 仅复位板子
     .\build.ps1 -Compiler tasking                      # TASKING Debug 编译
     .\build.ps1 -Compiler tasking -Action download     # TASKING 编译并烧录
     .\build.ps1 -BuildType Release                     # GCC Release 编译
     .\build.ps1 -Action rebuild -Compiler tasking      # TASKING 清理重编
-    .\build.ps1 -Action all                            # GCC 清理重编 + 烧录 + 串口验证
+    .\build.ps1 -Action all                            # GCC 清理重编 + 烧录
     # 新机器换路径:
     .\build.ps1 -AurixStudioPath "C:\Infineon\AURIX-Studio-1.10.32"
     .\build.ps1 -Compiler tasking -TaskingPath "C:\TASKING\TriCore_v6.4r1"
 #>
 [CmdletBinding()]
 param(
-    [ValidateSet("configure", "build", "rebuild", "clean", "download", "reset", "monitor", "all")]
+    [ValidateSet("configure", "build", "rebuild", "clean", "download", "reset", "all")]
     [string]$Action = "build",
 
     [ValidateSet("gcc", "tasking")]
@@ -68,7 +58,7 @@ param(
 
     [string]$BuildDir = "",
 
-    [string]$TargetName = "tc364_uart0_gcc",
+    [string]$TargetName = "tc364_can_x8_gcc",
 
     # ---- 高层路径（推导 GCC/TASKING/Flasher/make 子路径）----
     [string]$AurixStudioPath = "C:\Infineon\AURIX-Studio-1.10.28",
@@ -80,11 +70,6 @@ param(
     [string]$FlashTool  = "",
 
     [int]$DasPort = 0,
-
-    # ---- 串口调试 ----
-    [string]$SerialPort = "COM127",
-    [int]$BaudRate = 4000000,
-    [int]$MonitorSeconds = 5,
 
     [Alias("h")]
     [switch]$Help
@@ -98,7 +83,7 @@ $ErrorActionPreference = "Stop"
 if ($Help) {
     $helpText = @"
 
-tc364_uart0_gcc 构建脚本（TriCore GCC + TASKING 双工具链）
+tc364_can_x8_gcc 构建脚本（TriCore GCC + TASKING 双工具链）
 
 用法:
   .\build.ps1 [选项]
@@ -110,8 +95,7 @@ tc364_uart0_gcc 构建脚本（TriCore GCC + TASKING 双工具链）
   clean      删除构建目录
   download   编译并烧录到目标板（AURIXFlasher + DAP miniWiggler）
   reset      仅复位目标板
-  monitor    打开串口读取固件输出（含复位 + echo 探测）
-  all        清理重编 + 烧录 + 串口验证
+  all        清理重编 + 烧录
 
 工具链 (-Compiler):
   gcc       TriCore GCC（tricore-gcc11，默认）
@@ -122,7 +106,7 @@ tc364_uart0_gcc 构建脚本（TriCore GCC + TASKING 双工具链）
 
 常用选项:
   -BuildDir <路径>        覆盖构建目录（默认 build/<compiler>）
-  -TargetName <名称>      覆盖输出目标名（默认 tc364_uart0_gcc）
+  -TargetName <名称>      覆盖输出目标名（默认 tc364_can_x8_gcc）
   -AurixStudioPath <路径> AURIX Studio 安装根目录
                           （默认 C:\Infineon\AURIX-Studio-1.10.28）
   -TaskingPath <路径>     TASKING 安装根目录
@@ -131,16 +115,12 @@ tc364_uart0_gcc 构建脚本（TriCore GCC + TASKING 双工具链）
   -TaskingBin <路径>      显式指定 TASKING ctc\bin 目录（覆盖推导）
   -FlashTool <路径>       显式指定烧录工具（AURIXFlasher.exe）
   -DasPort <索引>         DAP/DAS 端口索引（默认 0）
-  -SerialPort <端口>      调试串口名（默认 COM127）
-  -BaudRate <速率>        串口波特率（默认 4000000）
-  -MonitorSeconds <秒>    monitor 读取时长（默认 5）
   -Help / -h              显示本帮助
 
 示例:
   .\build.ps1                                  # GCC Debug 编译
   .\build.ps1 -Action download                 # GCC 编译并烧录
-  .\build.ps1 -Action monitor                  # 读取 COM127 输出
-  .\build.ps1 -Compiler tasking -Action all     # TASKING 清理重编+烧录+验证
+  .\build.ps1 -Compiler tasking -Action all     # TASKING 清理重编+烧录
   .\build.ps1 -AurixStudioPath "C:\Infineon\AURIX-Studio-1.10.32"
   .\build.ps1 -Compiler tasking -TaskingPath "C:\TASKING\TriCore_v6.4r1"
 "@
@@ -317,67 +297,11 @@ function Invoke-Reset {
     }
 }
 
-# 打开串口读取固件输出，并回送一行数据验证 echo 功能。
-function Invoke-Monitor {
-    $available = [System.IO.Ports.SerialPort]::GetPortNames()
-    if ($available -notcontains $SerialPort) {
-        Write-Warning "$SerialPort not found. Available: $($available -join ', ')"
-        return
-    }
-
-    Write-Host "Opening $SerialPort @ $BaudRate ($MonitorSeconds s)..."
-    $sp = New-Object System.IO.Ports.SerialPort $SerialPort, $BaudRate, 'None', 8, 'One'
-    $sp.ReadTimeout  = 500
-    $sp.WriteTimeout = 500
-    $sp.DtrEnable    = $true
-    $sp.RtsEnable    = $true
-
-    try {
-        $sp.Open()
-        $sp.DiscardInBuffer()
-
-        # 复位让固件重新打印欢迎语。
-        # 串口已打开后再复位，可确保开机横幅不会在打开端口前就发完而丢失。
-        try { Invoke-Reset } catch { Write-Warning "Reset skipped: $_" }
-        Start-Sleep -Milliseconds 300
-
-        $deadline = (Get-Date).AddSeconds($MonitorSeconds)
-        $probeSent = $false
-        $sb = New-Object System.Text.StringBuilder
-
-        while ((Get-Date) -lt $deadline) {
-            # 板子启动后发一行数据，验证 echo 回显
-            if (-not $probeSent -and (Get-Date) -gt $deadline.AddSeconds(-($MonitorSeconds - 2))) {
-                $sp.Write("PING`r`n")
-                $probeSent = $true
-            }
-            try {
-                $chunk = $sp.ReadExisting()
-                if ($chunk) { [void]$sb.Append($chunk) }
-            } catch [TimeoutException] { }
-            Start-Sleep -Milliseconds 100
-        }
-
-        $text = $sb.ToString()
-        if ([string]::IsNullOrEmpty($text)) {
-            Write-Warning "No data received on $SerialPort."
-        } else {
-            Write-Host "---- $SerialPort output ----" -ForegroundColor Yellow
-            Write-Host $text
-            Write-Host "---------------------------" -ForegroundColor Yellow
-        }
-    } finally {
-        if ($sp.IsOpen) { $sp.Close() }
-        $sp.Dispose()
-    }
-}
-
 # ------------------------------------------------------------------
 Write-Host ("=== {0} | Compiler={1} | Action={2} | BuildType={3} ===" -f $TargetName, $Compiler, $Action, $BuildType) -ForegroundColor Cyan
 Write-Host "  GccBin     : $GccBin"
 Write-Host "  TaskingBin : $TaskingBin"
 Write-Host "  Flasher    : $defaultAurixFlasher"
-Write-Host "  Serial     : $SerialPort @ $BaudRate"
 
 switch ($Action) {
     "configure" { Invoke-Configure }
@@ -386,8 +310,7 @@ switch ($Action) {
     "clean"     { Invoke-Clean }
     "download"  { Invoke-Download }
     "reset"     { Invoke-Reset }
-    "monitor"   { Invoke-Monitor }
-    "all"       { Invoke-Clean; Invoke-Build; Invoke-Download; Invoke-Monitor }
+    "all"       { Invoke-Clean; Invoke-Build; Invoke-Download }
 }
 
 Write-Host "Done." -ForegroundColor Green

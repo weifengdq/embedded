@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    tc364_uart0_gcc CMake 命令行构建脚本（TriCore GCC + TASKING 双工具链）。
+    tc364_lwip_iperf_gcc CMake 命令行构建脚本（TriCore GCC + TASKING 双工具链）。
 
 .PARAMETER Action
     执行操作: configure | build（默认）| rebuild | clean | download | reset | monitor | all
@@ -68,7 +68,7 @@ param(
 
     [string]$BuildDir = "",
 
-    [string]$TargetName = "tc364_uart0_gcc",
+    [string]$TargetName = "tc364_lwip_iperf_gcc",
 
     # ---- 高层路径（推导 GCC/TASKING/Flasher/make 子路径）----
     [string]$AurixStudioPath = "C:\Infineon\AURIX-Studio-1.10.28",
@@ -83,7 +83,7 @@ param(
 
     # ---- 串口调试 ----
     [string]$SerialPort = "COM127",
-    [int]$BaudRate = 4000000,
+    [int]$BaudRate = 115200,
     [int]$MonitorSeconds = 5,
 
     [Alias("h")]
@@ -98,7 +98,7 @@ $ErrorActionPreference = "Stop"
 if ($Help) {
     $helpText = @"
 
-tc364_uart0_gcc 构建脚本（TriCore GCC + TASKING 双工具链）
+tc364_lwip_iperf_gcc 构建脚本（TriCore GCC + TASKING 双工具链）
 
 用法:
   .\build.ps1 [选项]
@@ -122,7 +122,7 @@ tc364_uart0_gcc 构建脚本（TriCore GCC + TASKING 双工具链）
 
 常用选项:
   -BuildDir <路径>        覆盖构建目录（默认 build/<compiler>）
-  -TargetName <名称>      覆盖输出目标名（默认 tc364_uart0_gcc）
+  -TargetName <名称>      覆盖输出目标名（默认 tc364_lwip_iperf_gcc）
   -AurixStudioPath <路径> AURIX Studio 安装根目录
                           （默认 C:\Infineon\AURIX-Studio-1.10.28）
   -TaskingPath <路径>     TASKING 安装根目录

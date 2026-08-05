@@ -2,7 +2,11 @@
 
 本文档说明如何在不依赖 AURIX Development Studio（ADS）IDE 的情况下，通过 PowerShell + CMake 对 TC364 系列工程进行清理、编译、下载、复位和串口验证。工程同时支持 TriCore GCC 和 TASKING 两种工具链，ADS IDE 功能不受影响。
 
-参考工程：`tc364/tc364_uart0_gcc`（由 `tc364/0_Board_Test_UART0` 拷贝改造而来）。
+参考工程：
+
+- `tc364/tc364_uart0_gcc`（由 `tc364/0_Board_Test_UART0` 拷贝改造而来）—— 验证 GCC/TASKING 双工具链基础流程。
+- `tc364/tc364_can_x8_gcc`（由 `tc364/0_Board_Test_CAN_x8` 拷贝改造而来）—— 多路 CAN 中断工程，验证多 ISR 宏在 GCC 下的拼接正确性。
+- `tc364/tc364_lwip_iperf_gcc`（由 `tc364/0_Board_Test_LwIP_Iperf` 拷贝改造而来）—— LwIP 千兆以太网 + iperf 工程，源文件多（400+），是验证"超长命令行"与"TASKING 链接器单遍扫描"两类坑的典型样本。
 
 ---
 
@@ -373,9 +377,148 @@ set(CMAKE_DEPENDS_IN_PROJECT_ONLY ON)               # 不扫描 TASKING 系统�
 
 **解决** 把复位脚本改写到构建目录下的 `aurix_reset.txt`。
 
+### 8.8 lwIP 工程：对象过多导致 GCC 链接命令行超 32 KB
+
+**现象**（`tc364_lwip_iperf_gcc` 工程，约 400 个源文件）
+
+```
+FAILED: tc364_lwip_iperf_gcc.elf
+... tricore-elf-gcc ... : link failed with exit code No command
+```
+
+`No command` 实际是 Windows `cmd.exe` 32 KB 命令行上限——把 400+ 个 `.obj`
+一次性传给 `tricore-elf-gcc` 时，拼接后的命令行超过限制，gcc 收到的参数被截断、
+实际无可执行命令。
+
+**解决** 先 `add_library(... STATIC <全部源文件>)` 把所有 `.obj` 打成一个 `.a`
+（ar 打包，命令行只有库名一个对象，极短），再让 executable 只链接这一个 `.a`：
+
+```cmake
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/empty.c" "")
+add_library(${PROJECT_NAME}_objs STATIC ${AURIX_SOURCE_FILES} ${AURIX_HEADER_FILES})
+add_executable(${PROJECT_NAME} "${CMAKE_CURRENT_BINARY_DIR}/empty.c")
+target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_objs)
+```
+
+源文件的实际编译发生在 `_objs` 静态库里，因此 `target_include_directories` /
+`target_compile_options` 必须加在 `_objs` 上，而非 executable 上（否则头文件找不到）。
+
+### 8.9 TASKING 链接器 ltc 对单一静态库单遍扫描漏符号
+
+**现象** 上面的"静态库"方案搬到 TASKING 后链接报错：
+
+```
+ltc E106: unresolved external: ifx_netif_input - (Ifx_Lwip.c.obj)
+ltc E106: unresolved external: ifx_netif_init - (Ifx_Lwip.c.obj)
+```
+
+**原因** 两个符号都定义在同一份 `.a` 内的 `netif.c.obj`，被库内靠前的
+`Ifx_Lwip.c.obj` 引用。TASKING 的 `ltc` 对 `.a` 是**单次顺序扫描**：先处理
+`empty.c.obj`，再扫描 `.a`，一旦扫完就不再回头，导致靠后成员的符号未被提取。
+GNU ld 默认多遍扫描、且支持 `--start-group/--end-group`，但 **ltc 不认
+`--start-group`**（会报 `E102: unknown option`），把库重复写两遍也无效（cctc 去重）。
+
+**解决** TASKING 分支不采用静态库中间层，而是**把所有源文件直接编入
+executable**（与 uart0 工程一致）。TASKING 的 `cctc` 在 Ninja 长命令行下会自动
+使用 `@rsp`，不受 32 KB 限制；且直接对象链接本就不存在库内顺序问题：
+
+```cmake
+if(AURIX_TOOLCHAIN_TYPE STREQUAL "TASKING")
+    add_executable(${PROJECT_NAME} ${AURIX_SOURCE_FILES} ${AURIX_HEADER_FILES})
+    set(AURIX_COMPILE_TARGET ${PROJECT_NAME})
+else()
+    # … 静态库方案（见 8.8）…
+    set(AURIX_COMPILE_TARGET ${PROJECT_NAME}_objs)
+endif()
+# 两处 target_compile_options / target_include_directories 改用 ${AURIX_COMPILE_TARGET}
+```
+
+### 8.10 can_x8 工程：GCC 下 ISR 优先级不能用 enum 成员
+
+**现象**（`tc364_can_x8_gcc` 工程）
+
+```
+error: % operator needs absolute expression
+error: symbol 'CAN_TX_ISR_...' already defined
+```
+
+**原因** `IFX_INTERRUPT(isr, vectab, priority)` 宏会把 `priority` 拼进中断向量
+符号名，要求它是**预处理期的绝对常量**。原工程用 `enum { CAN_NUM = 8 }` 的成员
+`CAN_NUM` 参与计算（如 `CAN_PRIORITY + 2 * CAN_NUM + ch`），而 enum 成员不是
+预处理常量，GCC 的汇编器取不到确定值，符号名拼接失败、进而重复定义。
+
+**解决** 新增宏常量 `#define CAN_CH_COUNT 8`，ISR 宏里的优先级表达式改用
+`CAN_CH_COUNT`；运行期赋值的 `priority = CAN_PRIORITY + CAN_NUM + channel` 仍保留
+enum 不变（运行期不需要常量）。
+
+### 8.11 lwIP 固件调试串口波特率为 115200（非 4000000）
+
+`tc364_lwip_iperf_gcc` 的固件调试串口由 `Libraries/UART/UART_Logging.c` 初始化，
+使用 **ASCLIN0 / P14_0 / P14_1 / 115200 8N1**。它的 `build.ps1` 默认波特率已修正
+为 `115200`。而 `tc364_uart0_gcc` 的固件 `init_uart0()` 用的是 `4000000`，两者
+**不一致**，务必与各自固件对应（详见第十二节对照表）。
+
 ---
 
-## 九、常见问题
+## 九、两个新增工程的实测结果
+
+### 9.1 `tc364_can_x8_gcc`（多路 CAN，无需功能验证，仅编译）
+
+| 工具链 | 结果 | 源文件数 | 说明 |
+|--------|------|---------|------|
+| GCC (`-mcpu=tc33xx`) | 通过，0 error / 1 warning | 约 60 | warning 来自 iLLD 库，不影响 |
+| TASKING (`-Ctc36x`) | 通过，0 error / 1 warning | 约 60 | 同上 |
+
+构建命令：
+
+```powershell
+cd C:\github\embedded\tc364\tc364_can_x8_gcc
+.\build.ps1 -Compiler gcc     -Action build
+.\build.ps1 -Compiler tasking -Action build
+```
+
+### 9.2 `tc364_lwip_iperf_gcc`（LwIP 千兆以太网 + iperf）
+
+| 工具链 | 结果 | 对象文件数 | 链接方式 |
+|--------|------|-----------|---------|
+| GCC (`-mcpu=tc33xx`) | 通过，0 error / 1 warning | 406 | 先打包 `.a`，再链接（避 32 KB 限制）|
+| TASKING (`-Ctc36x`) | 通过，0 error / 0 warning | 405 | 直接对象链接（`_objs` 库单遍扫描漏符号）|
+
+构建 / 烧录：
+
+```powershell
+cd C:\github\embedded\tc364\tc364_lwip_iperf_gcc
+.\build.ps1 -Compiler gcc     -Action download   # 编译并烧录（GCC）
+.\build.ps1 -Compiler tasking -Action download   # 编译并烧录（TASKING）
+```
+
+#### 网口验证（ping + iperf）
+
+板子固件静态 IP：`192.168.0.100/24`，网关 `192.168.0.1`，MAC `DE:AD:BE:EF:FE:ED`，
+使用 **GETH（千兆以太网）**，iperf TCP server 默认端口 `5001`。
+
+1. 将电脑网卡配到同网段，例如"以太网"口设为 `192.168.0.2/24`。
+2. 用 `build.ps1 -Action download` 烧录启动后，板子 LwIP 会发起 gratuitous ARP。
+3. 从电脑 `ping 192.168.0.100` 应通。
+4. iperf 吞吐测试（iperf 工具在 `tc364/bak/iperf.exe`）：
+
+   ```powershell
+   cd C:\github\embedded\tc364\bak
+   .\iperf.exe -c 192.168.0.100 -t 10 -i 1      # TCP 上行吞吐
+   .\iperf.exe -c 192.168.0.100 -u -b 100M -t 10 # UDP 吞吐
+   ```
+
+5. iperf 每轮结束会回调 `Cpu0_Main.c` 的 `lwiperf_report()`，通过调试串口
+   （ASCLIN0 @ 115200）打印报告。可用 `.\build.ps1 -Action monitor` 观察
+   （`monitor` 默认 5 秒，iperf 跑 10 秒时建议 `-MonitorSeconds 15`）。
+
+> 注意：该固件**开机不打印 IP / 启动横幅**（仅在开启 `__LWIP_DEBUG__` 时打印
+> `start/end`，且仍不打印 IP）；能否看到串口输出取决于是否触发 iperf report。
+> 网络是否正常的**第一判据是 `ping` 与 `iperf` 结果**，而非串口。
+
+---
+
+## 十、常见问题
 
 **Q：`CMake 3.24 or higher is required`**
 升级 CMake：`winget install Kitware.CMake`。
@@ -392,8 +535,9 @@ set(CMAKE_DEPENDS_IN_PROJECT_ONLY ON)               # 不扫描 TASKING 系统�
 
 **Q：串口没有输出**
 1. 确认 `-SerialPort` 与实际端口一致（`[System.IO.Ports.SerialPort]::GetPortNames()` 可列出）；
-2. 确认波特率与固件 `Cpu0_Main.c` 中 `init_uart0()` 的设置一致（本工程 4000000）；
-3. 确认固件已烧录并已复位启动。
+2. 确认波特率与固件一致：`tc364_uart0_gcc` 为 `4000000`（ASCLIN0，`init_uart0()`），
+   `tc364_lwip_iperf_gcc` 为 `115200`（ASCLIN0，`UART_Logging.c`）；
+3. 确认固件已烧录并已复位启动。`tc364_lwip_iperf_gcc` 开机**不打印**，需触发 iperf 才有输出。
 
 **Q：改了源码但没重新编译**
 `CONFIGURE_DEPENDS` 只在重新运行 CMake 时刷新文件列表。新增/删除文件后建议
@@ -401,3 +545,19 @@ set(CMAKE_DEPENDS_IN_PROJECT_ONLY ON)               # 不扫描 TASKING 系统�
 
 **Q：ADS IDE 还能用吗？**
 能。所有新增文件都不影响 ADS，`.project` / `.cproject` 未做修改，IDE 内编译调试照常。
+
+---
+
+## 十一、三个工程的差异对照表
+
+| 项 | `tc364_uart0_gcc` | `tc364_can_x8_gcc` | `tc364_lwip_iperf_gcc` |
+|----|-------------------|--------------------|------------------------|
+| 源自 | `0_Board_Test_UART0` | `0_Board_Test_CAN_x8` | `0_Board_Test_LwIP_Iperf` |
+| 功能 | UART0 回显 | 8 路 CAN 中断 | LwIP 千兆以太网 + iperf |
+| 源文件数 | ~211 | ~60 | ~400 |
+| 调试串口 | ASCLIN0 @ **4000000** | （同 uart0 风格）| ASCLIN0 @ **115200** |
+| 开机打印 | 有横幅 + echo | 视工程 | **无**（需 iperf 触发）|
+| GCC 链接方式 | 直接对象 | 直接对象 | 静态库 `.a`（避 32 KB）|
+| TASKING 链接方式 | 直接对象 | 直接对象 | 直接对象（ltc 单遍扫描）|
+| 是否需功能验证 | 是（串口 echo）| 否（仅编译）| 是（ping + iperf）|
+| 主要坑 | 8.1–8.7 | 8.10（ISR 优先级常量）| 8.8 / 8.9 / 8.11 |
