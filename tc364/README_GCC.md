@@ -6,7 +6,7 @@
 
 - `tc364/tc364_uart0_gcc`（由 `tc364/0_Board_Test_UART0` 拷贝改造而来）—— 验证 GCC/TASKING 双工具链基础流程。
 - `tc364/tc364_can_x8_gcc`（由 `tc364/0_Board_Test_CAN_x8` 拷贝改造而来）—— 多路 CAN 中断工程，验证多 ISR 宏在 GCC 下的拼接正确性。
-- `tc364/tc364_lwip_iperf_gcc`（由 `tc364/0_Board_Test_LwIP_Iperf` 拷贝改造而来）—— LwIP 千兆以太网 + iperf 工程，源文件多（400+），是验证"超长命令行"与"TASKING 链接器单遍扫描"两类坑的典型样本。
+- `tc364/tc364_lwip_iperf_gcc`（由 `tc364/0_Board_Test_LwIP_Iperf` 拷贝改造而来）—— LwIP 以太网（外接 DP83825 百兆 PHY）+ iperf 工程，源文件多（400+），是验证"超长命令行"与"TASKING 链接器单遍扫描"两类坑的典型样本。
 
 ---
 
@@ -477,7 +477,7 @@ cd C:\github\embedded\tc364\tc364_can_x8_gcc
 .\build.ps1 -Compiler tasking -Action build
 ```
 
-### 9.2 `tc364_lwip_iperf_gcc`（LwIP 千兆以太网 + iperf）
+### 9.2 `tc364_lwip_iperf_gcc`（LwIP 以太网 + iperf，外接 DP83825 百兆 PHY）
 
 | 工具链 | 结果 | 对象文件数 | 链接方式 |
 |--------|------|-----------|---------|
@@ -492,29 +492,55 @@ cd C:\github\embedded\tc364\tc364_lwip_iperf_gcc
 .\build.ps1 -Compiler tasking -Action download   # 编译并烧录（TASKING）
 ```
 
-#### 网口验证（ping + iperf）
+#### 网口验证（ping + iperf）—— 已实测通过
 
 板子固件静态 IP：`192.168.0.100/24`，网关 `192.168.0.1`，MAC `DE:AD:BE:EF:FE:ED`，
-使用 **GETH（千兆以太网）**，iperf TCP server 默认端口 `5001`。
+外接 **DP83825（RMII，百兆 PHY，非千兆）**，GETH 控制器，iperf TCP server 默认端口 `5001`。
+电脑侧网卡设为 `192.168.0.2/24`，与板子同网段。
 
-1. 将电脑网卡配到同网段，例如"以太网"口设为 `192.168.0.2/24`。
-2. 用 `build.ps1 -Action download` 烧录启动后，板子 LwIP 会发起 gratuitous ARP。
-3. 从电脑 `ping 192.168.0.100` 应通。
-4. iperf 吞吐测试（iperf 工具在 `tc364/bak/iperf.exe`）：
+1. 烧录启动：`build.ps1 -Compiler gcc -Action download`（TASKING 同理）。
+2. 板子启动后 LwIP 打印（调试串口 ASCLIN0 @ 115200）：
+
+   ```
+   netif: netmask of interface
+   netif: GW address of interface
+   netif_set_ipaddr: netif address being changed
+
+   netif: new ip address assigned: 192.168.0.100
+   ```
+
+3. `ping 192.168.0.100`：4/4 通，0% loss，TTL=255。GCC 与 TASKING 两个固件均验证通过。
+4. iperf 吞吐（iperf 工具在 `tc364/bak/iperf.exe`）：
 
    ```powershell
    cd C:\github\embedded\tc364\bak
-   .\iperf.exe -c 192.168.0.100 -t 10 -i 1      # TCP 上行吞吐
-   .\iperf.exe -c 192.168.0.100 -u -b 100M -t 10 # UDP 吞吐
+   .\iperf.exe -c 192.168.0.100 -t 10 -i 1
    ```
 
-5. iperf 每轮结束会回调 `Cpu0_Main.c` 的 `lwiperf_report()`，通过调试串口
-   （ASCLIN0 @ 115200）打印报告。可用 `.\build.ps1 -Action monitor` 观察
-   （`monitor` 默认 5 秒，iperf 跑 10 秒时建议 `-MonitorSeconds 15`）。
+   实测 GCC 固件 TCP 上行约 **87 Mbits/sec**（百兆 PHY 接近满速），样例行：
 
-> 注意：该固件**开机不打印 IP / 启动横幅**（仅在开启 `__LWIP_DEBUG__` 时打印
-> `start/end`，且仍不打印 IP）；能否看到串口输出取决于是否触发 iperf report。
-> 网络是否正常的**第一判据是 `ping` 与 `iperf` 结果**，而非串口。
+   ```
+   [ ID] Interval       Transfer     Bandwidth
+   [372]  0.0- 1.0 sec  10.5 MBytes  88.1 Mbits/sec
+   [372]  5.0- 6.0 sec  10.4 MBytes  87.6 Mbits/sec
+   [372]  0.0- 6.6 sec  68.4 MBytes  87.0 Mbits/sec
+   ```
+
+   > 注：iperf 客户端可能报 `Connection reset by peer`——这是板子侧 lwiperf server
+   > 在收到足够数据后主动关闭 socket 所致，吞吐数据已正常取得，不影响验证结论。
+   > iperf 每轮结束会回调 `Cpu0_Main.c` 的 `lwiperf_report()` 经串口打印报告，可用
+   > `.\build.ps1 -Action monitor -MonitorSeconds 15` 观察（需先触发 iperf）。
+
+> 注意：板子**开机即打印** IP 分配信息（固件 `lwipopts.h` 已定义 `__LWIP_DEBUG__`，
+> `initUART()` 会被调用，ASCLIN0 @ 115200）。网络是否正常的**第一判据是 `ping`、
+> `iperf` 结果**；串口打印作为辅助确认手段（`monitor` 动作可观察，默认 5 秒，建议
+> 搭配 `-MonitorSeconds` 延长）。
+
+> **排错提示**：若 `ping` 不通，先确认板子处于**运行态**——`build.ps1 -Action download`
+> 默认 `-start on` 会自动运行；若曾用 AURIXFlasher 单独复位而未启动，板子停在 stopped
+> 态不会发包，此时重新 `download` 或 `download -Action start` 即可。本机侧也可用
+> `Get-NetAdapterStatistics -Name "以太网"` 的 ReceivedBytes 是否为 0 来快速判断
+> （板子运行时 ping 期间应可见接收字节增长）。
 
 ---
 
@@ -553,7 +579,7 @@ cd C:\github\embedded\tc364\tc364_lwip_iperf_gcc
 | 项 | `tc364_uart0_gcc` | `tc364_can_x8_gcc` | `tc364_lwip_iperf_gcc` |
 |----|-------------------|--------------------|------------------------|
 | 源自 | `0_Board_Test_UART0` | `0_Board_Test_CAN_x8` | `0_Board_Test_LwIP_Iperf` |
-| 功能 | UART0 回显 | 8 路 CAN 中断 | LwIP 千兆以太网 + iperf |
+| 功能 | UART0 回显 | 8 路 CAN 中断 | LwIP 以太网 + iperf（百兆 PHY）|
 | 源文件数 | ~211 | ~60 | ~400 |
 | 调试串口 | ASCLIN0 @ **4000000** | （同 uart0 风格）| ASCLIN0 @ **115200** |
 | 开机打印 | 有横幅 + echo | 视工程 | **无**（需 iperf 触发）|
