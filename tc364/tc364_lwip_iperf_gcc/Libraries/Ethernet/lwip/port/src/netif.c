@@ -364,8 +364,32 @@ static pbuf_t *low_level_input(netif_t *netif)
         len = GetRxFrameSize((IfxGeth_RxDescr *)IfxGeth_Eth_getActualRxDescriptor(ethernetif, IfxGeth_RxDmaChannel_0));
     }
 
-    if (len == 0)
+    /* GetRxFrameSize() can return a value that is NOT a valid Ethernet frame
+     * length under sustained 100M load:
+     *   - 0       : no frame (original code's only check)
+     *   - 0xFFFF   : descriptor error flag (CRC / oversize / own-bit race)
+     *   - < 14     : runt frame (garbled RDES length field mid DMA write)
+     *   - > 1522   : oversize / jumbo / garbled length
+     * The original code only checked for len == 0, so a 0xFFFF frame was
+     * treated as a ~65KB frame: pbuf_alloc() built a huge chain whose first
+     * pbuf was shorter than the Ethernet header, and a later
+     * pbuf_header(p, -ETH_HLEN) tripped the assertion
+     *   "increment_magnitude <= p->len"  (pbuf.c:597)
+     * which aborted the TCP session ("Connection reset by peer").
+     * A runt (len < 14) would similarly hand eth_input() a pbuf with len < 14
+     * and trip the same assertion.
+     *
+     * We must (a) reject the bad frame, and (b) STILL release the descriptor
+     * back to the DMA and wake up the receiver, otherwise a single error frame
+     * would permanently stall the 8-entry RX ring. */
+    if ((len == 0) || (len == 0xFFFFU) || (len < 14U) || (len > 1522U))
     {
+        if (IfxGeth_Eth_isRxDataAvailable(ethernetif, IfxGeth_RxDmaChannel_0) != FALSE)
+        {
+            IfxGeth_Eth_freeReceiveBuffer(ethernetif, IfxGeth_RxDmaChannel_0);
+            IfxGeth_Eth_wakeupReceiver(ethernetif, IfxGeth_RxDmaChannel_0);
+            LINK_STATS_INC(link.drop);
+        }
         return (pbuf_t *)0;
     }
 
@@ -405,6 +429,15 @@ static pbuf_t *low_level_input(netif_t *netif)
 
         //acknowledge that packet has been read();
         IfxGeth_Eth_freeReceiveBuffer(ethernetif, IfxGeth_RxDmaChannel_0);
+        /* The normal iLLD receive path (IfxGeth_Eth_getReceiveBuffer) always
+         * calls IfxGeth_Eth_wakeupReceiver() after returning a buffer, because
+         * under sustained load the GETH DMA can enter the "receive buffer
+         * unavailable / receive stopped" state and silently suspend. Without an
+         * explicit wakeup the RX channel stays stalled: no further frames
+         * arrive, the TCP peer keeps retransmitting, and the session eventually
+         * aborts ("Connection reset by peer") after a variable delay. Restart
+         * the receiver here so the ring never stalls at 100M. */
+        IfxGeth_Eth_wakeupReceiver(ethernetif, IfxGeth_RxDmaChannel_0);
 
 #if ETH_PAD_SIZE
         pbuf_header(p, ETH_PAD_SIZE); /* reclaim the padding word */
@@ -414,7 +447,10 @@ static pbuf_t *low_level_input(netif_t *netif)
     }
     else
     {
-        //TODO: drop packet();
+        // pbuf pool exhausted: drop the frame but release the descriptor back
+        // to the DMA, otherwise the RX ring would deadlock after a few drops.
+        IfxGeth_Eth_freeReceiveBuffer(ethernetif, IfxGeth_RxDmaChannel_0);
+        IfxGeth_Eth_wakeupReceiver(ethernetif, IfxGeth_RxDmaChannel_0);
         LINK_STATS_INC(link.memerr);
         LINK_STATS_INC(link.drop);
     }

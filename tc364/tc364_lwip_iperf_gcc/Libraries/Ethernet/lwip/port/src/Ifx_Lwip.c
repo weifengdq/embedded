@@ -348,9 +348,18 @@ void Ifx_Lwip_pollTimerFlags(void)
 void Ifx_Lwip_pollReceiveFlags(void)
 {
     /**
-     * We are assuming that the only interrupt source is an incoming packet
+     * Drain the RX DMA ring completely on every poll. The GETH RX interrupt
+     * only sets a flag (isrRxCount), it does NOT empty the descriptor ring.
+     * If we only process a single frame per main-loop iteration, the ring
+     * (IFXGETH_MAX_RX_DESCRIPTORS entries) fills up under heavy 100M traffic
+     * and frames are dropped, which causes TCP retransmissions, throughput
+     * drops and "Connection reset by peer" errors.
+     *
+     * ifx_netif_input() returns ERR_OK even when no frame is present, so we
+     * gate the loop on the hardware RX-data-available status instead.
      */
-    //while (ethernetif_tc29x_timerFlags_interrupt())
+    IfxGeth_Eth *ethernetif = g_Lwip.netif.state;
+    while (IfxGeth_Eth_isRxDataAvailable(ethernetif, IfxGeth_RxDmaChannel_0) != FALSE)
     {
         ifx_netif_input(&g_Lwip.netif);
     }

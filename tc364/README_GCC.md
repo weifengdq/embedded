@@ -458,6 +458,66 @@ enum 不变（运行期不需要常量）。
 为 `115200`。而 `tc364_uart0_gcc` 的固件 `init_uart0()` 用的是 `4000000`，两者
 **不一致**，务必与各自固件对应（详见第十二节对照表）。
 
+### 8.12 GCC 链接必须用 `--whole-archive`，否则生成"空 ELF"板子不运行
+
+**现象**：`build/gcc/tc364_lwip_iperf_gcc.elf` 的 `text` 段为 0，烧录后板子**完全不工作**
+（串口无任何输出、ping 不通），但链接步骤"成功"（无 error）。`tricore-elf-size` 显示：
+
+```
+   text    data     bss      dec      hex filename
+      0     xxx    yyyyy   zzzzzz    ..... tc364_lwip_iperf_gcc.elf
+```
+
+**根因**：对象文件极多（400+），若直接传给 `tricore-elf-gcc` 链接，Ninja 会生成一个
+约 39 KB 的 `@rsp` 响应文件，命令行超过 Windows **32 KB 上限**，gcc 无法启动。为绕开该限制，
+早期做法先把全部 `.o` 打包成静态库 `libxxx_objs.a`，再让一个**空 stub（`empty.c`，不引用任何
+符号）** 链接该库。但 `-nostartfiles` 下链接器**只抽取"已被引用"的归档成员**，空 stub 不引用
+任何符号 → 没有任何 `.o` 被拉入 → 最终 `text` 段为 0，烧录即"砖"。
+
+**修复**：保留"先打包成静态库"以绕开 32 KB 限制，但用 `--whole-archive` / `--no-whole-archive`
+把整个静态库强制纳入，确保启动代码（`_START`）、`main` 与全部应用对象都被保留：
+
+```cmake
+add_library(${PROJECT_NAME}_objs STATIC ${AURIX_SOURCE_FILES} ${AURIX_HEADER_FILES})
+add_executable(${PROJECT_NAME} "${CMAKE_CURRENT_BINARY_DIR}/empty.c")
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    -Wl,--whole-archive ${PROJECT_NAME}_objs -Wl,--no-whole-archive)
+```
+
+修复后 `text` 段回到 ~129 KB，板子恢复运行。TASKING 分支始终直接编入全部源文件（`ltc` 单遍
+扫描），不受此问题影响。
+
+> 注意：正因该 bug，最初"GCC 87 Mbps"的实测结论其实是 **TASKING 固件**在跑；GCC 固件当时
+> 根本没运行。优化后 GCC 固件实测为 94.8 Mbps（见 §9.2）。
+
+### 8.13 百兆满速下 iperf 抖动 / `Connection reset by peer` 的底层修复
+
+百兆 PHY 满速（≈94.8 Mbps）压测时，原实现会出现吞吐抖动、中途断流、`Connection reset by peer`。
+三处底层缺陷及其修复：
+
+1. **RX 轮询每轮只收一帧**（`Ifx_Lwip_pollReceiveFlags` 只调一次 `ifx_netif_input`）。
+   GETH RX 中断仅置 `isrRxCount` 标志、并不清空描述符环，满速下 8 个描述符很快被抽空→丢帧→
+   TCP 重传。改为**每轮把描述符环抽干**（以 `IfxGeth_Eth_isRxDataAvailable` 为门控循环调用）。
+
+2. **GETH DMA 满速会静默挂起，原 RX 路径漏调 `IfxGeth_Eth_wakeupReceiver()`**。
+   iLLD 的 `IfxGeth_Eth_getReceiveBuffer()` 在归还描述符后总会调 `wakeupReceiver()`，因为
+   持续满速时 DMA 可能进入 "receive buffer unavailable / receive stopped" 并暂停；若不显式
+   wakeup，收包通道**静默卡死**（不再收帧→对端不停重传→会话最终 RST 重置，且卡死时长随流量
+   模式随机，表现为"时好时坏"）。修复：在 `low_level_input` 归还描述符后、以及任何丢帧分支，
+   都补上 `IfxGeth_Eth_wakeupReceiver()`。
+
+3. **坏帧 / 超短帧未过滤**。`GetRxFrameSize()` 在描述符带错误标志时返回 `0xFFFF`，原代码仅判断
+   `len == 0`，于是把 0xFFFF 当 ~65 KB 帧分配，后续 `pbuf_header(p, -ETH_HLEN)` 触发断言
+   `increment_magnitude <= p->len`（pbuf.c:597）并中止会话；满速下偶发的长度字段错乱也可能产生
+   runt 帧（len < 14）。修复：在 `low_level_input` 起始处过滤 `len == 0 / 0xFFFF / < 14 / > 1522`
+   的非法帧，并在丢弃时**同样归还描述符 + wakeup**，避免环形缓冲死锁。
+
+配套在 `lwipopts.h` 上调优（注意 TC364 DSRAM0 仅 192 KB，GETH 缓冲约 42 KB + 栈/CSA 约 20 KB
+为固定开销，堆不能无脑加大，否则 `.bss` 溢出到栈区导致运行期随机崩溃）：
+`MEM_SIZE 25 KB→40 KB`、`PBUF_POOL_SIZE 24→32`、`MEMP_NUM_PBUF/TCP_SEG 48→56`、`TCP_WND/SND_BUF 8*MSS`、
+`LWIPERF_TCP_MAX_IDLE_SEC 10→255`（彻底排除空闲超时误杀长会话）。实测 40 KB 堆即可在 100 s
+满速压测下稳定 94.8 Mbps、不溢出、不重置；吞吐与稳定性提升主要来自上述 RX 路径修复而非堆大小。
+
 ---
 
 ## 九、两个新增工程的实测结果
@@ -517,17 +577,31 @@ cd C:\github\embedded\tc364\tc364_lwip_iperf_gcc
    .\iperf.exe -c 192.168.0.100 -t 10 -i 1
    ```
 
-   实测 GCC 固件 TCP 上行约 **87 Mbits/sec**（百兆 PHY 接近满速），样例行：
+   经吞吐优化后，GCC 固件 TCP 上行稳定 **94.8 Mbits/sec**（百兆 PHY 的线速上限，
+   以太网/IP/TCP 开销后理论极限约 94–95 Mbits/sec），且长时压测（100 s）无掉速、
+   无重置。优化前约 87 Mbits/sec 且大流量下会抖动 / 中途断流。样例行：
 
    ```
    [ ID] Interval       Transfer     Bandwidth
-   [372]  0.0- 1.0 sec  10.5 MBytes  88.1 Mbits/sec
-   [372]  5.0- 6.0 sec  10.4 MBytes  87.6 Mbits/sec
-   [372]  0.0- 6.6 sec  68.4 MBytes  87.0 Mbits/sec
+   [380]  0.0-20.0 sec   226 MBytes  94.8 Mbits/sec
+   [380] 20.0-40.0 sec   226 MBytes  94.8 Mbits/sec
+   [380] 40.0-60.0 sec   226 MBytes  94.8 Mbits/sec
+   [380] 60.0-80.0 sec   226 MBytes  94.8 Mbits/sec
+   [380] 80.0-100.0 sec  226 MBytes  94.8 Mbits/sec
+   [380]  0.0-100.0 sec 1.10 GBytes  94.8 Mbits/sec
    ```
 
-   > 注：iperf 客户端可能报 `Connection reset by peer`——这是板子侧 lwiperf server
-   > 在收到足够数据后主动关闭 socket 所致，吞吐数据已正常取得，不影响验证结论。
+   板子侧串口会打印 `IPERF report: type=0, ... kbits/s: 94760`（`type=0` =
+   `LWIPERF_TCP_DONE_SERVER`，即**正常收满结束**），链路 100 s 全程 0 重置。
+
+   > **关于 `Connection reset by peer`**：早期版本在大流量 / 长时压测下会出现该报错，
+   > 根因并非板子"主动关 socket"，而是三处底层缺陷（详见 §8.12、§8.13）：
+   > (1) GCC 链接未用 `--whole-archive`，生成的是**空 ELF**（text 段为 0），板子根本
+   > 不运行——最初"87 Mbps"实测其实是 TASKING 固件在跑；(2) RX 轮询每轮只收一帧，百兆满速
+   > 下 DMA 环形缓冲被瞬时抽空、帧丢失、TCP 重传；(3) GETH DMA 在持续满速时会进入
+   > "receive buffer unavailable / receive stopped" 挂起态，原 RX 路径漏调了
+   > `IfxGeth_Eth_wakeupReceiver()`，导致收包通道静默卡死。上述均已修复，现在 100 s 压测
+   > 不再出现该错误。
    > iperf 每轮结束会回调 `Cpu0_Main.c` 的 `lwiperf_report()` 经串口打印报告，可用
    > `.\build.ps1 -Action monitor -MonitorSeconds 15` 观察（需先触发 iperf）。
 
@@ -563,7 +637,9 @@ cd C:\github\embedded\tc364\tc364_lwip_iperf_gcc
 1. 确认 `-SerialPort` 与实际端口一致（`[System.IO.Ports.SerialPort]::GetPortNames()` 可列出）；
 2. 确认波特率与固件一致：`tc364_uart0_gcc` 为 `4000000`（ASCLIN0，`init_uart0()`），
    `tc364_lwip_iperf_gcc` 为 `115200`（ASCLIN0，`UART_Logging.c`）；
-3. 确认固件已烧录并已复位启动。`tc364_lwip_iperf_gcc` 开机**不打印**，需触发 iperf 才有输出。
+3. 确认固件已烧录并已复位启动。`tc364_lwip_iperf_gcc` 开机**会打印** IP 分配
+   （`netif: new ip address assigned: 192.168.0.100`），iperf 结束后还会额外打印
+   `IPERF report: ...` 行。
 
 **Q：改了源码但没重新编译**
 `CONFIGURE_DEPENDS` 只在重新运行 CMake 时刷新文件列表。新增/删除文件后建议
@@ -583,7 +659,7 @@ cd C:\github\embedded\tc364\tc364_lwip_iperf_gcc
 | 源文件数 | ~211 | ~60 | ~400 |
 | 调试串口 | ASCLIN0 @ **4000000** | （同 uart0 风格）| ASCLIN0 @ **115200** |
 | 开机打印 | 有横幅 + echo | 视工程 | **无**（需 iperf 触发）|
-| GCC 链接方式 | 直接对象 | 直接对象 | 静态库 `.a`（避 32 KB）|
+| GCC 链接方式 | 直接对象 | 直接对象 | 静态库 `.a` + `--whole-archive`（避 32 KB 且保代码）|
 | TASKING 链接方式 | 直接对象 | 直接对象 | 直接对象（ltc 单遍扫描）|
 | 是否需功能验证 | 是（串口 echo）| 否（仅编译）| 是（ping + iperf）|
 | 主要坑 | 8.1–8.7 | 8.10（ISR 优先级常量）| 8.8 / 8.9 / 8.11 |

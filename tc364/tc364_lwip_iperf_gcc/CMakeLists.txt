@@ -111,11 +111,27 @@ if(AURIX_TOOLCHAIN_TYPE STREQUAL "TASKING")
     target_include_directories(${PROJECT_NAME} PRIVATE ${AURIX_INCLUDE_DIRS})
     set(AURIX_COMPILE_TARGET ${PROJECT_NAME})
 else()
+    # TriCore GCC：lwip 源文件极多（200+），若把全部 .o 直接传给 tricore-elf-gcc
+    # 链接，Ninja 生成的 @rsp 响应文件约 39KB，超过 Windows 32KB 命令行上限，
+    # 导致 gcc 无法启动（"link failed with exit code No command"）。
+    #
+    # 因此先编译成 STATIC 库（ar 打包，命令行极短），再链接进可执行文件。
+    # 但普通链接静态库时，链接器只会抽取“已被引用”的成员；本工程使用
+    # -nostartfiles，可执行文件本体（empty.c）不引用任何库符号，于是没有任何
+    # 成员被拉入，最终生成 **空 ELF（text=0）**，烧录后板子完全不运行。
+    #
+    # 解决办法：用 --whole-archive / --no-whole-archive 把整个静态库强制纳入，
+    # 确保启动代码(_START)、main 以及全部应用对象都被保留，生成的 ELF 才包含
+    # 真正的固件。这样既绕开了 32KB 限制，又不会丢代码。
     file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/empty.c" "")
     add_library(${PROJECT_NAME}_objs STATIC ${AURIX_SOURCE_FILES} ${AURIX_HEADER_FILES})
     add_executable(${PROJECT_NAME} "${CMAKE_CURRENT_BINARY_DIR}/empty.c")
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_objs)
     target_include_directories(${PROJECT_NAME}_objs PRIVATE ${AURIX_INCLUDE_DIRS})
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        -Wl,--whole-archive
+        ${PROJECT_NAME}_objs
+        -Wl,--no-whole-archive
+    )
     set(AURIX_COMPILE_TARGET ${PROJECT_NAME}_objs)
 endif()
 

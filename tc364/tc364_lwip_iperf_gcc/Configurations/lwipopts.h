@@ -37,7 +37,14 @@
 #define BOARDNAME               "AURIX_TC364"       /* Board name, also used as hostname                                    */
 
 #define MEM_ALIGNMENT           4                   /* Set memory alignment to 4 byte (32-bit machine)                      */
-#define MEM_SIZE                (25 * 1024)         /* Size of the Heap                                                     */
+/* TC364 DSRAM0 = 192KB. GETH buffers (~41KB) + stacks/CSA (~20KB) are fixed,
+ * leaving ~130KB for LwIP. MEM_SIZE is the LwIP heap and also contains the
+ * PBUF_POOL (PBUF_POOL_SIZE pbufs of ~1554 bytes each). Keep it modest so .bss
+ * ends well below the CPU0 stack/ustack at 0x7002CE00 (~184KB). 48KB heap holds
+ * a 32-pbuf pool (~50KB... see note) plus MEMP/TCP buffers; this matches the
+ * original example and leaves headroom for the 100M RX burst because the RX path
+ * now wakes the DMA and never stalls (see README §8.13). */
+#define MEM_SIZE                (40 * 1024)
 #define LWIP_DHCP               0                   /* Disable DHCP protocol                                                */
 #define LWIP_NETCONN            0                   /* Disable Netconn API                                                  */
 #define LWIP_SOCKET             0                   /* Disable the Socket API                                               */
@@ -45,7 +52,18 @@
 
 // iperf tcp optimizations
 #define TCP_MSS                 1460                /* Set Maximum Segment Size to 1460 bytes (Ethernet)                       */
-// #define TCP_SND_BUF             (4 * TCP_MSS)  /* Set TCP sender buffer space to 4 times MSS                          */
+#define TCP_WND                 (8 * TCP_MSS)       /* RX window: 8*MSS (~11.4KB); at 100M/1ms RTT the bandwidth-delay product ~12KB, so this already saturates the link */
+#define TCP_SND_BUF             (8 * TCP_MSS)       /* TX buffer: 8*MSS (~11.4KB) avoids stalling under load               */
+#define TCP_SND_QUEUELEN        ((4 * (TCP_SND_BUF) + (TCP_MSS - 1)) / (TCP_MSS)) /* segments allowed in send queue */
+#define PBUF_POOL_SIZE          36                  /* Pbufs in the pool (~36*1554 = 56KB, fits in MEM_SIZE); absorbs 100M RX bursts */
+#define MEMP_NUM_PBUF           56                  /* Number of PBUF structures                                            */
+#define MEMP_NUM_TCP_SEG        56                  /* Number of TCP segments (raised from default for 100M sustained load)  */
+#define MEMP_NUM_TCP_PCB        16                  /* Concurrent TCP PCBs                                                  */
+
+/* lwiperf: raise the idle timeout far above any legitimate transfer so a
+ * momentary gap in the data stream can never abort a long iperf session.
+ * Capped at 255 (u8_t) -> ~255s of true idle tolerance. */
+#define LWIPERF_TCP_MAX_IDLE_SEC 255U
 
 #define ETH_PAD_SIZE            2                   /* Add 2 bytes before the Ethernet header to ensure payload alignment   */
 
