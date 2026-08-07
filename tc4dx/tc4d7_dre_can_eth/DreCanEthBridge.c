@@ -32,7 +32,7 @@
 #define TC4D7_CAN_CRE_BASE_OFFSET 0x0800U
 
 #define DRE_ETH_PORT_INDEX 0U
-#define DRE_ETH_PHY_ADDR 1U
+#define DRE_ETH_PHY_ADDR BOARD_GETH0_P0_PHYADR
 #define DRE_ETH_NTSCF_OFFSET 14U
 #define DRE_ETH_PAYLOAD_LENGTH 1484U
 
@@ -50,11 +50,13 @@ static IfxCan_Can_Node g_canNode;
 static IfxDre_Dre g_dre;
 static IfxGeth_Eth g_geth;
 static phy_t g_phy;
+static uint8 g_macAddress[6];
 
 static uint32 g_canRxWords[16];
 
 static uint32 g_lastLinkPollTick;
 static boolean g_linkLogged;
+static boolean g_probeFrameSent;
 
 IFX_ALIGN(8) static uint8 g_channel0TxBuffer[IFXGETH_MAX_TX_DESCRIPTORS][DRE_GETH_MAX_BUFFER_SIZE];
 IFX_ALIGN(8) static uint8 g_channel0RxBuffer[IFXGETH_MAX_RX_DESCRIPTORS][DRE_GETH_MAX_BUFFER_SIZE];
@@ -230,6 +232,32 @@ static void DreCanEthBridge_mdioWrite(uint8 phyAddr, uint8 devAddr, uint16 regAd
     }
 }
 
+static void DreCanEthBridge_sendRawProbeFrame(void)
+{
+    static const uint8 destinationMac[6] = {0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU};
+    static const uint8 payload[] = "TC4D7 GETH TX PROBE";
+    uint8 *txBuffer;
+    uint32 payloadLength = (uint32)(sizeof(payload) - 1U);
+    uint32 frameLength = 14U + payloadLength;
+
+    txBuffer = (uint8 *)IfxGeth_Eth_waitTransmitBuffer(&g_geth, IfxGeth_TxDmaChannel_0);
+
+    if (txBuffer == NULL_PTR)
+    {
+        printf("ETH probe: no free TX buffer.\r\n");
+        return;
+    }
+
+    memcpy(&txBuffer[0], destinationMac, 6U);
+    memcpy(&txBuffer[6], g_macAddress, sizeof(g_macAddress));
+    txBuffer[12] = 0x88U;
+    txBuffer[13] = 0xB5U;
+    memcpy(&txBuffer[14], payload, payloadLength);
+
+    IfxGeth_Eth_sendTransmitBuffer(&g_geth, IfxGeth_PortIndex_0, frameLength, IfxGeth_TxDmaChannel_0);
+    printf("ETH probe frame sent: eth.type=0x88B5, len=%lu.\r\n", (unsigned long)frameLength);
+}
+
 static void DreCanEthBridge_applyLinkState(void)
 {
     Ifx_GETH *geth = &MODULE_GETH0;
@@ -268,6 +296,12 @@ static void DreCanEthBridge_applyLinkState(void)
 
     IfxGeth_startRx(geth, DRE_ETH_PORT_INDEX);
     IfxGeth_startTx(geth, DRE_ETH_PORT_INDEX);
+
+    if (g_probeFrameSent == FALSE)
+    {
+        g_probeFrameSent = TRUE;
+        DreCanEthBridge_sendRawProbeFrame();
+    }
 
     if (g_linkLogged == FALSE)
     {
@@ -619,6 +653,8 @@ void DreCanEthBridge_init(const uint8 *macAddress)
 {
     g_lastLinkPollTick = 0U;
     g_linkLogged = FALSE;
+    g_probeFrameSent = FALSE;
+    memcpy(g_macAddress, macAddress, sizeof(g_macAddress));
 
     DreCanEthBridge_initCan();
     DreCanEthBridge_initEthernet(macAddress);

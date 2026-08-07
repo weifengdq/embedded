@@ -8,7 +8,7 @@
 
 - 构建目标已从 `tc4d7_lwip_iperf` 改为 `tc4d7_dre_can_eth`。
 - `build.ps1` 默认工具链路径已切换到 `C:/Infineon/AURIX-Studio-1.10.36/tools/Compilers/tricore-gcc11/bin`。
-- `build.ps1` 默认下载工具路径已切换到 `C:/Infineon/AURIX-Studio-1.10.36/tools/AurixFlasherSoftwareTool_v3.0.14/AURIXFlasher.exe`。
+- `build.ps1` 默认下载工具路径已切换到 `C:/Infineon/AURIX-Studio-1.10.36/tools/AurixFlasherSoftwareTool_v3.0.18/AURIXFlasher.exe`。
 - 工程内 `Libraries/IfxLldVersion.h`、`Libraries/iLLD`、`Libraries/Infra`、`Libraries/Service` 已替换为 `tc4dx/ref/illd_release_tc4x-main/src/Libraries` 中的 `iLLD-TC4-v2.6.0`。
 - 旧的 lwIP/iperf 业务路径已从主流程中移除，当前主流程进入 DRE bridge。
 
@@ -133,12 +133,26 @@
 - 把工程内 iLLD/Infra/Service 升级到 `iLLD-TC4-v2.6.0`
 - 处理了 Windows + TriCore GCC 链接 response-file 问题
 - 重新完成 Debug 构建
+- 首次实机下载确认本机实际 flasher 版本目录为 `AurixFlasherSoftwareTool_v3.0.18`
+- 首次串口启动日志保存在 `tc4dx/ref/log/tc4d7_dre_can_eth_serial_boot_20260807_161013.log`
+- 根据启动日志把 bridge 中硬编码的 PHY 地址从 `1` 修正为板级宏 `BOARD_GETH0_P0_PHYADR (= 0)`
+- 二次实机下载与串口回归通过，日志保存在 `tc4dx/ref/log/tc4d7_dre_can_eth_serial_boot_20260807_161143.log`
+- 二次启动日志确认 `ETH link up: 100M full duplex.`，说明 GETH0 + DP83825I bring-up 已恢复
+- 在 `0x22F0` 抓包为空的前提下，增加一次性 `GETH TX` 原始探针帧（EtherType `0x88B5`）用于区分 `GETH TX` 与 `DRE TX` 故障段
+- 三次串口日志保存在 `tc4dx/ref/log/tc4d7_dre_can_eth_serial_boot_20260807_162747.log`，已确认启动阶段执行了 `ETH probe frame sent: eth.type=0x88B5, len=33.`
+- PC 侧抓包摘要保存在 `tc4dx/ref/log/tc4d7_dre_can_eth_can_to_eth_20260807_161447.txt`、`tc4dx/ref/log/tc4d7_dre_can_eth_ethsrc_20260807_161534.txt`、`tc4dx/ref/log/tc4d7_dre_can_eth_probe_20260807_162834.txt`
+- 当前证据显示：板上软件路径已经执行到 `GETH TX probe send`，但 PC 侧仍未观测到任何 `eth.src = 44:B7:D0:ED:AE:B9` 或 `eth.type = 0x88B5/0x22F0` 的出站帧
 
 ## 验证记录
 
 已完成：
 
 - `.\build.ps1 -Action rebuild -BuildType Debug`
+- `.\build.ps1 -Action download -BuildType Debug`
+- `COM130` 启动串口回归，已确认 banner、EEPROM MAC、链路建立日志
+- `COM130` 已确认启动阶段执行一次 `GETH TX` 原始探针发包
+- `gs_usb_x can0` 已按 `500K/2M CAN FD+BRS` 发送测试报文
+- `tshark` 已在候选有线网卡上完成多轮抓包
 - 成功生成：
   - `build/tc4d7_dre_can_eth.elf`
   - `build/tc4d7_dre_can_eth.hex`
@@ -146,9 +160,9 @@
 
 尚未完成：
 
-- 板上下载与串口启动日志确认
-- 使用 `gs_usb_x can0` 对 `CAN01` 的实机互转验证
-- 用 `Wireshark/tshark` 抓取并确认 `0x22F0` ACF/AVTP 帧内容
+- 确认 PC 实际连接的是哪一个 `I350` 端口，以及当前 `tshark` 抓包接口是否就是与 TC4D7 相连的物理口
+- 确认 `GETH TX` 原始探针帧为何未在 PC 侧出现
+- 在 `GETH TX` 被 PC 侧观测到后，再继续确认 `0x22F0` ACF/AVTP 帧内容
 - PC 侧主动构造 Ethernet -> CAN 的 ACF 注入测试
 
 ## 建议的上板验证步骤

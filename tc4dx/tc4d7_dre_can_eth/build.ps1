@@ -21,7 +21,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$defaultAurixFlasher = "C:\Infineon\AURIX-Studio-1.10.36\tools\AurixFlasherSoftwareTool_v3.0.14\AURIXFlasher.exe"
+$defaultAurixFlasher = "C:\Infineon\AURIX-Studio-1.10.36\tools\AurixFlasherSoftwareTool_v3.0.18\AURIXFlasher.exe"
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $buildPath = Join-Path $projectRoot $BuildDir
 $toolchainFile = Join-Path $projectRoot "cmake/tricore-gcc-toolchain.cmake"
