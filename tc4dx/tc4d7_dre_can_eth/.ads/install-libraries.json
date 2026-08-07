@@ -1,0 +1,121 @@
+{
+	"name" : "Install AURIX Libraries and Linker scripts",
+	"maps": [
+		{"variable": "device", "from": "TC4D7XP_AB-Step_MC_COM", "to": "TC4DA"},
+		{"variable": "device", "from": "TC4D7XE_AB-Step_MC_COM", "to": "TC4DA"},
+		{"variable": "device", "from": "TC4D7XQ_AB-Step_MC_COM", "to": "TC4DA"},
+		{"variable": "device", "from": "TC4D9XP_AB-Step_MC_COM", "to": "TC4DA"},
+		{"variable": "device", "from": "TC4D9XE_AB-Step_MC_COM", "to": "TC4DA"},
+		{"variable": "device", "from": "TC4D9XQ_A-Step_MC_COM", "to": "TC4DA"}
+	],
+	"commands" : [
+		{
+			"type": "CONTENT",
+			"enabledWhen": [
+				{
+					"value": "${device#remap}",
+					"equals": "TC4DA"
+				}
+			],
+			"from": "iLLDs/Full_Set/iLLD_2_4_0__TC4DA.zip",
+			"to": "/Libraries",
+			"recipe": ".ads/install.json"
+		},
+		{
+			"type": "CONTENT",
+			"from": "Linker_conf/Tasking/${device#remap}/TriCore",
+			"to": "/",
+			"enabledWhen": [
+				{
+					"value": "${architectures}",
+					"notContains": "arc"
+				},
+				{
+					"value": "${architectures}",
+					"notContains": "scr"
+				}
+			]
+		},
+		{
+			"type": "CONTENT",
+			"from": "Linker_conf/Tasking/${device#remap}/SCR",
+			"to": "/",
+			"enabledWhen": [
+				{
+					"value": "${architectures}",
+					"contains": "scr"
+				}
+			]
+		},
+		{
+			"type": "CONTENT",
+			"from": "Linker_conf/GCC/${device#remap}/TriCore",
+			"to": "/",
+			"enabledWhen": [
+				{
+					"value": "${architectures}",
+					"notContains": "arc"
+				},
+				{
+					"value": "${architectures}",
+					"notContains": "scr"
+				},
+				{
+					"value": "${device-without-templates}",
+					"notEquals": "true"
+				}
+			]
+		},
+		{
+			"type": "CONTENT",
+			"from": "Linker_conf/GCC/${device#remap}/SCR",
+			"to": "/",
+			"enabledWhen": [
+				{
+					"value": "${architectures}",
+					"contains": "scr"
+				},
+				{
+					"value": "${device-without-templates}",
+					"notEquals": "true"
+				}
+			]
+		},
+		{
+			"type": "CONTENT",
+			"from": "Linker_conf/LLVM/${device#remap}/TriCore",
+			"to": "/",
+			"enabledWhen": [
+				{
+					"value": "${architectures}",
+					"notContains": "arc"
+				},
+				{
+					"value": "${architectures}",
+					"notContains": "scr"
+				},
+				{
+					"value": "${device-without-templates}",
+					"notEquals": "true"
+				}
+			]
+		},
+		{
+			"type": "CONTENT",
+			"from": "Linker_conf/LLVM/${device#remap}/SCR",
+			"to": "/",
+			"enabledWhen": [
+				{
+					"value": "${architectures}",
+					"contains": "scr"
+				},
+				{
+					"value": "${device-without-templates}",
+					"notEquals": "true"
+				}
+			]
+		},
+		{"type": "CONTENT", "from": ".ads", "to": "/.ads"},
+		{"type": "CONTENT", "from": "package.json", "to": "/.ads/package.json"}
+	]
+}
