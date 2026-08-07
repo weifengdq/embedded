@@ -1,173 +1,174 @@
-# tc4d7_lwip_iperf
+# tc4d7_dre_can_eth
 
-这个工程基于 tc4d7_lwip_ping 改造，用于在 KIT_A3G_TC4D7_LITE 上验证 lwIP 静态 IP + iperf TCP 吞吐测试。
+这个工程从 `tc4d7_lwip_iperf` 拷贝重命名而来，当前已经改造成一个面向 TC4D7 的 DRE CAN/Ethernet bridge bring-up 工程。
 
-工程特点：
+本次工作目标是让 TC4D7 的 `CAN01` 和 `GETH0 Port0` 之间可以通过 DRE 完成 CAN 报文与以太网 IEEE 1722 ACF/AVTP 帧的互转，同时把工具链和 vendor 库升级到新的环境版本。
 
-- 保留 UART0 printf 输出，串口参数为 115200-8-N-1。
-- 通过 I2C0 读取板上 24AA02E48 EEPROM 中的 EUI-48 作为以太网 MAC 地址。
-- 使用 TC4D7 Lite Kit 的 GETH0 Port0 + RMII + DP83825I。
-- 使用 lwIP 2.2.1，NO_SYS 模式，静态 IP 为 192.168.0.100。
-- 板端启动 lwIP 自带的 iperf TCP server，默认监听 5001 端口。
+## 当前状态
 
-## 目录来源
+- 构建目标已从 `tc4d7_lwip_iperf` 改为 `tc4d7_dre_can_eth`。
+- `build.ps1` 默认工具链路径已切换到 `C:/Infineon/AURIX-Studio-1.10.36/tools/Compilers/tricore-gcc11/bin`。
+- `build.ps1` 默认下载工具路径已切换到 `C:/Infineon/AURIX-Studio-1.10.36/tools/AurixFlasherSoftwareTool_v3.0.14/AURIXFlasher.exe`。
+- 工程内 `Libraries/IfxLldVersion.h`、`Libraries/iLLD`、`Libraries/Infra`、`Libraries/Service` 已替换为 `tc4dx/ref/illd_release_tc4x-main/src/Libraries` 中的 `iLLD-TC4-v2.6.0`。
+- 旧的 lwIP/iperf 业务路径已从主流程中移除，当前主流程进入 DRE bridge。
 
-- lwIP 栈源码来自 tc4dx/ref/lwip-2.2.1。
-- TC4D7 以太网底层初始化参考 tc4dx/ref/iLLD_TC4D7_lite_kit_ADS_ETH_Demo。
-- EEPROM MAC 读取逻辑参考 tc4dx/tc4d7_i2c_eeprom_eui。
-- iperf 应用参考 tc4dx/ref/contrib-2.1.0/examples/lwiperf 以及 lwIP 2.2.1 自带的 src/apps/lwiperf。
+## 实现概览
 
-## 网络参数
+### 1. CAN -> Ethernet
 
-- IP 地址：192.168.0.100
-- 子网掩码：255.255.255.0
-- 网关：192.168.0.1
+当前实现不是“纯硬件 CAN 自动入 DRE”，而是下面这条较稳妥的首版路径：
 
-## 硬件连接
+1. CPU 轮询 `CAN01 (MODULE_CAN0 / Node1)` 的 `Rx FIFO0`。
+2. 收到 CAN/CAN FD 报文后，软件把报文内容填入 CRE `RHBUF0` 兼容格式。
+3. 软件调用 `IfxCan_Can_triggerDebugMessageToDre()` 对 `RHBUF0` 做 `SWTRIG`。
+4. DRE 根据 `RHBUF0.UCRH.DID = IfxCan_DestinationId_Ethernet1`，把报文打包成 Ethernet ACF/AVTP 帧并送往 `EOBUF0`。
+5. `EOBUF0` 通过 `GETH0 DMA Channel 0` 发出。
 
-默认按 TC4D7 Lite 板卡原生连接使用：
+这条路径里，真正的 CAN -> Ethernet 封装仍由 DRE 完成；CPU 只负责把 CAN Rx FIFO 中的数据灌入 CRE host buffer 并触发 DRE。
 
-- GETH0 Port0
-- RMII
-- PHY：DP83825I
-- EEPROM：24AA02E48，I2C0，SCL=P13.1，SDA=P13.2
-- 调试串口：UART0，TX=P14.0，RX=P14.1
+### 2. Ethernet -> CAN
 
-## 构建环境
+当前实现采用 DRE 直接解析与转发：
 
-已按工程脚本默认值配置以下工具：
+1. `GETH0 DMA Channel 0` 接收 RMII + DP83825I 上来的以太网帧。
+2. DRE `RETHDL0 + EIBUF0` 关联到该 Rx descriptor list。
+3. `Stream Filter 0` 当前配置为“全接收”范围匹配。
+4. `RT0 element 0` 当前配置为“全接收 CAN ID -> 单播到 CAN0_Node1”。
+5. DRE 解析 ACF 中的 CAN 报文后，直接转发到 `CAN01`。
 
-- CMake 3.24 或更新版本
-- Ninja
-- AURIX GNU Toolchain
-- AURIXFlasher.exe（如需下载）
+## 关键配置
 
-build.ps1 的默认工具链路径为：
+### CAN 侧
 
-- C:/Infineon/AURIX-Studio-1.10.28/tools/Compilers/tricore-gcc11/bin
+- 物理通道：`CAN01`
+- 节点：`MODULE_CAN0 / Node1`
+- 引脚：
+  - `TX = P01.3`
+  - `RX = P01.4`
+  - `STB = P03.5`
+- 位时序：
+  - 仲裁段：`500 kbit/s @ 80%`
+  - 数据段：`2 Mbit/s @ 80%`
+- 当前接收策略：标准帧和扩展帧都全接收，统一进入 `Rx FIFO0`
 
-如果你的安装路径不同，可在命令中覆盖 ToolchainBin 参数。
+### Ethernet 侧
 
-## 构建步骤
+- 接口：`GETH0 Port0`
+- 物理层：`RMII + DP83825I`
+- DMA：`Tx Channel 0` / `Rx Channel 0`
+- MAC 地址：优先从板上 EEPROM 读取；失败则回退到本地管理地址 `02:00:5E:4D:70:01`
+- 当前 `EOBUF0` 发包头配置：
+  - 目标 MAC：`FF:FF:FF:FF:FF:FF`
+  - 源 MAC：板卡 MAC
+  - EtherType：`0x22F0`
+  - `triggerMode = frameCount`
+  - `triggerFillLevel = 1`
 
-在工程目录 tc4dx/tc4d7_lwip_iperf 下执行：
+### DRE 侧
+
+- `Stream Filter 0`：当前配置为 64-bit Stream ID 全范围接收
+- `RT0 element 0`：当前配置为全 CAN ID 接收并转发到 `IfxCan_DestinationId_Can0_Node1`
+- `EIBUF0`：`ntscfStartAddress = 14`，按未打 VLAN 的以太网头偏移处理 NTSCF
+- `EOBUF0`：用于 DRE 打包后输出到 Ethernet1
+
+## 工程结构变化
+
+### 新增模块
+
+- `DreCanEthBridge.c`
+- `DreCanEthBridge.h`
+
+这个模块接管了：
+
+- CAN01 初始化
+- GETH0/PHY 初始化
+- DRE 初始化
+- 主循环轮询
+- DRE 状态清理
+
+### 构建系统调整
+
+为了绕过 Windows 下 TriCore `ld.exe` 对临时 `@response-file` 的处理问题，当前 `CMakeLists.txt` 额外做了两项调整：
+
+1. 旧的 `lwIP/iperf` 业务源码不再编译进目标。
+2. 最终链接改为：
+   - 启动相关对象直接参与链接
+   - 其他源文件先打进 `libtc4d7_dre_can_eth_support.a`
+
+这样可以显著减少最终链接命令上的对象数量，避免 `ld.exe: cannot find @C:\WINDOWS\TEMP\ccXXXXXX` 这一类 response-file 兼容问题。
+
+## 构建与下载
+
+### Debug 重建
 
 ```powershell
 .\build.ps1 -Action rebuild -BuildType Debug
 ```
 
-如果只需要普通构建：
-
-```powershell
-.\build.ps1 -Action build -BuildType Debug
-```
-
-如果需要 Release：
+### Release 重建
 
 ```powershell
 .\build.ps1 -Action rebuild -BuildType Release
 ```
 
-生成物位于 build 目录，关键文件包括：
-
-- tc4d7_lwip_iperf.elf
-- tc4d7_lwip_iperf.hex
-- tc4d7_lwip_iperf.map
-
-## 下载到板卡
-
-若本机已安装 AURIXFlasher，并且默认路径有效，可直接执行：
+### 下载
 
 ```powershell
 .\build.ps1 -Action download -BuildType Debug
 ```
 
-或一步完成构建加下载：
+### 一步完成构建和下载
 
 ```powershell
 .\build.ps1 -Action all -BuildType Debug
 ```
 
-如果默认下载工具路径不对，可以手动指定：
+## 本次留痕
 
-```powershell
-.\build.ps1 -Action download -BuildType Debug -FlashTool "你的AURIXFlasher.exe路径"
-```
+### 2026-08-07
 
-## 运行与测试
+- 把工程主目标从 `lwIP iperf` 切换为 `DRE CAN/Ethernet bridge`
+- 新增 `DreCanEthBridge` 模块
+- 把默认工具链/下载工具路径升级到 `AURIX-Studio-1.10.36`
+- 把工程内 iLLD/Infra/Service 升级到 `iLLD-TC4-v2.6.0`
+- 处理了 Windows + TriCore GCC 链接 response-file 问题
+- 重新完成 Debug 构建
 
-1. 上电后打开串口终端，设置为 115200-8-N-1。
-2. 复位板卡。
-3. 观察串口日志，正常情况下会打印：
-   - 启动横幅
+## 验证记录
+
+已完成：
+
+- `.\build.ps1 -Action rebuild -BuildType Debug`
+- 成功生成：
+  - `build/tc4d7_dre_can_eth.elf`
+  - `build/tc4d7_dre_can_eth.hex`
+  - `build/tc4d7_dre_can_eth.map`
+
+尚未完成：
+
+- 板上下载与串口启动日志确认
+- 使用 `gs_usb_x can0` 对 `CAN01` 的实机互转验证
+- 用 `Wireshark/tshark` 抓取并确认 `0x22F0` ACF/AVTP 帧内容
+- PC 侧主动构造 Ethernet -> CAN 的 ACF 注入测试
+
+## 建议的上板验证步骤
+
+1. 下载 `Debug` 版本到板卡。
+2. 打开 `COM130`，观察启动日志是否出现：
+   - DRE bridge banner
    - EEPROM MAC 读取结果
-   - 实际使用的 MAC 地址
-  - iperf server 启动提示
-  - 链路建立后的速率和双工信息
-4. 将 PC 网口配置到同一网段，例如：
-   - IP：192.168.0.10
-   - 子网掩码：255.255.255.0
-   - 网关：192.168.0.1
-5. 将 PC 与板卡通过交换机或直连方式连接。
-6. 在 PC 侧使用 iperf2 或兼容模式的 iperf 客户端执行：
+   - PHY link up/down 日志
+3. 用 `gs_usb_x can0` 以 `500K/2M` 发送 CAN FD 报文到 `CAN01`。
+4. 在 PC 侧用 Wireshark 抓包，过滤：
 
-```powershell
-iperf -c 192.168.0.100 -p 5001 -t 10
+```text
+eth.type == 0x22f0
 ```
 
-如果使用 iperf3，请切换到兼容 iperf2 的工具，lwIP 自带 lwiperf 不是 iperf3 协议实现。
+5. 反向验证时，从 PC 构造符合 IEEE 1722 ACF 的以太网帧，确认 `CAN01` 能发出对应报文。
 
-7. 如需反向观察多次测试结果，可重复执行：
+## 当前限制
 
-```powershell
-iperf -c 192.168.0.100 -p 5001 -i 1 -t 10
-```
-
-如果链路协商正常，板卡将作为 TCP server 接收 PC 发起的 iperf 会话，并在串口输出每次测试的统计结果。
-
-## 串口日志说明
-
-常见输出含义：
-
-- EEPROM MAC read succeeded.
-  表示已从 24AA02E48 成功读取 EUI-48。
-- EEPROM MAC read failed, using fallback MAC address.
-  表示 EEPROM 访问失败，工程回退到本地管理 MAC 地址继续启动网络。
-- lwIP started, waiting for link and iperf TCP clients.
-  表示协议栈已初始化完成，iperf TCP server 已启动并等待客户端连接。
-- lwIP iperf server started on TCP port 5001.
-  表示板端已成功开始监听默认 iperf 端口。
-- ETH link up: 100M full duplex.
-  表示 DP83825I 已完成协商，GETH MAC 已切换到对应速率和双工模式。
-- ETH link down.
-  表示当前网线拔出或链路协商失效，GETH 收发已被停止。
-- iperf result: server done, remote ...
-  表示一次 iperf TCP 测试完成，串口打印了总字节数、持续时间和平均带宽。
-
-## 故障排查
-
-如果 iperf 连不上或带宽异常，优先检查以下项目：
-
-1. PC 与板卡是否在同一网段。
-2. 网线、交换机和供电是否正常。
-3. DP83825I 链路是否已经协商成功。
-4. 串口日志是否显示 EEPROM 或 PHY 初始化失败。
-5. 本机防火墙是否阻止 ICMP。
-6. 构建是否使用了正确的工具链与 linker script。
-7. PC 侧是否使用 iperf2/兼容客户端，而不是 iperf3。
-
-## 当前实现备注
-
-- 当前版本的以太网底层继承自 tc4d7_lwip_ping，保留了已验证可工作的静态 IP、DP83825I 和 EEPROM MAC 读取路径。
-- 以太网初始化阶段没有调用 GETH AXI SRAM 的 VMT clear 流程。
-- 原因是当前板卡/工程组合下，AXI MBIST clear 会导致启动卡死，绕过该步骤后 GETH0 Port0 + lwIP 工作正常。
-- iperf 当前以 TCP server 方式运行在 5001 端口，适合让 PC 作为 client 发起吞吐测试。
-
-## 实现说明
-
-- 主循环采用 NO_SYS 轮询模式：
-  - Ifx_Lwip_pollTimerFlags()
-  - Ifx_Lwip_pollReceiveFlags()
-- 1 ms 周期由 STM0 中断推进，用于驱动 lwIP 定时器。
-- PHY 链路状态每 100 ms 轮询一次，链路状态变化时同步更新 GETH MAC 速率和双工模式。
-- 应用层通过 lwiperf_start_tcp_server_default() 启动 lwIP iperf TCP server。
+- 当前首版的 `CAN -> Ethernet` 路径使用的是“CPU 轮询 CAN + CRE RHBUF SWTRIG + DRE 封装”，不是完全纯硬件 CRE 自动路由。
+- `Ethernet -> CAN` 依赖输入帧符合 DRE 可解析的 ACF/AVTP 格式；本次没有额外附带 PC 侧注入脚本。
+- 目前还没有加入 runtime 统计打印或更细的 DRE 错误寄存器诊断日志。

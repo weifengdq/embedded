@@ -10,9 +10,9 @@ param(
     [ValidateSet("Debug", "Release", "RelWithDebInfo", "MinSizeRel")]
     [string]$BuildType = "Release",
 
-    [string]$ToolchainBin = "C:\Infineon\AURIX-Studio-1.10.28\tools\Compilers\tricore-gcc11\bin",
+    [string]$ToolchainBin = "C:\Infineon\AURIX-Studio-1.10.36\tools\Compilers\tricore-gcc11\bin",
 
-    [string]$TargetName = "tc4d7_lwip_iperf",
+    [string]$TargetName = "tc4d7_dre_can_eth",
 
     [string]$FlashTool = "",
 
@@ -21,7 +21,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$defaultAurixFlasher = "C:\Infineon\AURIX-Studio-1.10.28\tools\AurixFlasherSoftwareTool_v3.0.14\AURIXFlasher.exe"
+$defaultAurixFlasher = "C:\Infineon\AURIX-Studio-1.10.36\tools\AurixFlasherSoftwareTool_v3.0.14\AURIXFlasher.exe"
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $buildPath = Join-Path $projectRoot $BuildDir
 $toolchainFile = Join-Path $projectRoot "cmake/tricore-gcc-toolchain.cmake"

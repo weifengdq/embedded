@@ -33,12 +33,13 @@
 #include <stdio.h>
 
 #include "Configuration.h"
+#include "DreCanEthBridge.h"
 #include "EthernetMacEeprom.h"
-#include "IperfApp.h"
-#include "Ifx_Lwip.h"
 #include "serialio.h"
 
 #define UART_BAUDRATE 115200
+
+volatile uint32 g_TickCount_1ms;
 
 static const uint8 g_fallbackMacAddress[ETHERNET_MAC_EEPROM_LENGTH] = {0x02U, 0x00U, 0x5EU, 0x4DU, 0x70U, 0x01U};
 
@@ -46,13 +47,11 @@ static void printStartupBanner(void)
 {
     printf("\r\n");
     printf("========================================\r\n");
-    printf(" TC4D7 lwIP iperf demo\r\n");
+    printf(" TC4D7 DRE CAN/Ethernet bridge\r\n");
     printf(" UART0 TX=P14.0 RX=P14.1, 115200-8-N-1\r\n");
-    printf(" Static IP  : 192.168.0.100\r\n");
-    printf(" Netmask    : 255.255.255.0\r\n");
-    printf(" Gateway    : 192.168.0.1\r\n");
+    printf(" CAN01      : 500K@80%% arbitration, 2M@80%% data\r\n");
     printf(" PHY        : DP83825I (RMII, GETH0 Port0)\r\n");
-    printf(" iperf TCP  : server port 5001\r\n");
+    printf(" DRE        : IEEE1722 ACF <-> CAN bridge\r\n");
     printf("========================================\r\n");
 }
 
@@ -73,10 +72,6 @@ void core0_main(void)
 {
     uint8 macAddress[ETHERNET_MAC_EEPROM_LENGTH];
     boolean macReadOk;
-    eth_addr_t ethAddr;
-    ip_addr_t ipAddr = IPADDR4_INIT_BYTES(192, 168, 0, 100);
-    ip_addr_t netMask = IPADDR4_INIT_BYTES(255, 255, 255, 0);
-    ip_addr_t gateway = IPADDR4_INIT_BYTES(192, 168, 0, 1);
 
     IfxCpu_enableInterrupts();
 
@@ -108,24 +103,15 @@ void core0_main(void)
         printf("EEPROM MAC read succeeded.\r\n");
     }
 
-    for (uint32 index = 0U; index < ETHERNET_MAC_EEPROM_LENGTH; ++index)
-    {
-        ethAddr.addr[index] = macAddress[index];
-    }
-
     printf("MAC address: %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-           ethAddr.addr[0], ethAddr.addr[1], ethAddr.addr[2],
-           ethAddr.addr[3], ethAddr.addr[4], ethAddr.addr[5]);
+           macAddress[0], macAddress[1], macAddress[2],
+           macAddress[3], macAddress[4], macAddress[5]);
 
-    Ifx_Lwip_init_with_ip(ethAddr, ipAddr, netMask, gateway);
-        IperfApp_init();
-
-        printf("lwIP started, waiting for link and iperf TCP clients.\r\n");
+    DreCanEthBridge_init(macAddress);
 
     while (1)
     {
-        Ifx_Lwip_pollTimerFlags();
-        Ifx_Lwip_pollReceiveFlags();
+        DreCanEthBridge_poll();
     }
 }
 
@@ -137,5 +123,4 @@ void updateLwipStackIsr(void)
     IfxStm_increaseCompare(&MODULE_CPU0, IfxStm_Comparator_0, IFX_CFG_STM_TICKS_PER_MS);
 
     g_TickCount_1ms += IFX_CFG_STM_TIMER_PERIOD_MS;
-    Ifx_Lwip_onTimerTick();
 }

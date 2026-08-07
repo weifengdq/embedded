@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(tc4d7_lwip_iperf LANGUAGES C)
+project(tc4d7_dre_can_eth LANGUAGES C)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
@@ -18,10 +18,14 @@ set(AURIX_EXCLUDED_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/build"
     "${CMAKE_CURRENT_SOURCE_DIR}/TriCore Debug (GCC)"
     "${CMAKE_CURRENT_SOURCE_DIR}/TriCore Release (GCC)"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/Ethernet/lwip"
     "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/Ethernet/lwip/src/apps"
     CACHE STRING "Semicolon-separated directories excluded from recursive source scan"
 )
-set(AURIX_EXCLUDED_FILES "" CACHE STRING "Semicolon-separated files excluded from recursive source scan")
+set(AURIX_EXCLUDED_FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/IperfApp.c;${CMAKE_CURRENT_SOURCE_DIR}/IperfApp.h"
+    CACHE STRING "Semicolon-separated files excluded from recursive source scan"
+)
 
 aurix_extract_cproject_excluded_dirs(
     CPROJECT_FILE "${AURIX_CPROJECT_FILE}"
@@ -49,18 +53,42 @@ set(AURIX_MANUAL_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/CpuGeneric/Geth/Std/IfxGeth.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/CpuGeneric/Geth/Eth/IfxGeth_Eth.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/CpuGeneric/Hsphy/Std/IfxHsphy.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/Can/Can/IfxCan_Can.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/Can/Std/IfxCan.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/Dre/Std/IfxDre.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/Dre/Dre/IfxDre_Dre.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/I2c/Std/IfxI2c.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/I2c/I2c/IfxI2c_I2c.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/Pms/Std/IfxPmsEvr.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/Vmt/Std/IfxVmt.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/Ethernet/lwip/src/apps/lwiperf/lwiperf.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/CpuGeneric/_PinMap/TC4Dx/IfxAsclin_PinMap_TC4Dx_BGA292_COM.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/_PinMap/TC4Dx/IfxCan_PinMap_TC4Dx_BGA292_COM.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/CpuGeneric/_PinMap/TC4Dx/IfxGeth_PinMap_TC4Dx_BGA292_COM.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/Tricore/_PinMap/TC4Dx/IfxI2c_PinMap_TC4Dx_BGA292_COM.c"
 )
 
 list(APPEND AURIX_SOURCE_FILES ${AURIX_MANUAL_SOURCES})
 list(REMOVE_DUPLICATES AURIX_SOURCE_FILES)
+
+set(AURIX_STARTUP_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/Configurations/Ifx_Cfg_Ssw.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Configurations/Ifx_Cfg_SswBmhd.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Cpu0_Main.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Cpu1_Main.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Cpu2_Main.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Cpu3_Main.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Cpu4_Main.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Cpu5_Main.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/Infra/Ssw/TC4xx/Tricore/Ifx_Ssw_Tc0.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/Infra/Ssw/TC4xx/Tricore/Ifx_Ssw_Tc1.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/Infra/Ssw/TC4xx/Tricore/Ifx_Ssw_Tc2.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/Infra/Ssw/TC4xx/Tricore/Ifx_Ssw_Tc3.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/Infra/Ssw/TC4xx/Tricore/Ifx_Ssw_Tc4.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/Infra/Ssw/TC4xx/Tricore/Ifx_Ssw_Tc5.c"
+)
+
+set(AURIX_LIBRARY_SOURCES ${AURIX_SOURCE_FILES})
+list(REMOVE_ITEM AURIX_LIBRARY_SOURCES ${AURIX_STARTUP_SOURCES})
 
 list(APPEND AURIX_INCLUDE_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC4xx/CpuGeneric/Geth/Eth"
@@ -78,7 +106,44 @@ if(NOT AURIX_SOURCE_FILES)
     message(FATAL_ERROR "No C source files were found after applying exclusions.")
 endif()
 
-add_executable(${PROJECT_NAME} ${AURIX_SOURCE_FILES} ${AURIX_HEADER_FILES})
+add_library(${PROJECT_NAME}_support STATIC ${AURIX_LIBRARY_SOURCES})
+
+set_target_properties(${PROJECT_NAME}_support PROPERTIES
+    C_STANDARD 99
+    C_STANDARD_REQUIRED YES
+    C_EXTENSIONS NO
+)
+
+target_include_directories(${PROJECT_NAME}_support PRIVATE ${AURIX_INCLUDE_DIRS})
+
+target_compile_options(${PROJECT_NAME}_support PRIVATE
+    $<$<CONFIG:Debug>:-Og>
+    $<$<CONFIG:Debug>:-g3>
+    $<$<CONFIG:Debug>:-gdwarf-3>
+    $<$<CONFIG:Release>:-O3>
+    $<$<CONFIG:Release>:-DNDEBUG>
+    $<$<CONFIG:RelWithDebInfo>:-O2>
+    $<$<CONFIG:RelWithDebInfo>:-g>
+    $<$<CONFIG:RelWithDebInfo>:-DNDEBUG>
+    $<$<CONFIG:MinSizeRel>:-Os>
+    $<$<CONFIG:MinSizeRel>:-DNDEBUG>
+    -Wall
+    -fmessage-length=0
+    -fno-common
+    -fstrict-volatile-bitfields
+    -fdata-sections
+    -ffunction-sections
+    -mcpu=${AURIX_CPU}
+)
+
+target_compile_definitions(${PROJECT_NAME}_support PRIVATE
+    $<$<CONFIG:Debug>:AURIX_COMPILER_FLAGS="-Og -g3">
+    $<$<CONFIG:Release>:AURIX_COMPILER_FLAGS="-O3 -DNDEBUG">
+    $<$<CONFIG:RelWithDebInfo>:AURIX_COMPILER_FLAGS="-O2 -g -DNDEBUG">
+    $<$<CONFIG:MinSizeRel>:AURIX_COMPILER_FLAGS="-Os -DNDEBUG">
+)
+
+add_executable(${PROJECT_NAME} ${AURIX_STARTUP_SOURCES})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     OUTPUT_NAME "${AURIX_TARGET_NAME}"
@@ -116,6 +181,8 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     $<$<CONFIG:RelWithDebInfo>:AURIX_COMPILER_FLAGS="-O2 -g -DNDEBUG">
     $<$<CONFIG:MinSizeRel>:AURIX_COMPILER_FLAGS="-Os -DNDEBUG">
 )
+
+target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_support)
 
 set(AURIX_MAP_FILE "${CMAKE_CURRENT_BINARY_DIR}/${AURIX_TARGET_NAME}.map")
 set(AURIX_HEX_FILE "${CMAKE_CURRENT_BINARY_DIR}/${AURIX_TARGET_NAME}.hex")
