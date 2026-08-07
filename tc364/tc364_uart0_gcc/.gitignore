@@ -1,0 +1,21 @@
+# CMake 构建输出
+/build/
+
+# AURIX Studio (ADS) 构建输出
+/TriCore Debug (TASKING)/
+/TriCore Release (TASKING)/
+/TriCore Debug (GCC)/
+/TriCore Release (GCC)/
+
+# 构建产物
+*.elf
+*.hex
+*.map
+*.mdf
+*.obj
+*.o
+*.d
+
+# 烧录日志
+*_flasher_log.xml
+aurix_reset.txt
