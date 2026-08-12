@@ -144,6 +144,7 @@ ping 192.168.0.100
 ## 当前实现备注
 
 - 当前版本已在板卡上验证可正常 ping 通 192.168.0.100。
+- 2026-08-12：使用 AURIX Studio 1.10.36 工具链重建时触发 Windows TriCore `ld.exe` response-file 兼容问题；本轮仅将启动对象与其余源码拆分为 `tc4d7_lwip_ping_support` 静态库，未改变 lwIP/GETH/PHY 业务逻辑，目的是恢复可下载的基线镜像并复测物理以太网连接。
 - 以太网初始化阶段没有调用 GETH AXI SRAM 的 VMT clear 流程。
 - 原因是当前板卡/工程组合下，AXI MBIST clear 会导致启动卡死，绕过该步骤后 GETH0 Port0 + lwIP 工作正常。
 

@@ -58,7 +58,7 @@
 - DMA：`Tx Channel 0` / `Rx Channel 0`
 - MAC 地址：优先从板上 EEPROM 读取；失败则回退到本地管理地址 `02:00:5E:4D:70:01`
 - 当前 `EOBUF0` 发包头配置：
-  - 目标 MAC：`FF:FF:FF:FF:FF:FF`
+  - 目标 MAC：`2C:53:4A:0E:33:01`（当前 PC I350 `以太网` 单播 MAC；用于排除广播帧过滤）
   - 源 MAC：板卡 MAC
   - EtherType：`0x22F0`
   - `triggerMode = frameCount`
@@ -170,6 +170,31 @@
 - APU-PETH 修正已实测生效：`txCnt=1`、`txReq0=0`，DRE descriptor `w3` 从 `0xB0000032` 变为 `0x30000032`，说明 GETH DMA 已读取并回写 descriptor；固定 NPF 接口抓包仍未看到 `0x22F0`，下一步检查 MAC Tx enable/speed/duplex 和硬件 Tx counters
 - 最终 MAC 级验证已完成：稳定运行后发送 CAN FD，串口显示 `canRx=1`、`dreTrig=1`、`txCnt=1`、`txReq0=0`、`mac_txpkts=1`、`mac_txoct=64`、`mac_err=0`；这证明 DRE 已生成 descriptor、GETH DMA 已读取并回写、MAC 已接受 64 字节 Tx 帧
 - 最终固定接口抓包文件 `ref/log/tc4d7_dre_can_eth_can2eth_final_20260812_104717.pcapng` 大小仅 472 字节且没有 `eth.type == 0x22f0` 帧。因此当前结论是：芯片内部 DRE→GETH DMA→MAC Tx 路径已打通，但 PC 端 `以太网` NPF 抓包仍未观察到线上帧；剩余问题位于 RMII/PHY 物理发送、网卡接收可见性或抓包路径，不能宣称 PC 端已完成收包
+- 已确认 PC 抓包接口无误：Windows `以太网` 为 I350-T4、100 Mbps、IPv4 `192.168.0.2`，对应 tshark NPF 接口 6；全帧抓包可正常看到 PC 自身 mDNS/LLMNR 流量，但没有 TC4D7 发出的帧。本轮新增 PHY BMCR/BMSR、GETH MAC_DEBUG 诊断，继续区分 PHY/RMII 物理发送与 MAC 内部计数差异
+- PHY 运行诊断正常：`BMCR=0x3100`（100M、自动协商、全双工），`BMSR=0x786D`（Link up、Auto-negotiation complete），`MAC_TX=0x80000001`（Tx enable），且 `mac_err=0`
+- 在板卡稳定运行后再次抓取全部以太网帧，文件 `ref/log/tc4d7_dre_can_eth_allframes_stable_20260812_110732.pcapng` 包含 20 个 PC 自身 IP/IPv6 流量帧，但没有 TC4D7 源 MAC `44:B7:D0:ED:AE:B9` 的帧；这排除了启动时序、tshark EtherType 过滤和网卡接口选择问题
+- 当前最终边界：芯片内部 `DRE -> GETH DMA -> MAC Tx` 已验证成功，PHY 管理面也报告链路正常，但 PC 端仍未收到 TC4D7 帧；剩余问题应在 RMII TX 电气连接、PHY 到 RJ45/磁性器件路径、网线/交换链路或板级端口物理连接，需示波器/另一台直连网卡/交换机镜像进一步确认
+- 本轮将 DRE EOBUF0 目标 MAC 从广播改为 PC I350 单播 `2C:53:4A:0E:33:01`；DRE descriptor 的 `w0=0xF903AB42` 已与手册计算的 `DRE RAM base + 0x2B40 + 2` 一致，EOBUF 地址本身确认正确
+- 单播版本下载和启动正常，PHY 仍为 100M 全双工、`BMCR=0x3100`、`BMSR=0x786D`；但本轮发送脚本执行后串口始终为 `canRx=0`，未形成 DRE 请求，因此 `txCnt/mac_txpkts` 未变化，不能把本轮空抓包归因于单播 MAC。此前稳定版本已验证 `canRx=1`、`txCnt=1`、`mac_txpkts=1`
+- 当前单播配置暂保留；下一次验证必须先确认 gs_usb_x `can0` 实际发送并由 TC4D7 `canRx` 计数确认输入到达，再判断 PC 单播帧是否出现
+- 直接从 CPU 读取 DRE EOBUF0 物理地址 `0xF903AB42` 的实验导致串口在打印 DRE descriptor 后停止；这证明 DRE Ethernet Message RAM 的 EOBUF 数据区不能作为普通 CPU SRI 地址直接读取，也解释了此前让 CPU/iLLD 直接使用 DRE RAM descriptor base 会在初始化阶段卡死。该危险诊断已移除，DRE Tx descriptor 仍由 GETH DMA 正常读取
+- 使用固定 GSUSB selector `003:022:0` 后确认 CAN 总线输入有效：板卡日志 `ref/log/tc4d7_dre_can_eth_can_valid_selector_20260812_145516.log` 显示 `canRx=2`、`txCnt=2`、`mac_txpkts=2`；这也修正了此前 `channel='auto'`/设备会话失效导致 `canRx=0` 的误判
+- 单播有效 CAN 抓包 `ref/log/tc4d7_dre_can_eth_unicast_valid_can_20260812_145602.pcapng` 仍未看到 PC 端帧；DRE/MAC 内部计数已增加，剩余问题不是 CAN 输入或 Ethernet 目的 MAC 选择
+- 进一步发现关键差异：iLLD 初始化 GETH CH0 的 `TDRL/RDRL` 为 63（64 个 descriptor），而 TC4Dx 手册规定 DRE 每个 Ethernet interface 的 Tx/Rx Message RAM descriptor list 只有 4 个 descriptor；本轮将 DRE 模式下 CH0 的 `TX_CONTROL2.TDRL` 和 `RX_CONTROL2.RDRL` 改为 3（4 个 descriptor），与 DRE ring 长度一致
+- 4-entry ring 实测结果：固定 GSUSB selector `003:022:0` 发送有效 CAN 后，串口显示 `canRx=1`、`txCnt=1`、`mac_txpkts=1`、`mac_txoct=64`、`mac_err=0`；但抓包 `ref/log/tc4d7_dre_can_eth_ring4_20260812_151516.pcapng` 仍无 PC 端单播/`0x22F0` 帧，因此 `TDRL/RDRL=3` 已排除为最后根因
+- 单播 MAC 字节序根因已定位：DRE `MAC_H1` 的字段顺序为 `DA2[7:0], DA3[15:8], DA4[23:16], DA5[31:24]`，PC MAC `2C:53:4A:0E:33:01` 的正确 `macDestinationAddress1` 是 `0x01330E4A`，此前错误写成 `0x01334A0E`，导致实际目的 MAC 错误；现已修正
+- 单播修正后已抓到线上帧，但原始字节为 `DA + SA + 00 00 + 22 F0`，Wireshark 将 EtherType 解析为 `0x0000`；根据手册 EOBUF MAC header 固定包含 `TPID[15:0] + VLAN[15:0]` 区域，已将 `ethernetOutputBuffer0.tpId` 从 0 改为标准 `0x8100`，使线上帧成为合法 802.1Q VLAN、内层 EtherType 为 `0x22F0`
+- 最终修正验证成功：抓包 `ref/log/tc4d7_dre_can_eth_tpid_fix_20260812_152531.pcapng` 中出现合法 DRE 输出帧，Wireshark 摘要为 `frame 7: src=44:b7:d0:ed:ae:b9, dst=2c:53:4a:0e:33:01, eth.type=0x22f0, frame.len=56`；串口同时显示 `canRx=1`、`txCnt=1`、`mac_txpkts=1`、`mac_txoct=64`、`mac_err=0`
+- CAN→Ethernet 的两个最终根因：1) DRE `MAC_H1` 单播目的 MAC 高 32 位字节序错误（已改为 `0x01330E4A`）；2) DRE EOBUF `tpId=0` 导致线上 EtherType 为 `0x0000`（已改为 `0x8100`）。当前 CAN01→DRE→GETH0→PC `0x22F0` 路径已完成实机闭环验证
+
+### 2026-08-12：同级 lwIP ping 基线对照
+
+- 对同级工程 `tc4dx/tc4d7_lwip_ping` 使用 AURIX Studio 1.10.36 工具链重新构建；原工程同样触发 Windows TriCore `ld.exe` response-file 错误，因此仅在其 `CMakeLists.txt` 增加了与本工程相同的 support 静态库链接拆分，未改变 lwIP/GETH/PHY 业务逻辑
+- 使用 AURIX Flasher 3.0.18 下载 lwIP ping 基线成功，串口日志：`ref/log/tc4d7_lwip_ping_serial_baseline_20260812_111941.log`
+- lwIP 基线使用完全相同的 `GETH0 Port0 + RMII + DP83825I`、同一组 `BOARD_GETH0_P0_*` 引脚、同一 EEPROM MAC `44:B7:D0:ED:AE:B9`，并报告 `ETH link up: 100M full duplex.`
+- PC 网卡 `以太网`（Intel I350-T4，`192.168.0.2`）对 `192.168.0.100` ping 4/4 成功；抓包 `ref/log/tc4d7_lwip_ping_pcap_baseline_20260812_111941.pcapng` 同时看到板卡 MAC 的 ARP Reply 和 ICMP Echo Reply
+- 该对照证明网线、PHY、RMII 引脚、GETH Port0、PC 网卡和 tshark 接口均正常；DRE 工程当前“MAC 统计已发送但 PC 看不到帧”的剩余差异应继续聚焦 DRE 硬件 Tx ring、DRE Ethernet APU/descriptor 处理以及 DRE 生成帧与普通 GETH DMA 发包之间的寄存器状态差异，而不是物理连接
+- 本轮单播验证前发现工程 `cmake/tricore-gcc-toolchain.cmake` 仍残留 1.10.28 默认路径，导致清理 build 后即使脚本传入 1.10.36 仍配置失败；现已同步修正为 AURIX Studio 1.10.36
 
 ## 验证记录
 

@@ -3,7 +3,7 @@ set(CMAKE_SYSTEM_PROCESSOR tricore)
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
 set(AURIX_TOOLCHAIN_BIN
-    "C:/Infineon/AURIX-Studio-1.10.28/tools/Compilers/tricore-gcc11/bin"
+    "C:/Infineon/AURIX-Studio-1.10.36/tools/Compilers/tricore-gcc11/bin"
     CACHE PATH
     "Path to the tricore-gcc11 bin directory"
 )

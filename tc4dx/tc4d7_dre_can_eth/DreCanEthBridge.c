@@ -37,6 +37,8 @@
 #define DRE_ETH_NTSCF_OFFSET 14U
 #define DRE_ETH_PAYLOAD_LENGTH 64U
 #define DRE_TETHDL0_DESCRIPTOR_ADDRESS (0xF903B140U)
+#define DRE_ETH_PC_MAC0 0x532CU
+#define DRE_ETH_PC_MAC1 0x01330E4AU
 #define DRE_TETHDL0_DESCRIPTOR_WORDS ((volatile uint32 *)DRE_TETHDL0_DESCRIPTOR_ADDRESS)
 
 #define DRE_GETH_HEADER_PAD 16U
@@ -253,7 +255,7 @@ static void DreCanEthBridge_logBridgeStatus(void)
     IfxDre_getEthDescListStatus(&MODULE_DRE, &edlStatus);
     IfxDre_getEthReqSummary(&MODULE_DRE, &ersStatus);
 
-            printf("BRIDGE diag: canRx=%lu, dreTrig=%lu, txReq0=%u, txCnt=%u, fwdReq0=%u, rxCnt=%u, eobuf0_status=0x%08lX, eobuf0_error=0x%08lX, me_err=0x%08lX, tethdl0=0x%08lX, txdma=0x%08lX, tail=0x%08lX, curdesc=0x%08lX, mac_tx=0x%08lX, mac_txpkts=%lu, mac_txoct=%lu, mac_err=0x%08lX.\r\n",
+            printf("BRIDGE diag: canRx=%lu, dreTrig=%lu, txReq0=%u, txCnt=%u, fwdReq0=%u, rxCnt=%u, eobuf0_status=0x%08lX, eobuf0_error=0x%08lX, me_err=0x%08lX, tethdl0=0x%08lX, txdma=0x%08lX, tail=0x%08lX, curdesc=0x%08lX, mac_tx=0x%08lX, mac_debug=0x%08lX, mac_txpkts=%lu, mac_txoct=%lu, mac_err=0x%08lX, phy_bmcr=0x%04X, phy_bmsr=0x%04X.\r\n",
            (unsigned long)g_canRxCount,
            (unsigned long)g_dreTriggerCount,
            (unsigned)ersStatus.tx0,
@@ -268,9 +270,12 @@ static void DreCanEthBridge_logBridgeStatus(void)
                 (unsigned long)MODULE_GETH0.DMA.CH[0].TXDESC_TAIL_LPOINTER.U,
                 (unsigned long)MODULE_GETH0.DMA.CH[0].CURRENT_APP_TXDESC_L.U,
                 (unsigned long)MODULE_GETH0.PORT[0].CORE.MAC_TX_CONFIGURATION.U,
+                (unsigned long)MODULE_GETH0.PORT[0].CORE.MAC_DEBUG.U,
                 (unsigned long)MODULE_GETH0.PORT[0].CORE.TX_PACKET_COUNT_GOOD_LOW.U,
                 (unsigned long)MODULE_GETH0.PORT[0].CORE.TX_OCTET_COUNT_GOOD_LOW.U,
-                (unsigned long)MODULE_GETH0.PORT[0].CORE.MAC_RX_TX_STATUS.U);
+                (unsigned long)MODULE_GETH0.PORT[0].CORE.MAC_RX_TX_STATUS.U,
+                (unsigned)DreCanEthBridge_mdioRead(DRE_ETH_PHY_ADDR, 0U, PHY_MII_BMCR),
+                (unsigned)DreCanEthBridge_mdioRead(DRE_ETH_PHY_ADDR, 0U, PHY_MII_BMSR));
 
             if (g_canRxCount > 0U)
             {
@@ -436,6 +441,9 @@ static void DreCanEthBridge_initEthernet(const uint8 *macAddress)
      */
     MODULE_GETH0.DMA.CH[0].TXDESC_LIST_LADDRESS.U = DRE_TETHDL0_DESCRIPTOR_ADDRESS;
     MODULE_GETH0.DMA.CH[0].TXDESC_TAIL_LPOINTER.U = DRE_TETHDL0_DESCRIPTOR_ADDRESS;
+    /* DRE owns four Tx/Rx descriptors per Ethernet interface. */
+    MODULE_GETH0.DMA.CH[0].TX_CONTROL2.B.TDRL = 3U;
+    MODULE_GETH0.DMA.CH[0].RX_CONTROL2.B.RDRL = 3U;
     (void)DreCanEthBridge_mdioInit(NULL_PTR, gethClockRate);
     MODULE_GETH0.PORT[DRE_ETH_PORT_INDEX].CORE.MAC_PACKET_FILTER.U = 0U;
     IfxGeth_startRxDma(&MODULE_GETH0, IfxGeth_RxDmaChannel_0);
@@ -562,11 +570,11 @@ static void DreCanEthBridge_initDre(const uint8 *macAddress)
     dreConfig.ethernetOutputBuffer0.destinationId = IfxCan_DestinationId_Ethernet1;
     dreConfig.ethernetOutputBuffer0.headerEnable = TRUE;
     dreConfig.ethernetOutputBuffer0.triggerMode = IfxDre_TriggerMode_software;
-    dreConfig.ethernetOutputBuffer0.macDestinationAddress0 = 0xFFFFU;
-    dreConfig.ethernetOutputBuffer0.macDestinationAddress1 = 0xFFFFFFFFU;
+    dreConfig.ethernetOutputBuffer0.macDestinationAddress0 = DRE_ETH_PC_MAC0;
+    dreConfig.ethernetOutputBuffer0.macDestinationAddress1 = DRE_ETH_PC_MAC1;
     dreConfig.ethernetOutputBuffer0.macSourceAddress0 = DreCanEthBridge_packMac32(&macSource[0]);
     dreConfig.ethernetOutputBuffer0.macSourceAddress1 = DreCanEthBridge_packMac16(&macSource[4]);
-    dreConfig.ethernetOutputBuffer0.tpId = 0U;
+    dreConfig.ethernetOutputBuffer0.tpId = 0x8100U;
     dreConfig.ethernetOutputBuffer0.vlanTag = 0U;
     dreConfig.ethernetOutputBuffer0.avtpEtherType = 0x22F0U;
     dreConfig.ethernetOutputBuffer0.isStreamIdValid = TRUE;
@@ -722,7 +730,7 @@ void DreCanEthBridge_init(const uint8 *macAddress)
 
     printf("DRE bridge ready: CAN01 <-> Ethernet ACF/AVTP.\r\n");
     printf("CAN nominal/data: 500K@80%% / 2M@80%%.\r\n");
-    printf("ETH TX destination MAC: FF:FF:FF:FF:FF:FF, EtherType 0x22F0.\r\n");
+    printf("ETH TX destination MAC: 2C:53:4A:0E:33:01, EtherType 0x22F0.\r\n");
 }
 
 void DreCanEthBridge_poll(void)

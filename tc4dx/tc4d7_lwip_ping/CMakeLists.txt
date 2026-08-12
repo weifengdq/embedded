@@ -77,7 +77,30 @@ if(NOT AURIX_SOURCE_FILES)
     message(FATAL_ERROR "No C source files were found after applying exclusions.")
 endif()
 
-add_executable(${PROJECT_NAME} ${AURIX_SOURCE_FILES} ${AURIX_HEADER_FILES})
+set(AURIX_STARTUP_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/Configurations/Ifx_Cfg_Ssw.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Configurations/Ifx_Cfg_SswBmhd.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Cpu0_Main.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Cpu1_Main.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Cpu2_Main.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Cpu3_Main.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Cpu4_Main.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Cpu5_Main.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/Infra/Ssw/TC4xx/Tricore/Ifx_Ssw_Tc0.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/Infra/Ssw/TC4xx/Tricore/Ifx_Ssw_Tc1.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/Infra/Ssw/TC4xx/Tricore/Ifx_Ssw_Tc2.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/Infra/Ssw/TC4xx/Tricore/Ifx_Ssw_Tc3.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/Infra/Ssw/TC4xx/Tricore/Ifx_Ssw_Tc4.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/Infra/Ssw/TC4xx/Tricore/Ifx_Ssw_Tc5.c"
+)
+
+set(AURIX_LIBRARY_SOURCES ${AURIX_SOURCE_FILES})
+list(REMOVE_ITEM AURIX_LIBRARY_SOURCES ${AURIX_STARTUP_SOURCES})
+
+add_library(${PROJECT_NAME}_support STATIC ${AURIX_LIBRARY_SOURCES})
+set_target_properties(${PROJECT_NAME}_support PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED YES C_EXTENSIONS NO)
+
+add_executable(${PROJECT_NAME} ${AURIX_STARTUP_SOURCES})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     OUTPUT_NAME "${AURIX_TARGET_NAME}"
@@ -88,8 +111,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${AURIX_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME}_support PRIVATE ${AURIX_INCLUDE_DIRS})
 
-target_compile_options(${PROJECT_NAME} PRIVATE
+set(AURIX_COMMON_COMPILE_OPTIONS
     $<$<CONFIG:Debug>:-Og>
     $<$<CONFIG:Debug>:-g3>
     $<$<CONFIG:Debug>:-gdwarf-3>
@@ -108,13 +132,19 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     -ffunction-sections
     -mcpu=${AURIX_CPU}
 )
+target_compile_options(${PROJECT_NAME} PRIVATE ${AURIX_COMMON_COMPILE_OPTIONS})
+target_compile_options(${PROJECT_NAME}_support PRIVATE ${AURIX_COMMON_COMPILE_OPTIONS})
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE
+set(AURIX_COMMON_COMPILE_DEFINITIONS
     $<$<CONFIG:Debug>:AURIX_COMPILER_FLAGS="-Og -g3">
     $<$<CONFIG:Release>:AURIX_COMPILER_FLAGS="-O3 -DNDEBUG">
     $<$<CONFIG:RelWithDebInfo>:AURIX_COMPILER_FLAGS="-O2 -g -DNDEBUG">
     $<$<CONFIG:MinSizeRel>:AURIX_COMPILER_FLAGS="-Os -DNDEBUG">
 )
+target_compile_definitions(${PROJECT_NAME} PRIVATE ${AURIX_COMMON_COMPILE_DEFINITIONS})
+target_compile_definitions(${PROJECT_NAME}_support PRIVATE ${AURIX_COMMON_COMPILE_DEFINITIONS})
+
+target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_support)
 
 set(AURIX_MAP_FILE "${CMAKE_CURRENT_BINARY_DIR}/${AURIX_TARGET_NAME}.map")
 set(AURIX_HEX_FILE "${CMAKE_CURRENT_BINARY_DIR}/${AURIX_TARGET_NAME}.hex")
