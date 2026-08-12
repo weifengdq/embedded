@@ -142,6 +142,34 @@
 - 三次串口日志保存在 `tc4dx/ref/log/tc4d7_dre_can_eth_serial_boot_20260807_162747.log`，已确认启动阶段执行了 `ETH probe frame sent: eth.type=0x88B5, len=33.`
 - PC 侧抓包摘要保存在 `tc4dx/ref/log/tc4d7_dre_can_eth_can_to_eth_20260807_161447.txt`、`tc4dx/ref/log/tc4d7_dre_can_eth_ethsrc_20260807_161534.txt`、`tc4dx/ref/log/tc4d7_dre_can_eth_probe_20260807_162834.txt`
 - 当前证据显示：板上软件路径已经执行到 `GETH TX probe send`，但 PC 侧仍未观测到任何 `eth.src = 44:B7:D0:ED:AE:B9` 或 `eth.type = 0x88B5/0x22F0` 的出站帧
+- 后续通过固定 NPF 设备路径重做抓包，确认 `if5 = \Device\NPF_{F5B81553-F1D6-43D2-AA8E-4CC5364F1375} = 以太网`，并稳定抓到原始探针 `0x88B5`
+- 诊断日志 `tc4dx/ref/log/tc4d7_dre_can_eth_serial_can_diag_20260810_103041.log` 显示：`canRx` 和 `dreTrig` 已增长，但 `txReq0/txCnt` 仍为 0，说明问题已收敛到 `RHBUF SWTRIG -> DRE/EOBUF` 这一路
+- 基于该结论，当前把 `CRE.CONFIG.DEN` 对应的 `enableDestinationRouting` 从 `FALSE` 改为 `TRUE`，作为下一轮最小可证伪修正
+- 进一步排查时发现初始化里遗漏了 `CAD` 映射；当前已补上 `IfxDre_Dre_setCanAddressDatabaseElement()`，把 `CAN0_Node1` 关联到其 CRE 起始地址，作为下一轮验证的关键修正
+- 补上 `CAD` 后，串口诊断 `tc4dx/ref/log/tc4d7_dre_can_eth_serial_can_diag_20260810_103556.log` 已显示 `txReq0=1`，说明 `RHBUF SWTRIG -> DRE/EOBUF` 已经成立
+- 基于该结果，当前移除轮询里对 `EOBUF0.STATUS.TXREQ` 的主动清除，避免把 DRE 的待发请求过早清掉
+- 在移除 `TXREQ` 主动清除后，`0x22F0` 仍未出线，因此继续把下一跳聚焦到 `TETHDL0.CTRL.TRIG`；当前把 `txEthConfig.triggerType` 从 `FALSE` 改为 `TRUE` 做最小验证
+- 在 `TETHDL0.CTRL.TRIG` 切换后 `0x22F0` 仍未出现，当前进一步显式启用 `RETHDL0/TETHDL0` 的 `descriptorPointerConfigEnable` 并把指针初始化到 `0`，避免依赖 reset 默认值
+- 在固定抓包和多轮诊断后，继续去掉 `frameCount` 自动触发假设：当前把 `EOBUF0` 切到 `IfxDre_TriggerMode_software`，并在每次 `RHBUF SWTRIG` 后显式调用 `IfxDre_Dre_setSoftwareTrigger()`
+- 在 `software trigger` 仍未让 `0x22F0` 出线后，当前继续增加 `EOBUF0.STATUS/ERROR` 与 `TETHDL0.CTRL` 的串口诊断，进一步锁定 `DRE -> TETHDL` 这一段
+- 当前再收缩一个关键参数：把 `EOBUF0.payloadLength` 从 `1484` 下调到 `64`，避免小 CAN 帧验证时 DRE 长时间停留在超大 ACF 载荷目标上
+- 最新串口诊断 `tc4dx/ref/log/tc4d7_dre_can_eth_serial_can_diag_20260810_104412.log` 显示 `eobuf0_error=0` 但 `eobuf0_status` 出现 `TTL`，说明问题更像是 `TETHDL` 触发方式不匹配，而不是 descriptor 本身错误
+- 基于该结果，当前保留 `software trigger`，但把 `txEthConfig.triggerType` 从 `TRUE` 改回 `FALSE` 做对照验证
+- 对照验证后，`TTL` 消失，但 `txReq0=1` 与 `txCnt=0` 仍并存，说明 DRE 已经形成待发请求但没有真正下发到线缆
+- 由于原始 `0x88B5` 探针与 DRE 共用同一个 `GETH Tx DMA channel 0 / descriptor ring`，当前先移除探针，避免 CPU 直发流量继续干扰 DRE 的 Tx ring 占用
+- 基于本地用户手册抽取结果，确认 `software trigger` 模式下若 `TXRDY` 在缓冲为空时被置位，会触发 `TTL`；因此当前把 `IfxDre_Dre_setSoftwareTrigger()` 从 `RHBUF SWTRIG` 之后立即调用，改成 `EOBUF0.ACFL > 0` 后再触发
+- 当前进一步显式调用 `IfxGeth_configureAccessToGeth()`，用全开放 APU 配置放开 GETH 的 Global/MAC/Channel ACCEN，验证 DRE 作为外部 master 写 GETH Tx tail pointer 时是否存在访问限制
+- 串口诊断同时新增 `ME_ERR` 和 `GETH DMA CH0 tail/current descriptor` 观测，便于直接判断 DRE 是否成功推进了 GETH Tx ring
+- 最新 map 已确认原 GETH descriptor 和 Tx/Rx buffer 全部位于 CPU0 DSPR 全局地址 `0x7000...`；本轮将 descriptor 和 buffer 迁移到 `lmuram_nc` (`0xB040...`) 的 `.lmubss_nc` 段，并为 LMU memory APU 配置全开放访问，排除 DRE/GETH 外部 master 访问 DSPR 的限制
+- LMU 版本实测：DRE 已能改写 GETH Tx tail pointer（由 `0xB040A1A0` 变为 `0xF903B150`），但该值不是合法的 LMU descriptor 地址，`txCnt` 仍为 0；问题已缩小为 DRE 生成/读取 Tx descriptor 或 tail pointer 内容格式异常。本轮新增首个 Tx descriptor 四个 DWORD、descriptor 地址和 buffer 地址日志
+- 用户手册进一步确认：`TETHDLi_CTRL.TRIG=0` 时，DRE 在 DRE RAM 内准备 4 个 Tx descriptor，并把 GETH tail pointer 更新为 DRE descriptor list 的地址。实测 DRE 在第一帧后写入 tail `0xF903B150`，且手册规定 tail 为 descriptor base 加 `0x10`，因此 Tx descriptor base 修正为 `0xF903B140`；此前误用 `0xF903D140` 导致 GETH 启动后无串口 banner
+- `0xF903B140` 直接作为 GETH DMA descriptor base 的实验会在 GETH 初始化阶段卡住，已回退到可正常启动的 LMU Tx/Rx ring；该地址不能简单视为 CPU 可预配置的 DRE RAM 映射，后续需按 DRE RAM 实际窗口/访问方式继续确认
+- 手册精确检索确认 DRE RAM 起始地址为 `0xF9038000`（实测 tail `0xF903B150` = `0xF9038000 + 0x3140 + 0x10`）。修正方案改为：先用 LMU ring 完成 iLLD GETH 初始化，再仅在初始化完成后把硬件 Tx descriptor base/tail 寄存器切换到 DRE TETHDL0 list `0xF903B140`，避免 CPU 侧初始化访问 DRE RAM 窗口
+- 最新实测已确认硬件 ring 对接成功：切换后 `tail=curdesc=0xF903B150`，不再出现 LMU/DRE descriptor 指针不一致；但 `txCnt` 仍为 0。本轮新增读取 DRE TETHDL0 四个 descriptor DWORD 和 GETH MAC Tx 状态，继续定位 OWN/长度/Tx 错误
+- 最新 descriptor 诊断：DRE `w0=0xF903AB42`（EOBUF0 物理地址）、`w2=0x32`（50 字节）、`w3=0xB0000032`（OWN/FD/LD 已置位）；GETH `STATUS=0xC4` 仅有 TBU/RBU，无 FBE。根据手册的 APU-PETH 访问矩阵，已补调用 `IfxDre_initAp()` 初始化 DRE Ethernet Message RAM APU，开放 GETH master 对 EOBUF/descriptor 区的访问
+- APU-PETH 修正已实测生效：`txCnt=1`、`txReq0=0`，DRE descriptor `w3` 从 `0xB0000032` 变为 `0x30000032`，说明 GETH DMA 已读取并回写 descriptor；固定 NPF 接口抓包仍未看到 `0x22F0`，下一步检查 MAC Tx enable/speed/duplex 和硬件 Tx counters
+- 最终 MAC 级验证已完成：稳定运行后发送 CAN FD，串口显示 `canRx=1`、`dreTrig=1`、`txCnt=1`、`txReq0=0`、`mac_txpkts=1`、`mac_txoct=64`、`mac_err=0`；这证明 DRE 已生成 descriptor、GETH DMA 已读取并回写、MAC 已接受 64 字节 Tx 帧
+- 最终固定接口抓包文件 `ref/log/tc4d7_dre_can_eth_can2eth_final_20260812_104717.pcapng` 大小仅 472 字节且没有 `eth.type == 0x22f0` 帧。因此当前结论是：芯片内部 DRE→GETH DMA→MAC Tx 路径已打通，但 PC 端 `以太网` NPF 抓包仍未观察到线上帧；剩余问题位于 RMII/PHY 物理发送、网卡接收可见性或抓包路径，不能宣称 PC 端已完成收包
 
 ## 验证记录
 

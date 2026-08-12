@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "Ap/Std/IfxApApu.h"
 #include "Clock/Std/IfxClock.h"
 #include "Cpu/Std/IfxCpu.h"
 #include "Can/Can/IfxCan_Can.h"
@@ -34,7 +35,9 @@
 #define DRE_ETH_PORT_INDEX 0U
 #define DRE_ETH_PHY_ADDR BOARD_GETH0_P0_PHYADR
 #define DRE_ETH_NTSCF_OFFSET 14U
-#define DRE_ETH_PAYLOAD_LENGTH 1484U
+#define DRE_ETH_PAYLOAD_LENGTH 64U
+#define DRE_TETHDL0_DESCRIPTOR_ADDRESS (0xF903B140U)
+#define DRE_TETHDL0_DESCRIPTOR_WORDS ((volatile uint32 *)DRE_TETHDL0_DESCRIPTOR_ADDRESS)
 
 #define DRE_GETH_HEADER_PAD 16U
 #define DRE_GETH_MAX_BUFFER_SIZE (2560U + DRE_GETH_HEADER_PAD + 2U)
@@ -53,13 +56,20 @@ static phy_t g_phy;
 static uint8 g_macAddress[6];
 
 static uint32 g_canRxWords[16];
+static uint32 g_canRxCount;
+static uint32 g_dreTriggerCount;
 
 static uint32 g_lastLinkPollTick;
+static uint32 g_lastProbeTxTick;
+static uint32 g_lastDiagTick;
 static boolean g_linkLogged;
-static boolean g_probeFrameSent;
+static boolean g_softwareTriggerRequested;
+static boolean g_descriptorLogged;
 
-IFX_ALIGN(8) static uint8 g_channel0TxBuffer[IFXGETH_MAX_TX_DESCRIPTORS][DRE_GETH_MAX_BUFFER_SIZE];
-IFX_ALIGN(8) static uint8 g_channel0RxBuffer[IFXGETH_MAX_RX_DESCRIPTORS][DRE_GETH_MAX_BUFFER_SIZE];
+IFX_ALIGN(8) __attribute__((section(".lmubss_nc"))) static IfxGeth_TxDescrList g_txDescrList;
+IFX_ALIGN(8) __attribute__((section(".lmubss_nc"))) static IfxGeth_RxDescrList g_rxDescrList;
+IFX_ALIGN(8) __attribute__((section(".lmubss_nc"))) static uint8 g_channel0TxBuffer[IFXGETH_MAX_TX_DESCRIPTORS][DRE_GETH_MAX_BUFFER_SIZE];
+IFX_ALIGN(8) __attribute__((section(".lmubss_nc"))) static uint8 g_channel0RxBuffer[IFXGETH_MAX_RX_DESCRIPTORS][DRE_GETH_MAX_BUFFER_SIZE];
 
 static const IfxCan_Can_Pins g_canPins = {
     &IfxCan_TXD01_P01_3_OUT,
@@ -232,30 +242,58 @@ static void DreCanEthBridge_mdioWrite(uint8 phyAddr, uint8 devAddr, uint16 regAd
     }
 }
 
-static void DreCanEthBridge_sendRawProbeFrame(void)
+static void DreCanEthBridge_logBridgeStatus(void)
 {
-    static const uint8 destinationMac[6] = {0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU};
-    static const uint8 payload[] = "TC4D7 GETH TX PROBE";
-    uint8 *txBuffer;
-    uint32 payloadLength = (uint32)(sizeof(payload) - 1U);
-    uint32 frameLength = 14U + payloadLength;
+    IfxDre_EdlStatus edlStatus;
+    IfxDre_ErsStatus ersStatus;
 
-    txBuffer = (uint8 *)IfxGeth_Eth_waitTransmitBuffer(&g_geth, IfxGeth_TxDmaChannel_0);
+    memset((void *)&edlStatus, 0, sizeof(edlStatus));
+    memset((void *)&ersStatus, 0, sizeof(ersStatus));
 
-    if (txBuffer == NULL_PTR)
-    {
-        printf("ETH probe: no free TX buffer.\r\n");
-        return;
-    }
+    IfxDre_getEthDescListStatus(&MODULE_DRE, &edlStatus);
+    IfxDre_getEthReqSummary(&MODULE_DRE, &ersStatus);
 
-    memcpy(&txBuffer[0], destinationMac, 6U);
-    memcpy(&txBuffer[6], g_macAddress, sizeof(g_macAddress));
-    txBuffer[12] = 0x88U;
-    txBuffer[13] = 0xB5U;
-    memcpy(&txBuffer[14], payload, payloadLength);
+            printf("BRIDGE diag: canRx=%lu, dreTrig=%lu, txReq0=%u, txCnt=%u, fwdReq0=%u, rxCnt=%u, eobuf0_status=0x%08lX, eobuf0_error=0x%08lX, me_err=0x%08lX, tethdl0=0x%08lX, txdma=0x%08lX, tail=0x%08lX, curdesc=0x%08lX, mac_tx=0x%08lX, mac_txpkts=%lu, mac_txoct=%lu, mac_err=0x%08lX.\r\n",
+           (unsigned long)g_canRxCount,
+           (unsigned long)g_dreTriggerCount,
+           (unsigned)ersStatus.tx0,
+           (unsigned)edlStatus.txCount,
+           (unsigned)ersStatus.fwd0,
+            (unsigned)edlStatus.rxCount,
+            (unsigned long)MODULE_DRE.EOBUF[0].STATUS.U,
+            (unsigned long)MODULE_DRE.EOBUF[0].ERROR.U,
+                (unsigned long)MODULE_DRE.ME.ERR.U,
+               (unsigned long)MODULE_DRE.TETHDL[0].CTRL.U,
+                (unsigned long)MODULE_GETH0.DMA.CH[0].STATUS.U,
+                (unsigned long)MODULE_GETH0.DMA.CH[0].TXDESC_TAIL_LPOINTER.U,
+                (unsigned long)MODULE_GETH0.DMA.CH[0].CURRENT_APP_TXDESC_L.U,
+                (unsigned long)MODULE_GETH0.PORT[0].CORE.MAC_TX_CONFIGURATION.U,
+                (unsigned long)MODULE_GETH0.PORT[0].CORE.TX_PACKET_COUNT_GOOD_LOW.U,
+                (unsigned long)MODULE_GETH0.PORT[0].CORE.TX_OCTET_COUNT_GOOD_LOW.U,
+                (unsigned long)MODULE_GETH0.PORT[0].CORE.MAC_RX_TX_STATUS.U);
 
-    IfxGeth_Eth_sendTransmitBuffer(&g_geth, IfxGeth_PortIndex_0, frameLength, IfxGeth_TxDmaChannel_0);
-    printf("ETH probe frame sent: eth.type=0x88B5, len=%lu.\r\n", (unsigned long)frameLength);
+            if (g_canRxCount > 0U)
+            {
+                printf("DRE tdesc0: w0=0x%08lX, w1=0x%08lX, w2=0x%08lX, w3=0x%08lX, mac_txsts=0x%08lX.\r\n",
+                       (unsigned long)DRE_TETHDL0_DESCRIPTOR_WORDS[0],
+                       (unsigned long)DRE_TETHDL0_DESCRIPTOR_WORDS[1],
+                       (unsigned long)DRE_TETHDL0_DESCRIPTOR_WORDS[2],
+                       (unsigned long)DRE_TETHDL0_DESCRIPTOR_WORDS[3],
+                       (unsigned long)MODULE_GETH0.PORT[0].CORE.MAC_RX_TX_STATUS.U);
+            }
+
+            if ((g_canRxCount > 0U) && (g_descriptorLogged == FALSE))
+            {
+                volatile IfxGeth_TxDescr *descriptor = &g_txDescrList.descr[0];
+                printf("GETH txdesc0: tdes0=0x%08lX, tdes1=0x%08lX, tdes2=0x%08lX, tdes3=0x%08lX, desc=0x%08lX, buf=0x%08lX.\r\n",
+                       (unsigned long)descriptor->TDES0.U,
+                       (unsigned long)descriptor->TDES1.U,
+                       (unsigned long)descriptor->TDES2.U,
+                       (unsigned long)descriptor->TDES3.U,
+                       (unsigned long)&g_txDescrList.descr[0],
+                       (unsigned long)&g_channel0TxBuffer[0][0]);
+                g_descriptorLogged = TRUE;
+            }
 }
 
 static void DreCanEthBridge_applyLinkState(void)
@@ -297,12 +335,6 @@ static void DreCanEthBridge_applyLinkState(void)
     IfxGeth_startRx(geth, DRE_ETH_PORT_INDEX);
     IfxGeth_startTx(geth, DRE_ETH_PORT_INDEX);
 
-    if (g_probeFrameSent == FALSE)
-    {
-        g_probeFrameSent = TRUE;
-        DreCanEthBridge_sendRawProbeFrame();
-    }
-
     if (g_linkLogged == FALSE)
     {
         g_linkLogged = TRUE;
@@ -327,6 +359,7 @@ static uint16 DreCanEthBridge_packMac16(const uint8 *mac)
 
 static void DreCanEthBridge_initEthernet(const uint8 *macAddress)
 {
+    IfxApApu_ApuConfig gethApuConfig;
     const Ifx_HSPHY_ETH_Bits hsphyConfig = {
         .EPR = HSPHY_ETH_EPR_RMII,
         .MDIOEN = TRUE,
@@ -375,18 +408,34 @@ static void DreCanEthBridge_initEthernet(const uint8 *macAddress)
 
     gethConfig.dma.txChannel[0].channelEnable = TRUE;
     gethConfig.dma.txChannel[0].maxBurstLength = IfxGeth_TxBurstLength_16;
-    gethConfig.dma.txChannel[0].txDescrList = &IfxGeth_Eth_txDescrList[0][0];
+    gethConfig.dma.txChannel[0].txDescrList = &g_txDescrList;
     gethConfig.dma.txChannel[0].txBuffer1Size = DRE_GETH_MAX_BUFFER_SIZE;
     gethConfig.dma.txChannel[0].txBuffer1StartAddress = (uint32 *)&g_channel0TxBuffer[0][0];
 
     gethConfig.dma.rxChannel[0].channelEnable = TRUE;
     gethConfig.dma.rxChannel[0].maxBurstLength = IfxGeth_RxBurstLength_16;
-    gethConfig.dma.rxChannel[0].rxDescrList = &IfxGeth_Eth_rxDescrList[0][0];
+    gethConfig.dma.rxChannel[0].rxDescrList = &g_rxDescrList;
     gethConfig.dma.rxChannel[0].rxBuffer1Size = DRE_GETH_MAX_BUFFER_SIZE;
     gethConfig.dma.rxChannel[0].rxBuffer1StartAddress = (uint32 *)&g_channel0RxBuffer[0][0];
     gethConfig.bridge.mode = IfxGeth_BridgePortMode_singlePort0;
 
     IfxGeth_Eth_initModule(&g_geth, &gethConfig);
+    IfxApApu_initConfig(&gethApuConfig);
+    IfxGeth_configureAccessToGeth(&gethApuConfig);
+    {
+        IfxApApu_ApuMemoryConfig lmuMemoryConfig;
+        lmuMemoryConfig.apuConfig = &gethApuConfig;
+        IfxApApu_configureAccessToLmus(&lmuMemoryConfig);
+    }
+    /*
+     * Initialize the GETH driver with CPU-visible LMU descriptors first.
+     * In DRE DMA mode the Tx Descriptor Handler owns a separate four-entry
+     * descriptor list in DRE Message RAM. Switch only the hardware Tx ring
+     * registers after iLLD initialization, otherwise the CPU-side driver
+     * initialization would access the DRE RAM window and stall.
+     */
+    MODULE_GETH0.DMA.CH[0].TXDESC_LIST_LADDRESS.U = DRE_TETHDL0_DESCRIPTOR_ADDRESS;
+    MODULE_GETH0.DMA.CH[0].TXDESC_TAIL_LPOINTER.U = DRE_TETHDL0_DESCRIPTOR_ADDRESS;
     (void)DreCanEthBridge_mdioInit(NULL_PTR, gethClockRate);
     MODULE_GETH0.PORT[DRE_ETH_PORT_INDEX].CORE.MAC_PACKET_FILTER.U = 0U;
     IfxGeth_startRxDma(&MODULE_GETH0, IfxGeth_RxDmaChannel_0);
@@ -471,7 +520,7 @@ static void DreCanEthBridge_initCan(void)
     creConfig.stdFrameRateTableSize = IfxCan_StdFrameRateSize_0;
     creConfig.xtdFrameRateTableSize = IfxCan_XtdFrameRateSize_0;
     creConfig.enableCreRouting = FALSE;
-    creConfig.enableDestinationRouting = FALSE;
+    creConfig.enableDestinationRouting = TRUE;
     creConfig.rxBuf0DreTriggerEnable = TRUE;
     creConfig.rxBuf1DreTriggerEnable = FALSE;
     IfxCan_Can_initCre(&g_canNode, &creConfig);
@@ -483,7 +532,9 @@ static void DreCanEthBridge_initCan(void)
 
 static void DreCanEthBridge_initDre(const uint8 *macAddress)
 {
+    IfxDre_ApConfig dreApConfig;
     IfxDre_Dre_Config dreConfig;
+    IfxDre_Dre_CADConfig cadConfig;
     IfxDre_Dre_RoutingConfig routingConfig;
     IfxDre_Dre_EADConfig eadConfig;
     IfxDre_Dre_RPConfig rpConfig;
@@ -492,6 +543,10 @@ static void DreCanEthBridge_initDre(const uint8 *macAddress)
     uint8 macSource[6];
 
     memcpy(macSource, macAddress, sizeof(macSource));
+
+    /* Open the DRE Ethernet Message RAM APU for the GETH/LETH masters. */
+    IfxDre_initApConfig(&dreApConfig);
+    IfxDre_initAp(&MODULE_DRE, &dreApConfig);
 
     IfxDre_Dre_initModuleConfig(&dreConfig, &MODULE_DRE);
     dreConfig.rt0Config.size = 1U;
@@ -506,7 +561,7 @@ static void DreCanEthBridge_initDre(const uint8 *macAddress)
     dreConfig.ethernetOutputBuffer0.payloadLength = DRE_ETH_PAYLOAD_LENGTH;
     dreConfig.ethernetOutputBuffer0.destinationId = IfxCan_DestinationId_Ethernet1;
     dreConfig.ethernetOutputBuffer0.headerEnable = TRUE;
-    dreConfig.ethernetOutputBuffer0.triggerMode = IfxDre_TriggerMode_frameCount;
+    dreConfig.ethernetOutputBuffer0.triggerMode = IfxDre_TriggerMode_software;
     dreConfig.ethernetOutputBuffer0.macDestinationAddress0 = 0xFFFFU;
     dreConfig.ethernetOutputBuffer0.macDestinationAddress1 = 0xFFFFFFFFU;
     dreConfig.ethernetOutputBuffer0.macSourceAddress0 = DreCanEthBridge_packMac32(&macSource[0]);
@@ -524,6 +579,10 @@ static void DreCanEthBridge_initDre(const uint8 *macAddress)
     dreConfig.ethernetInputBuffer0.enableRejectRemoteFrame = TRUE;
 
     IfxDre_Dre_initModule(&g_dre, &dreConfig);
+
+    cadConfig.creStartAddress = (g_canNode.messageRAM.baseAddress & IFXCAN_MODULE_ADDRESS_MASK) + g_canNode.node->CRE.CONFIGADR.U;
+    cadConfig.elementIndex = IfxDre_CAD_Index_1;
+    IfxDre_Dre_setCanAddressDatabaseElement(&g_dre, &cadConfig);
 
     routingConfig.destinationId1 = IfxCan_DestinationId_Can0_Node1;
     routingConfig.destinationId2 = IfxCan_DestinationId_none;
@@ -557,7 +616,7 @@ static void DreCanEthBridge_initDre(const uint8 *macAddress)
     rxEthConfig.interruptOnCompletion = FALSE;
     rxEthConfig.fcsEnable = TRUE;
     rxEthConfig.descriptorPointer = 0U;
-    rxEthConfig.descriptorPointerConfigEnable = FALSE;
+    rxEthConfig.descriptorPointerConfigEnable = TRUE;
     IfxDre_Dre_initRxEthDescListControlConfig(&g_dre, 0U, &rxEthConfig);
 
     txEthConfig.dmaChannel = IfxDre_EthDmaChannel_0;
@@ -566,7 +625,7 @@ static void DreCanEthBridge_initDre(const uint8 *macAddress)
     txEthConfig.sourceAddressInsertionControl = IfxGeth_SourceAddressControl_notIncluded;
     txEthConfig.interruptOnCompletion = FALSE;
     txEthConfig.descriptorPointer = 0U;
-    txEthConfig.descriptorPointerConfigEnable = FALSE;
+    txEthConfig.descriptorPointerConfigEnable = TRUE;
     IfxDre_Dre_initTxEthDescListControlConfig(&g_dre, 0U, &txEthConfig);
 
     IfxDre_resetEthRxCount(&MODULE_DRE);
@@ -606,6 +665,8 @@ static void DreCanEthBridge_triggerCanToEthernet(const IfxCan_Message *rxMessage
     }
 
     IfxCan_Can_triggerDebugMessageToDre(&g_canNode, IfxCan_CreRxHostBufferIndex_0, &rxHostBuffer);
+    g_dreTriggerCount++;
+    g_softwareTriggerRequested = TRUE;
 }
 
 static void DreCanEthBridge_processCanRx(void)
@@ -617,17 +678,13 @@ static void DreCanEthBridge_processCanRx(void)
         IfxCan_Can_initMessage(&rxMessage);
         rxMessage.readFromRxFifo0 = TRUE;
         IfxCan_Can_readMessage(&g_canNode, &rxMessage, g_canRxWords);
+        g_canRxCount++;
         DreCanEthBridge_triggerCanToEthernet(&rxMessage, g_canRxWords);
     }
 }
 
 static void DreCanEthBridge_serviceDreStatus(void)
 {
-    if (IfxDre_get_EOBUF_Status_TxRequestFlag(&MODULE_DRE, 0U) != FALSE)
-    {
-        IfxDre_clear_EOBUF_Status_TxRequestFlag(&MODULE_DRE, 0U);
-    }
-
     if (IfxDre_get_EIBUF_Status_EthernetFrameCompleteFlag(&MODULE_DRE, 0U) != FALSE)
     {
         IfxDre_clear_EIBUF_Status_EthernetFrameCompleteFlag(&MODULE_DRE, 0U);
@@ -651,9 +708,12 @@ static void DreCanEthBridge_serviceDreStatus(void)
 
 void DreCanEthBridge_init(const uint8 *macAddress)
 {
+    g_canRxCount = 0U;
+    g_dreTriggerCount = 0U;
     g_lastLinkPollTick = 0U;
+    g_lastDiagTick = 0U;
     g_linkLogged = FALSE;
-    g_probeFrameSent = FALSE;
+    g_softwareTriggerRequested = FALSE;
     memcpy(g_macAddress, macAddress, sizeof(g_macAddress));
 
     DreCanEthBridge_initCan();
@@ -679,6 +739,27 @@ void DreCanEthBridge_poll(void)
         }
     }
 
+    if ((uint32)(now - g_lastDiagTick) >= 1000U)
+    {
+        g_lastDiagTick = now;
+        DreCanEthBridge_logBridgeStatus();
+    }
+
     DreCanEthBridge_processCanRx();
+
+    if (g_softwareTriggerRequested != FALSE)
+    {
+        if ((MODULE_DRE.EOBUF[0].STATUS.B.ACFL > 0U) && (MODULE_DRE.EREQ.B.TX0_REQ == 0U))
+        {
+            if (MODULE_DRE.EOBUF[0].STATUS.B.TTL != 0U)
+            {
+                MODULE_DRE.EOBUF[0].STATUS.B.TTL = 1U;
+            }
+
+            IfxDre_Dre_setSoftwareTrigger(&g_dre, 0U);
+            g_softwareTriggerRequested = FALSE;
+        }
+    }
+
     DreCanEthBridge_serviceDreStatus();
 }

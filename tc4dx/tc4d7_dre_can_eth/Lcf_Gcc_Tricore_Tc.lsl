@@ -2528,6 +2528,12 @@ SECTIONS
         *(.lmubss)
         *(.lmubss.*)
     } > lmuram
+
+    CORE_SEC(.lmubss_nc) (NOLOAD) : FLAGS(aw)
+    {
+        *(.lmubss_nc)
+        *(.lmubss_nc.*)
+    } > lmuram_nc
 }
 
 /*Far Const Sections, selectable with patterns and user defined sections*/
