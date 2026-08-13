@@ -277,6 +277,9 @@ static void DreCanEthBridge_logBridgeStatus(void)
                 (unsigned)DreCanEthBridge_mdioRead(DRE_ETH_PHY_ADDR, 0U, PHY_MII_BMCR),
                 (unsigned)DreCanEthBridge_mdioRead(DRE_ETH_PHY_ADDR, 0U, PHY_MII_BMSR));
 
+            printf("CAN psr: PSR=0x%08lX\r\n",
+                   (unsigned long)MODULE_CAN0.N[TC4D7_CAN_NODE_ID].PSR.U);
+
             if (g_canRxCount > 0U)
             {
                 printf("DRE tdesc0: w0=0x%08lX, w1=0x%08lX, w2=0x%08lX, w3=0x%08lX, mac_txsts=0x%08lX.\r\n",
@@ -476,6 +479,10 @@ static void DreCanEthBridge_initCan(void)
     nodeConfig.fastBaudRate.baudrate = TC4D7_CAN_DATA_BAUDRATE;
     nodeConfig.fastBaudRate.samplePoint = TC4D7_CAN_DATA_SAMPLE_POINT;
     nodeConfig.fastBaudRate.syncJumpWidth = 2000U;
+    /* Enable Transceiver Delay Compensation (mandatory for CAN FD data phase
+       >= 1 Mbps).  Without it the FD data-phase sample point is wrong and the
+       node silently drops every CAN FD frame. */
+    nodeConfig.fastBaudRate.tranceiverDelayOffset = 5U;
 
     nodeConfig.txConfig.txMode = IfxCan_TxMode_fifo;
     nodeConfig.txConfig.dedicatedTxBuffersNumber = 0;
@@ -529,12 +536,29 @@ static void DreCanEthBridge_initCan(void)
     creConfig.xtdFrameRateTableSize = IfxCan_XtdFrameRateSize_0;
     creConfig.enableCreRouting = FALSE;
     creConfig.enableDestinationRouting = TRUE;
-    creConfig.rxBuf0DreTriggerEnable = TRUE;
+    /* Software-driven path: CAN frames land in Rx FIFO0, are read by
+       DreCanEthBridge_processCanRx() and pushed into DRE via
+       IfxCan_Can_triggerDebugMessageToDre().  Keep the automatic
+       Rx->DRE trigger DISABLED so the FIFO0 is owned solely by software
+       and does not get starved after the first frame. */
+    creConfig.rxBuf0DreTriggerEnable = FALSE;
     creConfig.rxBuf1DreTriggerEnable = FALSE;
     IfxCan_Can_initCre(&g_canNode, &creConfig);
 
     while (IfxCan_Can_isNodeSynchronized(&g_canNode) == FALSE)
     {
+    }
+
+    /* Enable automatic Bus-Off recovery.  A transient error burst on the bus
+       (e.g. a frame the node could not yet ACK) would otherwise leave the
+       node permanently in Bus-Off, silently dropping every subsequent frame. */
+    {
+        Ifx_CAN_N *cn = &MODULE_CAN0.N[TC4D7_CAN_NODE_ID];
+        cn->CCCR.B.INIT = 1U;
+        while (cn->CCCR.B.INIT == 0U) {}
+        cn->CCCR.B.BRSE = 1U;
+        cn->CCCR.B.INIT = 0U;
+        while (cn->CCCR.B.INIT == 1U) {}
     }
 }
 
@@ -653,9 +677,23 @@ static void DreCanEthBridge_triggerCanToEthernet(const IfxCan_Message *rxMessage
     rxHostBuffer.UCRH.B.SID = IfxCan_DestinationId_Can0_Node1;
     rxHostBuffer.UCRH.B.DID = IfxCan_DestinationId_Ethernet1;
 
-    rxHostBuffer.R0.B.ID = rxMessage->messageId;
+    /* TC4x CAN RHBUF R0.ID packs a standard (11-bit) identifier into bits
+       [28:18], while an extended (29-bit) identifier occupies bits [28:0].
+       DRE reads the identifier straight from this register, so for standard
+       frames the ID must be left-shifted by 18.  Writing it un-shifted makes
+       DRE read a zero identifier for classic frames (extended IDs are already
+       in the low bits and work as-is). */
+    if (rxMessage->messageIdLength == IfxCan_MessageIdLength_extended)
+    {
+        rxHostBuffer.R0.B.ID  = rxMessage->messageId;
+        rxHostBuffer.R0.B.XTD = 1U;
+    }
+    else
+    {
+        rxHostBuffer.R0.B.ID  = rxMessage->messageId << 18U;
+        rxHostBuffer.R0.B.XTD = 0U;
+    }
     rxHostBuffer.R0.B.RTR = rxMessage->remoteTransmitRequest ? 1U : 0U;
-    rxHostBuffer.R0.B.XTD = (rxMessage->messageIdLength == IfxCan_MessageIdLength_extended) ? 1U : 0U;
     rxHostBuffer.R0.B.ESI = rxMessage->errorStateIndicator ? 1U : 0U;
 
     rxHostBuffer.R1.B.DLC = rxMessage->dataLengthCode;
@@ -670,6 +708,21 @@ static void DreCanEthBridge_triggerCanToEthernet(const IfxCan_Message *rxMessage
     for (index = 0U; index < byteCount; ++index)
     {
         rxHostBuffer.RHBUF_DB[index].U = payload[index];
+    }
+
+    /* Set the EOBUF payload length to the EXACT ACF frame size for this CAN
+       message.  DRE uses EOBUF CONFIG.PL as the Ethernet payload length (bytes
+       after the EtherType: AVTP control header + ACF CAN message).  A fixed
+       large PL would make GETH transmit the whole EOBUF buffer, including
+       stale bytes left by previous frames.  Keep PL 32-bit aligned. */
+    {
+        uint32 padded = (byteCount + 3U) & ~3U;
+        uint32 pl     = 12U + 8U + padded;   /* AVTP ctrl header + ACF(CAN hdr+id) + payload */
+        if (pl < 8U)
+        {
+            pl = 8U;   /* EOBUF PL minimum (value 4 is treated as 8) */
+        }
+        MODULE_DRE.EOBUF[0].CONFIG.B.PL = (uint16)pl;
     }
 
     IfxCan_Can_triggerDebugMessageToDre(&g_canNode, IfxCan_CreRxHostBufferIndex_0, &rxHostBuffer);
@@ -687,12 +740,53 @@ static void DreCanEthBridge_processCanRx(void)
         rxMessage.readFromRxFifo0 = TRUE;
         IfxCan_Can_readMessage(&g_canNode, &rxMessage, g_canRxWords);
         g_canRxCount++;
+        printf("CANRX id=0x%lx ext=%d fdf=%d brs=%d dlc=%d\r\n",
+               (unsigned long)rxMessage.messageId,
+               (rxMessage.messageIdLength == IfxCan_MessageIdLength_extended) ? 1 : 0,
+               (rxMessage.frameMode != IfxCan_FrameMode_standard) ? 1 : 0,
+               (rxMessage.frameMode == IfxCan_FrameMode_fdLongAndFast) ? 1 : 0,
+               rxMessage.dataLengthCode);
         DreCanEthBridge_triggerCanToEthernet(&rxMessage, g_canRxWords);
     }
 }
 
 static void DreCanEthBridge_serviceDreStatus(void)
 {
+    /* --- DRE Message Engine error housekeeping ---
+       An ME error (e.g. IRDE = Invalid Routing Destination, or a TX-descriptor
+       /watchdog error from the EOBUF path) stalls the ETH output.  Clear it and
+       re-kick the GETH TX DMA channel so pending EOBUF frames can be sent. */
+    {
+        uint32 meErr = MODULE_DRE.ME.ERR.U;
+        if (meErr != 0U)
+        {
+            MODULE_DRE.ME.ERR.U = 0x1EU;   /* clear rw1ch bits SPBBE/SRIBE/DBOE/IRDE */
+            IfxGeth_startTxDma(&MODULE_GETH0, IfxGeth_TxDmaChannel_0);
+        }
+    }
+
+    /* --- EOBUF (Ethernet output) housekeeping: clear TXREQ and errors --- */
+    {
+        Ifx_DRE_EOBUF_ERROR err;
+        err.U = MODULE_DRE.EOBUF[0].ERROR.U;
+        if (err.U != 0U)
+        {
+            static uint8 s_logged = FALSE;
+            if (s_logged == FALSE)
+            {
+                printf("EOBUF0 err: TDESE=%u WDTE=%u DERRTYP=%u (cleared)\r\n",
+                       (unsigned)err.B.TDESE, (unsigned)err.B.WDTE, (unsigned)err.B.DERRTYP);
+                s_logged = TRUE;
+            }
+            /* write 1 to clear error bits */
+            MODULE_DRE.EOBUF[0].ERROR.U = 3U;
+        }
+        if (MODULE_DRE.EOBUF[0].STATUS.B.TXREQ != 0U)
+        {
+            MODULE_DRE.EOBUF[0].STATUS.B.TXREQ = 1U; /* write 1 to clear */
+        }
+    }
+
     if (IfxDre_get_EIBUF_Status_EthernetFrameCompleteFlag(&MODULE_DRE, 0U) != FALSE)
     {
         IfxDre_clear_EIBUF_Status_EthernetFrameCompleteFlag(&MODULE_DRE, 0U);
@@ -755,18 +849,37 @@ void DreCanEthBridge_poll(void)
 
     DreCanEthBridge_processCanRx();
 
-    if (g_softwareTriggerRequested != FALSE)
+    /* Drain EOBUF: trigger the DRE Message Engine to move one pending ACF
+       frame from EOBUF0 into the GETH Tx path.  On this setup DRE does NOT
+       advance the GETH Tx DMA tail pointer by itself, so we advance it once
+       after each trigger (4-descriptor ring, 16 bytes each).  We trigger at
+       most ONCE per poll tick: the `ACFL > 0` condition re-enters on the next
+       tick for any remaining buffered frames, which avoids re-triggering the
+       same frame while DRE is still busy (that previously multiplied frames). */
+    if ((g_softwareTriggerRequested != FALSE) ||
+        (MODULE_DRE.EOBUF[0].STATUS.B.ACFL > 0U))
     {
-        if ((MODULE_DRE.EOBUF[0].STATUS.B.ACFL > 0U) && (MODULE_DRE.EREQ.B.TX0_REQ == 0U))
+        if (MODULE_DRE.EOBUF[0].STATUS.B.TTL != 0U)
         {
-            if (MODULE_DRE.EOBUF[0].STATUS.B.TTL != 0U)
-            {
-                MODULE_DRE.EOBUF[0].STATUS.B.TTL = 1U;
-            }
-
-            IfxDre_Dre_setSoftwareTrigger(&g_dre, 0U);
-            g_softwareTriggerRequested = FALSE;
+            MODULE_DRE.EOBUF[0].STATUS.B.TTL = 1U;
         }
+
+        IfxDre_Dre_setSoftwareTrigger(&g_dre, 0U);
+
+        /* Advance GETH Tx DMA tail pointer by one descriptor so the DMA engine
+           picks up the descriptor DRE just filled. */
+        {
+            uint32 base = DRE_TETHDL0_DESCRIPTOR_ADDRESS;
+            uint32 tp   = MODULE_GETH0.DMA.CH[0].TXDESC_TAIL_LPOINTER.U;
+            tp += 16U;
+            if (tp >= (base + 4U * 16U))
+            {
+                tp = base;
+            }
+            MODULE_GETH0.DMA.CH[0].TXDESC_TAIL_LPOINTER.U = tp;
+        }
+
+        g_softwareTriggerRequested = FALSE;
     }
 
     DreCanEthBridge_serviceDreStatus();

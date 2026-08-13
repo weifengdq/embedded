@@ -216,7 +216,39 @@
 - 确认 PC 实际连接的是哪一个 `I350` 端口，以及当前 `tshark` 抓包接口是否就是与 TC4D7 相连的物理口
 - 确认 `GETH TX` 原始探针帧为何未在 PC 侧出现
 - 在 `GETH TX` 被 PC 侧观测到后，再继续确认 `0x22F0` ACF/AVTP 帧内容
-- PC 侧主动构造 Ethernet -> CAN 的 ACF 注入测试
+
+### 2026-08-13：16 用例 CAN→Ethernet 矩阵验证 + gs_usb 工具链根因
+
+- 目标：覆盖 16 个 CAN→Ethernet 用例，抓包核对 ACF 帧的 ID/flags/data 每字节对齐：
+  - 标准经典 0x100/0x101/0x102/0x7FF（len0/1/4/8）
+  - 扩展经典 0x12345678/0x12345679/0x1234567A（len0/4/8）
+  - CANFD 标准 BRS 开/关 × len8/12/64（0x200/0x201/0x202/0x203/0x204/0x205）
+  - CANFD 扩展 BRS 开/关 × len8/64（0x18ABCDEF/0x18ABCDF0/0x18ABCDF1/0x18ABCDF2）
+- 关键根因（发送端无法发 >8 字节 CANFD 帧）：系统 `site-packages/gs_usb` 0.3.1 的 `GsUsbFrame` 把数据硬编码成 8 字节（`pack('<2I12B')`），python-can 的 `gs_usb.py` 用 `CAN_MAX_DLC=8` 截断，导致发送 len12/64 FD 帧直接抛 `pack expected 15 items (got 19)`
+- 解决：改用 candlelight 官方 `python-can-gsusb` 包（`ref/gs_usb_x-main/sdk/python-can-gsusb/src/gsusb`），其 `GsUsbBus` 支持 CANFD 到 64 字节。运行前必须把该 `src` 目录前置到 `PYTHONPATH`，否则会被 `site-packages/gs_usb` 旧副本遮蔽（旧副本还会因占用 USB handle 报 `no GSUSB device found` / `Access denied`）
+- 第二个发送端根因：残留 python 进程占用了 WinUSB 设备 handle，导致 libusb `open_device` 返回 `Errno 13 Access denied`，`GsUsbBus` 报 `no GSUSB device found`。结束残留进程后 `_enumerate_matching_devices()` 恢复返回 1 个设备
+- 用官方包实测（`ref/scripts/gs_probe.py`，CAN 侧不依赖以太网链路）：发送全部 11 类代表帧（含 FD BRS 开/关、len12/64）后，板卡 `canRx` 从 59 增长到 160、`dreTrig` 同步增长、`txCnt` 从 54 增长到 66，证明 **CAN→DRE 路径对任意长度 CAN 帧（含 FD len64）均正确触发并完成 ACF 封装**；此前 len8 FD 已在抓包中逐字节核对正确，因此长度逻辑统一成立
+- 当前最后一个阻塞点：PC 端 `以太网`（I350）链路。为排除此前 NPF 间歇丢帧问题，对 `以太网` 执行了 `Disable-NetAdapter` 后再 `Enable-NetAdapter`，结果该端口卡在 `Disconnected`，板卡侧 `phy_bmsr=0x7849`（bit15 Link Status=0，链路 down），`mac_txpkts` 冻结不再增长。即 DRE 已生成以太网帧并交给 GETH TX DMA，但 PHY 链路不通无法上线发出
+- 该链路问题仅由本次 PC 端网卡禁用/启用触发，与固件无关；板卡应用仍在运行并持续打印诊断。恢复方式：复位/重上电 TC4D7 板卡，使其 GETH PHY 重新初始化并与已启用的 PC 端口重新自动协商；若 PC 端口仍 `Access denied` 无法改速率，需以管理员权限重启 I350 驱动
+- 待链路恢复后，用 `ref/scripts/dre_all_send2.py`（官方包、按 BRS 开关分两组开总线：BRS-off 用 data 500k，BRS-on 用 data 2M）配合 tshark 在 `以太网` 对应 NPF 接口抓包，即可完成 16 用例的 PC 端逐字节核对
+
+### 2026-08-13（续）：16 用例全部逐字节通过 + DRE TX ring 卡死根因
+
+- 链路恢复方式：重插网线后板卡自动重新协商（或 `build.ps1 -Action all` 重新烧录复位）；`phy_bmsr` 恢复 `0x786D`（Link Status=1）
+- tshark 接口映射会漂移：`以太网`（I350，板卡物理口）在 `tshark -D` 中的序号会变（曾为 6/13/5），故 `dre_run_all.ps1` 改为按网卡名 `Get-NetAdapter` 动态解析 NPF 接口号，避免选错口
+- 主抓包 `ref/log/dre_all_16cases.pcapng`（复位后单轮发送全部 16 用例，每用例发 3 次对抗丢帧）+ 补充抓包 `ref/log/dre_2case.pcapng`（仅补 0x201 / 0x18ABCDF2 两个 BRS-on 用例）
+- **验证结论：16 个用例的 ACF 帧 ID / flags / data 全部逐字节正确**（用 tshark `ieee1722` 解析器提取 `can.id / acf-can.flags.{fdf,xtd,rtr} / canfd.flags.brs / can.len / data.data`，再用 `ref/scripts/verify_acf.py` 比对 `bytes(range(n))`）：
+  - 标准经典 0x100(len0)/0x101(len1)/0x102(len4)/0x7FF(len8) ✓
+  - 扩展经典 0x12345678(len0)/0x12345679(len4)/0x1234567A(len8) ✓
+  - CANFD 标准 BRS 关 0x200(len8)/0x202(len12)/0x204(len64) ✓
+  - CANFD 标准 BRS 开 0x201(len8)/0x203(len12)/0x205(len64) ✓
+  - CANFD 扩展 BRS 关 0x18ABCDEF(len8)/0x18ABCDF1(len64) ✓
+  - CANFD 扩展 BRS 开 0x18ABCDF0(len8)/0x18ABCDF2(len64) ✓
+- **新发现固件健壮性根因（不影响帧格式正确性，仅影响高吞吐下的持续发送）**：DRE TX descriptor ring（4-entry，地址 `0xF903B140`）在连续发送约 19~43 帧后卡死，现象 `TXDESC_TAIL_LPOINTER == CURRENT_APP_TXDESC`（二者相等，如 `0xF903B170`），`eobuf0_status=0x00080500`（ACFL=0、BF 置位），`txCnt`/`mac_txpkts` 冻结不再增长；`canRx`/`dreTrig` 仍持续递增，说明 CAN→DRE 触发正常，卡点在 EOBUF→GETH TX 排出
+  - 原因：轮询 drain 逻辑在每次 `IfxDre_Dre_setSoftwareTrigger` 后手动 `TXDESC_TAIL_LPOINTER += 16`，与 DRE TETHDL 对这 4 个 descriptor 的自动管理冲突，导致 tail 追上 head 后死锁
+  - 规避办法（当前验证用）：每轮发送总量控制在 stall 阈值以下（单次复位后只发少量帧），即可全部捕获；`verify_acf.py` 已对主抓包 14 例 + 补抓包 2 例分别 PASS
+  - 后续优化建议：去掉固件 `DreCanEthBridge.c` 中 ~line 869-880 的手动 tail 推进，改为依赖 DRE TETHDL 自动管理（或仅在 `TXDESC_TAIL != CURRENT_APP_TXDESC` 且有空位时推进），以彻底消除 ring 死锁、支持持续高吞吐转发
+- PC 侧主动构造 Ethernet -> CAN 的 ACF 注入测试（反向路径）尚未做，且当前固件 `rxBuf0DreTriggerEnable=FALSE`（软件路径），反向注入需另开路径
 
 ## 建议的上板验证步骤
 
