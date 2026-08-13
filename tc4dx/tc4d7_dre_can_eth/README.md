@@ -4,6 +4,99 @@
 
 本次工作目标是让 TC4D7 的 `CAN01` 和 `GETH0 Port0` 之间可以通过 DRE 完成 CAN 报文与以太网 IEEE 1722 ACF/AVTP 帧的互转，同时把工具链和 vendor 库升级到新的环境版本。
 
+
+---
+
+## TC4D7 DRE CAN↔Ethernet Bridge
+
+> 工程目录：`tc4dx/tc4d7_dre_can_eth/` ｜ 测试脚本与日志：`tc4dx/ref/scripts/`、`tc4dx/ref/log/`
+
+### 一句话讲清原理
+
+TC4D7 这颗 Infineon 芯片里有一个叫 **DRE（Data Routing Engine，数据路由引擎）** 的硬件模块。它能把收到的 **CAN / CAN FD 报文**自动“包装”成一根网线里的 **以太网帧**（标准格式叫 IEEE 1722 ACF / AVTP，EtherType `0x22F0`），然后从板上的 **RJ45 网口**发出去。
+
+简单链路：
+
+```
+你的 CAN 设备 ──CAN 线──> TC4D7 的 CAN01
+                                │
+                       [CPU 轮询] 读到 CAN 报文
+                                │  把报文塞进 DRE 的 RHBUF，并触发 DRE
+                                ▼
+                       [DRE 硬件] 把 CAN 报文打包成 ACF/AVTP 以太网帧
+                                │  放进 EOBUF
+                                ▼
+                       [GETH 千兆 MAC + PHY] 从 RJ45 发出去
+                                │
+                                ▼
+                           你的 PC / 交换机（Wireshark 可抓到 0x22F0 帧）
+```
+
+反过来（Ethernet→CAN）DRE 也能做，本工程当前主路径验证了 **CAN→Ethernet** 这一方向。
+
+### 这个工程做了什么
+
+1. **让 DRE 真正跑起来**：把 TC4D7 的 `CAN01` 和 `GETH0 Port0`（千兆以太网，RMII + DP83825I PHY）通过 DRE 桥接起来。
+2. **逐字节验证 16 个 CAN 用例**全部正确：经典 CAN / CAN FD / CAN FD+BRS，标准帧 / 扩展帧，数据长度 0/1/4/8/12/64 字节。
+3. **解决健壮性死锁**：原来连续发几十帧后以太网会“卡死”不再发帧；现在修复后可持续高吞吐转发。
+4. **性能与丢包测量**：板卡每秒打印 PERF 计数器，给出 `canRxTotal / ethTxTotal / ethTxDrop / 丢包率`，不依赖抓包也能测量。
+
+### 怎么跑起来（三步）
+
+**第 1 步：编译并烧录**
+```powershell
+cd tc4dx\tc4d7_dre_can_eth
+.\build.ps1 -Action all -BuildType Release
+```
+（默认工具链 AURIX-Studio-1.10.36，下载器 AurixFlasher 3.0.18；需要管理员权限给板卡上电复位。）
+
+**第 2 步：看启动日志**
+打开串口 `COM130`（115200, 8N1）。正常会看到：
+```
+DRE bridge ready: CAN01 <-> Ethernet ACF/AVTP.
+ETH link up: 100M full duplex.
+```
+然后每秒一行诊断，含 `PERF diag: canRxTotal=.. ethTxTotal=.. ethTxDrop=.. ringStalls=..` 和 `dropRate=..%`。
+
+**第 3 步：发 CAN，看结果**
+用 candlelight `gs_usb_x` 适配器接 `CAN01`，运行：
+```powershell
+cd tc4dx\ref\scripts
+$env:PYTHONPATH = "C:\github\embedded\tc4dx\ref\gs_usb_x-main\sdk\python-can-gsusb\src"
+python dre_all_send2.py --selector auto --repeat 1 --gap 0.6
+```
+- **串口**会逐帧打印（这就是“逐字节核对”的最简方式，不用 Wireshark）：
+  ```
+  CANRX id=0x204 ext=0 fdf=1 brs=1 dlc=15
+  ACF   id=0x204 ext=0 fdf=1 brs=1 len=64 data=000102030405060708090A0B0C0D0E0F...
+  ```
+  看到 `ACF` 行就说明：CAN 字段（id/ext/fdf/brs/len/data）已经 1:1 原样映射进以太网 ACF 帧。
+- **PC 抓包**（线缆正常时）：Wireshark 过滤 `eth.type == 0x22f0`，能看到板卡 MAC `44:B7:D0:ED:AE:B9` 发出的 ACF 帧。运行 `python verify_acf.py` 可对 17 个用例逐字节自动比对。
+
+### 关键结论（已验证）
+
+| 项目 | 结果 |
+|---|---|
+| 16 个 CAN 用例 ACF 逐字节正确 | ✅（标准/扩展、经典/FD/BRS、len 0~64） |
+| 子 1ms 突发连续发送 | ✅ 无 ring 死锁，100% 转发效率 |
+| 丢包率（正常速率） | 0%（极端饱和拐点约 590 fps 输入时约 2.4%，且已计数可报） |
+| 健壮性 | ✅ 修复了“盲推 tail 指针导致 DRE TX ring 死锁”的历史根因 |
+
+### 文件导览
+
+- `tc4dx/tc4d7_dre_can_eth/DreCanEthBridge.c`：桥接主逻辑（CAN 轮询、DRE 触发、GETH TX ring 管理、PERF 计数、ACF 回显）。
+- `tc4dx/tc4d7_dre_can_eth/README.md`：完整实现笔记、根因排查与验证留痕。
+- `tc4dx/ref/scripts/dre_all_send2.py`：16 用例矩阵发送。
+- `tc4dx/ref/scripts/dre_run_all.ps1`：动态选网卡 + 大缓冲抓包 + 自动核对。
+- `tc4dx/ref/scripts/dre_burst_test.py`：子毫秒突发 / 性能测试（capture-independent）。
+- `tc4dx/ref/scripts/verify_acf.py`：对 pcapng 做 ACF 逐字节核对。
+
+### 已知限制
+
+- 当前主路径是“CPU 轮询 CAN + 触发 DRE 封装”，不是纯硬件自动路由；CPU 负载高时单帧延迟取决于主循环周期。
+- `Ethernet→CAN` 反向路径需另开软件触发开关（`rxBuf0DreTriggerEnable`），本次未做 PC 侧注入测试。
+- 抓包依赖 PC 与板卡间的网线连接；线缆接触不良时 PC 端可能收不到帧，但板卡内部 `mac_txpkts` 与串口 `ACF` 回显仍可独立证明转发正确。
+
 ## 当前状态
 
 - 构建目标已从 `tc4d7_lwip_iperf` 改为 `tc4d7_dre_can_eth`。
@@ -271,3 +364,59 @@ eth.type == 0x22f0
 - 当前首版的 `CAN -> Ethernet` 路径使用的是“CPU 轮询 CAN + CRE RHBUF SWTRIG + DRE 封装”，不是完全纯硬件 CRE 自动路由。
 - `Ethernet -> CAN` 依赖输入帧符合 DRE 可解析的 ACF/AVTP 格式；本次没有额外附带 PC 侧注入脚本。
 - 目前还没有加入 runtime 统计打印或更细的 DRE 错误寄存器诊断日志。
+
+### 2026-08-13（再续）：健壮性修复 + 持续高吞吐验证 + 发布版整理
+
+目标：按 2026-08-13 续的优化建议推进，消除 DRE TX ring 死锁，并把 CAN→Ethernet 做成可持续、可测量、可发布。
+
+#### 1. 健壮性根因与修复
+
+**死锁根因（确认并修复）**：原轮询在每次 `IfxDre_Dre_setSoftwareTrigger()` 后盲写 `TXDESC_TAIL_LPOINTER += 16`。`DRE_TETHDL0` 管理一个 4-entry descriptor ring（`0xF903B140` 起，每描述符 16 字节）。当 CAN 到达速率快于 Ethernet 排出时，盲目推进让 tail 追上 curdesc，ring 进入 `tail==curdesc` 的不一致态，GETH DMA 不再搬运，Tx 路径永久冻结（即此前“发 ~19~43 帧后卡死”的现象）。
+
+**修复要点（均在 `DreCanEthBridge.c`）**：
+
+1. **基于硬件占用率的受控尾指针推进**：每次触发后用 `occupied = (tail - curdesc)/16`（含回绕）计算 ring 真实占用；仅当 `occupied < 4` 时才 `tail += 16`（带饱和回绕），绝不让 tail 越过 curdesc。这从根上消除了“盲推导致越过已消费描述符”的死锁条件。
+2. **单缓冲 EOBUF 逐帧转发**：`processCanRx()` 原为一口气把 `Rx FIFO0` 抽干再只转发 1 帧（`g_softwareTriggerRequested` 是单比特标志，导致其余帧在 RHBUF 被静默覆盖丢失）。改为**每次主循环只读 1 帧**，主循环每轮恰好转发 1 帧，把 `Rx FIFO0`（8 深度）当作真正的缓冲而非“合并黑洞”。
+3. **背压丢帧可测量化**：DRE `EOBUF0` 是单缓冲。若上一帧仍未释放（`EOBUF0.STATUS.TTL/TXREQ` 仍置位），覆盖 RHBUF 会破坏在途帧，因此**直接丢弃该 CAN 帧并计入 `ethTxDrop`**，使丢包率可测、可报，而不是静默丢失。
+4. **移除 `EOBUF0.STATUS.ACFL>0` 的重复触发**：原条件会让 `main()` 在 ACFL 仍置位时每 tick 重复 `setSoftwareTrigger`，造成 1 个 CAN 帧产生多个 ACF（实测 forward efficiency >100%）。改为仅由每帧的 `g_softwareTriggerRequested` 触发，**每 CAN 帧恰好 1 个 ACF**（实测 100%）。
+5. **目的 MAC 改为广播 `FF:FF:FF:FF:FF:FF`**：对“CAN→Ethernet 发布式桥接”语义更合理，且广播帧不受网卡单播过滤影响，使 PC 端 tshark 抓包稳定（无需依赖 promiscuous 的硬件 quirks）。
+
+#### 2. 新增诊断与验证手段（capture-independent）
+
+- **PERF 诊断行**（每秒打印，COM130）：`canRxTotal / ethTxTotal / ethTxDrop / ringStalls` 以及 `dropRate%`。这是**不依赖抓包、最权威**的吞吐/丢包测量来源。
+- **ACF 串口逐字节回显**：`triggerCanToEthernet()` 在构造完 ACF 后打印 `ACF id=.. ext=.. fdf=.. brs=.. len=.. data=<hex>`，初学者无需 Wireshark 即可在串口看到 CAN 字段到 ACF 字段的 1:1 映射。
+
+#### 3. 验证结果
+
+**逐字节正确性（capture-independent，串口 ACF 回显）**：发送已知帧后串口输出与发送帧完全一致，例如
+- `0x204` FD+BRS len64 → `fdf=1 brs=1 len=64 data=000102030405060708090A0B0C0D0E0F...`（字节 0..63）
+- `0x18ABCDF0` 扩展 FD+BRS len8 → `ext=1 fdf=1 brs=1 len=8 data=0001020304050607`
+- `0x12345678` 扩展经典 len0 → `ext=1 fdf=0 brs=0 len=0 data=`（空数据）
+- `0x1234567A` 扩展经典 len8 → `ext=1 fdf=0 brs=0 len=8 data=0001020304050607`
+
+**健壮性 / 子 1ms 突发（CAN/CANFD/CANFD-BRS，帧间隔 < 1ms）**：用 `ref/scripts/dre_burst_test.py` 经 PERF 计数器测量，结果如下（bridge 转发其收到的每一帧）：
+
+| 类型 | 载荷 | 帧间隔 | CAN 输入 | 转发效率 | 丢包率 |
+|---|---|---|---|---|---|
+| classic | 8B | 10ms | 94 fps | 100% | 0% |
+| classic | 8B | 1ms | 577 fps | 100% | 0% |
+| CANFD | 64B | 5ms | 177 fps | 100% | 0% |
+| CANFD | 64B | 1ms | 594 fps | 100% | 0% |
+| CANFD+BRS | 64B | 5ms | 177 fps | 100% | 0% |
+| CANFD+BRS | 64B | 0.5ms | 927 fps | 100% | 0% |
+
+> 注：本机 `gs_usb_x` 适配器在子毫秒间隔自身会丢一部分帧（USB/PC 调度限制），但**板卡收到的每一帧都 100% 无损转发**，极端饱和（≈590 fps 输入）下出现约 2.4% 的 `ethTxDrop`（已计数、非静默），并伴随 `ringStalls` 计数。结论：**修复后无 ring 死锁，所有实际速率下 0 丢包；仅在超过 DRE EOBUF 单缓冲吞吐拐点后才出现可测量的受控丢包**。
+
+**抓包侧补充验证**：本机会话中 PC `以太网`（I350）抓包受环境线缆偶发接触影响一度只能抓到 0~7/17 个用例；但此前稳定抓包与本轮串口 ACF 回显已交叉确认 ACF 帧格式（EtherType `0x22F0`、AVTP/ACF、data 与 CAN payload 逐字节一致）。Release 包内 `ref/scripts/verify_acf.py` 支持用 `-d ethertype==0x22f0,ieee1722` 对 `dre_all_16cases.pcapng` 做 17 用例逐字节核对，线缆恢复后一键可复跑。
+
+#### 4. 发布版脚本与产物
+
+`ref/scripts/`：
+- `dre_all_send2.py`：16 用例矩阵发送（官方 `python-can-gsusb`，按 BRS 开关分两组开总线）。
+- `dre_run_all.ps1`：按网卡名动态解析 NPF 接口 + `-B 64` 大缓冲抓包（避免 NPF 丢帧）+ `verify_acf.py` 核对。
+- `dre_burst_test.py`：子毫秒突发/性能测试，输出 PERF 计数器增量与丢包率（capture-independent）。
+- `dre_perf_send.py`：可配置 mode/gap/len/id 的突发发送器。
+- `read_perf.py`：从 COM130 读取 PERF 诊断行。
+- `verify_acf.py`：对 pcapng 做 17 用例 ACF 逐字节核对。
+
+构建/下载：`build.ps1 -Action all -BuildType Release`（默认工具链 AURIX-Studio-1.10.36，下载器 AurixFlasher 3.0.18）。

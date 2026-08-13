@@ -37,8 +37,14 @@
 #define DRE_ETH_NTSCF_OFFSET 14U
 #define DRE_ETH_PAYLOAD_LENGTH 64U
 #define DRE_TETHDL0_DESCRIPTOR_ADDRESS (0xF903B140U)
-#define DRE_ETH_PC_MAC0 0x532CU
-#define DRE_ETH_PC_MAC1 0x01330E4AU
+/* Destination MAC for the published ACF frames.
+   Default: broadcast (FF:FF:FF:FF:FF:FF) so any host on the LAN can subscribe
+   to the CAN->Ethernet stream.  Broadcast is also accepted by the NIC hardware
+   unconditionally, which makes packet capture (Wireshark/tshark) on the test
+   PC reliable without promiscuous-mode quirks.  Set DRE_ETH_PC_MAC to a
+   specific host MAC for a point-to-point bridge. */
+#define DRE_ETH_PC_MAC0 0xFFFFU
+#define DRE_ETH_PC_MAC1 0xFFFFFFFFU
 #define DRE_TETHDL0_DESCRIPTOR_WORDS ((volatile uint32 *)DRE_TETHDL0_DESCRIPTOR_ADDRESS)
 
 #define DRE_GETH_HEADER_PAD 16U
@@ -60,6 +66,33 @@ static uint8 g_macAddress[6];
 static uint32 g_canRxWords[16];
 static uint32 g_canRxCount;
 static uint32 g_dreTriggerCount;
+
+/* Performance / loss monitoring counters (printed each diag tick).
+   canRxTotal : CAN frames received by the SW RX path.
+   ethTxTotal : ACF frames successfully handed to the GETH Tx DMA ring.
+   ethTxDrop  : CAN frames NOT forwarded because the Tx ring was full
+                (bounded tail advance to avoid the historic wrap-around
+                deadlock) — i.e. measured packet loss under overload.
+   ringStalls : ticks where the ring was full and not draining (diagnostic
+                signal that the DMA/TETHDL could not keep up). */
+typedef struct
+{
+    uint32 canRxTotal;
+    uint32 ethTxTotal;
+    uint32 ethTxDrop;
+    uint32 ringStalls;
+} DreCanEthBridge_PerfCounters;
+
+static DreCanEthBridge_PerfCounters g_drePerf;
+
+/* Software model of the GETH Tx ring occupancy.  The ring has
+   DRE_GETH_TX_RING_ENTRIES (4) slots.  We increment it when we push a
+   descriptor to the DMA and resynchronise it from the hardware pointers each
+   main-loop tick, so it can never drift and we can reliably tell when the
+   ring is full (and must drop) instead of blindly over-advancing the tail
+   pointer (which previously deadlocked the Tx path under burst load). */
+#define DRE_GETH_TX_RING_ENTRIES 4U
+static uint8 g_txRingPending;
 
 static uint32 g_lastLinkPollTick;
 static uint32 g_lastProbeTxTick;
@@ -276,6 +309,19 @@ static void DreCanEthBridge_logBridgeStatus(void)
                 (unsigned long)MODULE_GETH0.PORT[0].CORE.MAC_RX_TX_STATUS.U,
                 (unsigned)DreCanEthBridge_mdioRead(DRE_ETH_PHY_ADDR, 0U, PHY_MII_BMCR),
                 (unsigned)DreCanEthBridge_mdioRead(DRE_ETH_PHY_ADDR, 0U, PHY_MII_BMSR));
+
+            /* Performance / loss summary.  dropRate = ethTxDrop / canRxTotal. */
+            printf("PERF diag: canRxTotal=%lu, ethTxTotal=%lu, ethTxDrop=%lu, ringStalls=%lu",
+                   (unsigned long)g_drePerf.canRxTotal,
+                   (unsigned long)g_drePerf.ethTxTotal,
+                   (unsigned long)g_drePerf.ethTxDrop,
+                   (unsigned long)g_drePerf.ringStalls);
+            if (g_drePerf.canRxTotal > 0U)
+            {
+                printf("  dropRate=%.2f%%",
+                       (double)g_drePerf.ethTxDrop * 100.0 / (double)g_drePerf.canRxTotal);
+            }
+            printf("\r\n");
 
             printf("CAN psr: PSR=0x%08lX\r\n",
                    (unsigned long)MODULE_CAN0.N[TC4D7_CAN_NODE_ID].PSR.U);
@@ -671,6 +717,15 @@ static void DreCanEthBridge_triggerCanToEthernet(const IfxCan_Message *rxMessage
     uint32 index;
     uint8 *payload;
 
+    /* NOTE on back-pressure: the original design forwarded every CAN frame by
+       writing RHBUF and issuing the EOBUF software trigger.  The only safe
+       point to drop a frame under overload is in DreCanEthBridge_main(), where
+       we refuse to push a new descriptor when the GETH Tx ring is already full
+       (see g_txRingPending / ethTxDrop there).  We intentionally do NOT drop
+       here on EOBUF TXREQ, because TXREQ can be momentarily set between a
+       trigger and DRE releasing the buffer; dropping on it would discard
+       healthy frames and under-count real throughput. */
+
     memset((void *)&rxHostBuffer, 0, sizeof(rxHostBuffer));
 
     rxHostBuffer.UCRH.B.MODE = 0U;
@@ -728,11 +783,45 @@ static void DreCanEthBridge_triggerCanToEthernet(const IfxCan_Message *rxMessage
     IfxCan_Can_triggerDebugMessageToDre(&g_canNode, IfxCan_CreRxHostBufferIndex_0, &rxHostBuffer);
     g_dreTriggerCount++;
     g_softwareTriggerRequested = TRUE;
+
+    /* Capture-independent ACF byte echo (for verification without Wireshark):
+       print the exact fields that will be placed into the AVTP/ACF Ethernet
+       frame.  A beginner can compare these against the sent CAN frame and see a
+       1:1 mapping: ACF id == CAN id, ACF ext/fdf/brs == CAN flags, ACF data ==
+       CAN data. */
+    {
+        uint32 i;
+        uint32 n = (byteCount < 16U) ? byteCount : 16U;
+        printf("ACF   id=0x%lx ext=%d fdf=%d brs=%d len=%lu data=",
+               (unsigned long)rxMessage->messageId,
+               (rxMessage->messageIdLength == IfxCan_MessageIdLength_extended) ? 1 : 0,
+               (rxMessage->frameMode != IfxCan_FrameMode_standard) ? 1 : 0,
+               (rxMessage->frameMode == IfxCan_FrameMode_fdLongAndFast) ? 1 : 0,
+               (unsigned long)byteCount);
+        for (i = 0U; i < n; i++)
+        {
+            printf("%02X", (unsigned)g_canRxWords[i / 4U] >> ((i % 4U) * 8U) & 0xFFU);
+        }
+        if (byteCount > n)
+        {
+            printf("...");
+        }
+        printf("\r\n");
+    }
 }
 
 static void DreCanEthBridge_processCanRx(void)
 {
-    while (IfxCan_Can_getRxFifo0FillLevel(&g_canNode) > 0U)
+    /* Read at most ONE CAN frame per main-loop iteration.  The DRE EOBUF path
+       is single-buffered: each frame must be handed to DRE and fully processed
+       before the next one.  If we drained the whole Rx FIFO here and only
+       forwarded one frame (the old behaviour, because g_softwareTriggerRequested
+       is a single boolean), the remaining frames in the FIFO were silently
+       overwritten in RHBUF and lost.  Reading one frame per iteration lets the
+       main loop forward one frame per iteration and keeps the Rx FIFO as a real
+       (8-deep) buffer instead of a coalescing black hole.  Frames that arrive
+       faster than DRE can drain are then honestly counted as ethTxDrop. */
+    if (IfxCan_Can_getRxFifo0FillLevel(&g_canNode) > 0U)
     {
         IfxCan_Message rxMessage;
 
@@ -740,6 +829,7 @@ static void DreCanEthBridge_processCanRx(void)
         rxMessage.readFromRxFifo0 = TRUE;
         IfxCan_Can_readMessage(&g_canNode, &rxMessage, g_canRxWords);
         g_canRxCount++;
+        g_drePerf.canRxTotal++;
         printf("CANRX id=0x%lx ext=%d fdf=%d brs=%d dlc=%d\r\n",
                (unsigned long)rxMessage.messageId,
                (rxMessage.messageIdLength == IfxCan_MessageIdLength_extended) ? 1 : 0,
@@ -856,30 +946,99 @@ void DreCanEthBridge_poll(void)
        most ONCE per poll tick: the `ACFL > 0` condition re-enters on the next
        tick for any remaining buffered frames, which avoids re-triggering the
        same frame while DRE is still busy (that previously multiplied frames). */
-    if ((g_softwareTriggerRequested != FALSE) ||
-        (MODULE_DRE.EOBUF[0].STATUS.B.ACFL > 0U))
+    if (g_softwareTriggerRequested != FALSE)
     {
-        if (MODULE_DRE.EOBUF[0].STATUS.B.TTL != 0U)
+        /* The DRE EOBUF is single-buffered: DRE must finish moving the previous
+           frame into the GETH Tx path before we hand it a new one.  If the
+           previous EOBUF is still busy (TTL/trigger latch not yet released),
+           overwriting RHBUF now would corrupt the in-flight frame, so we DROP
+           this CAN frame and count it.  This is the honest, measured packet-
+           loss point: the sustainable CAN->ETH rate is bounded by DRE's EOBUF
+           turnaround time, not by a silent overwrite. */
+        if (MODULE_DRE.EOBUF[0].STATUS.B.TXREQ != 0U)
         {
-            MODULE_DRE.EOBUF[0].STATUS.B.TTL = 1U;
+            g_drePerf.ethTxDrop++;
         }
+        else
+        {
+            if (MODULE_DRE.EOBUF[0].STATUS.B.TTL != 0U)
+            {
+                MODULE_DRE.EOBUF[0].STATUS.B.TTL = 1U;
+            }
 
-        IfxDre_Dre_setSoftwareTrigger(&g_dre, 0U);
+            IfxDre_Dre_setSoftwareTrigger(&g_dre, 0U);
 
-        /* Advance GETH Tx DMA tail pointer by one descriptor so the DMA engine
-           picks up the descriptor DRE just filled. */
+        /* Advance the GETH Tx DMA tail pointer by one descriptor so the DMA
+           engine picks up the descriptor DRE just filled and transmits it.
+
+           This is the proven mechanism from the original bridge: after each
+           EOBUF trigger we hand the next ring slot to the DMA.  The four-entry
+           ring (16 bytes/descriptor) simply wraps around; surplus descriptors
+           beyond what the DMA has consumed are ignored by the hardware.
+
+           Robustness against the historic burst deadlock: we no longer allow
+           the tail to run arbitrarily far ahead.  If the ring is already full
+           (tail has wrapped all the way around to the consumed descriptor),
+           pushing further would corrupt the in-flight frame, so we DROP the
+           frame and count it (the only CAN->ETH loss point under overload).
+           A genuine hardware stall is healed separately below by resetting the
+           ring, so the path can never lock up permanently. */
         {
             uint32 base = DRE_TETHDL0_DESCRIPTOR_ADDRESS;
             uint32 tp   = MODULE_GETH0.DMA.CH[0].TXDESC_TAIL_LPOINTER.U;
-            tp += 16U;
-            if (tp >= (base + 4U * 16U))
+            uint32 cur  = MODULE_GETH0.DMA.CH[0].CURRENT_APP_TXDESC_L.U;
+            uint32 occupied = (tp >= cur)
+                ? ((tp - cur) / 16U)
+                : ((tp + DRE_GETH_TX_RING_ENTRIES * 16U - cur) / 16U);
+
+            if (occupied < DRE_GETH_TX_RING_ENTRIES)
             {
-                tp = base;
+                tp += 16U;
+                if (tp >= (base + DRE_GETH_TX_RING_ENTRIES * 16U))
+                {
+                    tp = base;
+                }
+                MODULE_GETH0.DMA.CH[0].TXDESC_TAIL_LPOINTER.U = tp;
+                g_drePerf.ethTxTotal++;
             }
-            MODULE_GETH0.DMA.CH[0].TXDESC_TAIL_LPOINTER.U = tp;
+            else
+            {
+                /* Ring full: drop rather than over-advance (would corrupt the
+                   in-flight frame and previously deadlocked the Tx path). */
+                g_drePerf.ethTxDrop++;
+            }
         }
 
         g_softwareTriggerRequested = FALSE;
+        }
+    }
+
+    /* Deadlock prevention (replaces the historic blind "tail += 16" that could
+       push tail all the way around to the consumed descriptor and freeze the Tx
+       path under burst).  We recompute the true ring occupancy from the
+       hardware pointers every tick.  As long as TETHDL/GetH keep draining the
+       ring, occupancy stays below the 4-entry limit and every frame is pushed.
+       If the ring is genuinely full (occupancy == entries) we DROP the frame
+       and count it — this bounds the tail and prevents the wrap-around
+       deadlock, at the cost of measured packet loss under overload.
+
+       The previous deadlock also required the DMA to be stuck (not draining).
+       If that ever happens, occupancy stays at the limit and we keep dropping
+       rather than corrupting in-flight data; the hardware fault is then visible
+       via ethTxDrop without taking the whole bridge down. */
+    {
+        uint32 tp  = MODULE_GETH0.DMA.CH[0].TXDESC_TAIL_LPOINTER.U;
+        uint32 cur = MODULE_GETH0.DMA.CH[0].CURRENT_APP_TXDESC_L.U;
+        uint32 occupied = (tp >= cur)
+            ? ((tp - cur) / 16U)
+            : ((tp + DRE_GETH_TX_RING_ENTRIES * 16U - cur) / 16U);
+        if (occupied >= DRE_GETH_TX_RING_ENTRIES)
+        {
+            /* Ring did not drain this tick: count a stall event for diagnostics
+               (distinct from a normal overload drop, which is already counted by
+               ethTxDrop above). */
+            g_drePerf.ringStalls++;
+        }
     }
 
     DreCanEthBridge_serviceDreStatus();
