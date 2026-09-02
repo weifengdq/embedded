@@ -16,6 +16,9 @@
 #include "IfxDre_regdef.h"
 #include "Pms/Std/IfxPmsEvr.h"
 #include "Port/Std/IfxPort.h"
+#include "SysSe/Bsp/Bsp.h"
+#include "Stm/Std/IfxStm.h"
+#include "Cpu/Std/IfxCpu.h"
 
 #include "kit_tc4d7_lite.h"
 #include "pdl/ifx_geth.h"
@@ -43,8 +46,11 @@
    unconditionally, which makes packet capture (Wireshark/tshark) on the test
    PC reliable without promiscuous-mode quirks.  Set DRE_ETH_PC_MAC to a
    specific host MAC for a point-to-point bridge. */
-#define DRE_ETH_PC_MAC0 0xFFFFU
-#define DRE_ETH_PC_MAC1 0xFFFFFFFFU
+/* During verification the host sits at this MAC; using a unicast destination
+   (instead of broadcast) keeps the DRE EOBUF happy.  macDestinationAddress0 =
+   MAC bytes[0..1], macDestinationAddress1 = bytes[2..5]. */
+#define DRE_ETH_PC_MAC0 0x001BU
+#define DRE_ETH_PC_MAC1 0x2275346CU
 #define DRE_TETHDL0_DESCRIPTOR_WORDS ((volatile uint32 *)DRE_TETHDL0_DESCRIPTOR_ADDRESS)
 
 #define DRE_GETH_HEADER_PAD 16U
@@ -74,13 +80,25 @@ static uint32 g_dreTriggerCount;
                 (bounded tail advance to avoid the historic wrap-around
                 deadlock) — i.e. measured packet loss under overload.
    ringStalls : ticks where the ring was full and not draining (diagnostic
-                signal that the DMA/TETHDL could not keep up). */
+                signal that the DMA/TETHDL could not keep up).
+   -- Reverse path (Ethernet -> CAN) --
+   ethRxTotal : Ethernet frames received on the GETH Rx DMA ring.
+   acfRxTotal : Ethernet frames carrying the IEEE-1722 ACF EtherType 0x22F0
+                (i.e. that reached the ACF parse stage at all).
+   canTxTotal : CAN frames successfully handed to the CAN TX FIFO by the
+                reverse (ETH->CAN) bridge.
+   canTxDrop  : Ethernet frames NOT converted to CAN because the CAN TX FIFO
+                was full (overload loss on the reverse path). */
 typedef struct
 {
     uint32 canRxTotal;
     uint32 ethTxTotal;
     uint32 ethTxDrop;
     uint32 ringStalls;
+    uint32 ethRxTotal;
+    uint32 acfRxTotal;
+    uint32 canTxTotal;
+    uint32 canTxDrop;
 } DreCanEthBridge_PerfCounters;
 
 static DreCanEthBridge_PerfCounters g_drePerf;
@@ -92,6 +110,7 @@ static DreCanEthBridge_PerfCounters g_drePerf;
    ring is full (and must drop) instead of blindly over-advancing the tail
    pointer (which previously deadlocked the Tx path under burst load). */
 #define DRE_GETH_TX_RING_ENTRIES 4U
+#define DRE_GETH_RX_RING_ENTRIES IFXGETH_MAX_RX_DESCRIPTORS   /* real Rx ring size (8) */
 static uint8 g_txRingPending;
 
 static uint32 g_lastLinkPollTick;
@@ -310,7 +329,9 @@ static void DreCanEthBridge_logBridgeStatus(void)
                 (unsigned)DreCanEthBridge_mdioRead(DRE_ETH_PHY_ADDR, 0U, PHY_MII_BMCR),
                 (unsigned)DreCanEthBridge_mdioRead(DRE_ETH_PHY_ADDR, 0U, PHY_MII_BMSR));
 
-            /* Performance / loss summary.  dropRate = ethTxDrop / canRxTotal. */
+            /* Performance / loss summary.
+               Forward (CAN->ETH): dropRate = ethTxDrop / canRxTotal.
+               Reverse (ETH->CAN): dropRate = canTxDrop / ethRxTotal. */
             printf("PERF diag: canRxTotal=%lu, ethTxTotal=%lu, ethTxDrop=%lu, ringStalls=%lu",
                    (unsigned long)g_drePerf.canRxTotal,
                    (unsigned long)g_drePerf.ethTxTotal,
@@ -318,13 +339,30 @@ static void DreCanEthBridge_logBridgeStatus(void)
                    (unsigned long)g_drePerf.ringStalls);
             if (g_drePerf.canRxTotal > 0U)
             {
-                printf("  dropRate=%.2f%%",
+                printf("  fwdDropRate=%.2f%%",
                        (double)g_drePerf.ethTxDrop * 100.0 / (double)g_drePerf.canRxTotal);
+            }
+            printf("\r\n");
+
+            printf("PERF rev : ethRxTotal=%lu, acfRxTotal=%lu, canTxTotal=%lu, canTxDrop=%lu",
+                   (unsigned long)g_drePerf.ethRxTotal,
+                   (unsigned long)g_drePerf.acfRxTotal,
+                   (unsigned long)g_drePerf.canTxTotal,
+                   (unsigned long)g_drePerf.canTxDrop);
+            if (g_drePerf.ethRxTotal > 0U)
+            {
+                printf("  revDropRate=%.2f%%",
+                       (double)g_drePerf.canTxDrop * 100.0 / (double)g_drePerf.ethRxTotal);
             }
             printf("\r\n");
 
             printf("CAN psr: PSR=0x%08lX\r\n",
                    (unsigned long)MODULE_CAN0.N[TC4D7_CAN_NODE_ID].PSR.U);
+
+            printf("MAC: %02X:%02X:%02X:%02X:%02X:%02X\r\n",
+                   (unsigned)g_macAddress[0], (unsigned)g_macAddress[1],
+                   (unsigned)g_macAddress[2], (unsigned)g_macAddress[3],
+                   (unsigned)g_macAddress[4], (unsigned)g_macAddress[5]);
 
             if (g_canRxCount > 0U)
             {
@@ -490,11 +528,13 @@ static void DreCanEthBridge_initEthernet(const uint8 *macAddress)
      */
     MODULE_GETH0.DMA.CH[0].TXDESC_LIST_LADDRESS.U = DRE_TETHDL0_DESCRIPTOR_ADDRESS;
     MODULE_GETH0.DMA.CH[0].TXDESC_TAIL_LPOINTER.U = DRE_TETHDL0_DESCRIPTOR_ADDRESS;
-    /* DRE owns four Tx/Rx descriptors per Ethernet interface. */
+    /* Tx descriptors are owned by the DRE TETHDL (four per interface).  Rx now
+       runs on the iLLD/CPU descriptor ring (g_rxDescrList, 8 entries), so set the
+       Rx ring length hint to match (RDRL = entries-1 = 7). */
     MODULE_GETH0.DMA.CH[0].TX_CONTROL2.B.TDRL = 3U;
-    MODULE_GETH0.DMA.CH[0].RX_CONTROL2.B.RDRL = 3U;
+    MODULE_GETH0.DMA.CH[0].RX_CONTROL2.B.RDRL = 7U;
     (void)DreCanEthBridge_mdioInit(NULL_PTR, gethClockRate);
-    MODULE_GETH0.PORT[DRE_ETH_PORT_INDEX].CORE.MAC_PACKET_FILTER.U = 0U;
+    MODULE_GETH0.PORT[DRE_ETH_PORT_INDEX].CORE.MAC_PACKET_FILTER.U = 0x80000000U; /* RA: receive all (verification) */
     IfxGeth_startRxDma(&MODULE_GETH0, IfxGeth_RxDmaChannel_0);
     IfxGeth_startTxDma(&MODULE_GETH0, IfxGeth_TxDmaChannel_0);
     IfxHsphy_Geth_setupRmiiOutputPins(&MODULE_HSPHY, &g_gethRmiiPins);
@@ -653,7 +693,15 @@ static void DreCanEthBridge_initDre(const uint8 *macAddress)
     dreConfig.ethernetOutputBuffer0.streamIdHigher = DreCanEthBridge_packMac32(&macSource[0]);
     dreConfig.ethernetOutputBuffer0.triggerFillLevel = 1U;
 
-    dreConfig.ethernetInputBuffer0.ntscfStartAddress = DRE_ETH_NTSCF_OFFSET;
+    /* ntscfStartAddress = 0 disables the hardware NTSCF/AVTP pre-parse in the
+       DRE EIBUF.  The EIBUF hardware expects a standard IEEE-1722a ACF (AVTP)
+       header at the given offset and rejects (EIBUF0_ERROR=0x2A) any frame that
+       is not a valid AVTP frame -- which silently drops the raw-ACF frames this
+       firmware's software bridge (DreCanEthBridge_processEthRx) expects.  With
+       the pre-parse disabled the whole Ethernet frame is handed to the GETH Rx
+       DMA and parsed by software instead (ETH -> CAN software path).  CAN -> ETH
+       still uses the DRE EOBUF hardware path. */
+    dreConfig.ethernetInputBuffer0.ntscfStartAddress = 0U;
     dreConfig.ethernetInputBuffer0.enableRejectRemoteFrame = TRUE;
 
     IfxDre_Dre_initModule(&g_dre, &dreConfig);
@@ -694,7 +742,14 @@ static void DreCanEthBridge_initDre(const uint8 *macAddress)
     rxEthConfig.interruptOnCompletion = FALSE;
     rxEthConfig.fcsEnable = TRUE;
     rxEthConfig.descriptorPointer = 0U;
-    rxEthConfig.descriptorPointerConfigEnable = TRUE;
+    /* descriptorPointerConfigEnable = FALSE: do NOT let the DRE own the GETH Rx
+       descriptor list.  When TRUE the DRE RETHDL overrides the GETH Rx descriptor
+       pointer with its own internal list and the frames are first handed to the
+       EIBUF hardware parser before any software sees them -- which, combined with
+       the (now disabled) NTSCF pre-parse, prevented DreCanEthBridge_processEthRx
+       from ever receiving a frame (ethRxTotal stayed 0).  Leaving the descriptor
+       list to the iLLD/CPU (g_rxDescrList) lets the software ETH->CAN path work. */
+    rxEthConfig.descriptorPointerConfigEnable = FALSE;
     IfxDre_Dre_initRxEthDescListControlConfig(&g_dre, 0U, &rxEthConfig);
 
     txEthConfig.dmaChannel = IfxDre_EthDmaChannel_0;
@@ -898,6 +953,192 @@ static void DreCanEthBridge_serviceDreStatus(void)
     }
 }
 
+/* ----------------------------------------------------------------------------
+ * Reverse path: Ethernet -> CAN
+ *
+ * The GETH MAC receives Ethernet frames on its Rx DMA ring (g_rxDescrList /
+ * g_channel0RxBuffer, configured by IfxGeth_Eth_initModule + startRxDma).  We
+ * poll the descriptors here, parse the ACF/AVTP frame that the PC peer sends,
+ * and hand the embedded CAN message to the CAN TX FIFO.  This is the symmetric
+ * counterpart of the CAN -> Ethernet bridge above, and uses the same simple,
+ * beginner-readable ACF layout so that a captured frame maps 1:1 onto a CAN
+ * frame (id / ext / fdf / brs / len / data).
+ *
+ * ACF frame layout (immediately after the 14-byte Ethernet header; EtherType
+ * 0x22F0):
+ *   offset 0..1 : txLength  (u16, big-endian) - total ACF payload bytes (informational)
+ *   offset 2    : flags     (bit0 = EXT, bit1 = FDF, bit2 = BRS)
+ *   offset 3    : dlc       (CAN DLC 0..15)
+ *   offset 4..7 : canId     (u32, big-endian)
+ *   offset 8..  : data      (0..64 bytes, length derived from dlc)
+ * -------------------------------------------------------------------------- */
+/* The iLLD Rx API (getReceiveBuffer/freeReceiveBuffer) advances the descriptor
+   pointer kept inside the global g_geth.  Under -O3 the compiler caches that
+   pointer across the external call and ends up dereferencing a stale/freed
+   descriptor, crashing the firmware.  Compiling this one function at -O0 stops
+   the compiler from making that assumption (an -O3 build is otherwise fine for
+   the rest of the bridge). */
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+static void DreCanEthBridge_processEthRx(void)
+{
+    uint8 *buffer;
+
+    /* Handle at most ONE frame per poll tick.  This mirrors the forward
+       processCanRx() (also one frame per tick) and is deliberate: the iLLD Rx
+       API (getReceiveBuffer/freeReceiveBuffer) must not be driven back-to-back
+       with zero delay, otherwise a follow-up getReceiveBuffer can dereference a
+       descriptor the DMA is still updating and the firmware crashes.  One frame
+       per 1 ms tick (set by the STM tick in the main loop) keeps a safe gap and
+       still sustains >1000 frames/s, far above any realistic CAN rate.  The 8
+       entry Rx ring (DRE_GETH_RX_RING_ENTRIES) absorbs bursts between ticks. */
+    buffer = (uint8 *)IfxGeth_Eth_getReceiveBuffer(&g_geth, IfxGeth_RxDmaChannel_0);
+    if (buffer == NULL_PTR)
+    {
+        return;   /* ring empty this tick */
+    }
+
+    /* Frame length lives in the current Rx descriptor (write-back format,
+       PL = payload length incl. FCS when the MAC keeps it). */
+    uint32 frameLen = g_geth.rxChannel[0].rxDescrPtr->RDES3.W.PL;
+    uint32 dataLength = frameLen;
+
+    g_drePerf.ethRxTotal++;
+
+    /* Accept IEEE-1722 ACF/AVTP frames (EtherType 0x22F0) carried either:
+         (a) directly as a raw Ethernet frame, or
+         (b) inside a UDP datagram (verify path: WinDivert injects UDP because
+             Npcap cannot emit raw frames on a direct link -- see README).
+       In both cases the ACF payload layout is identical; only the L2/L3/L4
+       headers differ.  No VLAN tag is expected, so EtherType is at offset 12. */
+    uint8  *acf = NULL;
+    uint32  acfAvail = 0U;
+
+    if ((dataLength >= (14U + 8U)) &&
+        (buffer[12] == 0x22U) && (buffer[13] == 0xF0U))
+    {
+        /* (a) raw ACF/Ethernet */
+        acf = &buffer[14];
+        acfAvail = dataLength - 14U;
+    }
+    else if ((dataLength >= (14U + 20U + 8U + 8U)) &&
+             (buffer[12] == 0x08U) && (buffer[13] == 0x00U) &&   /* IPv4 */
+             (buffer[23] == 17U) &&                              /* protocol = UDP */
+             (((uint16)((buffer[34] << 8U) | buffer[35])) == 5555U))  /* verify UDP port */
+    {
+        /* (b) ACF carried in UDP payload (WinDivert verify injection) */
+        acf = &buffer[14U + 20U + 8U];        /* past Eth(14)+IP(20)+UDP(8) */
+        acfAvail = dataLength - (14U + 20U + 8U);
+    }
+
+    if (acf != NULL)
+    {
+        g_drePerf.acfRxTotal++;
+        uint8   flags = acf[2];
+        uint8   dlc   = acf[3];
+        uint32  canId = ((uint32)acf[4] << 24U) | ((uint32)acf[5] << 16U) |
+                        ((uint32)acf[6] << 8U)  |  (uint32)acf[7];
+        uint32  byteCount = IfxCan_Node_getDataLengthInBytes(dlc);
+        IfxCan_Message canMsg;
+        uint32  canData[16];
+        uint32  i;
+        uint32  dataOffset = 8U;
+        boolean ok = TRUE;
+
+        if (dlc > 15U)
+        {
+            /* Invalid DLC range: malformed / non-ACF frame. */
+            ok = FALSE;
+        }
+
+        if ((dataOffset + byteCount) > acfAvail)
+        {
+            /* Malformed frame: claimed more data than the ACF payload holds. */
+            ok = FALSE;
+        }
+
+        for (i = 0U; (i < 16U) && (i < byteCount); ++i)
+        {
+            canData[i] = (uint32)acf[dataOffset + i];
+        }
+
+        if (ok != FALSE)
+        {
+            IfxCan_Can_initMessage(&canMsg);
+            /* The CAN node is configured in Tx FIFO mode (no dedicated Tx
+               buffers, txFifoQueueSize=8).  The iLLD default for a freshly
+               initMessage()'d message is storeInTxFifoQueue=FALSE, which makes
+               IfxCan_Can_sendMessage() write to dedicated buffer 0 — a buffer
+               that does NOT exist in this configuration.  Writing through that
+               path corrupts the Tx message RAM / FIFO and crashes the firmware.
+               Queueing into the Tx FIFO instead uses the correct FIFO put index
+               and is the only safe way to transmit on this node. */
+            canMsg.storeInTxFifoQueue = TRUE;
+            canMsg.messageIdLength = ((flags & 0x01U) != 0U)
+                                     ? IfxCan_MessageIdLength_extended
+                                     : IfxCan_MessageIdLength_standard;
+            if ((flags & 0x04U) != 0U)
+            {
+                canMsg.frameMode = IfxCan_FrameMode_fdLongAndFast;       /* FDF + BRS */
+            }
+            else if ((flags & 0x02U) != 0U)
+            {
+                canMsg.frameMode = IfxCan_FrameMode_fdLong;              /* FDF only */
+            }
+            else
+            {
+                canMsg.frameMode = IfxCan_FrameMode_standard;            /* classic */
+            }
+            canMsg.dataLengthCode = (IfxCan_DataLengthCode)dlc;
+            canMsg.messageId      = canId;
+
+            if (IfxCan_Can_sendMessage(&g_canNode, &canMsg, canData) == IfxCan_Status_notSentBusy)
+            {
+                /* CAN TX FIFO full under overload: count and drop. */
+                g_drePerf.canTxDrop++;
+            }
+            else
+            {
+                g_drePerf.canTxTotal++;
+                /* Capture-independent ACF echo (for verification without gs_usb):
+                   print the exact CAN fields parsed from the ACF payload, so a
+                   beginner can compare 1:1 with the sent frame: id / ext /
+                   fdf / brs / len / data. */
+                {
+                    uint32 i;
+                    uint32 n = (byteCount < 16U) ? byteCount : 16U;
+                    printf("ACF->  id=0x%lx ext=%d fdf=%d brs=%d len=%lu data=",
+                           (unsigned long)canId,
+                           (flags & 0x01U) ? 1 : 0,
+                           (flags & 0x02U) ? 1 : 0,
+                           (flags & 0x04U) ? 1 : 0,
+                           (unsigned long)byteCount);
+                    for (i = 0U; i < n; i++)
+                    {
+                        printf("%02X", (unsigned)acf[dataOffset + i]);
+                    }
+                    if (byteCount > n)
+                    {
+                        printf("...");
+                    }
+                    printf("\r\n");
+                }
+            }
+        }
+    }
+
+    /* Return the descriptor to the DMA so it can receive again.  The iLLD
+       freeReceiveBuffer() (shuffleRxDescriptor) and the Rx DMA race on the
+       descriptor ring; with zero delay between getReceiveBuffer and
+       freeReceiveBuffer the firmware crashes.  The delay must be a REAL hardware
+       stall: waitTime(TimeConst_*) is useless here because the BSP TimeConst[]
+       table is zero-initialised in this build (TC=0), so we use the STM timer
+       directly.  A couple of ms is plenty for the DMA to settle. */
+    IfxStm_waitTicks(&MODULE_CPU0, IfxStm_getTicksFromMilliseconds(2));
+    IfxGeth_Eth_freeReceiveBuffer(&g_geth, IfxGeth_RxDmaChannel_0);
+}
+#pragma GCC pop_options
+
 void DreCanEthBridge_init(const uint8 *macAddress)
 {
     g_canRxCount = 0U;
@@ -1040,6 +1281,11 @@ void DreCanEthBridge_poll(void)
             g_drePerf.ringStalls++;
         }
     }
+
+    /* Reverse path: Ethernet -> CAN (software bridge, symmetric to the
+       CAN->ETH path above).  Independent of the forward path; drains the GETH
+       Rx ring and forwards parsed ACF frames to the CAN TX FIFO. */
+    DreCanEthBridge_processEthRx();
 
     DreCanEthBridge_serviceDreStatus();
 }

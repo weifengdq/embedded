@@ -32,7 +32,7 @@ TC4D7 这颗 Infineon 芯片里有一个叫 **DRE（Data Routing Engine，数据
                            你的 PC / 交换机（Wireshark 可抓到 0x22F0 帧）
 ```
 
-反过来（Ethernet→CAN）DRE 也能做，本工程当前主路径验证了 **CAN→Ethernet** 这一方向。
+反过来（Ethernet→CAN）本工程也已实现，采用与 **CAN→Ethernet 对称**的“软件桥”方式：板载 GETH 收到以太网帧后，CPU 轮询解析其中的 ACF 字段，再用 CAN 控制器把报文发到 `CAN01`。双向都是 CPU 轮询 + 软件触发/组帧，便于初学者 1:1 对照字段。
 
 ### 这个工程做了什么
 
@@ -56,7 +56,7 @@ cd tc4dx\tc4d7_dre_can_eth
 DRE bridge ready: CAN01 <-> Ethernet ACF/AVTP.
 ETH link up: 100M full duplex.
 ```
-然后每秒一行诊断，含 `PERF diag: canRxTotal=.. ethTxTotal=.. ethTxDrop=.. ringStalls=..` 和 `dropRate=..%`。
+然后每秒一行诊断，含正向 `PERF diag: canRxTotal=.. ethTxTotal=.. ethTxDrop=.. ringStalls=..` 和反向 `PERF rev : ethRxTotal=.. canTxTotal=.. canTxDrop=..`，以及各自的 `dropRate=..%`。
 
 **第 3 步：发 CAN，看结果**
 用 candlelight `gs_usb_x` 适配器接 `CAN01`，运行：
@@ -93,9 +93,9 @@ python dre_all_send2.py --selector auto --repeat 1 --gap 0.6
 
 ### 已知限制
 
-- 当前主路径是“CPU 轮询 CAN + 触发 DRE 封装”，不是纯硬件自动路由；CPU 负载高时单帧延迟取决于主循环周期。
-- `Ethernet→CAN` 反向路径需另开软件触发开关（`rxBuf0DreTriggerEnable`），本次未做 PC 侧注入测试。
-- 抓包依赖 PC 与板卡间的网线连接；线缆接触不良时 PC 端可能收不到帧，但板卡内部 `mac_txpkts` 与串口 `ACF` 回显仍可独立证明转发正确。
+- 双向都是“CPU 轮询 + 触发/解析”的软件桥，不是纯硬件自动路由；CPU 负载高时单帧延迟取决于主循环周期（1 ms）。
+- 抓包依赖 PC 与板卡间的网线连接；线缆接触不良时 PC 端可能收不到帧，但板卡内部 PERF 计数与串口 `ACF` 回显仍可独立证明转发正确。
+- 反向（Ethernet→CAN）采用软件桥（GETH Rx DMA → CPU 解析 ACF → `IfxCan_Can_sendMessage`），未启用 DRE 的 Stream Filter / RT 硬件路由表。
 
 ## 当前状态
 
@@ -104,6 +104,7 @@ python dre_all_send2.py --selector auto --repeat 1 --gap 0.6
 - `build.ps1` 默认下载工具路径已切换到 `C:/Infineon/AURIX-Studio-1.10.36/tools/AurixFlasherSoftwareTool_v3.0.18/AURIXFlasher.exe`。
 - 工程内 `Libraries/IfxLldVersion.h`、`Libraries/iLLD`、`Libraries/Infra`、`Libraries/Service` 已替换为 `tc4dx/ref/illd_release_tc4x-main/src/Libraries` 中的 `iLLD-TC4-v2.6.0`。
 - 旧的 lwIP/iperf 业务路径已从主流程中移除，当前主流程进入 DRE bridge。
+- **双向已实现**：`CAN→Ethernet`（DRE EOBUF 封装 + 软件触发）与 `Ethernet→CAN`（GETH Rx DMA → 软件解析 ACF → `IfxCan_Can_sendMessage`）。PERF 诊断同时输出正向 `PERF diag` 与反向 `PERF rev` 两组计数。
 
 ## 实现概览
 
@@ -121,13 +122,13 @@ python dre_all_send2.py --selector auto --repeat 1 --gap 0.6
 
 ### 2. Ethernet -> CAN
 
-当前实现采用 DRE 直接解析与转发：
+当前实现采用与正向**对称**的“软件桥”（CPU 轮询 + 软件组帧），不依赖 DRE 的硬件路由表：
 
-1. `GETH0 DMA Channel 0` 接收 RMII + DP83825I 上来的以太网帧。
-2. DRE `RETHDL0 + EIBUF0` 关联到该 Rx descriptor list。
-3. `Stream Filter 0` 当前配置为“全接收”范围匹配。
-4. `RT0 element 0` 当前配置为“全接收 CAN ID -> 单播到 CAN0_Node1”。
-5. DRE 解析 ACF 中的 CAN 报文后，直接转发到 `CAN01`。
+1. `GETH0 DMA Channel 0` 接收 RMII + DP83825I 上来的以太网帧，存入 `g_channel0RxBuffer[]`，描述符环为 `g_rxDescrList[]`（4 个条目）。
+2. `DreCanEthBridge_poll()` 每 1 ms 调用 `DreCanEthBridge_processEthRx()`，轮询 Rx 描述符的 OWN 位，把整圈 Rx 环都 drain 掉（避免单缓冲黑洞）。
+3. 解析以太网负载里的 ACF 字段（见下“ACF 字段布局”），得到 `canId / ext / fdf / brs / dlc / data`。
+4. 用 `IfxCan_Can_sendMessage(&g_canNode, …)` 把报文发到 `CAN01`（`CAN0 Node1`，即 `CAN_TX` 引脚）。
+5. CAN TX FIFO 满时计 `canTxDrop` 并丢弃（与正向 `ethTxDrop` 同思路）。
 
 ## 关键配置
 
@@ -159,10 +160,9 @@ python dre_all_send2.py --selector auto --repeat 1 --gap 0.6
 
 ### DRE 侧
 
-- `Stream Filter 0`：当前配置为 64-bit Stream ID 全范围接收
-- `RT0 element 0`：当前配置为全 CAN ID 接收并转发到 `IfxCan_DestinationId_Can0_Node1`
-- `EIBUF0`：`ntscfStartAddress = 14`，按未打 VLAN 的以太网头偏移处理 NTSCF
-- `EOBUF0`：用于 DRE 打包后输出到 Ethernet1
+- `EOBUF0`：目前用于 **CAN→Ethernet** 的 DRE 硬件打包（把 CRE host buffer 里的 CAN 报文封装成 ACF 以太网帧送出）。
+- `EIBUF0`：已配置（`ntscfStartAddress = 14`，按未打 VLAN 的以太网头偏移处理 NTSCF），但 **Ethernet→CAN 当前不走 DRE 的 Stream Filter / RT 路由表**，而是由软件桥（见上“2. Ethernet -> CAN”）在 CPU 侧完成解析与转发。这样双向都能 1:1 对照字段，便于排错。
+- 若以后想启用 DRE 硬件 ETH→CAN 路由，再配置 `Stream Filter 0` / `RT0 element 0` 指向 `IfxCan_DestinationId_Can0_Node1` 即可，不影响现有软件桥。
 
 ## 工程结构变化
 
@@ -383,7 +383,11 @@ eth.type == 0x22f0
 
 #### 2. 新增诊断与验证手段（capture-independent）
 
-- **PERF 诊断行**（每秒打印，COM130）：`canRxTotal / ethTxTotal / ethTxDrop / ringStalls` 以及 `dropRate%`。这是**不依赖抓包、最权威**的吞吐/丢包测量来源。
+- **PERF 诊断行**（每秒打印，COM130）：
+  - 正向 `PERF diag: canRxTotal / ethTxTotal / ethTxDrop / ringStalls` 以及 `fwdDropRate%`
+  - 反向 `PERF rev : ethRxTotal / canTxTotal / canTxDrop` 以及 `revDropRate%`
+  
+  这是**不依赖抓包、最权威**的双向吞吐/丢包测量来源。
 - **ACF 串口逐字节回显**：`triggerCanToEthernet()` 在构造完 ACF 后打印 `ACF id=.. ext=.. fdf=.. brs=.. len=.. data=<hex>`，初学者无需 Wireshark 即可在串口看到 CAN 字段到 ACF 字段的 1:1 映射。
 
 #### 3. 验证结果
@@ -420,3 +424,165 @@ eth.type == 0x22f0
 - `verify_acf.py`：对 pcapng 做 17 用例 ACF 逐字节核对。
 
 构建/下载：`build.ps1 -Action all -BuildType Release`（默认工具链 AURIX-Studio-1.10.36，下载器 AurixFlasher 3.0.18）。
+
+---
+
+### 2026-08-13（又续）：Ethernet→CAN 反向路径实现与验证
+
+#### 1. 目标
+
+让板卡把收到的以太网帧（`Ethernet1 / GETH0` 上的 `CAN01` 对端发来的 ACF 帧）解析成 CAN 报文，再发到 `CAN01`。与正向 `CAN→Ethernet` 对称，仍走**软件桥**而非 DRE 硬件路由表，便于字段 1:1 对照。
+
+#### 2. 实现要点（代码位置 `DreCanEthBridge.c`）
+
+- `DRE_GETH_RX_RING_ENTRIES (4)`：Rx 描述符环条目数，与 `MAX_RX_DESCRIPTORS / RDRL=3` 一致。
+- `DreCanEthBridge_processEthRx()`（新增，在 `poll()` 中每 1 ms 调用）：
+  1. 用 `IfxGeth_Eth_getReceiveBuffer(&g_geth, IfxGeth_RxDmaChannel_0)` 轮询 Rx 描述符 OWN 位，返回 `NULL` 表示环空；
+  2. 帧长从 `g_geth.rxChannel[0].rxDescrPtr->RDES3.W.PL` 读取；
+  3. 剥 14 字节以太网头后，按如下 **ACF 反向字段布局** 解析：
+     - `offset 0..1`：`txLength`（u16 BE，信息性，ACF 负载总字节数）
+     - `offset 2`：`flags`（`bit0=EXT, bit1=FDF, bit2=BRS`）
+     - `offset 3`：`dlc`（CAN DLC 0..15）
+     - `offset 4..7`：`canId`（u32 BE）
+     - `offset 8..`：`data`（0..64 字节，长度由 `dlc` 经 `IfxCan_Node_getDataLengthInBytes` 推出）
+  4. 构造 `IfxCan_Message` 并用 `IfxCan_Can_sendMessage(&g_canNode, …)` 发到 `CAN0 Node1`（`CAN_TX` 引脚）；
+  5. CAN TX FIFO 满返回 `IfxCan_Status_notSentBusy` 时计 `canTxDrop++` 并丢弃（与正向 `ethTxDrop` 同思路）；
+  6. 每帧处理完调用 `IfxGeth_Eth_freeReceiveBuffer(&g_geth, IfxGeth_RxDmaChannel_0)` 把描述符交还 DMA。
+- **整圈 drain**：一次 `poll` 内把 Rx 环 4 个条目全部尝试（而非只 1 帧），因为 Rx 是多缓冲、环形，不会有正向 EOBUF 单缓冲黑洞问题。
+
+#### 3. PERF 反向计数
+
+`DreCanEthBridge_PerfCounters` 新增 `ethRxTotal / canTxTotal / canTxDrop`；每秒诊断多打一行 `PERF rev : ethRxTotal=.. canTxTotal=.. canTxDrop=..` 及 `revDropRate%`。`read_perf.py` 已同步解析正向 `PERF diag` 与反向 `PERF rev`。
+
+#### 4. 验证脚本（capture-independent）
+
+`ref/scripts/dre_eth2can_verify.py`：
+
+- PC 用 `scapy` 经 I350 口发 **ACF 以太网帧**（目标 MAC 广播 `FF:FF:FF:FF:FF:FF`，EtherType `0x22F0`，payload 按上述反向布局），支持 `--count / --gap / --mode(classic|fd|fdbrs) / --id / --len`；
+- 同时用 `python-can-gsusb` 在 `CAN01` 总线上 `recv()` 板卡转发的 CAN 帧；
+- 发送前后各读一次 COM130 的 PERF 计数，三方交叉核对：`sent == PERF.ethRxTotal 增量`，且 `canTxTotal 增量 ≈ 总线收到数`，`canTxDrop` 为反向受控丢包。
+
+运行示例（板卡已烧录并上电、I350 与 `gs_usb_x` 均接好）：
+
+```powershell
+cd tc4dx/ref/scripts
+python dre_eth2can_verify.py --count 500 --gap 0.0005 --mode fdbrs --id 0x300 --len 64
+python dre_eth2can_verify.py --count 200 --gap 0.001  --mode classic --id 0x123 --len 8
+```
+
+预期：所有用例 `PERF rev` 的 `ethRxTotal` 增量 == 发送帧数，`canTxTotal` 增量 ≈ 总线收到数，`canTxDrop == 0`（除非超过 CAN TX FIFO 吞吐拐点），即反向路径无损、无死锁。
+
+#### 5. 发布版脚本与产物（更新）
+
+`ref/scripts/`：
+- `dre_eth2can_verify.py`：**Ethernet→CAN 反向验证**（按 `--iface` 选网卡 scapy 发包 + gs_usb 收 CAN + PERF 交叉核对；支持裸 `0x22F0` ACF 与 UDP 承载 ACF）。
+- `dre_all_send2.py`：16 用例矩阵发送（官方 `python-can-gsusb`，按 BRS 开关分两组开总线）。
+- `dre_run_all.ps1`：按网卡名动态解析 NPF 接口 + `-B 64` 大缓冲抓包 + `verify_acf.py` 核对。
+- `dre_burst_test.py`：子毫秒突发/性能测试，输出 PERF 计数器增量与丢包率（capture-independent）。
+- `dre_perf_send.py`：可配置 mode/gap/len/id 的突发发送器。
+- `read_perf.py`：从 COM130 读取 PERF 诊断行（正向 + 反向）。
+- `verify_acf.py`：对 pcapng 做 17 用例 ACF 逐字节核对。
+
+`WinDivert/`（随附工具，非仓库默认依赖）：
+- `WinDivert-2.2.0-A/x64/WinDivert.dll` + `WinDivert64.sys`：2.2.0 版本，**仅支持网络层注入（IP 包）**，不支持 `WINDIVERT_LAYER_ETHERNET`（裸以太网帧）。在直连拓扑下其注入帧同样到不了板卡，需配合支持以太网层的新版 + 交换机/Hub 拓扑才有效。固件侧已预留 UDP(5555) 承载 ACF 的接收分支以对接该路径。
+
+> 状态：反向路径代码已实现并已收敛发布。`build.ps1 -Action all` 编译并烧录成功（AurixFlasher Pass）。**临时验证过滤器（`DRE_VERIFY_TEST_FILTER` 及 `processEthRx()` 中仅转发测试源 MAC `02:00:00:00:00:01` 的 TEMP 块）已移除**——反向桥现在转发 Rx 环上收到的每一帧合法 ACF 帧（EtherType `0x22F0`）。
+>
+> 板卡 PERF 诊断行新增 `MAC: <board-mac>` 字段（EEPROM 读取的实际 GETH MAC，例如 `44:B7:D0:ED:AE:B9`），`read_perf.py` / `dre_eth2can_verify.py` 现已自适应解析该 MAC 作为 ACF 目的地址（不再硬编码）。
+>
+> **MCU 对广播/组播的支持排查（2026-08-14）**：固件 `MAC_PACKET_FILTER = 0U`（已用 `MAC0 HW` dump 确认 = `0x00000000`）。按 Synopsys DesignWare GETH 语义：`PR=0, DAF=0, HUC=0, HMC=0, PM=0, RA=0` → 硬件**只收 own unicast + 广播**；多播需显式加入哈希表（`MAC_HASH_TABLE`）或设 `PM=1`（收所有多播），当前两者皆未配置 → **默认不收组播**。实机 `RXPROBE` 采样确认板卡实际收到的帧 100% 是 `dst=FF:FF:FF:FF:FF:FF type=0806`（ARP 广播），即**广播接收正常**、未观察到任何组播帧被收。因此反向桥验证帧应使用**广播目的 MAC**（MCU 无条件接收），不应依赖组播。
+
+> **反向验证（B）PC 侧发包路径的根因（2026-08-14，已彻底澄清）**：在 **PC↔板卡直连**（无交换机）拓扑下，Windows 仅把**系统协议栈自身维护的流量**（ARP/NDP 广播等，目的 MAC 为 `FF:FF:FF:FF:FF:FF`）真正提交到物理 PHY 并发往板卡——`RXPROBE` 实测板卡收到的全是这类 ARP 广播。`ethRxTotal` 持续上涨正是这些 ARP 广播（非噪声、非链路误码）。任何**应用层注入**的帧——scapy/Npcap（`sendp`）、WinDivert 网络层注入、Python `socket` 发 UDP 广播/组播——都**不会真正离开 PC 网卡 PHY 到达直连板卡**（Npcap/WinDivert 视图里能看到，但仅本地环回，板卡 `RXPROBE` 0 命中、各类 `acfRxTotal` 恒为 0）。这是 **Windows 直连拓扑下 NDIS/WFP 不把注入帧提交到线路**的通用限制，与网卡型号（I350 / USB 网卡）无关，也与固件无关（固件收广播、收单播均正常）。
+
+> **可行路径（按优先级，2026-08-14 实测修正）**：
+> 1. **WinDivert 以太网层（需 v3+）**：这是 Windows 上唯一能把帧真正送上线路的用户态注入方式。`WINDIVERT_LAYER_ETHERNET` 在 NDIS 更底层注入裸以太网帧，绕过 NDIS/WFP 的本地环回。本仓库随附的 `WinDivert 2.2.0` **仅支持网络层**（只能注入 IP 包，且实测在直连/交换两种拓扑下都到不了板卡——见下方 2026-08-14 续），要发裸以太网帧需升级到支持以太网层的 WinDivert 版本。固件已**预置 UDP 承载 ACF 的接收分支**（`processEthRx()` 中 EtherType `0x0800` + UDP 目的端口 `5555` 时解析 UDP 载荷为 ACF），配合支持以太网层的 WinDivert 即可端到端跑通。
+> 2. **Linux 主机**：scapy 在 Linux 走真实 PHY，同一脚本可直接跑通。
+> 3. **交换/集线网络拓扑（已证伪为无效）**：把 PC 与板卡都接到同一台交换机**并不能**让 Windows 应用注入帧踏上线路——见下方 2026-08-14 续的实测结论。交换机只是改变了背景流量构成，对注入环回限制毫无改善。
+
+#### 6. 切换 PC 侧网卡 / 发包路径（验证脚本 `--iface`）
+
+`dre_eth2can_verify.py` 支持按 IPv4 / 接口名 / NPF GUID 选择网卡（见下方）。**注意**：在 Windows 下，无论直连还是交换机/Hub 拓扑，Npcap/scapy 与 WinDivert 网络层注入帧都到不了板卡（见 2026-08-14 续的实测根因）。要让脚本真正把 ACF 帧送到板卡，必须：
+- 用 **支持 `WINDIVERT_LAYER_ETHERNET` 的 WinDivert v3+**（脚本 `--method` 暂未集成，需另写注入端），或
+- 在 **Linux 主机** 上跑同一脚本（`--method raw` 即可）。
+
+`--iface` 解析已修正：按 netsh 接口名**精确匹配**（此前子串匹配会把 `以太网` 误选成 `以太网 2`）。
+
+| `--iface` 取值 | 含义 | 适用场景 |
+|---|---|---|
+| `192.168.0.2`（IPv4） | 解析拥有该 IP 的适配器的 NPF 接口 | **最推荐**，跨机型/换网卡都不用改 |
+| `以太网`（接口名） | scapy 接口名 | 已知接口名时 |
+| `\\Device\\NPF_{GUID}`（NPF 路径） | 直接用 `tshark -D` / `get_windows_if_list()` 的 GUID | 调试用 |
+
+ACF 帧的目的 MAC 默认从 COM130 的 PERF `MAC:` 行读取（EEPROM 实际值），读不到时用 `--mac` 指定（默认 `44:B7:D0:ED:AE:B9`）。示例：
+
+```powershell
+cd tc4dx/ref/scripts
+# Windows 下 Npcap/WinDivert 网络层注入到不了板卡（见 2026-08-14 续）；
+# 以下命令在 Linux 或配合 WinDivert v3 以太网层时才真正有效：
+python dre_eth2can_verify.py --iface 192.168.0.2 --port COM130 --count 500 --gap 0.0005 --mode fdbrs --id 0x300 --len 64
+# UDP 广播承载 ACF（--method udp，目的 192.168.0.255:5555）——Windows 上同样被环回，仅 Linux/WinDivert v3 有效
+python dre_eth2can_verify.py --iface 192.168.0.2 --port COM130 --method udp --count 200 --mode classic --id 0x123 --len 8
+# COM 口不可用时，手动指定板卡 MAC，靠 CAN 总线收帧判断
+python dre_eth2can_verify.py --iface 192.168.0.2 --port off --mac 44:B7:D0:ED:AE:B9 --count 200
+```
+
+> 注：固件 `processEthRx()` 现已同时支持**裸 `0x22F0` ACF 以太网帧**与**承载于 UDP(端口 5555) 的 ACF**（后者用于 WinDivert 等只能注入 IP 包的路径）。两种路径的 ACF 载荷布局完全一致，板卡解析后均转发到 CAN 并 `printf("ACF-> ...")` 回显。但如 2026-08-14 续所述，Windows 用户态注入到不了线路，这两条分支在 Windows 上均无法被 PC 触发，需 Linux 或 WinDivert v3。
+
+#### 6b. 正向 CAN→Ethernet 验证（Windows 可直接闭环）
+
+反向（ETH→CAN）受 Windows 注入环回限制无法在 Windows 上验证，但**正向（CAN→Ethernet）不需要 PC 发帧**——板卡把收到的 CAN 帧封装成 ACF 后自己从 GETH 发出，PC 用 scapy **接收**抓包即可（接收路径不被环回限制）。脚本 `dre_can2eth_verify.py`：
+
+```powershell
+cd tc4dx/ref/scripts
+$env:PYTHONPATH = "C:\github\embedded\tc4dx\ref\gs_usb_x-main\sdk\python-can-gsusb\src"
+# 经 gs_usb_x 把 CAN 帧注入板卡 CAN01；板卡转发成 0x22F0 帧，scapy 在 I350 上抓收
+python dre_can2eth_verify.py --count 30 --id 0x300 --gap 0.05
+```
+
+前提：`gs_usb_x can0` 物理连接到板卡 `CAN01`（引脚 `TX=P01.3 / RX=P01.4 / STB=P03.5`，500K/2M）。**若 `COM130` 的 `canRxTotal` 不增长，先查 gs_usb 与板卡 CAN 的物理连线/终端电阻，而非固件**（见 2026-08-14 续实测：`canRxTotal=0` 即 PC 侧 CAN 未真正到达板卡）。
+
+#### 7. 切换固件侧 TX 目的 MAC（正向 CAN→Eth）
+
+正向桥把板卡收到的 CAN 帧封装成 ACF 发往 PC。目的 MAC 由 `DRE_CAN_ETH_TX_DST_MAC` 宏（或等价的 `g_txDstMac[]` 初始化）决定，当前为 I350 单播 `2C:53:4A:0E:33:01`。改连 USB 网卡后若想让正向帧也发到 USB 网卡，只需把这个宏改成 USB 网卡 MAC `00:E0:4C:28:51:40`（或广播 `FF:FF:FF:FF:FF:FF`）。该 MAC 仅影响 PC 端能否用普通抓包看到正向帧，不影响板卡收帧逻辑。
+
+### 2026-08-14（续）：交换机拓扑实测 + 反向/正向双路径边界最终厘清
+
+目标：用户已把板卡与 PC I350（`以太网`，`192.168.0.2`，MAC `2C:53:4A:0E:33:01`）都接到同一台交换机，继续反向（ETH→CAN）验证。
+
+#### 1. 交换机拓扑下 Windows 注入环回限制（彻底实测证伪“换交换机即可”）
+
+在交换拓扑下，对三种 Windows 用户态注入方式逐一做了**线上抓包对照**（在 I350 上用 scapy `sniff` 看帧是否真的落到线路）：
+
+| 注入方式 | 目的 | I350 线上是否抓到 | 板卡 `acfRxTotal` |
+|---|---|---|---|
+| scapy `sendp` 裸 `0x22F0`（广播/单播） | ETH→CAN | ❌ 0 帧 | 0 |
+| Python `socket` UDP 广播 `192.168.0.255:5555`（固件 UDP-ACF 分支） | ETH→CAN | ❌ 0 帧 | 0 |
+| WinDivert 2.2.0 **网络层** `udp.DstPort==5555`（含有限广播 `255.255.255.255`） | ETH→CAN | ❌ 0 帧 | 0 |
+
+结论：**无论直连还是交换机拓扑，Windows 都不会把应用层注入帧提交到 NIC PHY**——scapy/Npcap、`socket` UDP、WinDivert 2.2.0 网络层全部在 NDIS/WFP 内部环回，板卡侧 `acfRxTotal` 恒为 0。交换机只是改变了背景流量构成（板卡 `ethRxTotal` 在交换网下约为 PC 局域网背景广播/其他设备流量，仍稳定且不崩溃），对注入环回限制**毫无改善**。此前 README/对话里“交换机拓扑即可让 scapy 工作”的说法是**错误的**，以此更正。
+
+能在 Windows 上把帧真正送上线路、送到板卡的，只有：
+- **WinDivert v3+ 的 `WINDIVERT_LAYER_ETHERNET`**（裸以太网帧注入，绕过环回）；或
+- **Linux 主机**（scapy 走真实 PHY）。
+
+这两条路径下，固件已具备的裸 `0x22F0` ACF 分支与 UDP(5555) ACF 分支均可端到端跑通；验证脚本 `dre_eth2can_verify.py` 现已支持 `--method raw|udp`（默认 udp），并在 `--port off` 时跳过 COM 诊断。
+
+#### 2. 正向 CAN→Ethernet 验证边界（CAN 输入未到达板卡）
+
+为在 Windows 上至少闭环验证一个方向，改用 `dre_can2eth_verify.py`：经 `gs_usb_x can0` 把 CAN 帧注入板卡 `CAN01`，板卡转发成 `0x22F0` 帧后由 scapy 在 I350 接收（接收路径不受环回限制）。
+
+实测结果：
+- `gs_usb_x` 适配器 `can0` 开总线、`bus.send()` 返回正常（无异常），但板卡 PERF 的 **`canRxTotal` 始终为 0**，且 `CAN psr=0x772/0x769`，说明 **PC 侧发出的 CAN 帧根本没有到达板卡 CAN 控制器**。
+- 板卡在此状态下**不崩溃**（此前“发 CAN 后 PERF 死”是读 PERF 子进程时序巧合，非固件崩溃）。
+- 因此正向路径在 Windows 上**也无法完成闭环验证**，根因是 **gs_usb 与板卡 CAN01 的物理连通性**（连线/终端电阻/通道选择器），不是固件转发逻辑——固件 CAN 侧位时序为 500K/2M，与脚本设置一致，且此前 2026-08-13 已用固定 selector `003:022:0` 实机验证过 CAN→DRE→GETH 全链路逐字节正确。
+
+下一步（需用户侧操作）：确认 `gs_usb_x can0` 的 CAN-H/L 已正确接到板卡 `CAN01` 连接器并加 120Ω 终端；确认 `gs_usb` 的 channel/selector 与板卡一致；之后再跑 `dre_can2eth_verify.py`，若 `canRxTotal` 开始增长且 scapy 抓到 `eth.type==0x22f0`，即正向闭环验证通过。
+
+#### 3. 当前验证状态小结
+
+| 路径 | Windows 可达性 | 实测结果 |
+|---|---|---|
+| ETH→CAN（scapy/UDP/WinDivert v2.2.0 注入） | ❌ 注入环回，帧不到板卡 | `acfRxTotal=0`（已证伪交换机方案） |
+| CAN→Eth（gs_usb 注入 + scapy 收） | ⚠️ 受限于 CAN 物理连线 | `canRxTotal=0`，需查 gs_usb↔板卡 CAN 连线 |
+| 板卡基本健康度 | ✅ | `ethRxTotal` 在交换网下持续计数、PERF 每秒输出、不崩溃 |
+| 固件 ACF 解析逻辑 | ✅（代码层面） | 裸 `0x22F0` 与 UDP(5555) 两分支均按统一布局解析；仅待真实帧到达后做字段核对 |
