@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(tc397_uart_lettershell LANGUAGES C ASM)
+project(tc397_lwip_iperf LANGUAGES C ASM)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
@@ -89,6 +89,14 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${AURIX_INCLUDE_DIRS})
 
 # Letter-shell configuration
 target_compile_definitions(${PROJECT_NAME} PRIVATE SHELL_CFG_USER="shell_cfg_user.h")
+
+# GETH DMA 描述符数量（必须全局定义，保证 iLLD 与 lwIP port 编译单元一致）
+# RX 环必须大于 TCP 窗口内的最大在途包数（44），否则线速突发下必然丢包，
+# 触发 Go-Back-N + 客户端 RTO，吞吐崩溃。64 x 1536 = 96KB，放 LMU。
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    IFXGETH_MAX_RX_DESCRIPTORS=64
+    IFXGETH_MAX_TX_DESCRIPTORS=8
+)
 
 # ---------- 工具链特定选项 ----------
 if(AURIX_TOOLCHAIN_TYPE STREQUAL "TASKING")

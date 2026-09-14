@@ -15,6 +15,7 @@ int Shell_Exec(const char *cmd);
 /* Called from UART ISR when a byte is received */
 void Shell_RxPush(uint8_t ch);
 void Shell_RxPushBulk(const uint8_t *data, uint16_t len);
+int Shell_HasPending(void);
 extern volatile uint32_t gShellRxOverflow;
 
 #ifdef __cplusplus

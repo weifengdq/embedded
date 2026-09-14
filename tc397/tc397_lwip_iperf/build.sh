@@ -21,7 +21,7 @@ set -e
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 DEFAULT_COMPILER="gcc"
 DEFAULT_BUILD_TYPE="Debug"
-DEFAULT_TARGET="tc397_uart_lettershell"
+DEFAULT_TARGET="tc397_lwip_iperf"
 # tc397/ref 仅放 PDF，无 flasher；复用 tc387 的 Linux flasher（TC3xx 通用）
 DEFAULT_FLASH_TOOL="/home/z/lz/tc387/ref/aurix_flasher_linux-master/linux/aurix_flasher"
 DEFAULT_TAS_SERVER="/home/z/lz/tc387/ref/aurix_flasher_linux-master/src/tas_server"
@@ -33,6 +33,7 @@ BUILD_DIR=""
 TARGET_NAME="$DEFAULT_TARGET"
 FLASH_TOOL="$DEFAULT_FLASH_TOOL"
 DAS_PORT=0
+DAP_FREQ=1000000
 VERBOSE=0
 
 while [[ $# -gt 0 ]]; do
@@ -51,6 +52,8 @@ while [[ $# -gt 0 ]]; do
       FLASH_TOOL="$2"; shift 2 ;;
     --id)
       DAS_PORT="$2"; shift 2 ;;
+    --freq)
+      DAP_FREQ="$2"; shift 2 ;;
     --verbose|-v)
       VERBOSE=1; shift ;;
     -h|--help)
@@ -63,6 +66,7 @@ while [[ $# -gt 0 ]]; do
       echo "  --target <name>"
       echo "  --flash-tool <path>"
       echo "  --id <boardId>"
+      echo "  --freq <hz> (DAP clock, default 1000000; 15MHz default is flaky on this bench)"
       exit 0
       ;;
     *)
@@ -178,7 +182,7 @@ do_download() {
     echo "  Or build from /home/z/lz/tc387/ref/aurix_flasher_linux-master: cd linux && make -f Makefile_linux" >&2
     exit 1
   fi
-  echo "=== Flash | HEX=$HEX_PATH | id=$DAS_PORT ==="
+  echo "=== Flash | HEX=$HEX_PATH | id=$DAS_PORT freq=$DAP_FREQ ==="
   echo "  Flasher: $FLASH_EXE"
   if ! check_tas; then
     echo "WARN: TAS server not running on localhost:24817" >&2
@@ -191,7 +195,7 @@ do_download() {
     "$FLASH_EXE" -hex "$HEX_PATH" -id "$DAS_PORT" -erase on -prog on -ver on -start on -log "$FLASH_LOG"
   else
     # Explicit -start on ensures Application Reset is issued; default is on but be explicit
-    "$FLASH_EXE" -hex "$HEX_PATH" -id "$DAS_PORT" -opt off -ver on -start on
+    "$FLASH_EXE" -hex "$HEX_PATH" -id "$DAS_PORT" -freq "$DAP_FREQ" -opt off -ver on -start on
   fi
   RET=$?
   set -e
@@ -205,7 +209,7 @@ do_download() {
   # Ensure CPU is running via the flasher's read path which does device_connect(RESET) + OCTRL.
   echo "=== Ensuring CPU is running (extra reset) ==="
   set +e
-  "$FLASH_EXE" -id "$DAS_PORT" -read 0x80000000 > /dev/null 2>&1 || true
+  "$FLASH_EXE" -id "$DAS_PORT" -freq "$DAP_FREQ" -read 0x80000000 > /dev/null 2>&1 || true
   set -e
   sleep 1
   echo "Reset done. Check P13.0 LED / serial at 921600 on /dev/ttyACM0."
@@ -219,7 +223,7 @@ do_reset() {
   # hot attach read -> device_connect(RESET) -> OCTRL -> re-read.
   # We use -read 0x80000000 as a lightweight way to trigger RESET + Application Reset.
   set +e
-  "$FLASH_EXE" -id "$DAS_PORT" -read 0x80000000 2>&1 | tail -n 30
+  "$FLASH_EXE" -id "$DAS_PORT" -freq "$DAP_FREQ" -read 0x80000000 2>&1 | tail -n 30
   RET=${PIPESTATUS[0]:-$?}
   set -e
   if [[ $RET -ne 0 ]]; then
