@@ -65,9 +65,10 @@
 
 #define DEVICE_TC39XB			           1
 
-#define IFX_PIN_PACKAGE_516                1 
+/* TC397XX 292pin board */
+#define IFX_PIN_PACKAGE_LFBGA292        1
+/* #define IFX_PIN_PACKAGE_516                1  */
 /* #define IFX_PIN_PACKAGE_LFBGA516        1 */
-/* #define IFX_PIN_PACKAGE_LFBGA292        1 */
 /* #define IFX_PIN_PACKAGE_LFBGA292_ADAS   1 */
 
 #endif /* IFX_CFG_H */

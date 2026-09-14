@@ -2936,6 +2936,24 @@ SECTIONS
         __DTOR_END__ = . ;
         . = ALIGN(8);
     } > default_rom
+
+    .shellCommand : FLAGS(ar)
+    {
+        PROVIDE(_shell_command_start = .);
+        KEEP(*(shellCommand))
+        KEEP(*(.shellCommand))
+        PROVIDE(_shell_command_end = .);
+        . = ALIGN(4);
+    } > default_rom
+
+    .shellVar :
+    {
+        PROVIDE(_shell_var_start = .);
+        KEEP(*(shellVar))
+        KEEP(*(.shellVar))
+        PROVIDE(_shell_var_end = .);
+        . = ALIGN(4);
+    } > default_rom
     /*
      * DWARF debug sections.
      * Symbols in the DWARF debugging sections are relative to the
