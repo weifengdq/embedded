@@ -1,6 +1,6 @@
 /**********************************************************************************************************************
  * \file Cpu0_Main.c
- * \brief TC397 UART0 (P14.0/P14.1, 921600) + Letter-Shell + P13.0 LED, ported from tc387_1.
+ * \brief TC397 CAN x12 (1M arb + 5M data) + UART0 Letter-Shell + P13.0 LED.
  * \copyright Copyright (C) Infineon Technologies AG 2019
  *********************************************************************************************************************/
 #include "Ifx_Types.h"
@@ -16,6 +16,8 @@
 #include "ConfigurationIsr.h"
 #include "UART_Logging.h"
 #include "shell_port.h"
+#include "shell_can.h"
+#include "can12.h"
 #include "Dts/Dts/IfxDts_Dts.h"
 #include "Dts/Std/IfxDts.h"
 #include "IfxScu_reg.h"
@@ -84,13 +86,13 @@ void core0_main(void)
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg2, &cnt2, TIME_INFINITE);
     }
     {
-        const char *msg3 = "\r\nTC397 UART0 + Letter-Shell\r\n";
+        const char *msg3 = "\r\nTC397 CAN x12 + Letter-Shell\r\n";
         Ifx_SizeT cnt3 = strlen(msg3);
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg3, &cnt3, TIME_INFINITE);
         const char *msg4 = "Board: TC397XX 292pin (ASCLIN0 P14.0 TX / P14.1 RX, 921600)\r\n";
         Ifx_SizeT cnt4 = strlen(msg4);
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg4, &cnt4, TIME_INFINITE);
-        const char *msg5 = "Type 'help' for commands, 'mcu' for chip info, 'temp' for temperature, 'led' for LED\r\n";
+        const char *msg5 = "Type 'help' for commands, 'canstat' for CAN, 'canpair' for pair test\r\n";
         Ifx_SizeT cnt5 = strlen(msg5);
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg5, &cnt5, TIME_INFINITE);
     }
@@ -114,6 +116,18 @@ void core0_main(void)
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)buf, &cnt, TIME_INFINITE);
     }
 
+    /* Transceivers to Normal mode, then 12x CAN: 1M arb + 5M data, 80% SP. */
+    xcvr_init();
+    can12_init_all_1M_5M();
+    {
+        char buf[128];
+        int len = snprintf(buf, sizeof(buf),
+            "CAN 12ch init done: 1M/5M 80%% (pairs 0-1..10-11), nFAULT=%d\r\n",
+            xcvr_fault());
+        Ifx_SizeT cnt = len;
+        IfxAsclin_Asc_write(&g_asc, (uint8_t*)buf, &cnt, TIME_INFINITE);
+    }
+
     /* LED on briefly to show boot, then heartbeat takes over (1 Hz in Shell_Process) */
     IfxPort_setPinLow(&MODULE_P13, 0);
 
@@ -121,5 +135,9 @@ void core0_main(void)
     {
         UART_Poll();
         Shell_Process();
+        can12_poll_all();
+        if (shell_can_live_enabled()) {
+            shell_can_live_dump();
+        }
     }
 }

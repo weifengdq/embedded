@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(tc397_uart_lettershell LANGUAGES C ASM)
+project(tc397_can_x12 LANGUAGES C ASM)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)

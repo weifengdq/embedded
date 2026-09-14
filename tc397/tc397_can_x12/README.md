@@ -1,86 +1,74 @@
-# tc397_uart_lettershell — TC397XX (292pin) ASCLIN0 Letter-Shell (921600) + P13.0 LED
+# tc397_can_x12 — TC397XX 12路 MCMCAN (1M + 5M FD) + Letter-Shell 收发测试
 
-本工程以 `tc397_0` (ADS, TC39XB) 为蓝本，在 **Ubuntu 26.04 + tricore-gcc 13.4.1 + CMake/Ninja**
-下重建，移植 `tc387_1` 的 **Letter-Shell + 921600 高速串口** 方案（不含以太网），目标
-**TC397XX 292pin**，调试串口 **ASCLIN0 TX P14.0 / RX P14.1, 921600-8N1**，
-LED **P13.0（低电平点亮）** 通过 Shell 命令控制。
+`tc397_uart_lettershell` 拷贝而来，新增 12 路 CAN FD 驱动与 can-utils 风格测试命令。
+目标 **TC397XX 292pin**，调试串口 **ASCLIN0 TX P14.0 / RX P14.1, 921600-8N1**，
+LED **P13.0（低电平点亮）**。12 路 CAN 两两互联（CAN0-CAN1 … CAN10-CAN11）做收发测试。
 
-* 参考移植：`/home/z/lz/tc387/tc387_1`（Shell/UART/CMake/build.sh，见其 README §5.4 921600 优化）
+* 参考：`/home/z/lz/embedded/tc387/tc387_can_x12_gcc`（12路初始化/位定时/TDC 规则）、
+  `/home/z/lz/tc387/gs_udp_can_tc387/App/can12.c`（轮询/RTR 取数/accept-all 滤波，网络部分未移植）、
+  `/home/z/lz/tc387/ref/can-utils-master/{cansend,candump}.c`（帧语法 `123#DEADBEEF` / `123##1…`）
 * 工具链/下载：tricore-gcc 13.4.1（`/opt/tricore-gcc`）+ TAS/DAS 8.3.0 + `aurix_flasher`
- （复用 `/home/z/lz/tc387/ref/aurix_flasher_linux-master/linux/aurix_flasher`，TC3xx 通用）
-* 串口：`/dev/ttyACM0`（1a86:55d3），DAP MiniWiggler `058b:0043` 仅用于 TAS 下载
+  （复用 `/home/z/lz/tc387/ref/aurix_flasher_linux-master/linux/aurix_flasher`，TC3xx 通用）
+* 收发器手册已转 txt：`tc397/ref/tcan1043-q1.txt`（主 datasheet）、
+  `tc397/ref/tcan1043_slla525a.txt`（功能安全 FIT/FMD/Pin FMA，非主手册）
 
 ---
 
 ## 1 硬件
 
-| 信号 | TC397 Pin | 说明 |
-| --- | --- | --- |
-| UART TX | P14.0 | `IfxAsclin0_TX_P14_0_OUT`, `cmosAutomotiveSpeed4` |
-| UART RX | P14.1 | `IfxAsclin0_RXA_P14_1_IN`, `pullUp`, `Ifx_RxSel_a` |
-| LED | P13.0 | 低电平点亮，上电短亮后 1 Hz 心跳（`Shell_Process`），`led` 命令控制 |
-| DAP | USB 058b:0043 | TAS 下载 |
-| MCU | TC397XX 292pin | `DEVICE_TC39XB` + `IFX_PIN_PACKAGE_LFBGA292`，6 核（Shell 跑 Core0） |
+| 逻辑 | TX | RX | MCMCAN | 收发器 | 使能脚 |
+| --- | --- | --- | --- | --- | --- |
+| CAN0 | P34.1 | P33.12 | CAN0 node0 | TCAN1043-Q1 | EN P33.1=H, nSTB P33.0=H, nFAULT P10.3(输入) |
+| CAN1 | P15.2 | P33.10 | CAN0 node1 | TCAN1044-Q1 | STB P21.5=L（与 CAN2/3 共用） |
+| CAN2 | P32.5 | P32.6 | CAN0 node2 | TCAN1044-Q1 | STB P21.5=L |
+| CAN3 | P32.3 | P32.2 | CAN0 node3 | TCAN1044-Q1 | STB P21.5=L |
+| CAN4 | P00.0 | P00.1 | CAN1 node0 | TCAN1044-Q1 | STB P21.2=L（与 CAN5/6/7 共用） |
+| CAN5 | P23.6 | P23.7 | CAN1 node1 | TCAN1044-Q1 | STB P21.2=L |
+| CAN6 | P23.2 | P23.3 | CAN1 node2 | TCAN1044-Q1 | STB P21.2=L |
+| CAN7 | P33.4 | P33.5 | CAN1 node3 | TCAN1044-Q1 | STB P21.2=L |
+| CAN8 | P10.6 | P34.2 | CAN2 node0 | TCAN1044-Q1 | STB P21.4=L（与 CAN9/10/11 共用） |
+| CAN9 | P00.2 | P00.3 | CAN2 node1 | TCAN1044-Q1 | STB P21.4=L |
+| CAN10 | P22.8 | P32.7 | CAN2 node2 | TCAN1044-Q1 | STB P21.4=L |
+| CAN11 | P22.10 | P22.11 | CAN2 node3 | TCAN1044-Q1 | STB P21.4=L |
+| UART | P14.0 | P14.1 | ASCLIN0 921600 | — | — |
+| LED | P13.0（低=亮） | — | — | — | 心跳 1Hz，可 `led hb off` 关 |
+
+引脚逐一核对过 `IfxCan_PinMap_TC39xB_LFBGA292.{h,c}`（RxSel/alt 见 `App/can12.c` 注释）。
+TCAN1043：`EN=H + nSTB=H = Normal`（datasheet Table 8-3）；
+TCAN1044：`STB=L = Normal`。`xcvr` 命令可查看实时电平。
+
+线束：CAN0-CAN1、CAN2-CAN3、CAN4-CAN5、CAN6-CAN7、CAN8-CAN9、CAN10-CAN11 两两互联。
 
 ---
 
 ## 2 目录结构
 
 ```
-tc397_uart_lettershell/
-├── cmake/tricore-gcc-toolchain.cmake  # /opt/tricore-gcc/bin, 13.4.1
-├── cmake/AurixProject.cmake           # 递归收集 + 排除 build/.ads/.settings
-├── Configurations/
-│   ├── Configuration.h / ConfigurationIsr.h  # STM 100k ticks/ms, OS_TICK 10, ASCLIN0 TX31/RX32
-│   └── Ifx_Cfg.h (LFBGA292) / Ifx_Cfg_Ssw.*  # 保留 tc397_0
-├── Libraries/
-│   ├── iLLD/TC3xx/...                 # 保留 tc397_0 原版（TC39xB），勿用 tc387 的覆盖
-│   ├── UART/UART_Logging.c/h          # ASCLIN0 921600, FIFO 1024, RX Level 1, TX/RX ISR + UART_Poll
-│   └── Infra/Service/...              # Bsp, Ssw, Platform（保留 tc397_0）
-├── Shell/
-│   ├── letter-shell/src/              # 3.2.4
-│   ├── shell_cfg_user.h               # 1024 Shell缓冲, 8历史, tick=g_TickCount_1ms
-│   └── shell_port.c/h                 # 环形缓冲 1024B + led/mcu/temp 等命令
-├── Lcf_Gnuc_Tricore_Tc.lsl            # 已增 .shellCommand/.shellVar (KEEP, PROVIDE)
-├── Cpu0_Main.c                        # STM 1ms + P13.0 + UART/Shell/DTS
-├── Cpu1..5_Main.c                     # 仅同步，空转（保留 tc397_0）
-├── build.sh / serial_monitor.py       # 一键构建/烧录/监控
-└── build/gcc/tc397_uart_lettershell.{elf,hex,map}
+tc397_can_x12/
+├── App/can12.[hc]      # 12路驱动：轮询收发/accept-all滤波/RTR/TEC-REC/BO恢复/收发器控制
+├── Shell/shell_can.c   # cansend/candump/canlive/canstat/canpair/canflood/canrst/xcvr
+├── Shell/shell_can.h   # live 标志接口（Cpu0_Main 主循环调用）
+├── Cpu0_Main.c         # STM 1ms + P13.0 + UART/Shell/DTS + xcvr/CAN 初始化 + 主循环轮询
+├── Configurations/…    # 同 uart_lettershell（中断配置未动，CAN 用纯轮询，无新增中断）
+├── ...                 # 其余同 tc397_uart_lettershell（iLLD/Lcf/CMake/build.sh）
+└── build/gcc/tc397_can_x12.{elf,hex,map}
 ```
 
 ---
 
-## 3 构建与下载（Ubuntu 26.04）
+## 3 构建与下载（Ubuntu）
 
 ```bash
 export PATH=/opt/tricore-gcc/bin:$PATH
-tricore-elf-gcc --version  # 13.4.1
-
-cd tc397_uart_lettershell
+cd tc397_can_x12
 ./build.sh build                        # Debug
 ./build.sh build --build-type Release
 ./build.sh download                     # 需 TAS: systemctl status tas-server
-./build.sh download --build-type Release --id 0
-./build.sh clean
-./build.sh all                          # rebuild + download
-./build.sh reset                        # 触发 RESET + Application Reset
+./build.sh reset                        # 硬复位（flasher）
 ```
 
-产物 `build/gcc/tc397_uart_lettershell.{elf,hex,map}`（`build/` 已全局忽略，不进 git）。
-
-手动 CMake：
-
-```bash
-cmake -S . -B build/gcc -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/tricore-gcc-toolchain.cmake -DCMAKE_BUILD_TYPE=Debug
-cmake --build build/gcc -j$(nproc)
-tricore-elf-size --format=berkeley build/gcc/tc397_uart_lettershell.elf
-```
-
-下载说明：`build.sh` 默认 flasher 为
-`/home/z/lz/tc387/ref/aurix_flasher_linux-master/linux/aurix_flasher`
-（`resolve_flasher` 另试 `tools/aurix_flasher/`），可用 `--flash-tool <path>` 覆盖。
-TAS 需运行：`systemctl status tas-server`（`ss -tlnp | grep 24817`），
-验证 `./aurix_flasher -id list`。
+产物 `build/gcc/tc397_can_x12.{elf,hex}`（`build/` 已忽略，不进 git）。
+当前板上为 **Debug 版（最终版，2026-09-14）**：`text 100976 data 6216 bss 141768, hex 296K`。
 
 ---
 
@@ -88,93 +76,81 @@ TAS 需运行：`systemctl status tas-server`（`ss -tlnp | grep 24817`），
 
 ```bash
 python3 -m serial.tools.miniterm /dev/ttyACM0 921600 --raw
-python3 serial_monitor.py --port /dev/ttyACM0 --baud 921600
-python3 serial_monitor.py --port /dev/ttyACM0 --baud 921600 --cmd help --duration 5
 ```
 
-启动日志（921600）：
+启动尾部：
 
 ```
-After Shell_Init direct
-TC397 Letter-Shell ...
-TC397 UART0 + Letter-Shell
+TC397 CAN x12 + Letter-Shell
 Board: TC397XX 292pin (ASCLIN0 P14.0 TX / P14.1 RX, 921600)
-Type 'help' for commands, ...
-ChipID: 0x... CHREV=0x...
-SCU_ID: 0x... RSTSTAT: 0x...
-STM Freq: 100000000 Hz Tick: 0
-DTS raw=0x... -> .. C
+Type 'help' for commands, 'canstat' for CAN, 'canpair' for pair test
+ChipID: 0xAF239793 CHREV=0x13
+SCU_ID: 0x00C4C0C1 ...
+STM Freq: 100000000 Hz ...
+DTS raw=0x... -> ~52 C
+CAN 12ch init done: 1M/5M 80% (pairs 0-1..10-11), nFAULT=0
 ```
 
-| 命令 | 说明 |
-| --- | --- |
-| `help` | 列出全部命令 |
-| `version` / `ver` | 固件版本、编译时间、板卡 |
-| `mcu` | ChipID/SCU_ID/RSTSTAT/RSTCON/CCUCON/STM |
-| `uid` | CHIPID + DTSSTAT |
-| `uptime` | g_TickCount 天时分秒 |
-| `reset` / `reboot` | 软件复位 |
-| `temp` | DTS 温度 |
-| `sysinfo` | mcu+temp+uptime |
-| `led` | P13.0 控制（见下） |
-| `mem` | 提示（NO_SYS） |
-
-LED（P13.0，低=亮）：
+### CAN 命令（can-utils 语法子集）
 
 ```
-letter:/$ led
-letter:/$ led on        # 点亮，心跳关
-letter:/$ led off       # 熄灭，心跳关
-letter:/$ led toggle
-letter:/$ led blink 5 200   # 闪 5 次 x 200ms
-letter:/$ led hb on     # 1Hz 心跳开（默认开）
-letter:/$ led hb off    # 心跳关
+cansend <ch> <frame>   经典: 123#DEADBEEF / 12345678#1122(扩展) / 123#R[Rlen]
+                       FD: 123##<flags><data>, flags bit0=BRS, 如 123##1DEADBEEF
+candump [ch|all] [n]   打印缓存的接收帧（默认 all 20）
+canlive <on|off>       主循环实时打印每帧
+canstat [ch]           计数+TEC/REC/BO+NBTP/DBTP+fMCAN
+canpair [rounds] [len] [fd]  双向回环: 每对互发验证 id+数据 (默认 1轮 8B FD+BRS)
+canflood <ch> <n> [len] [fd] 突发发送（TX FIFO 16深，超量报 busy，属正常）
+canrst [ch|all]        节点恢复（INIT toggle）
+xcvr                   收发器使能脚电平 + nFAULT
 ```
+
+UART/LED 旧命令（`help/version/mcu/uid/uptime/reset/temp/sysinfo/mem/led`）保持不变。
 
 ---
 
-## 5 移植要点（vs tc397_0 / tc387_1）
+## 5 位定时（fMCAN=80MHz，`canstat` 实测）
 
-* **保留 tc397_0**：`Libraries/iLLD`（TC39xB 全套 SFR/PinMap）、`Infra/Service`、
-  `Configurations/Ifx_Cfg_Ssw.*`、`Lcf` 内存布局（6 核 stacks/CSA）、`Cpu1..5_Main.c`。
-  切勿用 tc387 的 iLLD 覆盖（版本不同）。
-* **修改 `Ifx_Cfg.h`**：`IFX_PIN_PACKAGE_LFBGA292`（原 516），`DEVICE_TC39XB` 不变。
-* **新增**：`cmake/`（3 文件，直拷 tc387_1）、`CMakeLists.txt`
-  （`project(tc397_uart_lettershell)`，GCC `-mcpu=tc39xx` / TASKING `tc39xb`）、
-  `build.sh`（同上 + flasher 多路径）、`serial_monitor.py`、
-  `Configurations/Configuration.h` + `ConfigurationIsr.h`
-  （`OS_TICK 10`，`ASCLIN0_TX 31 / RX 32`）、`Libraries/UART/`（ASCLIN0 版）、
-  `Shell/`（letter-shell + `shell_cfg_user.h` + `shell_port.c` TC397 版 + `led`）、
-  `Lcf` 追加 `.shellCommand/.shellVar`（KEEP/PROVIDE，同 tc387_1）。
-* **UART0**：`MODULE_ASCLIN0`，`IfxAsclin0_TX_P14_0_OUT` / `IfxAsclin0_RXA_P14_1_IN`，
-  `921600/oversampling 16/medianFilter three/samplePoint 12/prescaler 1`，
-  `PadDriver cmosAutomotiveSpeed4`，`TX/RX 1024`，`RX Level 1 / TX 8`，
-  `RX 32 > TX 31 > STM 10`，ISR 批量 64B `Shell_RxPush`，
-  `UART_Poll` 仅作 `RFL` 丢失回退（见 tc387_1 README §5.4）。
-* **时钟/温度**：STM0 1ms（`100k ticks/ms`，`increaseCompare`），
-  DTS `LOW -40 UPPER 170`，`convertToCelsius`。
-* **CPU**：`CMake -mcpu=tc39xx`（`--target-help` 实测支持 `tc39xx`），
-  `.cproject` 仍为 `tc39xb`（TASKING 名，供 ADS 参考）。
+* 仲裁段 1M：`NBTP=0x06030E03`（NBRP=3, NTSEG1=14, NTSEG2=3 → 20TQ×50ns=1.0Mbps，采样点 80%）
+* 数据段 5M：`DBTP=0x00800B22`（DBRP=0, DTSEG1≈11, DTSEG2≈2, TDC=1 → 16TQ×12.5ns=5.0Mbps，采样点 ~81%）
+* 驱动用 `calculateBitTimingValues=TRUE` 由 fMCAN 自动计算（1M/0.8 + 5M/0.8），TDC = DTSEG1+2（同 tc387 参考规则）。
+
+MessageRAM：`0xF0200000 + group*0x10000`，每节点 4KB（std 0x000/ext 0x080/rxFifo0 0x180/txBuf 0xA80，
+RX FIFO 32/TX FIFO 16）。`g_can`（~70KB）显式放 `.bss`（NOBITS），不占 Flash 拷贝。
 
 ---
 
-## 6 常见问题
+## 6 实测结果（2026-09-14，DAP miniWiggler + TAS，板上 Debug 版）
 
-* **串口无输出**：确认 `921600` 且为 `/dev/ttyACM0` 非 `ttyUSB0`；
-  `stty -F /dev/ttyACM0 921600 raw -echo` 后重读；按 RESET；
-  `aurix_flasher -id 0 -read 0x80000000` 触发 RESET + Application Reset。
-* **烧录后仍 halt**：`build.sh download` 末尾已自动 `-read 0x80000000` 一次；
-  无效则 `./build.sh reset` 或按板载 RESET。
-* **`tricore-elf-gcc not found`**：`export PATH=/opt/tricore-gcc/bin:$PATH`。
-* **TAS 连不上**：`systemctl status tas-server`，`ss -tlnp | grep 24817`，
-  `ldd /opt/Tools/DAS/8.3.0/bin/tas_server` 查 `libftd2xx`。
-* **LED 不亮**：P13.0 低=亮；`led on` 后用万用表量 P13.0 应 ~0V；
-  `led hb off` 排除心跳干扰后再测。
+* `canstat`：12 节点 TEC=REC=0，BO=0，nFAULT=0，`fMCAN=80.00MHz`
+* `canpair 1 8 0`（经典 8B）：12/12 PASS
+* `canpair 1 8 1`（FD+BRS 8B）：12/12 PASS
+* `canpair 3 64 1`（FD+BRS 64B ×3 轮）：36/36 PASS，全程零错误
+* 扩展帧 `1ABCDEFF#11223344`、RTR `200#R4`：收发正常
+* `canflood 6 500 8`：FIFO 满后报 busy（符合预期），无错误计数增长
+* 软件 `reset` 后：启动正常 + `canpair` 12/12 PASS（暖启动已修复，见 §7）
+* 完整日志：`tc397/temp/canx12_final_test.log`（不进 git）
 
 ---
 
-## 7 许可
+## 7 已知问题与处理
+
+1. **SW 复位后曾卡死在 CAN 初始化**（现象：启动停在 DTS 行，shell 无响应；因 SW 复位保留 RAM，
+   陈旧的 `g_canModuleInitialized=TRUE` 跳过了 module 初始化）。修：`can12_init_all()` 入口强制清标志、
+   每次全量重配（`App/can12.c`）。复测：`reset` 后启动 + 收发一切正常。
+2. **首次上电第一帧 can0→can1 超时一次**（之后从未复现：经典/FD/64B 多轮全过，TEC/REC 恒零）。
+   疑为 TCAN1043 使能后首帧瞬态；`canpair` 失败不影响后续，`canrst`/复位可清。待长期观察。
+3. **TX 失败的帧会滞留 TX FIFO 被硬件持续重发**（M_CAN 行为），伴随反复 bus-off（自动恢复计数涨）。
+   排查时认准 `canstat` 的 `bo/rst` 列；对端恢复/复位后用 `canrst` 清理。
+4. `uptime` 在 SW 复位后不清零（RAM 保持所致，uart 基线亦如此，非本工程引入）。
+5. TCAN1043 非 G 版本 FD 上限为 2M（datasheet）；本板 5M BRS 实测通过，
+   若换批次收发器出现 5M 误码，优先降数据段到 2M（`can12_init_all(1M, 2M)`）再测。
+
+---
+
+## 8 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * Letter-Shell：MIT
+* can-utils 语法参考（GPL-2.0/BSD）：仅借鉴帧字符串格式，实现为自研代码
 * 其余移植代码内部许可

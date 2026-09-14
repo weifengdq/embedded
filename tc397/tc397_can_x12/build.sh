@@ -21,7 +21,7 @@ set -e
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 DEFAULT_COMPILER="gcc"
 DEFAULT_BUILD_TYPE="Debug"
-DEFAULT_TARGET="tc397_uart_lettershell"
+DEFAULT_TARGET="tc397_can_x12"
 # tc397/ref 仅放 PDF，无 flasher；复用 tc387 的 Linux flasher（TC3xx 通用）
 DEFAULT_FLASH_TOOL="/home/z/lz/tc387/ref/aurix_flasher_linux-master/linux/aurix_flasher"
 DEFAULT_TAS_SERVER="/home/z/lz/tc387/ref/aurix_flasher_linux-master/src/tas_server"
