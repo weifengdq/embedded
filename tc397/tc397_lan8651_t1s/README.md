@@ -1,14 +1,13 @@
-# tc397_uart_lettershell — TC397XX (292pin) ASCLIN0 Letter-Shell (921600) + P13.0 LED
+# tc397_lan8651_t1s — TC397 + LAN8651 10BASE-T1S (QSPI4) + LwIP + Letter-Shell
 
-本工程以 `tc397_0` (ADS, TC39XB) 为蓝本，在 **Ubuntu 26.04 + tricore-gcc 13.4.1 + CMake/Ninja**
-下重建，移植 `tc387_1` 的 **Letter-Shell + 921600 高速串口** 方案（不含以太网），目标
-**TC397XX 292pin**，调试串口 **ASCLIN0 TX P14.0 / RX P14.1, 921600-8N1**，
-LED **P13.0（低电平点亮）** 通过 Shell 命令控制。
+本工程由 `tc397_uart_lettershell` 复制，移植 `lan8651/tc387_lan8651_lwip_iperf_gcc`
+的 LAN8651 驱动 + LwIP 胶水，合并 `tc397_lwip_iperf` 的 Shell/iperf 框架。
+对端为 USB-10BASE-T1S（K2L `184f:0051`，网卡 `enx001ec0d1c337`）直连 PC。
 
-* 参考移植：`/home/z/lz/tc387/tc387_1`（Shell/UART/CMake/build.sh，见其 README §5.4 921600 优化）
-* 工具链/下载：tricore-gcc 13.4.1（`/opt/tricore-gcc`）+ TAS/DAS 8.3.0 + `aurix_flasher`
- （复用 `/home/z/lz/tc387/ref/aurix_flasher_linux-master/linux/aurix_flasher`，TC3xx 通用）
-* 串口：`/dev/ttyACM0`（1a86:55d3），DAP MiniWiggler `058b:0043` 仅用于 TAS 下载
+* 工具链：tricore-gcc 13.4.1（`/opt/tricore-gcc`）+ CMake/Ninja，Ubuntu 26.04
+* 下载：DAP MiniWiggler `058b:0043` + TAS（`tas-server.service`）+ `aurix_flasher`
+ （复用 `/home/z/lz/tc387/ref/aurix_flasher_linux-master/linux/aurix_flasher`）
+* 调试串口：`/dev/ttyACM0`（1a86:55d3），ASCLIN0 P14.0/P14.1，921600-8N1
 
 ---
 
@@ -16,165 +15,164 @@ LED **P13.0（低电平点亮）** 通过 Shell 命令控制。
 
 | 信号 | TC397 Pin | 说明 |
 | --- | --- | --- |
-| UART TX | P14.0 | `IfxAsclin0_TX_P14_0_OUT`, `cmosAutomotiveSpeed4` |
-| UART RX | P14.1 | `IfxAsclin0_RXA_P14_1_IN`, `pullUp`, `Ifx_RxSel_a` |
-| LED | P13.0 | 低电平点亮，上电短亮后 1 Hz 心跳（`Shell_Process`），`led` 命令控制 |
-| DAP | USB 058b:0043 | TAS 下载 |
-| MCU | TC397XX 292pin | `DEVICE_TC39XB` + `IFX_PIN_PACKAGE_LFBGA292`，6 核（Shell 跑 Core0） |
+| nRST | P23.4 | GPIO 输出，复位低 10ms → 高 50ms |
+| nINT | P33.7 | GPIO 输入上拉，`irq=idle` 常态 |
+| MISO | P33.13 | `IfxQspi4_MRSTA_P33_13_IN`（RxSel_a） |
+| MOSI | P22.0 | `IfxQspi4_MTSR_P22_0_OUT`（alt3） |
+| SCLK | P22.3 | `IfxQspi4_SCLK_P22_3_OUT`（alt3） |
+| nCS | P22.2 | `IfxQspi4_SLSO3_P22_2_OUT`（`autoCS=0`） |
+| UART TX/RX | P14.0/P14.1 | ASCLIN0，921600 |
+| LED | P13.0 | 低=亮，1Hz 心跳 |
+| LAN8651 | B1-E/LMX 板 | 25MHz 晶振，3V3；T1S 双绞线接 USB 适配器 |
+| PC | `enx001ec0d1c337` | `00:1e:c0:d1:c3:37`，配 `192.168.1.1/24` |
+
+QSPI4：Mode0（trailing-edge），20MHz（芯片上限 25MHz），中断 TX100/RX101/ER102。
+板端默认：MAC `02:00:00:10:BA:5E`，IP `192.168.1.100/24`，GW `192.168.1.1`，
+PLCA 使能，NodeID=1（从），NodeCount=8，UDP echo 端口 9，lwiperf TCP 5001。
 
 ---
 
-## 2 目录结构
+## 2 目录与移植要点
 
 ```
-tc397_uart_lettershell/
-├── cmake/tricore-gcc-toolchain.cmake  # /opt/tricore-gcc/bin, 13.4.1
-├── cmake/AurixProject.cmake           # 递归收集 + 排除 build/.ads/.settings
-├── Configurations/
-│   ├── Configuration.h / ConfigurationIsr.h  # STM 100k ticks/ms, OS_TICK 10, ASCLIN0 TX31/RX32
-│   └── Ifx_Cfg.h (LFBGA292) / Ifx_Cfg_Ssw.*  # 保留 tc397_0
-├── Libraries/
-│   ├── iLLD/TC3xx/...                 # 保留 tc397_0 原版（TC39xB），勿用 tc387 的覆盖
-│   ├── UART/UART_Logging.c/h          # ASCLIN0 921600, FIFO 1024, RX Level 1, TX/RX ISR + UART_Poll
-│   └── Infra/Service/...              # Bsp, Ssw, Platform（保留 tc397_0）
-├── Shell/
-│   ├── letter-shell/src/              # 3.2.4
-│   ├── shell_cfg_user.h               # 1024 Shell缓冲, 8历史, tick=g_TickCount_1ms
-│   └── shell_port.c/h                 # 环形缓冲 1024B + led/mcu/temp 等命令
-├── Lcf_Gnuc_Tricore_Tc.lsl            # 已增 .shellCommand/.shellVar (KEEP, PROVIDE)
-├── Cpu0_Main.c                        # STM 1ms + P13.0 + UART/Shell/DTS
-├── Cpu1..5_Main.c                     # 仅同步，空转（保留 tc397_0）
-├── build.sh / serial_monitor.py       # 一键构建/烧录/监控
-└── build/gcc/tc397_uart_lettershell.{elf,hex,map}
+tc397_lan8651_t1s/
+├── Libraries/LAN8651/lan8651.[hc]   # 自 tc387（739+199 行），QSPI2→QSPI4（P22.0/22.2/22.3+P33.13）
+├── Libraries/Ethernet/lwip/         # 自 tc387：lwip 栈 + port（Ifx_Lwip/ethernetif_lan8651/netif）
+├── Configurations/lwipopts.h        # 自 tc387：BOARDNAME→TC397，NETIF_DEBUG→OFF，
+│                                    # + LWIP_RAW/ICMP（ping 用），TCP_WND/SND 8K，POOL 32，MEM 48K
+├── Configurations/Configuration.h   # LAN8651 引脚/PLCA/IP/MAC/SPI 配置（见 §1）
+├── Configurations/ConfigurationIsr.h# + QSPI4 TX100/RX101/ER102
+├── Cpu0_Main.c                      # STM 1ms（兼 lwIP tick）+ LAN8651 init/start + UDP echo 9
+│                                    # + lwiperf + link 轮询/gratuitous ARP + Shell
+├── Shell/shell_port.c               # 保留 uart 基线命令 + 新增 ifconfig/ping/t1stat/t1r/t1w/plca/link
+├── CMakeLists.txt/.project/.cproject/build.sh  # 重命名为 tc397_lan8651_t1s
+└── build/gcc/tc397_lan8651_t1s.{elf,hex,map}
 ```
+
+* **保留 tc397_0**：iLLD（TC39xB）、Ssw、Lcf（6 核）、Cpu1..5；勿用 tc387 iLLD 覆盖。
+* **删掉的 GETH 残留**：tc387 `Ifx_Lwip.c` 尾部 `ISR_Geth_Tx/Rx`
+  （TC397 无 `ISR_PRIORITY_GETH_*`，留之则汇编报错）。
+* TC6：控制面 12B + 数据面 68B（4B header + 64B chunk），MSB-first，奇校验；
+  `ETH_PAD_SIZE=2`；TX<60B 补零；MAC NCFGR=`MTIHEN|RFCS|EFRHD`；
+  CONFIG0=`SYNC|RFA_ZARFE|BPS_64`（回读 `0x9006`）。
+* 工程改名：`CMakeLists project`、`build.sh DEFAULT_TARGET`、
+  `.project/.cproject` 内 5 处 `tc397_uart_lettershell`→`tc397_lan8651_t1s`。
+
+构建产物（`build/` 不进 git）：
+
+| 构建 | text | data | bss | hex |
+| --- | --- | --- | --- | --- |
+| Debug | 170398 | 64798 | 72156 | 649K |
+| Release（板上即此版） | 188196 | 99713 | 72156 | 793K |
 
 ---
 
-## 3 构建与下载（Ubuntu 26.04）
+## 3 构建与下载
 
 ```bash
 export PATH=/opt/tricore-gcc/bin:$PATH
-tricore-elf-gcc --version  # 13.4.1
-
-cd tc397_uart_lettershell
+cd tc397_lan8651_t1s
 ./build.sh build                        # Debug
-./build.sh build --build-type Release
+./build.sh build --build-type Release   # 板上版本
 ./build.sh download                     # 需 TAS: systemctl status tas-server
-./build.sh download --build-type Release --id 0
-./build.sh clean
-./build.sh all                          # rebuild + download
-./build.sh reset                        # 触发 RESET + Application Reset
+./build.sh reset                        # RESET + Application Reset（-read 路径）
 ```
 
-产物 `build/gcc/tc397_uart_lettershell.{elf,hex,map}`（`build/` 已全局忽略，不进 git）。
-
-手动 CMake：
+PC 组网（联调前必做，适配器本身是 `.2`，PC 用 `.1`）：
 
 ```bash
-cmake -S . -B build/gcc -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/tricore-gcc-toolchain.cmake -DCMAKE_BUILD_TYPE=Debug
-cmake --build build/gcc -j$(nproc)
-tricore-elf-size --format=berkeley build/gcc/tc397_uart_lettershell.elf
-```
-
-下载说明：`build.sh` 默认 flasher 为
-`/home/z/lz/tc387/ref/aurix_flasher_linux-master/linux/aurix_flasher`
-（`resolve_flasher` 另试 `tools/aurix_flasher/`），可用 `--flash-tool <path>` 覆盖。
-TAS 需运行：`systemctl status tas-server`（`ss -tlnp | grep 24817`），
-验证 `./aurix_flasher -id list`。
-
----
-
-## 4 串口与 Shell
-
-```bash
-python3 -m serial.tools.miniterm /dev/ttyACM0 921600 --raw
-python3 serial_monitor.py --port /dev/ttyACM0 --baud 921600
-python3 serial_monitor.py --port /dev/ttyACM0 --baud 921600 --cmd help --duration 5
-```
-
-启动日志（921600）：
-
-```
-After Shell_Init direct
-TC397 Letter-Shell ...
-TC397 UART0 + Letter-Shell
-Board: TC397XX 292pin (ASCLIN0 P14.0 TX / P14.1 RX, 921600)
-Type 'help' for commands, ...
-ChipID: 0x... CHREV=0x...
-SCU_ID: 0x... RSTSTAT: 0x...
-STM Freq: 100000000 Hz Tick: 0
-DTS raw=0x... -> .. C
-```
-
-| 命令 | 说明 |
-| --- | --- |
-| `help` | 列出全部命令 |
-| `version` / `ver` | 固件版本、编译时间、板卡 |
-| `mcu` | ChipID/SCU_ID/RSTSTAT/RSTCON/CCUCON/STM |
-| `uid` | CHIPID + DTSSTAT |
-| `uptime` | g_TickCount 天时分秒 |
-| `reset` / `reboot` | 软件复位 |
-| `temp` | DTS 温度 |
-| `sysinfo` | mcu+temp+uptime |
-| `led` | P13.0 控制（见下） |
-| `mem` | 提示（NO_SYS） |
-
-LED（P13.0，低=亮）：
-
-```
-letter:/$ led
-letter:/$ led on        # 点亮，心跳关
-letter:/$ led off       # 熄灭，心跳关
-letter:/$ led toggle
-letter:/$ led blink 5 200   # 闪 5 次 x 200ms
-letter:/$ led hb on     # 1Hz 心跳开（默认开）
-letter:/$ led hb off    # 心跳关
+sudo ip addr add 192.168.1.1/24 dev enx001ec0d1c337
+sudo ip link set enx001ec0d1c337 up
+ping -c 3 192.168.1.100
 ```
 
 ---
 
-## 5 移植要点（vs tc397_0 / tc387_1）
+## 4 启动日志与 Shell（921600）
 
-* **保留 tc397_0**：`Libraries/iLLD`（TC39xB 全套 SFR/PinMap）、`Infra/Service`、
-  `Configurations/Ifx_Cfg_Ssw.*`、`Lcf` 内存布局（6 核 stacks/CSA）、`Cpu1..5_Main.c`。
-  切勿用 tc387 的 iLLD 覆盖（版本不同）。
-* **修改 `Ifx_Cfg.h`**：`IFX_PIN_PACKAGE_LFBGA292`（原 516），`DEVICE_TC39XB` 不变。
-* **新增**：`cmake/`（3 文件，直拷 tc387_1）、`CMakeLists.txt`
-  （`project(tc397_uart_lettershell)`，GCC `-mcpu=tc39xx` / TASKING `tc39xb`）、
-  `build.sh`（同上 + flasher 多路径）、`serial_monitor.py`、
-  `Configurations/Configuration.h` + `ConfigurationIsr.h`
-  （`OS_TICK 10`，`ASCLIN0_TX 31 / RX 32`）、`Libraries/UART/`（ASCLIN0 版）、
-  `Shell/`（letter-shell + `shell_cfg_user.h` + `shell_port.c` TC397 版 + `led`）、
-  `Lcf` 追加 `.shellCommand/.shellVar`（KEEP/PROVIDE，同 tc387_1）。
-* **UART0**：`MODULE_ASCLIN0`，`IfxAsclin0_TX_P14_0_OUT` / `IfxAsclin0_RXA_P14_1_IN`，
-  `921600/oversampling 16/medianFilter three/samplePoint 12/prescaler 1`，
-  `PadDriver cmosAutomotiveSpeed4`，`TX/RX 1024`，`RX Level 1 / TX 8`，
-  `RX 32 > TX 31 > STM 10`，ISR 批量 64B `Shell_RxPush`，
-  `UART_Poll` 仅作 `RFL` 丢失回退（见 tc387_1 README §5.4）。
-* **时钟/温度**：STM0 1ms（`100k ticks/ms`，`increaseCompare`），
-  DTS `LOW -40 UPPER 170`，`convertToCelsius`。
-* **CPU**：`CMake -mcpu=tc39xx`（`--target-help` 实测支持 `tc39xx`），
-  `.cproject` 仍为 `tc39xb`（TASKING 名，供 ADS 参考）。
+```
+TC397 QSPI4 + LAN8651 10BASE-T1S + LwIP + Letter-Shell
+Board: TC397XX 292pin (ASCLIN0 P14.0 TX / P14.1 RX, 921600; QSPI4 P22.0/22.2/22.3+P33.13, nRST P23.4, nINT P33.7)
+ChipID: 0xAF239793 CHREV=0x13
+DTS raw=0x096E -> 48.50 C
+Booting TC397 LAN8651 firmware (QSPI4 20MHz, PLCA ID=1 CNT=8)
+LAN8651 DEVID=0x00086512 model=0x8651 rev=2
+cfg readback ok (see t1stat)
+LAN8651 started, MAC=02:00:00:10:BA:5E
+Static IP=192.168.1.100 MASK=255.255.255.0 GW=192.168.1.1
+UDP echo listening on port 9
+lwIP iperf server ready (TCP 5001)
+```
+
+> 注：启动期紧随 10 次 TC6 读寄存器之后的一行打印偶发 1~2 乱码字节
+> （已知 cosmetic quirk，功能无损）；寄存器回读以 `t1stat` 为准（见下）。
+
+| 命令 | 说明 | 实测 |
+| --- | --- | --- |
+| `help/version/mcu/uid/uptime/reset/temp/sysinfo/mem/led` | uart 基线命令 | 正常 |
+| `ifconfig` | netif（t1_0，IP/MAC/MTU/link） | `192.168.1.100 … link UP` |
+| `ping <ip> [count] [size]` | 板端 RAW ICMP，Ctrl+C 中止 | `ping 192.168.1.1 3/4 32` 0% loss |
+| `t1stat` | DEVID/SYNC/PLCA/PHY/MAC/BUF/IRQ 一览 | 见 §5 |
+| `t1r <reg>` / `t1w <reg> <val>` | TC6 寄存器读写（hex） | `t1r 0x000A0094`=0x86512 |
+| `plca [id] [count]` | 查看/ live 修改 PLCA（0=主/协调器） | `plca 0 8`→pst=1 |
+| `link` | T1S 链路（sync/pst/phy_link/irq） | 见 §5 |
+
+`t1stat`（从节点 ID1，常态）：
+
+```
+DEVID=0x00086512 SYNC=0 RESETC=0 oa_cfg=0x9006
+PLCA en=1 id=1 ncnt=8 pst=0 tot=0x0020 burst=0x0080
+PHY bmcr=0x0000 bmsr=0x0805(link=1) id=0x0007/0xC1B3
+MAC ncr=0x0C(TXEN=1 RXEN=1) ncfgr=0x02020040 nsr=0x04
+BUF rba=0 txc=48 irq=idle(1)
+```
+
+诊断寄存器：`STS1 (0x0004CA18)=0`（无 RXINTO/UNEXPB/BCNBFTO），
+`BCNCNT (0xCA26/27)=0`（适配器不发 BEACON，纯 CSMA 回退）。
 
 ---
 
-## 6 常见问题
+## 5 实测数据（2026-09-14）
 
-* **串口无输出**：确认 `921600` 且为 `/dev/ttyACM0` 非 `ttyUSB0`；
-  `stty -F /dev/ttyACM0 921600 raw -echo` 后重读；按 RESET；
-  `aurix_flasher -id 0 -read 0x80000000` 触发 RESET + Application Reset。
-* **烧录后仍 halt**：`build.sh download` 末尾已自动 `-read 0x80000000` 一次；
-  无效则 `./build.sh reset` 或按板载 RESET。
-* **`tricore-elf-gcc not found`**：`export PATH=/opt/tricore-gcc/bin:$PATH`。
-* **TAS 连不上**：`systemctl status tas-server`，`ss -tlnp | grep 24817`，
-  `ldd /opt/Tools/DAS/8.3.0/bin/tas_server` 查 `libftd2xx`。
-* **LED 不亮**：P13.0 低=亮；`led on` 后用万用表量 P13.0 应 ~0V；
-  `led hb off` 排除心跳干扰后再测。
+从节点（PLCA ID1，默认）：
+
+* PC→板 `ping 192.168.1.100`：3/3，avg ~0.7ms，ttl=255
+* 板→PC `ping 192.168.1.1 3/4 32`：0% loss，0~1ms
+* UDP echo（端口 9）：22/64/200B 全部原样返回
+* **iperf2 TCP（Release）：20s / 18.5MB / 7.69Mbps**（板端 server 报告 7688kbits/s，
+  与客户端一致；接近 10M 理论极限，对标 tc387 的 8.3Mbps）
+* Shell 自动化 `temp/test_lan8651_shell.py`：9/9 PASS
+
+主节点（`plca 0 8` live 切换，ID0/协调器）：
+
+* `t1stat`：`pst=1`，串口 `LAN8651 link up` + `gratuitous_arp=sent`
+* `STS1=0`（适配器不做协调器，无 BEACON 冲突）
+* PC→板 ping：2/2、3/3，0% loss
+* **iperf2 TCP：Debug 20s/11.6MB/4.79Mbps；Release 15s/14.3MB/7.89Mbps**
+
+---
+
+## 6 已知问题
+
+1. **K2L USB-10BASE-T1S 适配器会 wedged**（双向无包，`ip -s` TX 涨 RX 停，
+   板端 Shell/SPI 一切正常；板复位无效，复位适配器即恢复）：
+   轻载几十秒~几分钟或 iperf 后偶发。 workaround（屡试屡爽）：
+   ```bash
+   echo -n 0 | sudo tee /sys/bus/usb/devices/1-7/authorized > /dev/null; sleep 2
+   echo -n 1 | sudo tee /sys/bus/usb/devices/1-7/authorized > /dev/null; sleep 3
+   sudo ip addr add 192.168.1.1/24 dev enx001ec0d1c337
+   ```
+   iperf 测试方法：复位适配器后立即跑（`iperf -c 192.168.1.100 -p 5001 -t 15 -w 32K -M 1024`）。
+2. **启动期一行打印偶发乱码字节**（§4 注）：单发 `Asc_write` 长行在 QSPI
+   burst 后偶发，功能无损；`t1stat`（分块写）始终正常，以它为准。
+3. 板端默认从节点 ID1；主节点用 `plca 0 8` live 切换（掉电/复位恢复 ID1，
+   如需默认主节点改 `Configuration.h` 的 `LAN8651_PLCA_NODE_ID` 重编）。
+4. `lwiperf` 只支持单流 TCP；测速用 iperf2（非 iperf3）。
 
 ---
 
 ## 7 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
-* Letter-Shell：MIT
+* Letter-Shell：MIT；`aurix_flasher`：MIT + Apache 2.0
 * 其余移植代码内部许可

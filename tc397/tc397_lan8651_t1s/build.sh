@@ -6,7 +6,7 @@
 #     --compiler gcc|tasking (default gcc, only gcc supported on Linux)
 #     --build-type Debug|Release|RelWithDebInfo|MinSizeRel (default Debug)
 #     --build-dir <path> (default build/gcc)
-#     --target <name> (default tc397_uart_lettershell)
+#     --target <name> (default tc397_lan8651_t1s)
 #     --flash-tool <path> (default: /home/z/lz/tc387/ref/aurix_flasher_linux-master/linux/aurix_flasher)
 #     --id <boardId> (default 0)
 # Examples:
@@ -21,7 +21,7 @@ set -e
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 DEFAULT_COMPILER="gcc"
 DEFAULT_BUILD_TYPE="Debug"
-DEFAULT_TARGET="tc397_uart_lettershell"
+DEFAULT_TARGET="tc397_lan8651_t1s"
 # tc397/ref 仅放 PDF，无 flasher；复用 tc387 的 Linux flasher（TC3xx 通用）
 DEFAULT_FLASH_TOOL="/home/z/lz/tc387/ref/aurix_flasher_linux-master/linux/aurix_flasher"
 DEFAULT_TAS_SERVER="/home/z/lz/tc387/ref/aurix_flasher_linux-master/src/tas_server"
