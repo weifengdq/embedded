@@ -44,11 +44,14 @@ TX 的 ALT（P00.8/alt3、P00.9/alt5 等）亦逐个核对，`linreg` 可回读 
 芯片 3 = LIN8~11。板上 SLP_N 即收发器 EN（高=Normal，低=Sleep；datasheet §9.3.6/§9.4），
 4 通道 EN 连在一起由 1 个 MCU GPIO 控制。`lin_xcvr_init()` 上电即置 3 组 SLP_N 为高。
 
-**总线拓扑（显性钳位探针 `lindomf` 实测，不是 11 路共线）：**
-对线 B=(2,3)、C=(4,5)、D=(6,7)、E=(8,9)、F=(10,11)；
-**LIN1 落单**（其对端 LIN0 与 UART0 冲突不可用，且 LIN0 收发器通道 TXD 上是 UART
-流量，若与 LIN1 共线会污染，见 §7）。
-LIN11 不再是固定 master——测试侧用 `linrole`/`linsend` 配成 master。
+**总线拓扑（2026-09-15 用户改为 3 总线；`lindomf` 实测结论）：**
+期望：A=(1,2,3,m3)、B=(4,5,6,7,m7)、C=(8,9,10,11,m11)。
+实测：新跳线**时通时断**（同一命令不同时间结果不同，固件未变）——(2,3)、(4,5)、
+(8,9)、(10,11) 基本稳定，(6,7) 曾断开又恢复，A/B/C 的跨组连接基本不通。
+`linpair` 结果与实测拓扑完全吻合。**跳线接触不良是当前第一问题**（杜邦线/面包板
+类连接在 TLIN 总线侧不可靠；万用表静态量电平正常不代表接触良好）。
+LIN1 之前落单（对端 LIN0 与 UART0 冲突）；LIN11 不再是唯一的 master——
+每条总线各配一个 master（3/7/11），测试侧用 `linrole`/`linsend` 动态指定。
 
 > 注意（commander 上拉）：按 TLIN1024A-Q1 §9.3.1/§9.3.1.2.1，responder 靠内部
 > 45kΩ 上拉即可，**commander 节点必须外加 1kΩ + 串联二极管到 VSUP**。
@@ -178,21 +181,18 @@ UART/LED 旧命令（`help/version/mcu/uid/uptime/reset/temp/sysinfo/mem/led`）
 
 标准测试流程（一键脚本 `tc397/temp/test_lin.py`，日志 `tc397/temp/linx11_test.log`，不进 git）：
 
-| # | 命令 | 结果 | 说明 |
+| # | 命令 | 结果（2026-09-15，新拓扑） | 说明 |
 | --- | --- | --- | --- |
-| 1 | 上电启动日志 | 通过 | `LIN 11ch init done: 19200 …`；ChipID `0xAF239793`，DTS ~51℃ |
-| 2 | `linpair 1 8`（19200） | **6/10 通过** | 通过：3→2、6↔7、8↔9、11→10；失败见 §7（4 个方向） |
-| 3 | `linreq 11 10 0x20 8 …` | 失败 | 从机应答方向（LIN10 TX 不发射，见 §7.4） |
-| 4 | `linslv 1 8` | 2/5 通过 | 6←7、8←9 通过；其余卡在 header-TX 侧 |
-| 5 | `linbaud 9600` → `linpair 1 8` | 同 6/10 | 波特率无关性（另测 4800 同样 pattern） |
-| 6 | `linslp 2 0` → `linsend 11 …`（FAIL，timeout 列涨）→ `linwake` → `linsend`（PASS） | 通过 | sleep/wake（含 master 睡眠组）行为符合预期 |
-| 7 | `linerr parity` | 通过（11→10 定向） | 坏 PID 奇偶被从机指示（par 列） |
-| 8 | `linerr cksum` | 通过 | master-classic vs slave-enhanced，LIN10 LC 标志 +1 |
-| 9 | `linerr timeout` | 通过 | 无应答，master response-timeout |
-| 10 | `linsend 11 0x3C …` | 通过（classic） | 诊断帧 master-req |
-| 11 | `linreq 11 10 0x3D …` | 失败 | 同 #3（LIN10 TX 不发射） |
-| 12 | `linbb 1/3/4/5/10/11` | 通过 | GPIO bit-bang 自证全部从机 ASCLIN 收通路 |
-| 13 | `lindomf` 全扫 | 通过 | 总线分组 + DTO（见 §1 拓扑结论） |
+| 1 | 上电启动日志 | 通过 | `masters=3/7/11`；ChipID `0xAF239793`，DTS ~51℃ |
+| 2 | `linpair 1 8` | **4/16 通过** | 通过：3→2、7→6、7←6、11→10；其余见 §7（跳线时断 + 硬故障） |
+| 3 | `linreq` 系列 | 同 pair 结论 | 从机应答方向取决于对端 TX（10/4/5 的 TX 不发射） |
+| 4 | `linslv 1 8` | 0/5（本次） | 均卡在 header-TX 侧；历史对线拓扑下 6←7、8←9 曾通过 |
+| 5 | `linbaud` 4800/9600/19200 | pattern 一致 | 波特率无关性（排除 slew 主因，指向开路/器件） |
+| 6 | `linslp/linwake` + `linsend` | 通过 | sleep 组 FAIL（timeout 涨）→ wake 后 PASS，符合预期 |
+| 7 | `linerr parity/cksum/timeout` | 通过（11→10 定向） | 坏 PID/LC 失配/无应答超时 |
+| 8 | `linsend 11 10 0x3C` | 通过（classic） | 诊断帧 master-req（classic 默认已修） |
+| 9 | `linbb 1/3/4/5/10/11` | 通过 | GPIO bit-bang 自证全部从机 ASCLIN 收通路（含 11 切 slave 后） |
+| 10 | `lindomf` 全扫 + `linact/linpulse` | 通过 | 总线分组/DTO/边沿/脉冲时序（LIN10 与 LIN11 波形一致） |
 
 注意事项：
 
@@ -226,13 +226,18 @@ iLLD `initModule` 仅在中断模式下写 `FLAGSENABLE`，轮询模式保持全
 此时 RHE/RRE 等永不锁存（THE/TRE 不受影响——这曾误导排查）。
 修：`lin_enable_polling_flags()`（照抄 TC387 uart8lin 参考实现），init 后调用。
 
-### 7.3 板上是 5 对线 + LIN1 落单，不是 11 路共线（拓扑结论）
+### 7.3 总线拓扑：3 总线目标，实测跳线时通时断（重点）
 
-`lindomf` 显性钳位全扫 + `linact` 边沿普查 prove：
-B=(2,3)、C=(4,5)、D=(6,7)、E=(8,9)、F=(10,11)；LIN1 单独（对端 LIN0 与 UART0
-冲突，且 LIN0 收发器 TXD 上是 UART 流量）。测试套件已按对线重构
-（`linRoles`/`m2s`/`s2m`/`linpair` 双向）。`linloop`（LIN11 自环回）证明
-master 侧模拟链 TXD→TLIN→总线→TLIN→RXD 完整。
+2026-09-15 用户改为 3 总线：A=(1,2,3,m3)、B=(4,5,6,7,m7)、C=(8,9,10,11,m11)，
+固件已按分组重构（`linGroups`/组播 `linpair`/`linslv`，master 3/7/11）。
+但 `lindomf` 显性跟随实测：同一命令在固件未变的相邻时间多次运行结果不同——
+`lindomf 7` 曾只跟随 LIN7 自身，数分钟后跟随 LIN6+LIN7；
+`lindomf 10` 在 {10,11}→{}→{11} 之间翻转。
+结论：新跳线**接触不良（时通时断）**，(6,7) 的旧跳线也被拆掉了；
+万用表静态电平正常不代表接触可靠。`linpair` 的 4/16 通过与实测拓扑完全吻合。
+请硬件侧：重插/更换全部 LIN 总线跳线（杜邦线/面包板触点），用 `lindomf <m>`
+（期望跟随该总线全部成员）逐条验收，验收通过后再跑 `linpair`（期望全 PASS）。
+此期间历史结论（对线时代 6/10 方向 PASS）依然有效，见 git 历史与 temp 日志。
 
 ### 7.4 ASCLIN4/5/10 的 TX 不发射（硬件故障候选，固件侧已穷尽）
 
