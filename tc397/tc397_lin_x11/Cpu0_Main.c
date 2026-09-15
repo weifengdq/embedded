@@ -1,6 +1,6 @@
 /**********************************************************************************************************************
  * \file Cpu0_Main.c
- * \brief TC397 UART0 (P14.0/P14.1, 921600) + Letter-Shell + P13.0 LED, ported from tc387_1.
+ * \brief TC397 LIN x11 (ASCLIN LIN master/slave + TLIN1024) + UART0 Letter-Shell + P13.0 LED.
  * \copyright Copyright (C) Infineon Technologies AG 2019
  *********************************************************************************************************************/
 #include "Ifx_Types.h"
@@ -16,6 +16,7 @@
 #include "ConfigurationIsr.h"
 #include "UART_Logging.h"
 #include "shell_port.h"
+#include "lin12.h"
 #include "Dts/Dts/IfxDts_Dts.h"
 #include "Dts/Std/IfxDts.h"
 #include "IfxScu_reg.h"
@@ -84,13 +85,13 @@ void core0_main(void)
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg2, &cnt2, TIME_INFINITE);
     }
     {
-        const char *msg3 = "\r\nTC397 UART0 + Letter-Shell\r\n";
+        const char *msg3 = "\r\nTC397 LIN x11 + Letter-Shell\r\n";
         Ifx_SizeT cnt3 = strlen(msg3);
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg3, &cnt3, TIME_INFINITE);
         const char *msg4 = "Board: TC397XX 292pin (ASCLIN0 P14.0 TX / P14.1 RX, 921600)\r\n";
         Ifx_SizeT cnt4 = strlen(msg4);
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg4, &cnt4, TIME_INFINITE);
-        const char *msg5 = "Type 'help' for commands, 'mcu' for chip info, 'temp' for temperature, 'led' for LED\r\n";
+        const char *msg5 = "Type 'help' for commands, 'linstat' for LIN, 'linpair' for master/slave test\r\n";
         Ifx_SizeT cnt5 = strlen(msg5);
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg5, &cnt5, TIME_INFINITE);
     }
@@ -111,6 +112,17 @@ void core0_main(void)
         float c = IfxDts_Dts_convertToCelsius(raw);
         len = snprintf(buf, sizeof(buf), "DTS raw=0x%04X -> %.2f C\r\n", (unsigned)raw, (double)c);
         cnt = len;
+        IfxAsclin_Asc_write(&g_asc, (uint8_t*)buf, &cnt, TIME_INFINITE);
+    }
+
+    /* TLIN1024 EN (board SLP_N) to Normal, then LIN1..11: 19200 master/slave. */
+    lin_xcvr_init();
+    lin12_init_all_19200();
+    {
+        char buf[128];
+        int len = snprintf(buf, sizeof(buf),
+            "LIN 11ch init done: 19200 master=LIN11 slaves=LIN1..10 (LIN0 placeholder)\r\n");
+        Ifx_SizeT cnt = len;
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)buf, &cnt, TIME_INFINITE);
     }
 
