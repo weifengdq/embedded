@@ -16,6 +16,7 @@
 #include "ConfigurationIsr.h"
 #include "UART_Logging.h"
 #include "shell_port.h"
+#include "adc.h"
 #include "Dts/Dts/IfxDts_Dts.h"
 #include "Dts/Std/IfxDts.h"
 #include "IfxScu_reg.h"
@@ -90,7 +91,7 @@ void core0_main(void)
         const char *msg4 = "Board: TC397XX 292pin (ASCLIN0 P14.0 TX / P14.1 RX, 921600)\r\n";
         Ifx_SizeT cnt4 = strlen(msg4);
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg4, &cnt4, TIME_INFINITE);
-        const char *msg5 = "Type 'help' for commands, 'mcu' for chip info, 'temp' for temperature, 'led' for LED\r\n";
+        const char *msg5 = "Type 'help' for commands, 'mcu' for chip info, 'temp' for temperature, 'led' for LED, 'adc' for AN0..AN47\r\n";
         Ifx_SizeT cnt5 = strlen(msg5);
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg5, &cnt5, TIME_INFINITE);
     }
@@ -112,6 +113,19 @@ void core0_main(void)
         len = snprintf(buf, sizeof(buf), "DTS raw=0x%04X -> %.2f C\r\n", (unsigned)raw, (double)c);
         cnt = len;
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)buf, &cnt, TIME_INFINITE);
+    }
+
+    /* EVADC AN0..AN47 background scan (after boot prints, so a hang here stays visible) */
+    {
+        const char *msg6 = "ADC init (EVADC G0/G1/G2/G3/G8 queue scan)...\r\n";
+        Ifx_SizeT cnt6 = strlen(msg6);
+        IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg6, &cnt6, TIME_INFINITE);
+    }
+    Adc_Init();
+    {
+        const char *msg7 = "ADC ready, try 'adc' (AN0..AN47)\r\n";
+        Ifx_SizeT cnt7 = strlen(msg7);
+        IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg7, &cnt7, TIME_INFINITE);
     }
 
     /* LED on briefly to show boot, then heartbeat takes over (1 Hz in Shell_Process) */

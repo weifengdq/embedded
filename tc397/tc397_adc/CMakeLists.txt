@@ -73,6 +73,12 @@ list(APPEND AURIX_SOURCE_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC3xx/Tricore/Dts/Dts/IfxDts_Dts.c"
 )
 
+# EVADC drivers (.cproject excludes Evadc dirs, so append explicitly like DTS)
+list(APPEND AURIX_SOURCE_FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC3xx/Tricore/Evadc/Std/IfxEvadc.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/iLLD/TC3xx/Tricore/Evadc/Adc/IfxEvadc_Adc.c"
+)
+
 # ---------- 构建目标 ----------
 add_executable(${PROJECT_NAME} ${AURIX_SOURCE_FILES} ${AURIX_HEADER_FILES})
 
@@ -159,7 +165,6 @@ else()
         -fmessage-length=0
         -fno-common
         -fstrict-volatile-bitfields
-        -fdata-sections
         -ffunction-sections
         -mcpu=${AURIX_CPU}
     )
