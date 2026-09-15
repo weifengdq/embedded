@@ -161,9 +161,12 @@ void lin12_init_all(float32 baud)
     if (baud < 1000.0f) baud = 19200.0f;
     g_linBaud = baud;
     memset(g_lin, 0, sizeof(g_lin));
-    /* LIN0 intentionally skipped (ASCLIN0 = UART0 debug console). */
+    /* LIN0 intentionally skipped (ASCLIN0 = UART0 debug console).
+     * Default masters: LIN3 (bus A: 1-2-3), LIN7 (bus B: 4-5-6-7),
+     * LIN11 (bus C: 8-9-10-11); all others slave. */
     for (ch = LIN1; ch < LIN_NUM; ch++) {
-        lin_init_channel(ch, baud, (ch == LIN_MASTER_CH) ? 1 : 0);
+        uint8 isMaster = (ch == LIN3 || ch == LIN7 || ch == LIN_MASTER_CH) ? 1 : 0;
+        lin_init_channel(ch, baud, isMaster);
     }
 }
 

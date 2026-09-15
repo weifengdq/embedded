@@ -74,16 +74,33 @@ static void print_data(Shell *shell, const uint8 *d, int len)
     for (i = 0; i < len; i++) shellPrint(shell, "%02X%s", d[i], (i + 1 < len) ? " " : "");
 }
 
-/* Wired pairs on this board (dominant-probe verified): LIN1 is single
- * (partner LIN0 shares UART0 pins, unusable); LIN4 TX is suspect (HW fault). */
-static const uint8 linPairs[5][2] = {{2,3},{4,5},{6,7},{8,9},{10,11}};
+/* Wired buses (user 2026-09-15): A=(1,2,3) master LIN3, B=(4,5,6,7) master LIN7,
+ * C=(8,9,10,11) master LIN11. LIN0 placeholder (shares UART0 pins). */
+static const uint8 linBusA[] = {1, 2, 3};
+static const uint8 linBusB[] = {4, 5, 6, 7};
+static const uint8 linBusC[] = {8, 9, 10, 11};
+static const uint8 linBusMasters[3] = {3, 7, 11};
+
+static int bus_of(int ch)
+{
+    int i;
+    for (i = 0; i < 3; i++) if (linBusA[i] == ch) return 0;
+    for (i = 0; i < 4; i++) if (linBusB[i] == ch) return 1;
+    for (i = 0; i < 4; i++) if (linBusC[i] == ch) return 2;
+    return -1;
+}
 
 static int pair_partner(int ch)
 {
-    int p;
-    for (p = 0; p < 5; p++) {
-        if (linPairs[p][0] == ch) return linPairs[p][1];
-        if (linPairs[p][1] == ch) return linPairs[p][0];
+    /* legacy helper: first other member on the same bus (for hints) */
+    int b = bus_of(ch), i, n;
+    const uint8 *m;
+    if (b == 0) { m = linBusA; n = 3; }
+    else if (b == 1) { m = linBusB; n = 4; }
+    else if (b == 2) { m = linBusC; n = 4; }
+    else return -1;
+    for (i = 0; i < n; i++) {
+        if (m[i] != ch) return m[i];
     }
     return -1;
 }
@@ -105,10 +122,10 @@ static int cmd_linsend(int argc, char *argv[])
     long v;
     char *end;
 
-    if (argc < 3) {
-        shellPrint(shell, "Usage: linsend <txch 1..11> <id 0..63> [hexdata] [classic 0|1]\r\n");
-        shellPrint(shell, "  e.g. linsend 11 0x12 A0A1A2A3A4A5A6A7\r\n");
-        shellPrint(shell, "  txch becomes master, its wired pair partner verifies.\r\n");
+    if (argc < 4) {
+        shellPrint(shell, "Usage: linsend <txch 1..11> <rxch 1..11> <id 0..63> [hexdata] [classic 0|1]\r\n");
+        shellPrint(shell, "  e.g. linsend 11 10 0x12 A0A1A2A3A4A5A6A7\r\n");
+        shellPrint(shell, "  txch becomes master; both must share a bus (A:1-3 B:4-7 C:8-11).\r\n");
         return -1;
     }
     v = strtol(argv[1], &end, 10);
@@ -117,25 +134,29 @@ static int cmd_linsend(int argc, char *argv[])
         return -1;
     }
     txch = (linChannel)v;
-    if (parse_id6(argv[2], &id6) != 0) {
-        shellPrint(shell, "Bad id '%s' (0..63, hex ok)\r\n", argv[2]);
+    v = strtol(argv[2], &end, 10);
+    if (*end != '\0' || v < 1 || v > 11 || v == txch) {
+        shellPrint(shell, "Bad rxch '%s'\r\n", argv[2]);
         return -1;
     }
-    partner = pair_partner((int)txch);
-    if (partner < 0) {
-        shellPrint(shell, "LIN%d has no pair partner (LIN1: partner LIN0 shares UART0).\r\n", (int)txch);
-        shellPrint(shell, "Try 'linbb 1' / 'lindomf 1' for LIN1 single-node checks.\r\n");
+    partner = (int)v;
+    if (parse_id6(argv[3], &id6) != 0) {
+        shellPrint(shell, "Bad id '%s' (0..63, hex ok)\r\n", argv[3]);
         return -1;
+    }
+    if (bus_of((int)txch) < 0 || bus_of((int)txch) != bus_of(partner)) {
+        shellPrint(shell, "NOTE: LIN%d and LIN%d are on different buses; trying anyway.\r\n",
+                   (int)txch, partner);
     }
     for (i = 0; i < 8; i++) data[i] = (uint8)(0xA0 + i);
-    if (argc >= 4) {
-        int n = parse_hexbytes(argv[3], data, 8);
+    if (argc >= 5) {
+        int n = parse_hexbytes(argv[4], data, 8);
         if (n < 0) {
-            shellPrint(shell, "Bad hexdata '%s'\r\n", argv[3]);
+            shellPrint(shell, "Bad hexdata '%s'\r\n", argv[4]);
             return -1;
         }
         len = (n == 0) ? 8 : n;
-        if (argc >= 5) classic = (atoi(argv[4]) != 0) ? 1 : 0;
+        if (argc >= 6) classic = (atoi(argv[5]) != 0) ? 1 : 0;
         else if (id6 >= 0x3C) classic = 1; /* 0x3C/0x3D default classic per LIN spec */
     } else {
         if (id6 >= 0x3C) classic = 1;
@@ -209,40 +230,46 @@ static int cmd_linreq(int argc, char *argv[])
     return rc ? -1 : 0;
 }
 
-/* ---------- linpair: both directions over each wired pair ---------- */
+/* ---------- linpair: per bus, master<->each slave both directions ---------- */
 static int cmd_linpair(int argc, char *argv[])
 {
     Shell *shell = shellGetCurrent();
-    int rounds = 1, len = 8, r, p, fails = 0, total = 0;
+    int rounds = 1, len = 8, r, b, i, fails = 0, total = 0;
     uint8 data[8];
-    int i;
+    int k;
 
     if (argc >= 2) { rounds = atoi(argv[1]); if (rounds < 1) rounds = 1; if (rounds > 20) rounds = 20; }
     if (argc >= 3) { len = atoi(argv[2]); if (len < 1) len = 1; if (len > 8) len = 8; }
-    shellPrint(shell, "linpair: %d round(s), len=%d, pairs (2,3)(4,5)(6,7)(8,9)(10,11) both directions\r\n",
+    shellPrint(shell, "linpair: %d round(s), len=%d, buses A(1-3,m3) B(4-7,m7) C(8-11,m11)\r\n",
                rounds, len);
     for (r = 0; r < rounds; r++) {
         shellPrint(shell, "round %d:\r\n", r + 1);
-        for (p = 0; p < 5; p++) {
-            linChannel a = (linChannel)linPairs[p][0], b = (linChannel)linPairs[p][1];
-            uint8 idab = (uint8)(0x10 + p * 2), idba = (uint8)(0x11 + p * 2);
-            for (i = 0; i < len; i++) data[i] = (uint8)(0xA0 + r * 16 + p * 2 + i);
-            lin_roles_for(a);
-            total++;
-            if (lin_xact_m2s(a, b, idab, data, (uint8)len, 0) != 0) {
-                fails++;
-                shellPrint(shell, "  LIN%d->LIN%d id=0x%02X: FAIL\r\n", (int)a, (int)b, idab);
-            } else {
-                shellPrint(shell, "  LIN%d->LIN%d id=0x%02X: PASS\r\n", (int)a, (int)b, idab);
-            }
-            lin_roles_for(b);
-            total++;
-            if (lin_xact_m2s(b, a, idba, data, (uint8)len, 0) != 0) {
-                fails++;
-                shellPrint(shell, "  LIN%d->LIN%d id=0x%02X: FAIL%s\r\n", (int)b, (int)a, idba,
-                           (a == LIN4) ? " (LIN4 TX suspect, see README)" : "");
-            } else {
-                shellPrint(shell, "  LIN%d->LIN%d id=0x%02X: PASS\r\n", (int)b, (int)a, idba);
+        for (b = 0; b < 3; b++) {
+            const uint8 *mem;
+            int n, Master = linBusMasters[b];
+            if (b == 0) { mem = linBusA; n = 3; }
+            else if (b == 1) { mem = linBusB; n = 4; }
+            else { mem = linBusC; n = 4; }
+            for (i = 0; i < n; i++) {
+                linChannel slave = (linChannel)mem[i];
+                uint8 idms = (uint8)(0x10 + b * 8 + i * 2), idsm = (uint8)(0x11 + b * 8 + i * 2);
+                if ((int)slave == Master) continue;
+                for (k = 0; k < len; k++) data[k] = (uint8)(0xA0 + r * 16 + b * 4 + i + k);
+                lin_roles_for((linChannel)Master);
+                total++;
+                if (lin_xact_m2s((linChannel)Master, slave, idms, data, (uint8)len, 0) != 0) {
+                    fails++;
+                    shellPrint(shell, "  LIN%d->LIN%d id=0x%02X: FAIL\r\n", Master, (int)slave, idms);
+                } else {
+                    shellPrint(shell, "  LIN%d->LIN%d id=0x%02X: PASS\r\n", Master, (int)slave, idms);
+                }
+                total++;
+                if (lin_xact_s2m((linChannel)Master, slave, idsm, data, (uint8)len, 0) != 0) {
+                    fails++;
+                    shellPrint(shell, "  LIN%d<-LIN%d id=0x%02X: FAIL\r\n", Master, (int)slave, idsm);
+                } else {
+                    shellPrint(shell, "  LIN%d<-LIN%d id=0x%02X: PASS\r\n", Master, (int)slave, idsm);
+                }
             }
         }
     }
@@ -251,31 +278,39 @@ static int cmd_linpair(int argc, char *argv[])
     return fails ? -1 : 0;
 }
 
-/* ---------- linslv: slave-response direction per pair ---------- */
+/* ---------- linslv: slave-response direction per bus ---------- */
 static int cmd_linslv(int argc, char *argv[])
 {
     Shell *shell = shellGetCurrent();
-    int rounds = 1, len = 8, r, p, fails = 0, total = 0;
+    int rounds = 1, len = 8, r, b, i, fails = 0, total = 0;
     uint8 data[8];
-    int i;
+    int k;
 
     if (argc >= 2) { rounds = atoi(argv[1]); if (rounds < 1) rounds = 1; if (rounds > 10) rounds = 10; }
     if (argc >= 3) { len = atoi(argv[2]); if (len < 1) len = 1; if (len > 8) len = 8; }
-    shellPrint(shell, "linslv: %d round(s), len=%d, pair-second responds to pair-first header\r\n",
+    shellPrint(shell, "linslv: %d round(s), len=%d, each slave responds to its bus master\r\n",
                rounds, len);
     for (r = 0; r < rounds; r++) {
         shellPrint(shell, "round %d:\r\n", r + 1);
-        for (p = 0; p < 5; p++) {
-            linChannel a = (linChannel)linPairs[p][0], b = (linChannel)linPairs[p][1];
-            uint8 id6 = (uint8)(0x20 + p);
-            for (i = 0; i < len; i++) data[i] = (uint8)(0x50 + r * 16 + p + i);
-            lin_roles_for(a);
-            total++;
-            if (lin_xact_s2m(a, b, id6, data, (uint8)len, 0) != 0) {
-                fails++;
-                shellPrint(shell, "  LIN%d<-LIN%d id=0x%02X: FAIL\r\n", (int)a, (int)b, id6);
-            } else {
-                shellPrint(shell, "  LIN%d<-LIN%d id=0x%02X: PASS\r\n", (int)a, (int)b, id6);
+        for (b = 0; b < 3; b++) {
+            const uint8 *mem;
+            int n, Master = linBusMasters[b];
+            if (b == 0) { mem = linBusA; n = 3; }
+            else if (b == 1) { mem = linBusB; n = 4; }
+            else { mem = linBusC; n = 4; }
+            for (i = 0; i < n; i++) {
+                linChannel slave = (linChannel)mem[i];
+                uint8 id6 = (uint8)(0x20 + b * 8 + i);
+                if ((int)slave == Master) continue;
+                for (k = 0; k < len; k++) data[k] = (uint8)(0x50 + r * 16 + b * 4 + i + k);
+                lin_roles_for((linChannel)Master);
+                total++;
+                if (lin_xact_s2m((linChannel)Master, slave, id6, data, (uint8)len, 0) != 0) {
+                    fails++;
+                    shellPrint(shell, "  LIN%d<-LIN%d id=0x%02X: FAIL\r\n", Master, (int)slave, id6);
+                } else {
+                    shellPrint(shell, "  LIN%d<-LIN%d id=0x%02X: PASS\r\n", Master, (int)slave, id6);
+                }
             }
         }
     }
@@ -293,7 +328,7 @@ static int cmd_linrole(int argc, char *argv[])
 
     if (argc < 3) {
         shellPrint(shell, "Usage: linrole <ch 1..11> <M|S>  (re-init channel as master/slave)\r\n");
-        shellPrint(shell, "  Pairs: (2,3)(4,5)(6,7)(8,9)(10,11); test side must be master.\r\n");
+        shellPrint(shell, "  Buses: A(1-3,m3) B(4-7,m7) C(8-11,m11); header side must be master.\r\n");
         return -1;
     }
     ch = strtol(argv[1], &end, 10);

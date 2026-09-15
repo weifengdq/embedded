@@ -30,7 +30,7 @@
 #include <stdint.h>
 
 #define LIN_NUM        12
-#define LIN_MASTER_CH  11
+#define LIN_MASTER_CH  11   /* default master of bus C (raw helpers use it) */
 #define LIN_DATA_MAX   8u
 
 typedef enum {

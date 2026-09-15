@@ -115,13 +115,15 @@ void core0_main(void)
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)buf, &cnt, TIME_INFINITE);
     }
 
-    /* TLIN1024 EN (board SLP_N) to Normal, then LIN1..11: 19200 master/slave. */
+    /* TLIN1024 EN (board SLP_N) to Normal, then LIN1..11: 19200.
+     * Masters: LIN3 (bus A: 1-2-3), LIN7 (bus B: 4-5-6-7),
+     * LIN11 (bus C: 8-9-10-11); rest slave. */
     lin_xcvr_init();
     lin12_init_all_19200();
     {
         char buf[128];
         int len = snprintf(buf, sizeof(buf),
-            "LIN 11ch init done: 19200 master=LIN11 slaves=LIN1..10 (LIN0 placeholder)\r\n");
+            "LIN 11ch init done: 19200 masters=3(A:1-3) 7(B:4-7) 11(C:8-11) (LIN0 placeholder)\r\n");
         Ifx_SizeT cnt = len;
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)buf, &cnt, TIME_INFINITE);
     }
