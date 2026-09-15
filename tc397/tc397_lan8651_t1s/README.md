@@ -115,7 +115,7 @@ lwIP iperf server ready (TCP 5001)
 | `t1stat` | DEVID/SYNC/PLCA/PHY/MAC/BUF/IRQ 一览 | 见 §5 |
 | `t1r <reg>` / `t1w <reg> <val>` | TC6 寄存器读写（hex） | `t1r 0x000A0094`=0x86512 |
 | `plca [id] [count]` | 查看/ live 修改 PLCA（0=主/协调器） | `plca 0 8`→pst=1 |
-| `link` | T1S 链路（sync/pst/phy_link/irq） | 见 §5 |
+| `link` | T1S 链路（sync/pst/phy_link/irq；判据见 §5 末） | `link: UP (sync=0 pst=0 phy_link=1 …)` |
 
 `t1stat`（从节点 ID1，常态）：
 
@@ -129,6 +129,11 @@ BUF rba=0 txc=48 irq=idle(1)
 
 诊断寄存器：`STS1 (0x0004CA18)=0`（无 RXINTO/UNEXPB/BCNBFTO），
 `BCNCNT (0xCA26/27)=0`（适配器不发 BEACON，纯 CSMA 回退）。
+
+`link`/`lan8651_link_up()` 判据为 `SYNC || PST || PHY_LINK`（BMSR link 位，
+latch-low 故读两次取第二次）：K2L 适配器无 BEACON 时 `sync=0/pst=0` 但
+`phy_link=1` 且业务正常，故必须纳入 PHY_LINK，否则 `link` 会误报 DOWN。
+netif 侧另有 `LAN8651_FORCE_LINK_UP=1` 兜底。
 
 ---
 

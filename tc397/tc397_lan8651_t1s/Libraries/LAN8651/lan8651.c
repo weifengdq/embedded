@@ -724,6 +724,7 @@ bool lan8651_link_up(lan8651_t *dev)
 {
     uint32_t value = 0U;
     uint32_t plca_status = 0U;
+    uint32_t bmsr = 0U;
 
     if (lan8651_read_reg(dev, LAN8651_OA_STATUS0, &value) != kLan8651Status_Ok)
     {
@@ -735,5 +736,16 @@ bool lan8651_link_up(lan8651_t *dev)
         plca_status = 0U;
     }
 
-    return (((value & LAN8651_OA_STATUS0_SYNC) != 0U) || ((plca_status & LAN8651_PLCA_STS_PST) != 0U));
+    /* PHY BMSR link bit is latched-low: read twice, use the second sample.
+     * This covers CSMA/CD fallback (no BEACONs on the wire: SYNC=0/PST=0)
+     * where the link is nevertheless usable, as with the K2L USB adapter. */
+    (void)lan8651_read_reg(dev, LAN8651_PHY_BMSR, &bmsr);
+    if (lan8651_read_reg(dev, LAN8651_PHY_BMSR, &bmsr) != kLan8651Status_Ok)
+    {
+        bmsr = 0U;
+    }
+
+    return (((value & LAN8651_OA_STATUS0_SYNC) != 0U) ||
+            ((plca_status & LAN8651_PLCA_STS_PST) != 0U) ||
+            ((bmsr & LAN8651_PHY_BMSR_LINK_STATUS) != 0U));
 }
