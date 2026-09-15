@@ -1,6 +1,6 @@
 /**********************************************************************************************************************
  * \file Cpu0_Main.c
- * \brief TC397 UART0 (P14.0/P14.1, 921600) + Letter-Shell + P13.0 LED, ported from tc387_1.
+ * \brief TC397 SDMMC0 + FatFs R0.16 (exFAT) + Letter-Shell (UART0 P14.0/P14.1 921600) + P13.0 LED.
  * \copyright Copyright (C) Infineon Technologies AG 2019
  *********************************************************************************************************************/
 #include "Ifx_Types.h"
@@ -16,6 +16,8 @@
 #include "ConfigurationIsr.h"
 #include "UART_Logging.h"
 #include "shell_port.h"
+#include "shell_sd.h"
+#include "mmc_sdmmc.h"
 #include "Dts/Dts/IfxDts_Dts.h"
 #include "Dts/Std/IfxDts.h"
 #include "IfxScu_reg.h"
@@ -28,12 +30,16 @@ IFX_ALIGN(4) IfxCpu_syncEvent cpuSyncEvent = 0;
 /* STM tick for shell and uptime */
 volatile uint32 g_TickCount_1ms = 0;
 
-/* STM ISR: 1ms tick */
+/* STM ISR: 1ms tick; FatFs disk_timerproc() every 10ms (as in Infineon example) */
 IFX_INTERRUPT(updateTickISR, 0, ISR_PRIORITY_OS_TICK);
 void updateTickISR(void)
 {
     IfxStm_increaseCompare(&MODULE_STM0, IfxStm_Comparator_0, IFX_CFG_STM_TICKS_PER_MS);
     g_TickCount_1ms++;
+    if ((g_TickCount_1ms % 10U) == 0U)
+    {
+        disk_timerproc();
+    }
 }
 
 void core0_main(void)
@@ -56,6 +62,9 @@ void core0_main(void)
     /* P13.0 LED: output, high = off (low = on) */
     IfxPort_setPinMode(&MODULE_P13, 0, IfxPort_Mode_outputPushPullGeneral);
     IfxPort_setPinState(&MODULE_P13, 0, IfxPort_State_high);
+
+    /* SD card-detect P10.7 input pull-up (SDMMC pins init on 'sd init') */
+    SdShell_InitPins();
 
     initUART();
     setvbuf(stdout, NULL, _IONBF, 0);
@@ -84,13 +93,13 @@ void core0_main(void)
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg2, &cnt2, TIME_INFINITE);
     }
     {
-        const char *msg3 = "\r\nTC397 UART0 + Letter-Shell\r\n";
+        const char *msg3 = "\r\nTC397 SDMMC + Letter-Shell (FatFs R0.16, exFAT)\r\n";
         Ifx_SizeT cnt3 = strlen(msg3);
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg3, &cnt3, TIME_INFINITE);
         const char *msg4 = "Board: TC397XX 292pin (ASCLIN0 P14.0 TX / P14.1 RX, 921600)\r\n";
         Ifx_SizeT cnt4 = strlen(msg4);
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg4, &cnt4, TIME_INFINITE);
-        const char *msg5 = "Type 'help' for commands, 'mcu' for chip info, 'temp' for temperature, 'led' for LED\r\n";
+        const char *msg5 = "Type 'help' for commands, 'sd' for SD card tests, 'led' for LED\r\n";
         Ifx_SizeT cnt5 = strlen(msg5);
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg5, &cnt5, TIME_INFINITE);
     }
