@@ -17,12 +17,16 @@
 #include "IfxAsclin_Lin.h"
 #include "IfxAsclin_PinMap.h"
 #include "IfxPort.h"
+#include "IfxStm.h"
+#include "IfxScuWdt.h"
 #include <string.h>
 
 extern volatile uint32 g_TickCount_1ms;
 
 linChState_t g_lin[LIN_NUM];
 float32 g_linBaud = 19200.0f;
+/* mid-hold snapshot for lindomf forensics */
+uint32 g_linHoldIOC = 0, g_linHoldIN = 0, g_linHoldOUT = 0;
 
 /* ASCLIN SFR per logical LIN (LINn -> MODULE_ASCLINn). LIN0 unused. */
 static Ifx_ASCLIN *const linSfr[LIN_NUM] = {
@@ -96,9 +100,38 @@ sint8 lin_pid_check(uint8 pid)
 }
 
 /* ---------- init ---------- */
+/* Same set as the proven TC387 uart8lin reference (lin_enable_polling_flags):
+ * in polling mode the LIN event flags must be explicitly enabled, otherwise
+ * e.g. RHE/RRE never latch and slaves time out. Called after initModule
+ * (which leaves FLAGSENABLE=0 in polling mode). */
+static void lin_enable_polling_flags(Ifx_ASCLIN *sfr)
+{
+    IfxAsclin_enableBreakDetectedFlag(sfr, TRUE);
+    IfxAsclin_enableCollisionDetectionErrorFlag(sfr, TRUE);
+    IfxAsclin_enableFrameErrorFlag(sfr, TRUE);
+    IfxAsclin_enableHeaderTimeoutFlag(sfr, TRUE);
+    IfxAsclin_enableLinAutoBaudDetectionErrorFlag(sfr, TRUE);
+    IfxAsclin_enableLinChecksumErrorFlag(sfr, TRUE);
+    IfxAsclin_enableLinParityErrorFlag(sfr, TRUE);
+    IfxAsclin_enableResponseTimeoutFlag(sfr, TRUE);
+    IfxAsclin_enableRxFifoOverflowFlag(sfr, TRUE);
+    IfxAsclin_enableRxHeaderEndFlag(sfr, TRUE);
+    IfxAsclin_enableRxResponseEndFlag(sfr, TRUE);
+    IfxAsclin_enableTxHeaderEndFlag(sfr, TRUE);
+    IfxAsclin_enableTxResponseEndFlag(sfr, TRUE);
+    IfxAsclin_enableTxFifoOverflowFlag(sfr, TRUE);
+}
+
 static void lin_init_channel(linChannel ch, float32 baud, uint8 isMaster)
 {
     IfxAsclin_Lin_Config cfg;
+
+    /* NOTE: no KRST here — a kernel reset hung the boot (RSTSTAT never set,
+     * board silent until reflash). ASCLIN init alone is sufficient. */
+    /* Match the proven TC387 reference: disable before (re-)init. */
+    if (linHandle[ch].asclin != NULL) {
+        IfxAsclin_Lin_disableModule(&linHandle[ch]);
+    }
     IfxAsclin_Lin_initModuleConfig(&cfg, linSfr[ch]);
     cfg.linMode = isMaster ? IfxAsclin_LinMode_master : IfxAsclin_LinMode_slave;
     cfg.brg.baudrate = baud;
@@ -109,7 +142,14 @@ static void lin_init_channel(linChannel ch, float32 baud, uint8 isMaster)
     /* RxSel (a..g) == ALTI 0..6: derive from the pin struct itself. */
     cfg.alti = (IfxAsclin_RxInputSelect)linPins[ch].rx->select;
     cfg.isInterruptMode = FALSE;
+    /* Break: master generates 16 bits (margin over the 13-bit minimum),
+     * slaves detect at 11 bits (LIN-compliant window). iLLD 13/13 default
+     * proved marginal on this board (TLIN1024 edges + FDR rounding):
+     * slaves saw FED/RED but never BD/RHE with a 13-bit master break,
+     * while a 14-bit bit-banged break decoded fine. */
+    cfg.lin.breakLength = isMaster ? 16 : 11;
     IfxAsclin_Lin_initModule(&linHandle[ch], &cfg);
+    lin_enable_polling_flags(linSfr[ch]);
 
     g_lin[ch].used = 1;
     g_lin[ch].isMaster = isMaster;
@@ -132,9 +172,20 @@ void lin12_init_all_19200(void)
     lin12_init_all(19200.0f);
 }
 
+
 /* ---------- timeout-guarded primitives ---------- */
 #define LIN_HDR_TIMEOUT_MS   50u
 #define LIN_RESP_TIMEOUT_MS  100u
+
+static uint32 lin_elapsed(uint32 t0);
+static int lin_tx_header(Ifx_ASCLIN *sfr, uint8 pid, linChState_t *st);
+static int lin_tx_response(Ifx_ASCLIN *sfr, const uint8 *data, uint8 len,
+                           uint8 classic, linChState_t *st);
+static void lin_arm_header(Ifx_ASCLIN *sfr);
+static int lin_poll_header(Ifx_ASCLIN *sfr, uint8 *pid, linChState_t *st);
+static void lin_arm_response(Ifx_ASCLIN *sfr, uint8 len, uint8 classic);
+static int lin_poll_response(Ifx_ASCLIN *sfr, uint8 *data, uint8 len,
+                             linChState_t *st);
 
 static uint32 lin_elapsed(uint32 t0)
 {
@@ -322,6 +373,99 @@ static int lin_poll_response(Ifx_ASCLIN *sfr, uint8 *data, uint8 len,
     return -1;
 }
 
+int lin_set_role(linChannel ch, uint8 isMaster)
+{
+    if (ch < LIN1 || ch > LIN11) return -1;
+    lin_init_channel(ch, g_linBaud, isMaster ? 1 : 0);
+    return 0;
+}
+
+/* Pairwise master -> slave (header + response from master, slave verifies). */
+int lin_xact_m2s(linChannel master, linChannel slave, uint8 id6,
+                 const uint8 *data, uint8 len, uint8 classic)
+{
+    uint8 pid = lin_pid(id6);
+    uint8 rxPid = 0, rxData[8];
+    int i;
+
+    if (master < LIN1 || master > LIN11 || slave < LIN1 || slave > LIN11) return -1;
+    if (len < 1) len = 1;
+    if (len > 8) len = 8;
+
+    lin_arm_header(linSfr[slave]);
+    if (lin_tx_header(linSfr[master], pid, &g_lin[master]) != 0) return -1;
+    if (lin_poll_header(linSfr[slave], &rxPid, &g_lin[slave]) != 0 || rxPid != pid) return -1;
+    lin_arm_response(linSfr[slave], len, classic);
+    if (lin_tx_response(linSfr[master], data, len, classic, &g_lin[master]) != 0) {
+        g_lin[slave].respErr++;
+        return -1;
+    }
+    memset(rxData, 0, sizeof(rxData));
+    if (lin_poll_response(linSfr[slave], rxData, len, &g_lin[slave]) != 0) return -1;
+    for (i = 0; i < len; i++) {
+        if (rxData[i] != data[i]) {
+            g_lin[slave].respErr++;
+            return -1;
+        }
+    }
+    g_lin[slave].lastId = id6 & 0x3FU;
+    g_lin[slave].lastLen = len;
+    for (i = 0; i < len; i++) g_lin[slave].lastData[i] = rxData[i];
+    g_lin[slave].lastClassic = classic ? 1 : 0;
+    g_lin[slave].lastDir = 0;
+    g_lin[slave].lastTick = g_TickCount_1ms;
+    g_lin[slave].lastOk = 1;
+    g_lin[master].lastId = id6 & 0x3FU;
+    g_lin[master].lastLen = len;
+    for (i = 0; i < len; i++) g_lin[master].lastData[i] = data[i];
+    g_lin[master].lastClassic = classic ? 1 : 0;
+    g_lin[master].lastDir = 0;
+    g_lin[master].lastTick = g_TickCount_1ms;
+    g_lin[master].lastOk = 1;
+    return 0;
+}
+
+/* Pairwise slave -> master (master header, slave responds, master verifies). */
+int lin_xact_s2m(linChannel master, linChannel responder, uint8 id6,
+                 const uint8 *data, uint8 len, uint8 classic)
+{
+    uint8 pid = lin_pid(id6);
+    uint8 rxPid = 0, rxData[8];
+    int i;
+
+    if (master < LIN1 || master > LIN11 || responder < LIN1 || responder > LIN11) return -1;
+    if (len < 1) len = 1;
+    if (len > 8) len = 8;
+
+    lin_arm_header(linSfr[responder]);
+    if (lin_tx_header(linSfr[master], pid, &g_lin[master]) != 0) return -1;
+    if (lin_poll_header(linSfr[responder], &rxPid, &g_lin[responder]) != 0 || rxPid != pid) return -1;
+    lin_arm_response(linSfr[master], len, classic);
+    if (lin_tx_response(linSfr[responder], data, len, classic, &g_lin[responder]) != 0) {
+        IfxAsclin_clearAllFlags(linSfr[master]);
+        return -1;
+    }
+    memset(rxData, 0, sizeof(rxData));
+    if (lin_poll_response(linSfr[master], rxData, len, &g_lin[master]) != 0) return -1;
+    for (i = 0; i < len; i++) {
+        if (rxData[i] != data[i]) return -1;
+    }
+    g_lin[responder].lastId = id6 & 0x3FU;
+    g_lin[responder].lastLen = len;
+    for (i = 0; i < len; i++) g_lin[responder].lastData[i] = data[i];
+    g_lin[responder].lastClassic = classic ? 1 : 0;
+    g_lin[responder].lastDir = 1;
+    g_lin[responder].lastTick = g_TickCount_1ms;
+    g_lin[responder].lastOk = 1;
+    g_lin[master].lastId = id6 & 0x3FU;
+    g_lin[master].lastLen = len;
+    for (i = 0; i < len; i++) g_lin[master].lastData[i] = rxData[i];
+    g_lin[master].lastClassic = classic ? 1 : 0;
+    g_lin[master].lastDir = 1;
+    g_lin[master].lastTick = g_TickCount_1ms;
+    g_lin[master].lastOk = 1;
+    return 0;
+}
 /* ---------- full transactions ---------- */
 int lin_xact_master_tx_mode(uint8 id6, const uint8 *data, uint8 len,
                             uint8 masterClassic, uint8 slaveClassic, uint32 *okMask)
@@ -518,13 +662,25 @@ int lin_raw_master_response(const uint8 *data, uint8 len, uint8 classic)
 
 void lin_slave_arm_header(linChannel ch)
 {
-    if (ch < LIN1 || ch > LIN10) return;
+    if (ch < LIN1 || ch > LIN11) return;
     lin_arm_header(linSfr[ch]);
+}
+
+void lin_slave_arm_response(linChannel ch, uint8 len, uint8 classic)
+{
+    if (ch < LIN1 || ch > LIN11) return;
+    lin_arm_response(linSfr[ch], len, classic);
+}
+
+int lin_slave_poll_response(linChannel ch, uint8 *data, uint8 len)
+{
+    if (ch < LIN1 || ch > LIN11) return -1;
+    return lin_poll_response(linSfr[ch], data, len, &g_lin[ch]);
 }
 
 int lin_slave_poll_header(linChannel ch, uint8 *pid)
 {
-    if (ch < LIN1 || ch > LIN10) return -1;
+    if (ch < LIN1 || ch > LIN11) return -1;
     return lin_poll_header(linSfr[ch], pid, &g_lin[ch]);
 }
 
@@ -536,4 +692,492 @@ void lin_master_arm_response(uint8 len, uint8 classic)
 int lin_master_poll_response(uint8 *data, uint8 len)
 {
     return lin_poll_response(linSfr[LIN_MASTER_CH], data, len, &g_lin[LIN_MASTER_CH]);
+}
+
+void lin_probe_tx_toggle(linChannel ch, uint8 n)
+{
+    uint8 i;
+    if (ch < LIN1 || ch > LIN11) return;
+    if (n == 0) n = 10;
+    if (n > 50) n = 50;
+    /* TX pin -> GPIO output, toggle ~5 Hz */
+    IfxPort_setPinModeOutput(linPins[ch].tx->pin.port, linPins[ch].tx->pin.pinIndex,
+                             IfxPort_OutputMode_pushPull, IfxPort_OutputIdx_general);
+    for (i = 0; i < n; i++) {
+        uint32 t0 = g_TickCount_1ms;
+        IfxPort_togglePin(linPins[ch].tx->pin.port, linPins[ch].tx->pin.pinIndex);
+        while ((g_TickCount_1ms - t0) < 100u) { }
+    }
+    /* restore full LIN configuration */
+    lin12_init_all(g_linBaud);
+}
+
+int lin_bus_activity(uint8 pid, uint32 *sawMask, uint8 *txSawLow, uint8 *txSawHigh)
+{
+    Ifx_ASCLIN *sfr = linSfr[LIN_MASTER_CH];
+    uint8 b = pid;
+    uint32 t0 = g_TickCount_1ms;
+    uint32 mask = 0;
+    uint8 low = 0, high = 0;
+    linChannel ch;
+    int rc = -1;
+
+    IfxAsclin_clearAllFlags(sfr);
+    IfxAsclin_enableRxFifoInlet(sfr, FALSE);
+    IfxAsclin_flushTxFifo(sfr);
+    IfxAsclin_enableTxFifoOutlet(sfr, TRUE);
+    IfxAsclin_write8(sfr, &b, 1U);
+    IfxAsclin_setTransmitHeaderRequestFlag(sfr);
+    while (!IfxAsclin_getTxHeaderEndFlagStatus(sfr)) {
+        /* NOTE: getPinState returns boolean (1/0); compare with FALSE/TRUE,
+         * NOT with IfxPort_State_low (0x10000) which never matches! */
+        boolean txLow = (IfxPort_getPinState(linPins[LIN_MASTER_CH].tx->pin.port,
+                                             linPins[LIN_MASTER_CH].tx->pin.pinIndex)
+                         == FALSE) ? TRUE : FALSE;
+        if (txLow) low = 1;
+        else high = 1;
+        for (ch = LIN1; ch <= LIN10; ch++) {
+            boolean rxLow = (IfxPort_getPinState(linPins[ch].rx->pin.port,
+                                                 linPins[ch].rx->pin.pinIndex)
+                             == FALSE) ? TRUE : FALSE;
+            if (rxLow) mask |= (1u << ch);
+        }
+        if (IfxAsclin_getHeaderTimeoutFlagStatus(sfr) ||
+            IfxAsclin_getFrameErrorFlagStatus(sfr) ||
+            IfxAsclin_getCollisionDetectionErrorFlagStatus(sfr) ||
+            IfxAsclin_getLinParityErrorFlagStatus(sfr)) {
+            break;
+        }
+        if ((g_TickCount_1ms - t0) > LIN_HDR_TIMEOUT_MS) break;
+    }
+    if (IfxAsclin_getTxHeaderEndFlagStatus(sfr)) {
+        IfxAsclin_clearTxHeaderEndFlag(sfr);
+        g_lin[LIN_MASTER_CH].txHdr++;
+        rc = 0;
+    } else {
+        g_lin[LIN_MASTER_CH].hdrErr++;
+    }
+    IfxAsclin_clearAllFlags(sfr);
+    if (sawMask) *sawMask = mask;
+    if (txSawLow) *txSawLow = low;
+    if (txSawHigh) *txSawHigh = high;
+    return rc;
+}
+
+/* STM busy-wait in ticks (100 MHz STM0 -> 10 ns/tick, unsigned wrap-safe). */
+static void lin_stm_wait_ticks(uint32 ticks)
+{
+    uint32 t0 = IfxStm_getLower(&MODULE_STM0);
+    while ((IfxStm_getLower(&MODULE_STM0) - t0) < ticks) { }
+}
+
+uint32 lin_rx_levels(void)
+{
+    uint32 mask = 0;
+    linChannel ch;
+    for (ch = LIN1; ch <= LIN11; ch++) {
+        boolean low = (IfxPort_getPinState(linPins[ch].rx->pin.port,
+                                           linPins[ch].rx->pin.pinIndex)
+                       == FALSE) ? TRUE : FALSE;
+        if (low) mask |= (1u << ch);
+    }
+    return mask;
+}
+
+void lin_dominant_hold(linChannel ch, uint32 *earlyMask, uint32 *lateMask)
+{
+    uint32 t0;
+    if (ch < LIN1 || ch > LIN11) return;
+    /* TX net -> GPIO, drive dominant (TLIN TXD low) */
+    IfxPort_setPinModeOutput(linPins[ch].tx->pin.port, linPins[ch].tx->pin.pinIndex,
+                             IfxPort_OutputMode_pushPull, IfxPort_OutputIdx_general);
+    IfxPort_setPinLow(linPins[ch].tx->pin.port, linPins[ch].tx->pin.pinIndex);
+    t0 = g_TickCount_1ms;
+    while ((g_TickCount_1ms - t0) < 2u) { }
+    if (earlyMask) *earlyMask = lin_rx_levels();
+    t0 = g_TickCount_1ms;
+    while ((g_TickCount_1ms - t0) < 300u) { }
+    if (lateMask) *lateMask = lin_rx_levels();
+    /* release + recover (DTO clears on TXD rising edge) */
+    IfxPort_setPinHigh(linPins[ch].tx->pin.port, linPins[ch].tx->pin.pinIndex);
+    t0 = g_TickCount_1ms;
+    while ((g_TickCount_1ms - t0) < 50u) { }
+    /* restore full LIN configuration (pin mux + ASCLIN) */
+    lin12_init_all(g_linBaud);
+}
+
+void lin_dominant_fast(linChannel ch, uint8 *txSelfLow, uint32 *rxMask)
+{
+    Ifx_P *txPort;
+    uint8 txPin;
+    uint32 t0ms;
+    uint32 rx = 0;
+    uint8 selfLow = 0;
+    linChannel c;
+
+    if (ch < LIN1 || ch > LIN11) return;
+    txPort = linPins[ch].tx->pin.port;
+    txPin = linPins[ch].tx->pin.pinIndex;
+    IfxPort_setPinModeOutput(txPort, txPin,
+                             IfxPort_OutputMode_pushPull, IfxPort_OutputIdx_general);
+    IfxPort_setPinLow(txPort, txPin);
+    /* ~5 ms STM window (DTO min 20 ms, so bus must stay dominant throughout) */
+    t0ms = g_TickCount_1ms;
+    while ((g_TickCount_1ms - t0ms) < 5u) {
+        if (IfxPort_getPinState(txPort, txPin) == FALSE) selfLow = 1;
+        for (c = LIN1; c <= LIN11; c++) {
+            if (IfxPort_getPinState(linPins[c].rx->pin.port,
+                                    linPins[c].rx->pin.pinIndex) == FALSE) {
+                rx |= (1u << c);
+            }
+        }
+    }
+    /* snapshot PCR + IN/OUT mid-hold (globals for shell printout) */
+    g_linHoldIOC = txPort->IOCR0.U;
+    g_linHoldIN = txPort->IN.U;
+    g_linHoldOUT = txPort->OUT.U;
+    IfxPort_setPinHigh(txPort, txPin);
+    t0ms = g_TickCount_1ms;
+    while ((g_TickCount_1ms - t0ms) < 50u) { }
+    lin12_init_all(g_linBaud);
+    if (txSelfLow) *txSelfLow = selfLow;
+    if (rxMask) *rxMask = rx;
+}
+
+void lin_ac_census(linChannel master, uint8 pid, uint32 edgeCnt[LIN_NUM])
+{
+    Ifx_ASCLIN *sfr;
+    uint8 b = pid;
+    uint32 t0;
+    uint32 last[LIN_NUM], cnt[LIN_NUM];
+    linChannel ch;
+    int i;
+
+    if (master < LIN1 || master > LIN11) return;
+    for (i = 0; i < LIN_NUM; i++) { cnt[i] = 0; last[i] = 1; }
+    sfr = linSfr[master];
+
+    IfxAsclin_clearAllFlags(sfr);
+    IfxAsclin_enableRxFifoInlet(sfr, FALSE);
+    IfxAsclin_flushTxFifo(sfr);
+    IfxAsclin_enableTxFifoOutlet(sfr, TRUE);
+    IfxAsclin_write8(sfr, &b, 1U);
+    IfxAsclin_setTransmitHeaderRequestFlag(sfr);
+    t0 = g_TickCount_1ms;
+    while (!IfxAsclin_getTxHeaderEndFlagStatus(sfr)) {
+        for (ch = LIN1; ch <= LIN11; ch++) {
+            uint32 lvl = (IfxPort_getPinState(linPins[ch].rx->pin.port,
+                                              linPins[ch].rx->pin.pinIndex)
+                          == FALSE) ? 0u : 1u;
+            if (lvl != last[ch]) {
+                cnt[ch]++;
+                last[ch] = lvl;
+            }
+        }
+        if ((g_TickCount_1ms - t0) > LIN_HDR_TIMEOUT_MS) break;
+    }
+    IfxAsclin_clearAllFlags(sfr);
+    /* drain ~2 ms more to catch trailing edges */
+    t0 = g_TickCount_1ms;
+    while ((g_TickCount_1ms - t0) < 2u) {
+        for (ch = LIN1; ch <= LIN11; ch++) {
+            uint32 lvl = (IfxPort_getPinState(linPins[ch].rx->pin.port,
+                                              linPins[ch].rx->pin.pinIndex)
+                          == FALSE) ? 0u : 1u;
+            if (lvl != last[ch]) {
+                cnt[ch]++;
+                last[ch] = lvl;
+            }
+        }
+    }
+    for (i = 0; i < LIN_NUM; i++) {
+        if (edgeCnt) edgeCnt[i] = (i >= LIN1 && i <= LIN11) ? cnt[i] : 0;
+    }
+    g_lin[master].txHdr++;
+}
+
+uint32 lin_pulse_capture(linChannel master, linChannel rxch, uint8 pid,
+                         uint32 stamps[64])
+{
+    Ifx_ASCLIN *sfr;
+    Ifx_P *port;
+    uint8 pin;
+    uint8 b = pid;
+    uint32 t0, n = 0, last;
+    int i;
+
+    if (master < LIN1 || master > LIN11 || rxch < LIN1 || rxch > LIN11) return 0;
+    sfr = linSfr[master];
+    port = linPins[rxch].rx->pin.port;
+    pin = linPins[rxch].rx->pin.pinIndex;
+
+    IfxAsclin_clearAllFlags(sfr);
+    IfxAsclin_enableRxFifoInlet(sfr, FALSE);
+    IfxAsclin_flushTxFifo(sfr);
+    IfxAsclin_enableTxFifoOutlet(sfr, TRUE);
+    last = (IfxPort_getPinState(port, pin) == FALSE) ? 0u : 1u;
+    IfxAsclin_write8(sfr, &b, 1U);
+    IfxAsclin_setTransmitHeaderRequestFlag(sfr);
+    t0 = g_TickCount_1ms;
+    while (!IfxAsclin_getTxHeaderEndFlagStatus(sfr)) {
+        uint32 lvl = (IfxPort_getPinState(port, pin) == FALSE) ? 0u : 1u;
+        if (lvl != last && n < 64) {
+            stamps[n++] = IfxStm_getLower(&MODULE_STM0);
+            last = lvl;
+        }
+        if ((g_TickCount_1ms - t0) > LIN_HDR_TIMEOUT_MS) break;
+    }
+    IfxAsclin_clearAllFlags(sfr);
+    t0 = g_TickCount_1ms;
+    while ((g_TickCount_1ms - t0) < 3u && n < 64) {
+        uint32 lvl = (IfxPort_getPinState(port, pin) == FALSE) ? 0u : 1u;
+        if (lvl != last) {
+            stamps[n++] = IfxStm_getLower(&MODULE_STM0);
+            last = lvl;
+        }
+    }
+    g_lin[master].txHdr++;
+    for (i = 0; i < 0; i++) { (void)i; }
+    return n;
+}
+
+int lin_rawhdr_forensic(linChannel master, linChannel slave, uint8 pid,
+                        uint8 *rxPid, uint32 *flagSnap)
+{
+    Ifx_ASCLIN *msfr, *ssfr;
+    uint8 b = pid, got = 0;
+    uint32 t0;
+    int rc = -1;
+
+    if (master < LIN1 || master > LIN11 || slave < LIN1 || slave > LIN11) return -1;
+    msfr = linSfr[master];
+    ssfr = linSfr[slave];
+
+    lin_arm_header(ssfr);
+    /* master header TX (same as lin_tx_header, stats on master) */
+    IfxAsclin_clearAllFlags(msfr);
+    IfxAsclin_enableRxFifoInlet(msfr, FALSE);
+    IfxAsclin_flushTxFifo(msfr);
+    IfxAsclin_enableTxFifoOutlet(msfr, TRUE);
+    IfxAsclin_write8(msfr, &b, 1U);
+    IfxAsclin_setTransmitHeaderRequestFlag(msfr);
+    t0 = g_TickCount_1ms;
+    while (!IfxAsclin_getTxHeaderEndFlagStatus(msfr)) {
+        if ((g_TickCount_1ms - t0) > LIN_HDR_TIMEOUT_MS) break;
+    }
+    if (IfxAsclin_getTxHeaderEndFlagStatus(msfr)) {
+        IfxAsclin_clearTxHeaderEndFlag(msfr);
+        g_lin[master].txHdr++;
+    } else {
+        g_lin[master].hdrErr++;
+    }
+    IfxAsclin_clearAllFlags(msfr);
+    /* RHE-only poll on slave for 100 ms, then snapshot FLAGS (no clear) */
+    t0 = g_TickCount_1ms;
+    while (!IfxAsclin_getRxHeaderEndFlagStatus(ssfr)) {
+        if ((g_TickCount_1ms - t0) > 100u) break;
+    }
+    if (flagSnap) *flagSnap = ssfr->FLAGS.U;
+    if (IfxAsclin_getRxHeaderEndFlagStatus(ssfr)) {
+        IfxAsclin_clearRxHeaderEndFlag(ssfr);
+        IfxAsclin_read8(ssfr, &got, 1U);
+        g_lin[slave].rxHdr++;
+        if (rxPid) *rxPid = got;
+        rc = 0;
+    }
+    return rc;
+}
+
+void lin_tx_trace(linChannel master, uint8 pid, uint32 flagsLog[60],
+                  uint32 fifoLog[60])
+{
+    Ifx_ASCLIN *sfr;
+    uint8 b = pid;
+    int i;
+
+    if (master < LIN1 || master > LIN11) return;
+    sfr = linSfr[master];
+    IfxAsclin_clearAllFlags(sfr);
+    IfxAsclin_enableRxFifoInlet(sfr, FALSE);
+    IfxAsclin_flushTxFifo(sfr);
+    IfxAsclin_enableTxFifoOutlet(sfr, TRUE);
+    IfxAsclin_write8(sfr, &b, 1U);
+    IfxAsclin_setTransmitHeaderRequestFlag(sfr);
+    for (i = 0; i < 60; i++) {
+        uint32 t1 = IfxStm_getLower(&MODULE_STM0);
+        while ((IfxStm_getLower(&MODULE_STM0) - t1) < 10000u) { } /* ~100 us */
+        if (flagsLog) flagsLog[i] = sfr->FLAGS.U;
+        if (fifoLog) fifoLog[i] = sfr->TXFIFOCON.U;
+    }
+    IfxAsclin_clearAllFlags(sfr);
+}
+
+int lin_bb_header(linChannel slave, uint8 pid, uint8 *rxPid)
+{
+    Ifx_ASCLIN *sfr;
+    Ifx_P *port;
+    uint8 pin;
+    uint32 freq, bitTicks;
+    uint8 b;
+    int i, rc = -1;
+    uint32 t0;
+
+    if (slave < LIN1 || slave > LIN11) return -1;
+    sfr = linSfr[slave];
+    port = linPins[slave].rx->pin.port;
+    pin = linPins[slave].rx->pin.pinIndex;
+
+    freq = IfxStm_getFrequency(&MODULE_STM0);
+    if (freq < 1000000u) freq = 100000000u;
+    bitTicks = freq / (uint32)g_linBaud;   /* e.g. 5208 @19200/100MHz */
+
+    /* arm slave header reception */
+    lin_arm_header(sfr);
+
+    /* RX net -> GPIO output, idle recessive (high) */
+    IfxPort_setPinModeOutput(port, pin, IfxPort_OutputMode_pushPull, IfxPort_OutputIdx_general);
+    IfxPort_setPinHigh(port, pin);
+    t0 = g_TickCount_1ms;
+    while ((g_TickCount_1ms - t0) < 3u) { }
+
+    /* break: 14 bits dominant + 1 bit delimiter */
+    IfxPort_setPinLow(port, pin);
+    lin_stm_wait_ticks(bitTicks * 14u);
+    IfxPort_setPinHigh(port, pin);
+    lin_stm_wait_ticks(bitTicks);
+
+    /* sync 0x55 + PID, 8N1 LSB-first */
+    for (b = 0; b < 2; b++) {
+        uint8 byte = (b == 0) ? 0x55u : pid;
+        IfxPort_setPinLow(port, pin);              /* start */
+        lin_stm_wait_ticks(bitTicks);
+        for (i = 0; i < 8; i++) {
+            if (byte & (1u << i)) IfxPort_setPinHigh(port, pin);
+            else IfxPort_setPinLow(port, pin);
+            lin_stm_wait_ticks(bitTicks);
+        }
+        IfxPort_setPinHigh(port, pin);             /* stop */
+        lin_stm_wait_ticks(bitTicks);
+    }
+
+    /* let the ASCLIN latch RHE, then sample before re-init clears it */
+    t0 = g_TickCount_1ms;
+    while ((g_TickCount_1ms - t0) < 5u) { }
+    if (IfxAsclin_getRxHeaderEndFlagStatus(sfr)) {
+        uint8 got = 0;
+        IfxAsclin_clearRxHeaderEndFlag(sfr);
+        IfxAsclin_read8(sfr, &got, 1U);
+        g_lin[slave].rxHdr++;
+        if (rxPid) *rxPid = got;
+        rc = (got == pid) ? 0 : -2;
+    } else {
+        g_lin[slave].hdrErr++;
+        g_lin[slave].timeoutErr++;
+    }
+
+    /* restore full LIN configuration (pin mux + ASCLIN) */
+    lin12_init_all(g_linBaud);
+    return rc;
+}
+
+int lin_master_loopback(uint8 id6, const uint8 *data, uint8 len, uint8 classic,
+                        uint8 *treSeen, uint32 *flagSnap)
+{
+    Ifx_ASCLIN *sfr = linSfr[LIN_MASTER_CH];
+    uint8 pid = lin_pid(id6);
+    uint8 b = pid;
+    uint8 rxPid = 0, rxData[8];
+    uint32 t0;
+    uint8 tre = 0;
+    int i;
+
+    if (len < 1) len = 1;
+    if (len > 8) len = 8;
+
+    IfxAsclin_setDataLength(sfr, (IfxAsclin_DataLength)(len - 1));
+    IfxAsclin_setChecksumMode(sfr, classic ? IfxAsclin_Checksum_classic : IfxAsclin_Checksum_enhanced);
+    IfxAsclin_clearAllFlags(sfr);
+    IfxAsclin_flushRxFifo(sfr);
+    IfxAsclin_flushTxFifo(sfr);
+    /* keep BOTH directions open: TX header goes out, looped-back header
+     * comes in through the transceiver + bus */
+    IfxAsclin_enableRxFifoInlet(sfr, TRUE);
+    IfxAsclin_enableTxFifoOutlet(sfr, TRUE);
+    IfxAsclin_write8(sfr, &b, 1U);
+    IfxAsclin_setTransmitHeaderRequestFlag(sfr);
+
+    /* wait for EITHER own-TX-done or looped-back-header, up to 50 ms */
+    t0 = g_TickCount_1ms;
+    while (!IfxAsclin_getRxHeaderEndFlagStatus(sfr)) {
+        if (IfxAsclin_getHeaderTimeoutFlagStatus(sfr) ||
+            IfxAsclin_getFrameErrorFlagStatus(sfr) ||
+            IfxAsclin_getCollisionDetectionErrorFlagStatus(sfr) ||
+            IfxAsclin_getLinParityErrorFlagStatus(sfr)) {
+            break;
+        }
+        if ((g_TickCount_1ms - t0) > LIN_HDR_TIMEOUT_MS) break;
+    }
+    if (!IfxAsclin_getRxHeaderEndFlagStatus(sfr)) {
+        g_lin[LIN_MASTER_CH].hdrErr++;
+        g_lin[LIN_MASTER_CH].timeoutErr++;
+        IfxAsclin_clearAllFlags(sfr);
+        return -1;
+    }
+    IfxAsclin_clearRxHeaderEndFlag(sfr);
+    IfxAsclin_clearTxHeaderEndFlag(sfr);
+    IfxAsclin_read8(sfr, &rxPid, 1U);
+    g_lin[LIN_MASTER_CH].rxHdr++;
+    if (rxPid != pid) {
+        g_lin[LIN_MASTER_CH].hdrErr++;
+        g_lin[LIN_MASTER_CH].parityErr++;
+        IfxAsclin_clearAllFlags(sfr);
+        return -2;
+    }
+
+    /* now the response: transmit it while RX stays armed, catch the echo */
+    IfxAsclin_setDataLength(sfr, (IfxAsclin_DataLength)(len - 1));
+    IfxAsclin_setChecksumMode(sfr, classic ? IfxAsclin_Checksum_classic : IfxAsclin_Checksum_enhanced);
+    IfxAsclin_clearAllFlags(sfr);
+    IfxAsclin_flushRxFifo(sfr);
+    IfxAsclin_flushTxFifo(sfr);
+    IfxAsclin_enableRxFifoInlet(sfr, TRUE);
+    IfxAsclin_enableTxFifoOutlet(sfr, TRUE);
+    IfxAsclin_write8(sfr, (uint8 *)data, len);
+    IfxAsclin_setTransmitResponseRequestFlag(sfr);
+    t0 = g_TickCount_1ms;
+    while (!IfxAsclin_getRxResponseEndFlagStatus(sfr)) {
+        if (IfxAsclin_getTxResponseEndFlagStatus(sfr)) tre = 1;
+        if (IfxAsclin_getRxFifoOverflowFlagStatus(sfr) ||
+            IfxAsclin_getFrameErrorFlagStatus(sfr) ||
+            IfxAsclin_getCollisionDetectionErrorFlagStatus(sfr) ||
+            IfxAsclin_getLinChecksumErrorFlagStatus(sfr) ||
+            IfxAsclin_getResponseTimeoutFlagStatus(sfr)) {
+            break;
+        }
+        if ((g_TickCount_1ms - t0) > LIN_RESP_TIMEOUT_MS) break;
+    }
+    if (IfxAsclin_getTxResponseEndFlagStatus(sfr)) tre = 1;
+    if (treSeen) *treSeen = tre;
+    if (flagSnap) *flagSnap = sfr->FLAGS.U;
+    if (!IfxAsclin_getRxResponseEndFlagStatus(sfr)) {
+        g_lin[LIN_MASTER_CH].respErr++;
+        g_lin[LIN_MASTER_CH].timeoutErr++;
+        IfxAsclin_clearAllFlags(sfr);
+        return -4;
+    }
+    IfxAsclin_clearRxResponseEndFlag(sfr);
+    IfxAsclin_clearTxResponseEndFlag(sfr);
+    memset(rxData, 0, sizeof(rxData));
+    IfxAsclin_read8(sfr, rxData, len);
+    g_lin[LIN_MASTER_CH].rxResp++;
+    g_lin[LIN_MASTER_CH].txResp++;
+    for (i = 0; i < len; i++) {
+        if (rxData[i] != data[i]) {
+            g_lin[LIN_MASTER_CH].respErr++;
+            IfxAsclin_clearAllFlags(sfr);
+            return -5;
+        }
+    }
+    IfxAsclin_clearAllFlags(sfr);
+    return 0;
 }

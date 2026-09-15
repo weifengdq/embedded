@@ -18,6 +18,7 @@
 #include "shell.h"
 #include "lin12.h"
 #include "IfxPort.h"
+#include "IfxAsclin_reg.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -73,45 +74,81 @@ static void print_data(Shell *shell, const uint8 *d, int len)
     for (i = 0; i < len; i++) shellPrint(shell, "%02X%s", d[i], (i + 1 < len) ? " " : "");
 }
 
+/* Wired pairs on this board (dominant-probe verified): LIN1 is single
+ * (partner LIN0 shares UART0 pins, unusable); LIN4 TX is suspect (HW fault). */
+static const uint8 linPairs[5][2] = {{2,3},{4,5},{6,7},{8,9},{10,11}};
+
+static int pair_partner(int ch)
+{
+    int p;
+    for (p = 0; p < 5; p++) {
+        if (linPairs[p][0] == ch) return linPairs[p][1];
+        if (linPairs[p][1] == ch) return linPairs[p][0];
+    }
+    return -1;
+}
+
+/* Roles for a pairwise test: everyone slave except the header master. */
+static void lin_roles_for(linChannel master)
+{
+    linChannel ch;
+    for (ch = LIN1; ch <= LIN11; ch++) lin_set_role(ch, (ch == master) ? 1 : 0);
+}
+
 /* ---------- linsend ---------- */
 static int cmd_linsend(int argc, char *argv[])
 {
     Shell *shell = shellGetCurrent();
+    linChannel txch;
     uint8 id6, data[8], classic = 0;
-    int len = 8, i, fails;
-    uint32 mask = 0;
+    int len = 8, i, rc, partner;
+    long v;
+    char *end;
 
-    if (argc < 2) {
-        shellPrint(shell, "Usage: linsend <id 0..63> [hexdata up to 8B] [classic 0|1]\r\n");
-        shellPrint(shell, "  e.g. linsend 0x12 A0A1A2A3A4A5A6A7\r\n");
-        shellPrint(shell, "  Master LIN11 broadcasts; LIN1..LIN10 verify header+response.\r\n");
+    if (argc < 3) {
+        shellPrint(shell, "Usage: linsend <txch 1..11> <id 0..63> [hexdata] [classic 0|1]\r\n");
+        shellPrint(shell, "  e.g. linsend 11 0x12 A0A1A2A3A4A5A6A7\r\n");
+        shellPrint(shell, "  txch becomes master, its wired pair partner verifies.\r\n");
         return -1;
     }
-    if (parse_id6(argv[1], &id6) != 0) {
-        shellPrint(shell, "Bad id '%s' (0..63, hex ok)\r\n", argv[1]);
+    v = strtol(argv[1], &end, 10);
+    if (*end != '\0' || v < 1 || v > 11) {
+        shellPrint(shell, "Bad txch '%s'\r\n", argv[1]);
+        return -1;
+    }
+    txch = (linChannel)v;
+    if (parse_id6(argv[2], &id6) != 0) {
+        shellPrint(shell, "Bad id '%s' (0..63, hex ok)\r\n", argv[2]);
+        return -1;
+    }
+    partner = pair_partner((int)txch);
+    if (partner < 0) {
+        shellPrint(shell, "LIN%d has no pair partner (LIN1: partner LIN0 shares UART0).\r\n", (int)txch);
+        shellPrint(shell, "Try 'linbb 1' / 'lindomf 1' for LIN1 single-node checks.\r\n");
         return -1;
     }
     for (i = 0; i < 8; i++) data[i] = (uint8)(0xA0 + i);
-    if (argc >= 3) {
-        int n = parse_hexbytes(argv[2], data, 8);
+    if (argc >= 4) {
+        int n = parse_hexbytes(argv[3], data, 8);
         if (n < 0) {
-            shellPrint(shell, "Bad hexdata '%s'\r\n", argv[2]);
+            shellPrint(shell, "Bad hexdata '%s'\r\n", argv[3]);
             return -1;
         }
         len = (n == 0) ? 8 : n;
-        if (argc >= 4) classic = (atoi(argv[3]) != 0) ? 1 : 0;
+        if (argc >= 5) classic = (atoi(argv[4]) != 0) ? 1 : 0;
+        else if (id6 >= 0x3C) classic = 1; /* 0x3C/0x3D default classic per LIN spec */
     } else {
-        /* IDs 0x3C/0x3D default to classic checksum per LIN spec */
         if (id6 >= 0x3C) classic = 1;
     }
-    fails = lin_xact_master_tx(id6, data, (uint8)len, classic, &mask);
-    shellPrint(shell, "linsend id=0x%02X pid=0x%02X len=%d %s: %s (%d fail(s), mask=0x%03lX)\r\n",
-               id6, lin_pid(id6), len, classic ? "classic" : "enhanced",
-               fails ? "FAIL" : "ALL PASS", fails, (unsigned long)mask);
+    lin_roles_for(txch);
+    rc = lin_xact_m2s(txch, (linChannel)partner, id6, data, (uint8)len, classic);
+    shellPrint(shell, "linsend LIN%d->LIN%d id=0x%02X pid=0x%02X len=%d %s: %s\r\n",
+               (int)txch, partner, id6, lin_pid(id6), len,
+               classic ? "classic" : "enhanced", rc ? "FAIL" : "PASS");
     shellPrint(shell, "  data: ");
     print_data(shell, data, len);
     shellPrint(shell, "\r\n");
-    return fails ? -1 : 0;
+    return rc ? -1 : 0;
 }
 
 /* ---------- linreq ---------- */
@@ -119,116 +156,159 @@ static int cmd_linreq(int argc, char *argv[])
 {
     Shell *shell = shellGetCurrent();
     uint8 id6, data[8];
-    linChannel slave = LIN1;
+    linChannel mch = LIN11, sch = LIN10;
     int len = 8, i, rc;
-    uint32 snoop = 0;
+    long v;
+    char *end;
 
-    if (argc < 2) {
-        shellPrint(shell, "Usage: linreq <id 0..63> <slave 1..10> [len 1..8] [hexdata]\r\n");
-        shellPrint(shell, "  e.g. linreq 0x20 3 8 1122334455667788\r\n");
-        shellPrint(shell, "  Master sends header; slave responds; master verifies.\r\n");
+    if (argc < 4) {
+        shellPrint(shell, "Usage: linreq <mch 1..11> <sch 1..10> <id 0..63> [len 1..8] [hexdata]\r\n");
+        shellPrint(shell, "  e.g. linreq 11 10 0x20 8 1122334455667788\r\n");
+        shellPrint(shell, "  mch sends header (master); sch responds; mch verifies.\r\n");
         return -1;
     }
-    if (parse_id6(argv[1], &id6) != 0) {
-        shellPrint(shell, "Bad id '%s'\r\n", argv[1]);
+    v = strtol(argv[1], &end, 10);
+    if (*end != '\0' || v < 1 || v > 11) {
+        shellPrint(shell, "Bad mch '%s'\r\n", argv[1]);
         return -1;
     }
-    if (argc >= 3 && parse_ch(argv[2], &slave) != 0) {
-        shellPrint(shell, "Bad slave '%s' (1..10)\r\n", argv[2]);
+    mch = (linChannel)v;
+    if (parse_ch(argv[2], &sch) != 0) {
+        shellPrint(shell, "Bad sch '%s' (1..10)\r\n", argv[2]);
         return -1;
     }
-    if (argc >= 4) {
-        len = atoi(argv[3]);
+    if (parse_id6(argv[3], &id6) != 0) {
+        shellPrint(shell, "Bad id '%s'\r\n", argv[3]);
+        return -1;
+    }
+    if (argc >= 5) {
+        len = atoi(argv[4]);
         if (len < 1) len = 1;
         if (len > 8) len = 8;
     }
     for (i = 0; i < 8; i++) data[i] = (uint8)(0x50 + id6 + i);
-    if (argc >= 5) {
-        int n = parse_hexbytes(argv[4], data, 8);
+    if (argc >= 6) {
+        int n = parse_hexbytes(argv[5], data, 8);
         if (n < 0) {
-            shellPrint(shell, "Bad hexdata '%s'\r\n", argv[4]);
+            shellPrint(shell, "Bad hexdata '%s'\r\n", argv[5]);
             return -1;
         }
         if (n > 0) len = n;
     }
     {
         uint8 classic = (id6 >= 0x3C) ? 1 : 0;
-        rc = lin_xact_slave_tx(id6, slave, data, (uint8)len, classic, &snoop);
+        lin_roles_for(mch);
+        if (sch == mch) lin_set_role(sch, 0);
+        rc = lin_xact_s2m(mch, sch, id6, data, (uint8)len, classic);
     }
-    shellPrint(shell, "linreq id=0x%02X slave=LIN%d len=%d: %s (snoop %lu/9)\r\n",
-               id6, (int)slave, len, rc ? "FAIL" : "PASS", (unsigned long)snoop);
+    shellPrint(shell, "linreq LIN%d<-LIN%d id=0x%02X len=%d: %s\r\n",
+               (int)mch, (int)sch, id6, len, rc ? "FAIL" : "PASS");
     shellPrint(shell, "  data: ");
     print_data(shell, data, len);
     shellPrint(shell, "\r\n");
     return rc ? -1 : 0;
 }
 
-/* ---------- linpair ---------- */
+/* ---------- linpair: both directions over each wired pair ---------- */
 static int cmd_linpair(int argc, char *argv[])
 {
     Shell *shell = shellGetCurrent();
-    int rounds = 1, len = 8, r, k, fails = 0, total = 0;
+    int rounds = 1, len = 8, r, p, fails = 0, total = 0;
     uint8 data[8];
     int i;
 
     if (argc >= 2) { rounds = atoi(argv[1]); if (rounds < 1) rounds = 1; if (rounds > 20) rounds = 20; }
     if (argc >= 3) { len = atoi(argv[2]); if (len < 1) len = 1; if (len > 8) len = 8; }
-    shellPrint(shell, "linpair: %d round(s), len=%d, master LIN11 -> slaves LIN1..10\r\n", rounds, len);
+    shellPrint(shell, "linpair: %d round(s), len=%d, pairs (2,3)(4,5)(6,7)(8,9)(10,11) both directions\r\n",
+               rounds, len);
     for (r = 0; r < rounds; r++) {
         shellPrint(shell, "round %d:\r\n", r + 1);
-        for (k = 0; k < 10; k++) {
-            uint8 id6 = (uint8)(0x10 + k);
-            uint32 mask = 0;
-            int f;
-            for (i = 0; i < len; i++) data[i] = (uint8)(0xA0 + r * 16 + k * 2 + i);
-            f = lin_xact_master_tx(id6, data, (uint8)len, 0, &mask);
+        for (p = 0; p < 5; p++) {
+            linChannel a = (linChannel)linPairs[p][0], b = (linChannel)linPairs[p][1];
+            uint8 idab = (uint8)(0x10 + p * 2), idba = (uint8)(0x11 + p * 2);
+            for (i = 0; i < len; i++) data[i] = (uint8)(0xA0 + r * 16 + p * 2 + i);
+            lin_roles_for(a);
             total++;
-            if (f) {
+            if (lin_xact_m2s(a, b, idab, data, (uint8)len, 0) != 0) {
                 fails++;
-                shellPrint(shell, "  id=0x%02X: FAIL (%d slave(s), mask=0x%03lX)\r\n",
-                           id6, f, (unsigned long)mask);
+                shellPrint(shell, "  LIN%d->LIN%d id=0x%02X: FAIL\r\n", (int)a, (int)b, idab);
             } else {
-                shellPrint(shell, "  id=0x%02X: PASS (10/10)\r\n", id6);
+                shellPrint(shell, "  LIN%d->LIN%d id=0x%02X: PASS\r\n", (int)a, (int)b, idab);
+            }
+            lin_roles_for(b);
+            total++;
+            if (lin_xact_m2s(b, a, idba, data, (uint8)len, 0) != 0) {
+                fails++;
+                shellPrint(shell, "  LIN%d->LIN%d id=0x%02X: FAIL%s\r\n", (int)b, (int)a, idba,
+                           (a == LIN4) ? " (LIN4 TX suspect, see README)" : "");
+            } else {
+                shellPrint(shell, "  LIN%d->LIN%d id=0x%02X: PASS\r\n", (int)b, (int)a, idba);
             }
         }
     }
-    shellPrint(shell, "linpair done: %s (%d/%d id(s) failed)\r\n",
+    shellPrint(shell, "linpair done: %s (%d/%d failed)\r\n",
                fails ? "FAIL" : "ALL PASS", fails, total);
     return fails ? -1 : 0;
 }
 
-/* ---------- linslv ---------- */
+/* ---------- linslv: slave-response direction per pair ---------- */
 static int cmd_linslv(int argc, char *argv[])
 {
     Shell *shell = shellGetCurrent();
-    int rounds = 1, len = 8, r, s, fails = 0, total = 0;
+    int rounds = 1, len = 8, r, p, fails = 0, total = 0;
     uint8 data[8];
     int i;
 
     if (argc >= 2) { rounds = atoi(argv[1]); if (rounds < 1) rounds = 1; if (rounds > 10) rounds = 10; }
     if (argc >= 3) { len = atoi(argv[2]); if (len < 1) len = 1; if (len > 8) len = 8; }
-    shellPrint(shell, "linslv: %d round(s), len=%d, each LIN1..10 responds in turn\r\n", rounds, len);
+    shellPrint(shell, "linslv: %d round(s), len=%d, pair-second responds to pair-first header\r\n",
+               rounds, len);
     for (r = 0; r < rounds; r++) {
         shellPrint(shell, "round %d:\r\n", r + 1);
-        for (s = 1; s <= 10; s++) {
-            uint8 id6 = (uint8)(0x20 + s);
-            uint32 snoop = 0;
-            int rc;
-            for (i = 0; i < len; i++) data[i] = (uint8)(0x50 + r * 16 + s + i);
-            rc = lin_xact_slave_tx(id6, (linChannel)s, data, (uint8)len, 0, &snoop);
+        for (p = 0; p < 5; p++) {
+            linChannel a = (linChannel)linPairs[p][0], b = (linChannel)linPairs[p][1];
+            uint8 id6 = (uint8)(0x20 + p);
+            for (i = 0; i < len; i++) data[i] = (uint8)(0x50 + r * 16 + p + i);
+            lin_roles_for(a);
             total++;
-            if (rc) {
+            if (lin_xact_s2m(a, b, id6, data, (uint8)len, 0) != 0) {
                 fails++;
-                shellPrint(shell, "  LIN%d -> LIN11 id=0x%02X: FAIL\r\n", s, id6);
+                shellPrint(shell, "  LIN%d<-LIN%d id=0x%02X: FAIL\r\n", (int)a, (int)b, id6);
             } else {
-                shellPrint(shell, "  LIN%d -> LIN11 id=0x%02X: PASS (snoop %lu/9)\r\n",
-                           s, id6, (unsigned long)snoop);
+                shellPrint(shell, "  LIN%d<-LIN%d id=0x%02X: PASS\r\n", (int)a, (int)b, id6);
             }
         }
     }
     shellPrint(shell, "linslv done: %s (%d/%d failed)\r\n",
                fails ? "FAIL" : "ALL PASS", fails, total);
     return fails ? -1 : 0;
+}
+
+/* ---------- linrole ---------- */
+static int cmd_linrole(int argc, char *argv[])
+{
+    Shell *shell = shellGetCurrent();
+    long ch;
+    char *end;
+
+    if (argc < 3) {
+        shellPrint(shell, "Usage: linrole <ch 1..11> <M|S>  (re-init channel as master/slave)\r\n");
+        shellPrint(shell, "  Pairs: (2,3)(4,5)(6,7)(8,9)(10,11); test side must be master.\r\n");
+        return -1;
+    }
+    ch = strtol(argv[1], &end, 10);
+    if (*end != '\0' || ch < 1 || ch > 11) {
+        shellPrint(shell, "Bad channel '%s'\r\n", argv[1]);
+        return -1;
+    }
+    if ((argv[2][0] != 'M' && argv[2][0] != 'm' && argv[2][0] != 'S' && argv[2][0] != 's') || argv[2][1] != '\0') {
+        shellPrint(shell, "Bad role '%s' (M|S)\r\n", argv[2]);
+        return -1;
+    }
+    lin_set_role((linChannel)ch, (argv[2][0] == 'M' || argv[2][0] == 'm') ? 1 : 0);
+    shellPrint(shell, "linrole: LIN%ld now %s\r\n", ch,
+               (argv[2][0] == 'M' || argv[2][0] == 'm') ? "master" : "slave");
+    return 0;
 }
 
 /* ---------- linstat ---------- */
@@ -305,12 +385,12 @@ static int cmd_linbaud(int argc, char *argv[])
     char *end;
 
     if (argc < 2) {
-        shellPrint(shell, "Usage: linbaud <9600|10417|19200>  (current %.0f)\r\n", (double)g_linBaud);
+        shellPrint(shell, "Usage: linbaud <2400|4800|9600|10417|19200>  (current %.0f)\r\n", (double)g_linBaud);
         return -1;
     }
     rate = strtol(argv[1], &end, 10);
-    if (*end != '\0' || (rate != 9600 && rate != 10417 && rate != 19200)) {
-        shellPrint(shell, "Bad rate '%s' (9600/10417/19200)\r\n", argv[1]);
+    if (*end != '\0' || (rate != 2400 && rate != 4800 && rate != 9600 && rate != 10417 && rate != 19200)) {
+        shellPrint(shell, "Bad rate '%s' (2400/4800/9600/10417/19200)\r\n", argv[1]);
         return -1;
     }
     lin12_init_all((float32)rate);
@@ -355,6 +435,38 @@ static int cmd_linwake(int argc, char *argv[])
     return 0;
 }
 
+/* ---------- lintgl ---------- */
+static int cmd_lintgl(int argc, char *argv[])
+{
+    Shell *shell = shellGetCurrent();
+    long ch, n = 10;
+    char *end;
+
+    if (argc < 2) {
+        shellPrint(shell, "Usage: lintgl <txch 1..11> [n]  (toggle TX pin as GPIO, then LIN re-init)\r\n");
+        shellPrint(shell, "  e.g. lintgl 11 10: P21.0 toggles 10x100ms; probe with meter/scope,\r\n");
+        shellPrint(shell, "  then 'linpair' to re-test (counters cleared by re-init).\r\n");
+        return -1;
+    }
+    ch = strtol(argv[1], &end, 10);
+    if (*end != '\0' || ch < 1 || ch > 11) {
+        shellPrint(shell, "Bad channel '%s' (1..11)\r\n", argv[1]);
+        return -1;
+    }
+    if (argc >= 3) {
+        n = strtol(argv[2], &end, 10);
+        if (*end != '\0' || n < 1 || n > 50) n = 10;
+    }
+    shellPrint(shell, "lintgl: LIN%ld TX toggling %ld x 100ms... (probe now)\r\n", ch, n);
+    lin_probe_tx_toggle((linChannel)ch, (uint8)n);
+    shellPrint(shell, "lintgl done, LIN re-init at %.0f bps. RX levels:", (double)g_linBaud);
+    {
+        /* RX pin states need SFR-independent read: report via linstat instead */
+        shellPrint(shell, " see 'linstat' EN + run 'linpair'.\r\n");
+    }
+    return 0;
+}
+
 /* ---------- linerr ---------- */
 static int cmd_linerr(int argc, char *argv[])
 {
@@ -370,39 +482,63 @@ static int cmd_linerr(int argc, char *argv[])
     }
     if (strcmp(argv[1], "parity") == 0) {
         uint8 good = lin_pid(0x12), bad = (uint8)(good ^ 0x40); /* flip P0 */
-        uint8 pid;
+        uint8 pid = 0;
+        uint32 pe0 = g_lin[LIN10].parityErr;
         int badSeen = 0;
-        linChannel ch;
-        for (ch = LIN1; ch <= LIN10; ch++) lin_slave_arm_header(ch);
-        shellPrint(shell, "linerr parity: sending bad pid=0x%02X (good 0x%02X)...\r\n", bad, good);
+        lin_roles_for(LIN11);
+        lin_slave_arm_header(LIN10);
+        shellPrint(shell, "linerr parity: LIN11 sends bad pid=0x%02X (good 0x%02X) to LIN10...\r\n", bad, good);
         if (lin_raw_master_header(bad) != 0) {
             shellPrint(shell, "  master header TX failed (bus ok? try 'linpair')\r\n");
             return -1;
         }
-        for (ch = LIN1; ch <= LIN10; ch++) {
-            uint32 pe0 = g_lin[ch].parityErr;
-            if (lin_slave_poll_header(ch, &pid) == 0) {
-                if (lin_pid_check(pid) != 0) badSeen++;
-            }
-            if (g_lin[ch].parityErr > pe0) badSeen++;
+        if (lin_slave_poll_header(LIN10, &pid) == 0) {
+            if (lin_pid_check(pid) != 0) badSeen++;
         }
-        shellPrint(shell, "  slaves with parity indication: %d/10 (expect 10; check 'linstat' par column)\r\n", badSeen);
-        return 0;
+        if (g_lin[LIN10].parityErr > pe0) badSeen++;
+        shellPrint(shell, "  LIN10 parity indication: %s (see 'linstat' par column)\r\n",
+                   badSeen ? "yes" : "NO");
+        return badSeen ? 0 : -1;
     } else if (strcmp(argv[1], "cksum") == 0) {
-        /* Master sends classic while slaves are armed enhanced for id 0x12.
-         * All 10 slaves must flag LIN checksum error (LC). */
-        uint32 cs0[LIN_NUM], mask = 0;
-        linChannel ch;
-        int csSeen = 0, fails;
-        for (ch = LIN0; ch < LIN_NUM; ch++) cs0[ch] = g_lin[ch].cksumErr;
-        shellPrint(shell, "linerr cksum: id=0x12 master classic vs slaves enhanced...\r\n");
-        fails = lin_xact_master_tx_mode(0x12, data, 8, 1, 0, &mask);
-        for (ch = LIN1; ch <= LIN10; ch++) {
-            if (g_lin[ch].cksumErr > cs0[ch]) csSeen++;
+        /* Pair (11->10): master sends classic while slave armed enhanced.
+         * Slave must flag LIN checksum error (LC). */
+        uint8 csData[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+        uint32 cs0 = g_lin[LIN10].cksumErr;
+        int fails;
+        shellPrint(shell, "linerr cksum: LIN11->LIN10 id=0x12 master classic vs slave enhanced...\r\n");
+        lin_roles_for(LIN11);
+        fails = 0;
+        {
+            /* header (both sides parity-clean), then mismatched response */
+            uint8 pid = lin_pid(0x12);
+            uint8 rxPid = 0;
+            lin_slave_arm_header(LIN10);
+            if (lin_raw_master_header(pid) != 0) {
+                shellPrint(shell, "  master header TX failed\r\n");
+                return -1;
+            }
+            if (lin_slave_poll_header(LIN10, &rxPid) != 0 || rxPid != pid) {
+                shellPrint(shell, "  LIN10 header miss\r\n");
+                return -1;
+            }
+            /* slave armed enhanced(0), master sends classic(1) */
+            lin_slave_arm_response(LIN10, 8, 0);
+            if (lin_raw_master_response(csData, 8, 1) != 0) {
+                shellPrint(shell, "  master response TX failed\r\n");
+                return -1;
+            }
+            {
+                uint8 rx[8];
+                memset(rx, 0, sizeof(rx));
+                if (lin_slave_poll_response(LIN10, rx, 8) == 0) {
+                    shellPrint(shell, "  UNEXPECTED: slave accepted mismatched checksum\r\n");
+                    fails = 1;
+                }
+            }
         }
-        shellPrint(shell, "  xact fails=%d mask=0x%03lX, slaves with LC flag: %d/10 (expect 10)\r\n",
-                   fails, (unsigned long)mask, csSeen);
-        return (csSeen == 10) ? 0 : -1;
+        shellPrint(shell, "  LIN10 LC flag delta: %lu (expect >=1)\r\n",
+                   (unsigned long)(g_lin[LIN10].cksumErr - cs0));
+        return (fails == 0 && (g_lin[LIN10].cksumErr - cs0) >= 1) ? 0 : -1;
     } else if (strcmp(argv[1], "timeout") == 0) {
         uint8 pid = lin_pid(0x30);
         uint8 rx[8];
@@ -424,8 +560,44 @@ static int cmd_linerr(int argc, char *argv[])
     return -1;
 }
 
-SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linsend, cmd_linsend, master broadcast test);
-SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linreq, cmd_linreq, slave response test);
+/* ---------- linbusact ---------- */
+static int cmd_linbusact(int argc, char *argv[])
+{
+    Shell *shell = shellGetCurrent();
+    uint8 pid = lin_pid(0x12);
+    uint32 mask = 0;
+    uint8 txLow = 0, txHigh = 0;
+    int rc, i;
+
+    if (argc >= 2) {
+        char *end;
+        unsigned long v = strtoul(argv[1], &end, 0);
+        if (*end != '\0' || v > 0xFF) {
+            shellPrint(shell, "Usage: linbusact [pid-hex]  (default PID for id 0x12)\r\n");
+            return -1;
+        }
+        pid = (uint8)v;
+    }
+    shellPrint(shell, "linbusact: master sends header pid=0x%02X, sampling TX+RX pins...\r\n", pid);
+    rc = lin_bus_activity(pid, &mask, &txLow, &txHigh);
+    shellPrint(shell, "  THE=%s masterTX sawLow=%d sawHigh=%d\r\n",
+               rc ? "FAIL" : "ok", txLow, txHigh);
+    shellPrint(shell, "  slave RX saw-dominant mask=0x%03lX: ", (unsigned long)mask);
+    for (i = 1; i <= 10; i++) shellPrint(shell, "%d", (mask & (1u << i)) ? 1 : 0);
+    shellPrint(shell, " (LIN1..LIN10 order)\r\n");
+    if (rc == 0 && txLow && txHigh && mask == 0) {
+        shellPrint(shell, "  -> MCU TX toggles but NO slave sees it: check TLIN TXD trace / EN at chip / LIN bus wiring\r\n");
+    } else if (rc == 0 && mask != 0) {
+        shellPrint(shell, "  -> bus toggles; slaves' ASCLIN not decoding: check baud/ALTI/pin mux\r\n");
+    } else if (!txLow || !txHigh) {
+        shellPrint(shell, "  -> master TX pin stuck: check P21.0 ALT/mux\r\n");
+    }
+    return rc;
+}
+
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linsend, cmd_linsend, pair master test);
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linreq, cmd_linreq, pair slave response test);
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linrole, cmd_linrole, set master/slave role);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linpair, cmd_linpair, master->slaves loop);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linslv, cmd_linslv, slaves->master loop);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linstat, cmd_linstat, LIN status);
@@ -433,4 +605,394 @@ SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), li
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linbaud, cmd_linbaud, LIN baudrate);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linslp, cmd_linslp, transceiver sleep);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linwake, cmd_linwake, transceiver wake);
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), lintgl, cmd_lintgl, TX pin probe toggle);
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linbusact, cmd_linbusact, bus activity probe);
+
+/* ---------- linbb ---------- */
+static int cmd_linbb(int argc, char *argv[])
+{
+    Shell *shell = shellGetCurrent();
+    linChannel slave = LIN1;
+    uint8 id6 = 0x12, pid, rxPid = 0;
+    int rc;
+
+    if (argc >= 2) {
+        char *end;
+        long v = strtol(argv[1], &end, 10);
+        if (*end != '\0' || v < 1 || v > 11) {
+            shellPrint(shell, "Usage: linbb <ch 1..11> [id 0..63]\r\n");
+            return -1;
+        }
+        slave = (linChannel)v;
+    }
+    if (argc >= 3 && parse_id6(argv[2], &id6) != 0) {
+        shellPrint(shell, "Bad id '%s'\r\n", argv[2]);
+        return -1;
+    }
+    pid = lin_pid(id6);
+    shellPrint(shell, "linbb: bit-bang header pid=0x%02X into LIN%d RX net...\r\n", pid, (int)slave);
+    rc = lin_bb_header(slave, pid, &rxPid);
+    if (rc == 0) {
+        shellPrint(shell, "  PASS: slave latched RHE, pid=0x%02X match\r\n", rxPid);
+    } else if (rc == -2) {
+        shellPrint(shell, "  MISMATCH: RHE latched but pid=0x%02X (sent 0x%02X)\r\n", rxPid, pid);
+    } else {
+        shellPrint(shell, "  FAIL: no RHE (slave ASCLIN/pin/baud path broken)\r\n");
+    }
+    shellPrint(shell, "  (LIN re-initialized; counters cleared)\r\n");
+    return rc;
+}
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linbb, cmd_linbb, bit-bang slave self-test);
+
+/* ---------- linloop ---------- */
+static int cmd_linloop(int argc, char *argv[])
+{
+    Shell *shell = shellGetCurrent();
+    uint8 id6 = 0x12, data[8];
+    int len = 8, i, rc;
+    uint8 tre = 0;
+    uint32 flags = 0;
+
+    if (argc >= 2 && parse_id6(argv[1], &id6) != 0) {
+        shellPrint(shell, "Usage: linloop [id 0..63]\r\n");
+        return -1;
+    }
+    for (i = 0; i < 8; i++) data[i] = (uint8)(0xA0 + i);
+    shellPrint(shell, "linloop: LIN11 TXD->TLIN->bus->TLIN->RXD self-reception...\r\n");
+    rc = lin_master_loopback(id6, data, (uint8)len, 0, &tre, &flags);
+    shellPrint(shell, "  TRE=%d FLAGS=0x%08lX ", tre, (unsigned long)flags);
+    if (rc == 0) {
+        shellPrint(shell, "  PASS: header + 8B response looped back intact\r\n");
+    } else if (rc == -1) {
+        shellPrint(shell, "  FAIL: no looped-back header (TXD/TLIN/bus/RXD chain broken)\r\n");
+    } else if (rc == -2) {
+        shellPrint(shell, "  FAIL: looped-back PID mismatch\r\n");
+    } else if (rc == -4) {
+        shellPrint(shell, "  PARTIAL: header looped back, response echo missing\r\n");
+    } else {
+        shellPrint(shell, "  FAIL: response echo mismatch (rc=%d)\r\n", rc);
+    }
+    return rc;
+}
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linloop, cmd_linloop, master analog loopback);
+
+/* ---------- linresptst: response-on-bus test (no header) ---------- */
+static int cmd_linresptst(int argc, char *argv[])
+{
+    Shell *shell = shellGetCurrent();
+    uint8 data[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+    uint8 rx[8] = {0};
+    int i, rc;
+
+    (void)argc; (void)argv;
+    shellPrint(shell, "linresptst: arm LIN1 for 8B response, master sends response (no header)...\r\n");
+    lin_slave_arm_response(LIN1, 8, 0);
+    if (lin_raw_master_response(data, 8, 0) != 0) {
+        shellPrint(shell, "  master response TX failed\r\n");
+        return -1;
+    }
+    rc = lin_slave_poll_response(LIN1, rx, 8);
+    if (rc != 0) {
+        shellPrint(shell, "  FAIL: LIN1 no RRE (response not on bus or LIN1 RXD path broken)\r\n");
+        return -1;
+    }
+    for (i = 0; i < 8; i++) {
+        if (rx[i] != data[i]) {
+            shellPrint(shell, "  FAIL: data mismatch at byte %d\r\n", i);
+            return -1;
+        }
+    }
+    shellPrint(shell, "  PASS: LIN1 received master response intact\r\n");
+    return 0;
+}
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linresptst, cmd_linresptst, response on bus test);
+
+/* ---------- lindom: dominant-hold bus commonality probe ---------- */
+static void print_rxmask(Shell *shell, uint32 mask)
+{
+    int i;
+    for (i = 1; i <= 11; i++) shellPrint(shell, "%d", (mask & (1u << i)) ? 1 : 0);
+}
+
+static int cmd_lindom(int argc, char *argv[])
+{
+    Shell *shell = shellGetCurrent();
+    long ch;
+    char *end;
+    uint32 idle, early = 0, late = 0;
+
+    if (argc < 2) {
+        shellPrint(shell, "Usage: lindom <ch 1..11>  (hold TXD dominant, sample all RX nets)\r\n");
+        shellPrint(shell, "  Which RX nets follow tells which chips share the LIN bus.\r\n");
+        return -1;
+    }
+    ch = strtol(argv[1], &end, 10);
+    if (*end != '\0' || ch < 1 || ch > 11) {
+        shellPrint(shell, "Bad channel '%s'\r\n", argv[1]);
+        return -1;
+    }
+    idle = lin_rx_levels();
+    shellPrint(shell, "lindom LIN%ld: idle RX mask=", ch);
+    print_rxmask(shell, idle);
+    shellPrint(shell, " (expect all 0; 1=dominant!)\r\n");
+    shellPrint(shell, "  holding TXD dominant... (LIN re-init afterwards)\r\n");
+    lin_dominant_hold((linChannel)ch, &early, &late);
+    shellPrint(shell, "  early(2ms) RX mask=");
+    print_rxmask(shell, early);
+    shellPrint(shell, " late(300ms) RX mask=");
+    print_rxmask(shell, late);
+    shellPrint(shell, "\r\n  (LIN re-initialized; counters cleared)\r\n");
+    return 0;
+}
+
+/* ---------- lindomf: fast dominant probe with TX self-read ---------- */
+static int cmd_lindomf(int argc, char *argv[])
+{
+    Shell *shell = shellGetCurrent();
+    long ch;
+    char *end;
+    uint8 selfLow = 0;
+    uint32 rx = 0;
+
+    if (argc < 2) {
+        shellPrint(shell, "Usage: lindomf <ch 1..11>\r\n");
+        return -1;
+    }
+    ch = strtol(argv[1], &end, 10);
+    if (*end != '\0' || ch < 1 || ch > 11) {
+        shellPrint(shell, "Bad channel '%s'\r\n", argv[1]);
+        return -1;
+    }
+    lin_dominant_fast((linChannel)ch, &selfLow, &rx);
+    shellPrint(shell, "lindomf LIN%ld: txSelfLow=%d rxMask=0x%03lX: ", ch, selfLow, (unsigned long)rx);
+    print_rxmask(shell, rx);
+    shellPrint(shell, "\r\n  mid-hold IOCR0=0x%08lX IN=0x%08lX OUT=0x%08lX\r\n",
+               (unsigned long)g_linHoldIOC, (unsigned long)g_linHoldIN, (unsigned long)g_linHoldOUT);
+    shellPrint(shell, "  (LIN re-initialized; counters cleared)\r\n");
+    return 0;
+}
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), lindom, cmd_lindom, dominant bus probe);
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), lindomf, cmd_lindomf, fast dominant probe);
+
+/* ---------- linact: AC edge census during a real header ---------- */
+static int cmd_linact(int argc, char *argv[])
+{
+    Shell *shell = shellGetCurrent();
+    long ch = 11;
+    char *end;
+    uint32 cnt[LIN_NUM];
+    int i;
+
+    if (argc >= 2) {
+        ch = strtol(argv[1], &end, 10);
+        if (*end != '\0' || ch < 1 || ch > 11) {
+            shellPrint(shell, "Usage: linact [master 1..11]\r\n");
+            return -1;
+        }
+    }
+    lin_roles_for((linChannel)ch);
+    lin_ac_census((linChannel)ch, lin_pid(0x12), cnt);
+    shellPrint(shell, "linact LIN%ld header: RX edge counts 1..11: ", ch);
+    for (i = 1; i <= 11; i++) shellPrint(shell, "%lu ", (unsigned long)cnt[i]);
+    shellPrint(shell, "\r\n  (expect ~20+ on wired partners, 0 elsewhere)\r\n");
+    return 0;
+}
+
+/* ---------- linreg: pin/mode forensics ---------- */
+static int cmd_linreg(int argc, char *argv[])
+{
+    Shell *shell = shellGetCurrent();
+    (void)argc; (void)argv;
+    shellPrint(shell, "P21_IOCR0=0x%08lX IN=0x%08lX OUT=0x%08lX\r\n",
+               (unsigned long)MODULE_P21.IOCR0.U,
+               (unsigned long)MODULE_P21.IN.U,
+               (unsigned long)MODULE_P21.OUT.U);
+    shellPrint(shell, "P15_IOCR0/1=0x%08lX/0x%08lX IN=0x%08lX\r\n",
+               (unsigned long)MODULE_P15.IOCR0.U,
+               (unsigned long)MODULE_P15.IOCR4.U,
+               (unsigned long)MODULE_P15.IN.U);
+    shellPrint(shell, "P14_IOCR0=0x%08lX IN=0x%08lX (UART ref)\r\n",
+               (unsigned long)MODULE_P14.IOCR0.U,
+               (unsigned long)MODULE_P14.IN.U);
+    shellPrint(shell, "P00_IOCR4=0x%08lX IOCR8=0x%08lX IN=0x%08lX (exp: P00.7/alt2=0x90 P00.8/alt3=0x98 P00.9/alt5=0xA8)\r\n",
+               (unsigned long)MODULE_P00.IOCR4.U,
+               (unsigned long)MODULE_P00.IOCR8.U,
+               (unsigned long)MODULE_P00.IN.U);
+    shellPrint(shell, "P10_IOCR4=0x%08lX (exp: P10.5/alt2=0x90)\r\n",
+               (unsigned long)MODULE_P10.IOCR4.U);
+    shellPrint(shell, "ASC11: IOCR=0x%08lX FLAGS=0x%08lX FEN=0x%08lX FRAMECON=0x%08lX LINCON=0x%08lX DATCON=0x%08lX BRG=0x%08lX BITCON=0x%08lX\r\n",
+               (unsigned long)MODULE_ASCLIN11.IOCR.U,
+               (unsigned long)MODULE_ASCLIN11.FLAGS.U,
+               (unsigned long)MODULE_ASCLIN11.FLAGSENABLE.U,
+               (unsigned long)MODULE_ASCLIN11.FRAMECON.U,
+               (unsigned long)MODULE_ASCLIN11.LIN.CON.U,
+               (unsigned long)MODULE_ASCLIN11.DATCON.U,
+               (unsigned long)MODULE_ASCLIN11.BRG.U,
+               (unsigned long)MODULE_ASCLIN11.BITCON.U);
+    shellPrint(shell, "ASC1 : IOCR=0x%08lX FLAGS=0x%08lX FEN=0x%08lX FRAMECON=0x%08lX LINCON=0x%08lX\r\n",
+               (unsigned long)MODULE_ASCLIN1.IOCR.U,
+               (unsigned long)MODULE_ASCLIN1.FLAGS.U,
+               (unsigned long)MODULE_ASCLIN1.FLAGSENABLE.U,
+               (unsigned long)MODULE_ASCLIN1.FRAMECON.U,
+               (unsigned long)MODULE_ASCLIN1.LIN.CON.U);
+    {
+        /* all-module MS bits + g_lin role mirror */
+        uint32 ms = 0;
+        int i;
+        ms |= ((MODULE_ASCLIN1.LIN.CON.B.MS & 1u) << 1);
+        ms |= ((MODULE_ASCLIN2.LIN.CON.B.MS & 1u) << 2);
+        ms |= ((MODULE_ASCLIN3.LIN.CON.B.MS & 1u) << 3);
+        ms |= ((MODULE_ASCLIN4.LIN.CON.B.MS & 1u) << 4);
+        ms |= ((MODULE_ASCLIN5.LIN.CON.B.MS & 1u) << 5);
+        ms |= ((MODULE_ASCLIN6.LIN.CON.B.MS & 1u) << 6);
+        ms |= ((MODULE_ASCLIN7.LIN.CON.B.MS & 1u) << 7);
+        ms |= ((MODULE_ASCLIN8.LIN.CON.B.MS & 1u) << 8);
+        ms |= ((MODULE_ASCLIN9.LIN.CON.B.MS & 1u) << 9);
+        ms |= ((MODULE_ASCLIN10.LIN.CON.B.MS & 1u) << 10);
+        ms |= ((MODULE_ASCLIN11.LIN.CON.B.MS & 1u) << 11);
+        shellPrint(shell, "MS bits11..1: ");
+        for (i = 11; i >= 1; i--) shellPrint(shell, "%d", (ms >> i) & 1u);
+        shellPrint(shell, " (1=master)  sw roles: ");
+        for (i = 11; i >= 1; i--) shellPrint(shell, "%d", g_lin[i].isMaster ? 1 : 0);
+        shellPrint(shell, "\r\n");
+    }
+    {
+        /* TX-path regs for suspect (4/5/10) vs reference (11) modules */
+        shellPrint(shell, "ASC4 : CLC=0x%08lX TXFIFO=0x%08lX BRG=0x%08lX BITCON=0x%08lX DATCON=0x%08lX LINCON=0x%08lX\r\n",
+                   (unsigned long)MODULE_ASCLIN4.CLC.U,
+                   (unsigned long)MODULE_ASCLIN4.TXFIFOCON.U,
+                   (unsigned long)MODULE_ASCLIN4.BRG.U,
+                   (unsigned long)MODULE_ASCLIN4.BITCON.U,
+                   (unsigned long)MODULE_ASCLIN4.DATCON.U,
+                   (unsigned long)MODULE_ASCLIN4.LIN.CON.U);
+        shellPrint(shell, "ASC5 : CLC=0x%08lX TXFIFO=0x%08lX BRG=0x%08lX BITCON=0x%08lX DATCON=0x%08lX LINCON=0x%08lX\r\n",
+                   (unsigned long)MODULE_ASCLIN5.CLC.U,
+                   (unsigned long)MODULE_ASCLIN5.TXFIFOCON.U,
+                   (unsigned long)MODULE_ASCLIN5.BRG.U,
+                   (unsigned long)MODULE_ASCLIN5.BITCON.U,
+                   (unsigned long)MODULE_ASCLIN5.DATCON.U,
+                   (unsigned long)MODULE_ASCLIN5.LIN.CON.U);
+        shellPrint(shell, "ASC10: CLC=0x%08lX TXFIFO=0x%08lX BRG=0x%08lX BITCON=0x%08lX DATCON=0x%08lX LINCON=0x%08lX\r\n",
+                   (unsigned long)MODULE_ASCLIN10.CLC.U,
+                   (unsigned long)MODULE_ASCLIN10.TXFIFOCON.U,
+                   (unsigned long)MODULE_ASCLIN10.BRG.U,
+                   (unsigned long)MODULE_ASCLIN10.BITCON.U,
+                   (unsigned long)MODULE_ASCLIN10.DATCON.U,
+                   (unsigned long)MODULE_ASCLIN10.LIN.CON.U);
+        shellPrint(shell, "FEN 4/5/10: 0x%08lX/0x%08lX/0x%08lX  FLAGS 4/5/10: 0x%08lX/0x%08lX/0x%08lX\r\n",
+                   (unsigned long)MODULE_ASCLIN4.FLAGSENABLE.U,
+                   (unsigned long)MODULE_ASCLIN5.FLAGSENABLE.U,
+                   (unsigned long)MODULE_ASCLIN10.FLAGSENABLE.U,
+                   (unsigned long)MODULE_ASCLIN4.FLAGS.U,
+                   (unsigned long)MODULE_ASCLIN5.FLAGS.U,
+                   (unsigned long)MODULE_ASCLIN10.FLAGS.U);
+        shellPrint(shell, "CSR 4/5/10/11: 0x%08lX/0x%08lX/0x%08lX/0x%08lX  FRAMECON 4/5/10: 0x%08lX/0x%08lX/0x%08lX\r\n",
+                   (unsigned long)MODULE_ASCLIN4.CSR.U,
+                   (unsigned long)MODULE_ASCLIN5.CSR.U,
+                   (unsigned long)MODULE_ASCLIN10.CSR.U,
+                   (unsigned long)MODULE_ASCLIN11.CSR.U,
+                   (unsigned long)MODULE_ASCLIN4.FRAMECON.U,
+                   (unsigned long)MODULE_ASCLIN5.FRAMECON.U,
+                   (unsigned long)MODULE_ASCLIN10.FRAMECON.U);
+    }
+    return 0;
+}
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linreg, cmd_linreg, register dump);
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linact, cmd_linact, AC edge census);
+
+/* ---------- linpulse: RX pulse timing during a real header ---------- */
+static int cmd_linpulse(int argc, char *argv[])
+{
+    Shell *shell = shellGetCurrent();
+    long tx = 11, rx = 10;
+    char *end;
+    uint32 stamps[64];
+    uint32 n, i;
+
+    if (argc >= 2) {
+        tx = strtol(argv[1], &end, 10);
+        if (*end != '\0' || tx < 1 || tx > 11) {
+            shellPrint(shell, "Usage: linpulse <txch> [rxch]\r\n");
+            return -1;
+        }
+    }
+    if (argc >= 3) {
+        rx = strtol(argv[2], &end, 10);
+        if (*end != '\0' || rx < 1 || rx > 11) {
+            shellPrint(shell, "Usage: linpulse <txch> [rxch]\r\n");
+            return -1;
+        }
+    }
+    lin_roles_for((linChannel)tx);
+    n = lin_pulse_capture((linChannel)tx, (linChannel)rx, lin_pid(0x12), stamps);
+    shellPrint(shell, "linpulse TX=LIN%ld RX=LIN%ld: %lu edges, intervals_us:", tx, rx, (unsigned long)n);
+    for (i = 1; i < n && i < 40; i++) {
+        uint32 dt = (stamps[i] - stamps[i - 1]) / 100u; /* 100 MHz -> us */
+        shellPrint(shell, " %lu", (unsigned long)dt);
+    }
+    shellPrint(shell, "\r\n  (19200: bit=52us; break~680us; sync 0x55 alternating 52us)\r\n");
+    return 0;
+}
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linpulse, cmd_linpulse, RX pulse timing);
+
+/* ---------- linforen: raw header + RHE-only poll + FLAGS snapshot ---------- */
+static int cmd_linforen(int argc, char *argv[])
+{
+    Shell *shell = shellGetCurrent();
+    long tx = 11, rx = 10;
+    char *end;
+    uint8 rxPid = 0;
+    uint32 flags = 0;
+    int rc;
+
+    if (argc >= 2) {
+        tx = strtol(argv[1], &end, 10);
+        if (*end != '\0' || tx < 1 || tx > 11) {
+            shellPrint(shell, "Usage: linforen [txch] [rxch]\r\n");
+            return -1;
+        }
+    }
+    if (argc >= 3) {
+        rx = strtol(argv[2], &end, 10);
+        if (*end != '\0' || rx < 1 || rx > 11) {
+            shellPrint(shell, "Usage: linforen [txch] [rxch]\r\n");
+            return -1;
+        }
+    }
+    lin_roles_for((linChannel)tx);
+    rc = lin_rawhdr_forensic((linChannel)tx, (linChannel)rx, lin_pid(0x12), &rxPid, &flags);
+    shellPrint(shell, "linforen TX=LIN%ld RX=LIN%ld: RHE=%s pid=0x%02X FLAGS=0x%08lX\r\n",
+               tx, rx, rc ? "MISS" : "HIT", rxPid, (unsigned long)flags);
+    shellPrint(shell, "  bit: 0=THE 1=TRE 2=RHE 3=RRE 5=FED 6=RED 16=PE 17=TC 18=FE 19=HT 20=RT 21=BD 22=LP 23=LA 24=LC 25=CE 26=RFO 30=TFO\r\n");
+    return rc;
+}
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linforen, cmd_linforen, forensic header test);
+
+/* ---------- lintrace: FLAGS/TXFIFO time series after THRQS ---------- */
+static int cmd_lintrace(int argc, char *argv[])
+{
+    Shell *shell = shellGetCurrent();
+    long ch = 10;
+    char *end;
+    uint32 fl[60], ff[60];
+    int i;
+
+    if (argc >= 2) {
+        ch = strtol(argv[1], &end, 10);
+        if (*end != '\0' || ch < 1 || ch > 11) {
+            shellPrint(shell, "Usage: lintrace [master 1..11]\r\n");
+            return -1;
+        }
+    }
+    lin_roles_for((linChannel)ch);
+    lin_tx_trace((linChannel)ch, lin_pid(0x12), fl, ff);
+    shellPrint(shell, "lintrace LIN%ld (~100us/sample, FLAGS/TXFIFO-fill):\r\n", ch);
+    for (i = 0; i < 60; i += 2) {
+        shellPrint(shell, "  %02d: F=0x%08lX FIFO=0x%08lX\r\n", i,
+                   (unsigned long)fl[i], (unsigned long)ff[i]);
+        if (i % 10 == 8) shellPrint(shell, "\r\n");
+    }
+    return 0;
+}
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), lintrace, cmd_lintrace, TX flag trace);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linerr, cmd_linerr, error injection);

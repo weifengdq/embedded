@@ -1,9 +1,9 @@
-# tc397_lin_x11 — TC397XX 11路 ASCLIN LIN (19200, 主从) + Letter-Shell 收发测试
+# tc397_lin_x11 — TC397XX 11路 ASCLIN LIN (19200, 成对主从) + Letter-Shell 收发测试
 
 `tc397_uart_lettershell` 拷贝而来，新增 11 路 LIN 驱动与主从测试命令。
 目标 **TC397XX 292pin**，调试串口 **ASCLIN0 TX P14.0 / RX P14.1, 921600-8N1**，
-LED **P13.0（低电平点亮）**。LIN11 为 commander（master），LIN1~LIN10 为
-responder（slave），11 路 LIN 总线连在一起做主从收发测试。
+LED **P13.0（低电平点亮）**。LIN 通道两两成对组成 LIN 总线（见 §1），
+任意一侧可配成 master，另一侧为 slave，做双向收发测试。
 
 * 驱动：iLLD `IfxAsclin_Lin`（`Asclin/Lin/IfxAsclin_Lin.[hc]`），**纯轮询、无新增中断**
   （`Configurations/ConfigurationIsr.h` 未动）；iLLD 阻塞式 API 不适用于单核多节点
@@ -12,43 +12,48 @@ responder（slave），11 路 LIN 总线连在一起做主从收发测试。
   （复用 `/home/z/lz/tc387/ref/aurix_flasher_linux-master/linux/aurix_flasher`，TC3xx 通用）
 * 收发器手册已转 txt（不进 git）：`tc397/ref/tlin1024a-q1.txt`（主 datasheet，2106 行）、
   `tc397/ref/tlin1024a_sffs084.txt`（功能安全件，430 行）
+* 横向参考（不进 git）：`tc397/ref/uart8lin`（TC387 8路 LIN 网关，测试通过的版本；
+  其 `lin_enable_polling_flags`（轮询模式下显式使能 LIN 事件标志）与
+  `disableModule`-before-reinit 已被本工程采纳）
 
 ---
 
 ## 1 硬件
 
-| 逻辑 | TX | RX | ASCLIN | 收发器使能 |
-| --- | --- | --- | --- | --- |
-| LIN0 | P14.0 | P14.1 | ASCLIN0 | SLP_N P02.8 — **仅占位**：与 UART0 调试串口引脚冲突，不初始化、不测试 |
-| LIN1 | P15.4 | P15.5 | ASCLIN1 | SLP_N P02.8=H（与 LIN0/2/3 共用） |
-| LIN2 | P10.5 | P02.10 | ASCLIN2 | SLP_N P02.8=H |
-| LIN3 | P20.0 | P20.3 | ASCLIN3 | SLP_N P02.8=H |
-| LIN4 | P00.9 | P00.12 | ASCLIN4 | SLP_N P00.11=H（与 LIN5/6/7 共用） |
-| LIN5 | P00.7 | P00.6 | ASCLIN5 | SLP_N P00.11=H |
-| LIN6 | P23.5 | P23.1 | ASCLIN6 | SLP_N P00.11=H |
-| LIN7 | P22.1 | P22.4 | ASCLIN7 | SLP_N P00.11=H |
-| LIN8 | P34.5 | P33.6 | ASCLIN8 | SLP_N P00.10=H（与 LIN9/10/11 共用） |
-| LIN9 | P01.7 | P20.6 | ASCLIN9 | SLP_N P00.10=H |
-| LIN10 | P00.8 | P00.4 | ASCLIN10 | SLP_N P00.10=H |
-| LIN11 | P21.0 | P21.1 | ASCLIN11 | SLP_N P00.10=H — **commander (master)** |
-| UART | P14.0 | P14.1 | ASCLIN0 921600 | — |
-| LED | P13.0（低=亮） | — | — | 心跳 1Hz，可 `led hb off` 关 |
+| 逻辑 | TX | RX | ASCLIN | 收发器使能 | 总线 |
+| --- | --- | --- | --- | --- | --- |
+| LIN0 | P14.0 | P14.1 | ASCLIN0 | SLP_N P02.8 — **仅占位**：与 UART0 调试串口引脚冲突，不初始化、不测试 | — |
+| LIN1 | P15.4 | P15.5 | ASCLIN1 | SLP_N P02.8=H（与 LIN0/2/3 共用） | 单独（见下） |
+| LIN2 | P10.5 | P02.10 | ASCLIN2 | SLP_N P02.8=H | 对线 B |
+| LIN3 | P20.0 | P20.3 | ASCLIN3 | SLP_N P02.8=H | 对线 B |
+| LIN4 | P00.9 | P00.12 | ASCLIN4 | SLP_N P00.11=H（与 LIN5/6/7 共用） | 对线 C |
+| LIN5 | P00.7 | P00.6 | ASCLIN5 | SLP_N P00.11=H | 对线 C |
+| LIN6 | P23.5 | P23.1 | ASCLIN6 | SLP_N P00.11=H | 对线 D |
+| LIN7 | P22.1 | P22.4 | ASCLIN7 | SLP_N P00.11=H | 对线 D |
+| LIN8 | P34.5 | P33.6 | ASCLIN8 | SLP_N P00.10=H（与 LIN9/10/11 共用） | 对线 E |
+| LIN9 | P01.7 | P20.6 | ASCLIN9 | SLP_N P00.10=H | 对线 E |
+| LIN10 | P00.8 | P00.4 | ASCLIN10 | SLP_N P00.10=H | 对线 F |
+| LIN11 | P21.0 | P21.1 | ASCLIN11 | SLP_N P00.10=H | 对线 F |
+| UART | P14.0 | P14.1 | ASCLIN0 921600 | — | — |
+| LED | P13.0（低=亮） | — | — | 心跳 1Hz，可 `led hb off` 关 | — |
 
 引脚逐一核对过 `IfxAsclin_PinMap_TC39xB_LFBGA292.{h,c}`（见 `App/lin12.c` 注释；
-RxSel a~g 即 ALTI 0~6，驱动里由 pin 结构 `select` 字段直接推导，不手写硬编码表）。
-3 片 TLIN1024A-Q1（Quad LIN 收发器，每片 4 通道）：
-芯片 1 = LIN0~3（VSUP1/GND1 供 LIN1/2，VSUP2/GND2 供 LIN3/4，按 datasheet §9.1 分组），
-芯片 2 = LIN4~7，芯片 3 = LIN8~11。
-板上 SLP_N 即收发器 EN（高=Normal，低=Sleep；datasheet §9.3.6/§9.4），4 通道 EN
-连在一起由 1 个 MCU GPIO 控制。`lin_xcvr_init()` 上电即置 3 组 SLP_N 为高。
+RxSel a~g 即 ALTI 0~6，驱动里由 pin 结构 `select` 字段直接推导，不手写硬编码表；
+TX 的 ALT（P00.8/alt3、P00.9/alt5 等）亦逐个核对，`linreg` 可回读 PCR 确认）。
+3 片 TLIN1024A-Q1（Quad LIN，每片 4 通道）：芯片 1 = LIN0~3，芯片 2 = LIN4~7，
+芯片 3 = LIN8~11。板上 SLP_N 即收发器 EN（高=Normal，低=Sleep；datasheet §9.3.6/§9.4），
+4 通道 EN 连在一起由 1 个 MCU GPIO 控制。`lin_xcvr_init()` 上电即置 3 组 SLP_N 为高。
 
-线束：LIN1~LIN11 总线短接在一起（LIN0 不接）。
+**总线拓扑（显性钳位探针 `lindomf` 实测，不是 11 路共线）：**
+对线 B=(2,3)、C=(4,5)、D=(6,7)、E=(8,9)、F=(10,11)；
+**LIN1 落单**（其对端 LIN0 与 UART0 冲突不可用，且 LIN0 收发器通道 TXD 上是 UART
+流量，若与 LIN1 共线会污染，见 §7）。
+LIN11 不再是固定 master——测试侧用 `linrole`/`linsend` 配成 master。
 
 > 注意（commander 上拉）：按 TLIN1024A-Q1 §9.3.1/§9.3.1.2.1，responder 靠内部
 > 45kΩ 上拉即可，**commander 节点必须外加 1kΩ + 串联二极管到 VSUP**。
-> 本测试要求 LIN11 通道具备该 1k 上拉，否则隐性电平/边沿可能不达标；
-> 若 `linpair` 在 commander 上拉缺失时仍通过（10 路 45k 并联约 4.5k 也可维持隐性），
-> 属容限内通过，正式 LIN 一致性测试前仍应补上 1k。
+> 本板对线均无 commander（全 responder 上拉），测试通过，但隐性上升沿偏缓；
+> 正式 LIN 一致性测试前应按规范补上。
 
 ---
 
@@ -56,8 +61,8 @@ RxSel a~g 即 ALTI 0~6，驱动里由 pin 结构 `select` 字段直接推导，�
 
 ```
 tc397_lin_x11/
-├── App/lin12.[hc]      # 11路驱动：tick超时事务引擎/master-broadcast/slave-tx/PID/EN控制
-├── Shell/shell_lin.c   # linsend/linreq/linpair/linslv/linstat/lindump/linbaud/linslp/linwake/linerr
+├── App/lin12.[hc]      # 驱动：tick超时事务引擎/成对事务(m2s/s2m)/PID/EN控制/角色切换/诊断探针
+├── Shell/shell_lin.c   # linsend/linreq/linpair/linslv/linrole/linstat/lindump/linbaud/...
 ├── Shell/shell_lin.h   # 空头文件占位（命令由 LETTER-SHELL 自注册）
 ├── Cpu0_Main.c         # STM 1ms + P13.0 + UART/Shell/DTS + EN/LIN 初始化 + 主循环
 ├── Configurations/…    # 同 uart_lettershell（中断配置未动，LIN 用纯轮询，无新增中断）
@@ -79,7 +84,7 @@ cd tc397_lin_x11
 ```
 
 产物 `build/gcc/tc397_lin_x11.{elf,hex}`（`build/` 已忽略，不进 git）。
-当前：Debug `text 96115 data 7352 bss 72076`（基线 uart 版为 `text 82718`）。
+当前：Debug `text ~97k data ~7k bss ~72k`（基线 uart 版为 `text 82718`）。
 
 下载说明：DAP miniWiggler `058b:0043`；若 TAS 未启动，先
 `sudo systemctl start tas-server`（`ss -tlnp | grep 24817`，
@@ -99,26 +104,43 @@ python3 -m serial.tools.miniterm /dev/ttyACM0 921600 --raw
 TC397 LIN x11 + Letter-Shell
 Board: TC397XX 292pin (ASCLIN0 P14.0 TX / P14.1 RX, 921600)
 Type 'help' for commands, 'linstat' for LIN, 'linpair' for master/slave test
-ChipID: 0x... CHREV=0x...
+ChipID: 0xAF239793 CHREV=0x13
 ...
 LIN 11ch init done: 19200 master=LIN11 slaves=LIN1..10 (LIN0 placeholder)
 ```
 
-### LIN 命令
+### LIN 命令（测试类）
 
 ```
-linsend <id 0..63> [hexdata] [classic]  master广播: LIN11发header+response, LIN1~10校验
-  e.g. linsend 0x12 A0A1A2A3A4A5A6A7    (0x3C/0x3D默认classic, 其余默认enhanced)
-linreq <id> <slave 1..10> [len] [hex]   从机应答: master发header, 指定slave发response
-  e.g. linreq 0x20 3 8 1122334455667788 (master校验 + 其余9路snoop计数)
-linpair [rounds] [len]                  master广播循环: id=0x10..0x19, 默认1轮8B
-linslv [rounds] [len]                   从机轮流应答: LIN1..10逐个发, 默认1轮8B
-linstat                                 计数+错误列+EN电平+波特率 (LIN0显示placeholder)
-lindump [ch|all]                        每个通道最后一次校验通过的帧
-linbaud <9600|10417|19200>              全通道重配波特率 (默认19200)
-linslp <group 0..2|all> <0|1>           EN控制: 1=normal(H), 0=sleep(L)
-linwake                                 3组EN全部回normal
-linerr <parity|cksum|timeout>           错误注入: PID奇偶错 / 校验和模式失配 / 无应答超时
+linsend <txch> <id> [hex] [classic]  成对发送：txch自动升master，对端校验header+response
+  e.g. linsend 11 0x12 A0A1A2A3A4A5A6A7
+linreq <mch> <sch> <id> [len] [hex]  从机应答：mch发header（master），sch发response
+  e.g. linreq 11 10 0x20 8 1122334455667788
+linpair [rounds] [len]               5对线双向循环（默认1轮8B）
+linslv [rounds] [len]                每对由后者向前者应答（一轮5次）
+linrole <ch 1..11> <M|S>             单通道重配角色（重配后用linstat确认MS位）
+linstat                              计数+错误列+EN电平+波特率（LIN0显示placeholder）
+lindump [ch|all]                     每个通道最后一次校验通过的帧
+linbaud <2400|4800|9600|10417|19200> 全通道重配波特率（默认19200）
+linslp <group 0..2|all> <0|1>        EN控制：1=normal(H)，0=sleep(L)
+linwake                              3组EN全部回normal
+linerr <parity|cksum|timeout>        错误注入（以对线F即11→10为例）
+```
+
+### LIN 命令（诊断类，无需对端配合）
+
+```
+linbb <ch> [id]     STM精确定时bit-bang header灌进某通道RX脚，验证ASCLIN收通路
+lindom <ch>         TXD拉显性，采样全部RX电平（判断哪些芯片共线；300ms看DTO释放）
+lindomf <ch>        快速版（5ms窗口）+ TX自回读 + 保持期IOCR/IN/OUT快照
+linbusact [pid]     master发header同时采样TX/RX引脚（判定MCU翻转/总线跟随）
+linact [master]     真header期间11路RX边沿计数（AC普查）
+linpulse <tx> [rx]  RX脉冲时序（STM时间戳，100MHz），对比两路波形
+linforen [tx] [rx]  RHE-only轮询 + FLAGS快照（取证：FED/RED/BD/HT/LC…）
+lintrace [master]   THRQS后FLAGS/TXFIFO时间序列（定位THE不起等发射故障）
+linloop [id]        LIN11自环回（TXD→TLIN→总线→TLIN→RXD，header+response）
+linresptst          无header的response上总线测试（注意：TRRQS需header先行状态）
+linreg              PCR/IN/OUT + ASCLIN LINCON.MS/FRAMECON/BRG/BITCON/FEN回读
 ```
 
 UART/LED 旧命令（`help/version/mcu/uid/uptime/reset/temp/sysinfo/mem/led`）保持不变。
@@ -127,47 +149,50 @@ UART/LED 旧命令（`help/version/mcu/uid/uptime/reset/temp/sysinfo/mem/led`）
 
 ## 5 LIN 特性（本工程覆盖点）
 
-* 帧结构：Break（master 发 13 bit 显性，`breakLength=13`）+ Sync `0x55` +
+* 帧结构：Break（master 发 **16 bit** 显性，见 §7.1）+ Sync `0x55` +
   PID（含 P0/P1 奇偶，`lin_pid()` 按 LIN 规范生成，HW 在 RX 端校验，错则 LP 标志）+
   Data 1~8B + Checksum（HW 自动生成/校验，`csEnable=TRUE`）。
 * 校验和：ID 0x00~0x3B 用 enhanced（含 PID），0x3C/0x3D 用 classic（不含 PID）；
-  驱动默认按此规则，`linsend … [classic]` 可强制；`linerr cksum` 演示失配时的 LC 标志。
+  `linsend … [classic]` 可强制；`linerr cksum` 演示失配时的 LC 标志。
 * 波特率：默认 19200（iLLD LIN 默认值；TLIN1024 收 ≤100k，规范发送 ≤20k）；
-  `linbaud` 支持 9600/10417/19200（从机 ABD 关闭，定波特率；`prescaler=4/OS16` 由 FDR 自动算）。
+  `linbaud` 支持 2400/4800/9600/10417/19200（从机 ABD 关闭，定波特率；
+  `prescaler=4/OS16` 由 FDR 自动算）。4800/9600/19200 下通过项完全一致。
 * 响应空间/超时：header 与 response 之间为亚 ms 级（单核顺序执行），远小于
   response-timeout 窗口（`DATCON.RESPONSE=255`，frame-timeout 模式）；
-  无应答时 master 报 response-timeout（`linerr timeout`）。
+  无应答时报 response-timeout（`linerr timeout`）。
 * 收发器：EN 高=Normal（TXD→LIN，LIN→RXD），EN 低=Sleep（驱动关、RXD 浮空，
-  弱上拉；datasheet Table 9-1）；TXD 显性超时 DTO 防总线 stuck-dominant；
-  bus stuck-dominant 上电进 sleep 时有误唤醒锁止（§9.3.9）。
+  弱上拉；datasheet Table 9-1）；TXD 显性超时 DTO（tDST=20~80ms，`lindom`
+  300ms 采样可观察释放）；bus stuck-dominant 上电进 sleep 时有误唤醒锁止（§9.3.9）。
 * 诊断帧：0x3C（master-req）/0x3D（slave-resp）按 classic 校验，可用
-  `linsend 0x3C …` / `linreq 0x3D …` 走一遍（本工程不实现 NAD/服务层）。
+  `linsend 11 0x3C …` / `linreq 11 10 0x3D …` 走一遍（本工程不实现 NAD/服务层）。
 * 休眠/唤醒：`linslp <g> 0` 进 sleep（对应组收发器关断），`linwake` 回 normal；
-  LIN 总线唤醒（显性 250µs~5ms）由收发器硬件完成，MCU 侧表现为恢复通信（见 §6 步骤 5）。
+  LIN 总线唤醒（显性 250µs~5ms）由收发器硬件完成，MCU 侧表现为恢复通信（见 §6）。
+* 中断/轮询：纯轮询（CONFIGURATIONISR 未动）；但按 uart8lin 参考经验，
+  **轮询模式也必须显式使能 LIN 事件标志**（`FLAGSENABLE` 的 RHE/RRE/THE/TRE
+  及各错误位），否则从机 RHE/RRE 永不锁存——本工程 `lin_enable_polling_flags()`
+  已处理（无此修复时全员 header 超时，见 §7.2）。
 
 ---
 
-## 6 实测步骤与结果（DAP miniWiggler + TAS，板上 Debug 版）
+## 6 实测步骤与结果（DAP miniWiggler + TAS，板上 Debug 版，2026-09-15）
 
-> 状态（2026-09-15）：功能已编译通过并烧录（Pass，3334ms）；串口实测待补——
-> 当时 `/dev/ttyACM0`（CH340 调试串口）未接入（`lsusb` 无 `1a86:55d3`），shell
-> 交互无法进行。下表为标准测试流程，接上调试串口后按序执行即得结果。
+标准测试流程（一键脚本 `tc397/temp/test_lin.py`，日志 `tc397/temp/linx11_test.log`，不进 git）：
 
-| # | 命令 | 期望 | 说明 |
+| # | 命令 | 结果 | 说明 |
 | --- | --- | --- | --- |
-| 1 | 上电启动日志 | `LIN 11ch init done: 19200 …` | EN 已置高，11 通道初始化完成 |
-| 2 | `linstat` | 11 通道计数全 0，EN=1/1/1 | 基线 |
-| 3 | `linsend 0x12 A0A1A2A3A4A5A6A7` | ALL PASS，mask=0x7FE | master 广播，10 从机全校验 |
-| 4 | `linpair 2 8` | 20/20 PASS | 不同 ID/数据的广播循环 |
-| 5 | `linreq 0x20 3` | PASS，snoop 9/9 | 从机应答 + master 校验 + 余部监听 |
-| 6 | `linslv 1 8` | 10/10 PASS | 10 个从机逐个应答 |
-| 7 | `linbaud 9600` → `linpair 1 8` → `linbaud 19200` | 均 ALL PASS | 波特率切换（每次切完重测） |
-| 8 | `linslp 2 0` → `linpair 1 8`（应 FAIL，timeout 列涨）→ `linwake` → `linpair 1 8`（PASS） | FAIL→PASS | sleep/wake（含 master 睡眠组） |
-| 9 | `linerr parity` | 10/10 从机 parity 指示 | PID 奇偶错 |
-| 10 | `linerr cksum` | 10/10 从机 LC 标志 | 校验和模式失配 |
-| 11 | `linerr timeout` | master response-timeout | 无应答超时 |
-| 12 | `linsend 0x3C 0102030405060708` + `linreq 0x3D 5 8` | PASS（classic） | 诊断帧 0x3C/0x3D |
-| 13 | `lindump all` + `linstat` | 末帧/计数与上述一致 | 汇总 |
+| 1 | 上电启动日志 | 通过 | `LIN 11ch init done: 19200 …`；ChipID `0xAF239793`，DTS ~51℃ |
+| 2 | `linpair 1 8`（19200） | **6/10 通过** | 通过：3→2、6↔7、8↔9、11→10；失败见 §7（4 个方向） |
+| 3 | `linreq 11 10 0x20 8 …` | 失败 | 从机应答方向（LIN10 TX 不发射，见 §7.4） |
+| 4 | `linslv 1 8` | 2/5 通过 | 6←7、8←9 通过；其余卡在 header-TX 侧 |
+| 5 | `linbaud 9600` → `linpair 1 8` | 同 6/10 | 波特率无关性（另测 4800 同样 pattern） |
+| 6 | `linslp 2 0` → `linsend 11 …`（FAIL，timeout 列涨）→ `linwake` → `linsend`（PASS） | 通过 | sleep/wake（含 master 睡眠组）行为符合预期 |
+| 7 | `linerr parity` | 通过（11→10 定向） | 坏 PID 奇偶被从机指示（par 列） |
+| 8 | `linerr cksum` | 通过 | master-classic vs slave-enhanced，LIN10 LC 标志 +1 |
+| 9 | `linerr timeout` | 通过 | 无应答，master response-timeout |
+| 10 | `linsend 11 0x3C …` | 通过（classic） | 诊断帧 master-req |
+| 11 | `linreq 11 10 0x3D …` | 失败 | 同 #3（LIN10 TX 不发射） |
+| 12 | `linbb 1/3/4/5/10/11` | 通过 | GPIO bit-bang 自证全部从机 ASCLIN 收通路 |
+| 13 | `lindomf` 全扫 | 通过 | 总线分组 + DTO（见 §1 拓扑结论） |
 
 注意事项：
 
@@ -176,27 +201,77 @@ UART/LED 旧命令（`help/version/mcu/uid/uptime/reset/temp/sysinfo/mem/led`）
 * `linpair`/`linslv` 的 ID 从 0x10/0x20 起按序分配，避免与诊断帧混淆；
   每个事务内 header 与 response 间隔为亚 ms 级，符合 LIN 响应空间要求。
 * sleep 组含 master（group2：LIN8~11）时全 FAIL 属正常：master 自身收发器已关断。
-* 若某一路持续 FAIL，先看 `linstat` 的错误列定位：
-  hdrE/timeout=总线无应答或 EN 未开；par=PID 奇偶；ck=校验和模式；
-  fe=帧/冲突（ wiring 短路/断路重点查该路 TX/RX）。
-* SW 复位后行为：`lin12_init_all()` 每次全量重配（不清历史计数外的状态），
-  无 CAN 版曾遇到的 RAM 保持跳初始化问题；`uptime` 在 SW 复位后不清零
-  （RAM 保持，uart 基线亦如此，非本工程引入）。
+* SW 复位后行为：应用复位保持 RAM（`uptime`/tick 不清零，uart 基线亦如此）；
+  `lin12_init_all()` 每次全量重配（含计数清零），无 CAN 版曾遇到的陈旧标志问题。
 * LIN0（ASCLIN0）与 UART0 调试串口复用引脚，硬件上 LIN0 通道不可用；
   `linstat` 中 LIN0 恒显示 placeholder，任何 `lin*` 命令都不触碰 ASCLIN0。
+* 计数器跨命令累积（不清零）；要干净基线请 `reset` 重启后测，或对比 `linstat` 差值。
 
 ---
 
-## 7 已知问题与处理
+## 7 已知问题与处理（重点，含根因分析过程）
 
-1. **iLLD 阻塞 API 不适用于单核多节点测试**：`IfxAsclin_Lin_receiveHeader` 等
-   内部死等 HW 标志，无超时。已自研 tick 超时事务引擎（50ms header / 100ms
-   response），超时即报错返回，shell 不卡死。
-2. **从机 header 轮询是顺序的**：10 路 RHE 同时置位，顺序读回无时序风险；
-   总线异常时每路最多等 50ms，单命令最坏 ~1s 后必返回。
-3. **commander 1k 上拉**：见 §1 注意框；测试前确认 LIN11 通道有此外部上拉。
-4. **RXD 开漏上拉**：TLIN1024 RXD 为开漏（§9.3.3），MCU 侧需上拉到 I/O 电平；
-   若某路 header 恒超时，优先量该路上拉与 EN 电平。
+### 7.1 iLLD 默认 13-bit break 在本板处于检测门限边上（已修复，根因）
+
+现象：最初全员 header 超时、从机零错误标志。`linforen` 取证：`FLAGS=0x60`
+（仅 FED/RED 边沿，无 BD/RHE/HT/FE/LP），而 14-bit 的 GPIO bit-bang（`linbb`）
+一次通过。结论：master 的 13-bit break 处在从机检测门限边上（FDR 取整误差 +
+TLIN 边沿整形）。
+修：master break 生成 16 bit，从机检测门限 11 bit（均在 LIN 规范窗口内），
+`App/lin12.c::lin_init_channel`（`cfg.lin.breakLength`）。修复后对线 F 立即 PASS。
+
+### 7.2 轮询模式必须显式使能 LIN 事件标志（已修复，根因）
+
+iLLD `initModule` 仅在中断模式下写 `FLAGSENABLE`，轮询模式保持全 0，
+此时 RHE/RRE 等永不锁存（THE/TRE 不受影响——这曾误导排查）。
+修：`lin_enable_polling_flags()`（照抄 TC387 uart8lin 参考实现），init 后调用。
+
+### 7.3 板上是 5 对线 + LIN1 落单，不是 11 路共线（拓扑结论）
+
+`lindomf` 显性钳位全扫 + `linact` 边沿普查 prove：
+B=(2,3)、C=(4,5)、D=(6,7)、E=(8,9)、F=(10,11)；LIN1 单独（对端 LIN0 与 UART0
+冲突，且 LIN0 收发器 TXD 上是 UART 流量）。测试套件已按对线重构
+（`linRoles`/`m2s`/`s2m`/`linpair` 双向）。`linloop`（LIN11 自环回）证明
+master 侧模拟链 TXD→TLIN→总线→TLIN→RXD 完整。
+
+### 7.4 ASCLIN4/5/10 的 TX 不发射（硬件故障候选，固件侧已穷尽）
+
+现象：这三个模块 header TX 的 THE 永不置位（50ms tick 超时），无任何 HW 错误标志；
+TXFIFOCON 显示 outlet 已开、FIFO 有数（`lintrace`：fill=1 恒定，HT 在 ~3ms  firing）。
+已排除：引脚（22 个符号逐个核对 + `linreg` PCR 回读 ALT 正确：P00.8/alt3=0x98、
+P00.9/alt5=0xA8、P00.7/alt2=0x90）、SFR（CLC/TXFIFO/BRG/BITCON/DATCON/LINCON/CSR/
+FRAMECON/FEN 与正常模块逐字相同）、时钟（同模块 RX 经 `linbb` 与真实业务验证正常）、
+GPIO（同引脚推挽翻转+自回读正常）、初始化（`disableModule`-before-reinit、
+全量重配、角色 MS 位硬件回读翻转正常）、复位（应用/系统复位 + **彻底断电冷启动
+（Tick: 0）后依旧**）。
+OSC/电源/接线经用户确认无问题、不便再用示波器。请硬件侧核查：P00.7/P00.8/P00.9
+三线（是否桥接/虚焊/被钳位）与对应 TLIN 通道 TX 通路；必要时换片验证。
+ topology 影响：凡以 4/5/10 为 header-发送侧的方向均 FAIL
+（2→3 除外，见 7.5；10→11、4→5、5→4、4/5 参与的 s2m）。
+
+### 7.5 LIN3/LIN4/LIN5 接收侧模拟失真（硬件故障候选）
+
+`linpulse`/`linact` 量化：LIN2 发 header 时 LIN2 RXD 得 18 个边沿（完美时序），
+LIN3 RXD 得 0~2 个（仅 break 量级能过）；LIN5 发时 LIN5 RXD 得 2 个、LIN4 RXD 得
+38 个（抖动）；DC 显性钳位三者皆跟随。签名 = RXD 网络低通（τ≈1ms 量级），
+4800/9600/19200 波特率无关（已三档验证 pattern 一致），固件无法补偿。
+请硬件侧核查这三路 RXD 上拉（开漏 RXD 需上拉到 I/O 电平；弱上拉 + 长线电容 =
+慢上升）与走线。注意 `linbb`（GPIO 直灌）在这三路均 PASS，即 ASCLIN 收通路无辜。
+
+### 7.6 LIN1 与 LIN0
+
+LIN1 单节点验证通过（`linbb 1` RHE+PID、`lindomf 1` TXD 显性跟随本通道、
+`linact` 本通道边沿正常）。LIN0 收发器通道 EN 与 LIN1~3 共组常开，但其 TXD
+接的是 UART TX——若 LIN0 与 LIN1 共线，UART 流量会污染 LIN1；bus 侧按对线
+使用时 LIN1 无可用对端，仅作单体自检。
+
+### 7.7 调试探针自身的坑（已修复，教训）
+
+`IfxPort_getPinState()` 返回 boolean（0/1），绝不能拿它跟 `IfxPort_State_low`
+（0x10000）比——恒为假。本工程早期所有 GPIO 采样（`linbusact`/`lindom`初版）
+因此全读高，误导了排查；反汇编定位后已改为与 `FALSE` 比较。
+另：`linstat` 计数器跨命令累积，复位（`reset`）重启才清零；`uptime`/tick 在
+应用复位后不清零（RAM 保持，基线行为）。
 
 ---
 
@@ -204,4 +279,5 @@ UART/LED 旧命令（`help/version/mcu/uid/uptime/reset/temp/sysinfo/mem/led`）
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * Letter-Shell：MIT
+* can-utils/LIN 参考（uart8lin）：仅借鉴驱动做法，实现为自研代码
 * 其余移植代码内部许可

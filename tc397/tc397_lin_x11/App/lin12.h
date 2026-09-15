@@ -64,6 +64,7 @@ typedef struct {
 
 extern linChState_t g_lin[LIN_NUM];
 extern float32 g_linBaud;   /* current baudrate (all channels) */
+extern uint32 g_linHoldIOC, g_linHoldIN, g_linHoldOUT;
 
 /* TLIN1024 EN (= board SLP_N, high = normal, low = sleep):
  * group0 = LIN0-3 (P02.8), group1 = LIN4-7 (P00.11), group2 = LIN8-11 (P00.10). */
@@ -75,6 +76,16 @@ void lin_xcvr_set_all(uint8 normal);
  * (safe to call again for linbaud / after SW reset). */
 void lin12_init_all(float32 baud);
 void lin12_init_all_19200(void);
+/* Re-init a single channel with the given role (LIN0 rejected). Counters kept. */
+int lin_set_role(linChannel ch, uint8 isMaster);
+/* Pairwise transactions between an explicit master and one slave
+ * (independent of LIN_MASTER_CH default; roles must be configured first,
+ * e.g. via lin_set_role). m2s: master header+response, slave verifies.
+ * s2m: master header, slave responds, master verifies. Returns 0 on PASS. */
+int lin_xact_m2s(linChannel master, linChannel slave, uint8 id6,
+                 const uint8 *data, uint8 len, uint8 classic);
+int lin_xact_s2m(linChannel master, linChannel responder, uint8 id6,
+                 const uint8 *data, uint8 len, uint8 classic);
 
 /* LIN protected identifier (PID) from 6-bit ID (parity per LIN spec). */
 uint8 lin_pid(uint8 id6);
@@ -105,8 +116,53 @@ int lin_raw_master_response(const uint8 *data, uint8 len, uint8 classic);
 /* Slave header arm/poll (for parity/timeout tests). Returns 0 + pid. */
 void lin_slave_arm_header(linChannel ch);
 int lin_slave_poll_header(linChannel ch, uint8 *pid);
+/* Slave response arm/poll (header-independent, for bus tests). */
+void lin_slave_arm_response(linChannel ch, uint8 len, uint8 classic);
+int lin_slave_poll_response(linChannel ch, uint8 *data, uint8 len);
 /* Master response arm/poll (for timeout test: expect -1 when nobody answers). */
 void lin_master_arm_response(uint8 len, uint8 classic);
 int lin_master_poll_response(uint8 *data, uint8 len);
+/* Probe helper: toggle a LIN TX pin as GPIO n times, then full LIN re-init
+ * (restores pin mux + ASCLIN config; counters are cleared). */
+void lin_probe_tx_toggle(linChannel ch, uint8 n);
+/* Bus-activity probe: master sends one header (raw PID) while sampling the
+ * master TX pin and all slave RX pins as GPIO. sawMask bit i = LINi RX saw
+ * dominant (low) at least once during the header. Returns 0 if THE set. */
+int lin_bus_activity(uint8 pid, uint32 *sawMask, uint8 *txSawLow, uint8 *txSawHigh);
+/* Bit-bang self-test: STM-timed LIN header (break + 0x55 + PID) driven as
+ * GPIO onto one slave's RX net, then check the slave ASCLIN latched RHE with
+ * matching PID. Proves slave pin/ALTI/baud/config without any transceiver.
+ * Returns 0 + rxPid on success. LIN is fully re-initialized afterwards. */
+int lin_bb_header(linChannel slave, uint8 pid, uint8 *rxPid);
+/* Master analog loopback: ASCLIN11 transmits a header+response while its own
+ * RX stays armed, so the frame must travel MCU TXD -> TLIN -> LIN bus ->
+ * TLIN -> MCU RXD to be received. Returns 0 on header+response both looped
+ * back with matching bytes. Debug outs: treSeen, FLAGS snapshot at exit. */
+int lin_master_loopback(uint8 id6, const uint8 *data, uint8 len, uint8 classic,
+                        uint8 *treSeen, uint32 *flagSnap);
+/* RX level snapshot: bit i = LINi RX pin currently low (dominant). */
+uint32 lin_rx_levels(void);
+/* Dominant-hold probe: drive one channel's TXD net dominant (GPIO low) for
+ * holdMs, sampling all RX nets early (2 ms, must follow if bus common) and
+ * late (300 ms, TLIN DTO may have released the bus). Full LIN re-init after.
+ * earlyMask/lateMask use lin_rx_levels() encoding. */
+void lin_dominant_hold(linChannel ch, uint32 *earlyMask, uint32 *lateMask);
+/* Fast dominant probe: drive TXD low, STM-sample (~5 ms window) the driven TX
+ * pin itself (txSelfLow=1 if ever read back low) and all RX nets. */
+void lin_dominant_fast(linChannel ch, uint8 *txSelfLow, uint32 *rxMask);
+/* AC census: master sends one raw header while fast-sampling every RX net;
+ * edgeCnt[i] = transitions seen on LINi RX during the header window. */
+void lin_ac_census(linChannel master, uint8 pid, uint32 edgeCnt[LIN_NUM]);
+/* Pulse capture: master sends raw header; record STM timestamps (100 MHz) of
+ * up to 64 transitions on one RX net. Caller prints deltas. */
+uint32 lin_pulse_capture(linChannel master, linChannel rxch, uint8 pid,
+                         uint32 stamps[64]);
+/* Raw header + RHE-only poll (no error-break): reports RHE status and FLAGS
+ * snapshot for forensics. */
+int lin_rawhdr_forensic(linChannel master, linChannel slave, uint8 pid,
+                        uint8 *rxPid, uint32 *flagSnap);
+/* TX trace: issue header TX, sample (FLAGS, TXFIFOCON) ~every 100us x 60. */
+void lin_tx_trace(linChannel master, uint8 pid, uint32 flagsLog[60],
+                  uint32 fifoLog[60]);
 
 #endif /* LIN12_H */
