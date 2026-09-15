@@ -115,7 +115,52 @@ lwIP iperf server ready (TCP 5001)
 | `t1stat` | DEVID/SYNC/PLCA/PHY/MAC/BUF/IRQ 一览 | 见 §5 |
 | `t1r <reg>` / `t1w <reg> <val>` | TC6 寄存器读写（hex） | `t1r 0x000A0094`=0x86512 |
 | `plca [id] [count]` | 查看/ live 修改 PLCA（0=主/协调器） | `plca 0 8`→pst=1 |
-| `link` | T1S 链路（sync/pst/phy_link/irq；判据见 §5 末） | `link: UP (sync=0 pst=0 phy_link=1 …)` |
+| `link` | T1S 链路（sync/pst/phy_link/irq；判据见下文） | `link: UP (sync=0 pst=0 phy_link=1 …)` |
+| `sqi [toid]` | SQI 信号质量 0~7（轮询模式，要 RX 流量） | `SQI=7 (SNR>=~18dB … best)` |
+| `plcadiag` | PLCA 诊断 + BEACON/TO 速率 + STS1（RC） | `BEACON 1061/s, TO 1061/s`，全 0 |
+| `pcsdiag` | PCS/MAC 错误 sticky 位（STS1/2/3 RC + TSR/RSR） | 全 0，`tsr=0x2A` 常态 |
+| `evcnt` | TO/BCN 累计计数 | `TO_cnt≈BCN_cnt` |
+| `cable` | 线缆健康综合（SQI + 错误位 + 结论） | `cable GOOD` |
+
+### 诊断命令实测（2026-09-15，PLCA：适配器 ID0 + 板 ID1）
+
+手册依据：datasheet §7.5 SQI（轮询流程）、§7.2.4 PLCA 诊断、
+§11.5.2/3/4（STS1/2/3，**均为 RC 读清**）、§11.5.7 CTRCTRL、
+§11.5.16 PRSSTS（MAXID）、§11.5.52~55（SQI 寄存器）。
+寄存器（MMS4）：`SQICTL 0xA0 / SQISTS0 0xA1 / SQICFG0 0xAA（TOID 在 bit11:4）/
+SQICFG2 0xAC`，`STS1 0xCA18 / STS2 0xCA19 / STS3 0xCA1A`，
+`CTRCTRL 0x20 / TOCNT 0x24-25 / BCNCNT 0x26-27 / PRSSTS 0x36`
+（即 OA `0x000400xx`；注意 CTRCTRL 在 `0x20` 区不是 `0xCA20`）。
+
+```
+letter:/$ plcadiag
+PLCA en=1 id=1 ncnt=8 pst=1 tot=0x0020 burst=0x0080 maxid=8
+BEACON 1061/s, TO 1061/s (1s window, 32-bit wrap-aware diff)
+STS1(RC,read-clear)=0x0000: EMPCYC=0 RXINTO=0 UNEXPB=0 BCNBFTO=0 PSTC=0
+letter:/$ pcsdiag
+STS1(RC)=0x0000: DEC5B=0 ESDERR=0 PLCASYM=0 UNCRS=0 SQI=0 TXCOL=0 TXJAB=0 TSSI=0
+STS2(RC)=0x0000: UV33=0 OT=0 IWDTO=0 WKEMDI=0 WKEWI=0; STS3(RC)=0x0000 ERRTOID=0
+MAC ncr=0x0C ncfgr=0x02020040 nsr=0x04(IDLE=1) tsr=0x2A(COL=1 TXCOMP=1) rsr=0x02(REC=1)
+letter:/$ evcnt
+TO_cnt=7541 BCN_cnt=7540 (cumulative since counter enable)
+letter:/$ sqi                       # iperf 背景流量下
+SQI=7 (SNR>=~18dB BER<=~9.9E-16 (best))
+letter:/$ cable                     # iperf 背景流量下
+SQI=7 (SNR>=~18dB BER<=~9.9E-16 (best)) -> cable GOOD
+phy_link=1 STS1err(DEC5B/ESDERR/PLCASYM/UNCRS)=0000 UV33=0 OT=0
+```
+
+* `tsr=0x2A`（COL+TXGO+TXCOMP）为常态：PLCA RS 为对齐 TO 会向 MAC 断言
+  逻辑（假）碰撞，属正常现象（datasheet §4.6.1.5），非故障。
+* SQI 需要持续 RX 流量：ping（100ms 间隔小包）下 6s 超时无结论，
+  iperf 下一次即得 SQI=7；`cable` 同理（ping 下 inconclusive，iperf 下 GOOD）。
+  SQI 判级：≥6 GOOD，4~5 MARGINAL，≤3 POOR（查线缆/终端/长度）。
+* `TO_cnt≈BCN_cnt`：TOCNT 计的是**本地可用** TO（follower 每 cycle 1 个），
+  故与 BEACON 数基本相等，属正常。
+* Cable fault（HDD/TDR 类）：官方 harness 缺陷定位算法 **NDA 不公开**
+  （datasheet §7.6），`cable` 命令以 SQI + 错误 sticky 位 + link 做健康综合
+  结论，不能定位短路/开路点；Linux 侧 `ethtool --cable-test` 在 C2 上也不支持
+  （仅 D0，见 §6 表）。
 
 `t1stat`（从节点 ID1；下为 CSMA 回退旧值，PLCA 见 §5）：
 
@@ -164,7 +209,7 @@ netif 侧另有 `LAN8651_FORCE_LINK_UP=1` 兜底。
 
 使能命令（见 §6 表 `set-plca-cfg` 行）：适配器 `ethtool --set-plca-cfg … node-id 0 …` 后，
 板端 `t1stat` 从 `pst=0` 变 `pst=1`，`link: UP (sync=0 pst=1 phy_link=1 …)`；
-BEACON 计数 3s 内 +70739（~23.6k/s，NCNT=8/TOT=32 下合理），TO 计数同步涨。
+BEACON 约 1061/s（bus cycle ~0.94ms，见 `plcadiag`），TO 计数同步涨。
 
 * PC→板 ping 4/4（~0.8ms），UDP echo 5/5×100B
 * **iperf2 TCP（Release）：20s / 20.9MB / 8.70Mbps**（8.60~8.81 各 interval，

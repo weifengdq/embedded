@@ -599,6 +599,268 @@ static int cmd_link(int argc, char *argv[])
     return 0;
 }
 
+/* ---------- LAN8651 diagnostics: SQI / PLCA / PCS / cable ---------- */
+
+static const char *sqi_text(uint32_t v)
+{
+    switch (v & 0x7U) {
+        case 0: return "SNR<=~5dB BER>=~3.8E-02 (worst)";
+        case 1: return "~5-10dB BER~3.8E-02~7.8E-4";
+        case 2: return "~10-12dB BER~7.8E-4~3.4E-5";
+        case 3: return "~12-14dB BER~3.4E-5~2.7E-7";
+        case 4: return "~14-16dB BER~2.7E-7~1.4E-10";
+        case 5: return "~16-17dB BER~1.4E-10~7.2E-13";
+        case 6: return "~17-18dB BER~7.2E-13~9.9E-16";
+        default: return "SNR>=~18dB BER<=~9.9E-16 (best)";
+    }
+}
+
+/* Run one SQI polling-mode measurement. Returns 0 + *sqival on success,
+ * -1 on timeout, -2 on SQI error. Keeps lwIP polling so links survive. */
+static int sqi_measure(uint32_t toid, uint32_t timeout_ms, uint32_t *sqival, uint32_t *errc)
+{
+    uint32_t v = 0;
+    uint32_t start;
+    int restarts = 0;
+
+    /* TOID lives in SQICFG0 bits 11:4 */
+    if (lan8651_read_reg(&g_lan8651, LAN8651_SQICFG0, &v) != kLan8651Status_Ok) return -3;
+    v = (v & ~(uint32_t)LAN8651_SQICFG0_TOID_MASK) |
+        (((toid << LAN8651_SQICFG0_TOID_SHIFT) & LAN8651_SQICFG0_TOID_MASK));
+    if (lan8651_write_reg(&g_lan8651, LAN8651_SQICFG0, v) != kLan8651Status_Ok) return -3;
+
+    /* polling mode: interrupt threshold disabled (0x1F) */
+    if (lan8651_read_reg(&g_lan8651, LAN8651_SQICFG2, &v) != kLan8651Status_Ok) return -3;
+    v = (v & ~(uint32_t)LAN8651_SQICFG2_INTTHR_MASK) | LAN8651_SQICFG2_INTTHR_OFF;
+    if (lan8651_write_reg(&g_lan8651, LAN8651_SQICFG2, v) != kLan8651Status_Ok) return -3;
+
+    /* reset SQI block, wait self-clear */
+    if (lan8651_read_reg(&g_lan8651, LAN8651_SQICTL, &v) != kLan8651Status_Ok) return -3;
+    if (lan8651_write_reg(&g_lan8651, LAN8651_SQICTL, v | LAN8651_SQICTL_SQIRST) != kLan8651Status_Ok) return -3;
+    start = g_TickCount_1ms;
+    do {
+        if (lan8651_read_reg(&g_lan8651, LAN8651_SQICTL, &v) != kLan8651Status_Ok) return -3;
+        if ((v & LAN8651_SQICTL_SQIRST) == 0U) break;
+        Ifx_Lwip_pollTimerFlags();
+        Ifx_Lwip_pollReceiveFlags();
+    } while ((g_TickCount_1ms - start) < 500U);
+
+    /* enable measurement */
+    if (lan8651_read_reg(&g_lan8651, LAN8651_SQICTL, &v) != kLan8651Status_Ok) return -3;
+    if (lan8651_write_reg(&g_lan8651, LAN8651_SQICTL, v | LAN8651_SQICTL_SQIEN) != kLan8651Status_Ok) return -3;
+
+    start = g_TickCount_1ms;
+    while ((g_TickCount_1ms - start) < timeout_ms) {
+        uint32_t s0;
+        Ifx_Lwip_pollTimerFlags();
+        Ifx_Lwip_pollReceiveFlags();
+        if (lan8651_read_reg(&g_lan8651, LAN8651_SQISTS0, &s0) != kLan8651Status_Ok) return -3;
+        if ((s0 & LAN8651_SQISTS0_SQIVLD) != 0U) {
+            *sqival = (s0 & LAN8651_SQISTS0_SQIVAL_MASK) >> LAN8651_SQISTS0_SQIVAL_SHIFT;
+            *errc = 0U;
+            lan8651_read_reg(&g_lan8651, LAN8651_SQICTL, &v);
+            lan8651_write_reg(&g_lan8651, LAN8651_SQICTL, v & ~(uint32_t)LAN8651_SQICTL_SQIEN);
+            return 0;
+        }
+        if ((s0 & LAN8651_SQISTS0_SQIERR) != 0U) {
+            *errc = s0 & LAN8651_SQISTS0_SQIERRC_MASK;
+            if (restarts == 0) {
+                /* datasheet: clear SQIEN then re-enable and retry once */
+                restarts++;
+                lan8651_read_reg(&g_lan8651, LAN8651_SQICTL, &v);
+                lan8651_write_reg(&g_lan8651, LAN8651_SQICTL, v & ~(uint32_t)LAN8651_SQICTL_SQIEN);
+                lan8651_read_reg(&g_lan8651, LAN8651_SQICTL, &v);
+                lan8651_write_reg(&g_lan8651, LAN8651_SQICTL, v | LAN8651_SQICTL_SQIEN);
+                start = g_TickCount_1ms;
+                continue;
+            }
+            lan8651_read_reg(&g_lan8651, LAN8651_SQICTL, &v);
+            lan8651_write_reg(&g_lan8651, LAN8651_SQICTL, v & ~(uint32_t)LAN8651_SQICTL_SQIEN);
+            return -2;
+        }
+    }
+    lan8651_read_reg(&g_lan8651, LAN8651_SQICTL, &v);
+    lan8651_write_reg(&g_lan8651, LAN8651_SQICTL, v & ~(uint32_t)LAN8651_SQICTL_SQIEN);
+    return -1;
+}
+
+static int cmd_sqi(int argc, char *argv[])
+{
+    Shell *shell = shellGetCurrent();
+    uint32_t toid = 0xFFU;
+    uint32_t sqival = 0U, errc = 0U;
+    int rc;
+    if (argc >= 2 && parse_u32(argv[1], &toid)) {
+        shellPrint(shell, "usage: sqi [toid 0..255, default 0xFF=all]\r\n");
+        return -1;
+    }
+    shellPrint(shell, "SQI measuring (toid=0x%02lX, up to 6s, needs RX traffic)...\r\n", (unsigned long)toid);
+    rc = sqi_measure(toid, 6000U, &sqival, &errc);
+    if (rc == 0) {
+        shellPrint(shell, "SQI=%lu (%s)\r\n", (unsigned long)sqival, sqi_text(sqival));
+    } else if (rc == -2) {
+        shellPrint(shell, "SQI error, code=0x%lX (see datasheet SQIERRC)\r\n", (unsigned long)errc);
+    } else if (rc == -1) {
+        shellPrint(shell, "SQI timeout (no valid estimation in 6s; generate RX traffic e.g. ping/iperf and retry)\r\n");
+    } else {
+        shellPrint(shell, "SQI register access failed\r\n");
+    }
+    return rc == 0 ? 0 : -1;
+}
+
+static uint32_t ctr32(uint32_t hi_reg, uint32_t lo_reg)
+{
+    uint32_t hi = 0U, lo = 0U;
+    lan8651_read_reg(&g_lan8651, hi_reg, &hi);
+    lan8651_read_reg(&g_lan8651, lo_reg, &lo);
+    return ((hi & 0xFFFFU) << 16) | (lo & 0xFFFFU);
+}
+
+static int cmd_plcadiag(int argc, char *argv[])
+{
+    (void)argc; (void)argv;
+    Shell *shell = shellGetCurrent();
+    uint32_t c0 = 0, c1 = 0, sts = 0, tot = 0, bst = 0, s1 = 0, prs = 0, ctr = 0;
+    uint32_t bcn0, to0, bcn1, to1;
+    lan8651_read_reg(&g_lan8651, LAN8651_PLCA_CTRL0, &c0);
+    lan8651_read_reg(&g_lan8651, LAN8651_PLCA_CTRL1, &c1);
+    lan8651_read_reg(&g_lan8651, LAN8651_PLCA_STS, &sts);
+    lan8651_read_reg(&g_lan8651, LAN8651_PLCA_TOTMR, &tot);
+    lan8651_read_reg(&g_lan8651, LAN8651_PLCA_BURST, &bst);
+    lan8651_read_reg(&g_lan8651, LAN8651_PRSSTS, &prs);
+    /* enable TO/BCN counters if needed (sticky once enabled) */
+    lan8651_read_reg(&g_lan8651, LAN8651_CTRCTRL, &ctr);
+    if ((ctr & (LAN8651_CTRCTRL_TOCTRE | LAN8651_CTRCTRL_BCNCTRE)) !=
+        (LAN8651_CTRCTRL_TOCTRE | LAN8651_CTRCTRL_BCNCTRE)) {
+        lan8651_write_reg(&g_lan8651, LAN8651_CTRCTRL,
+            ctr | LAN8651_CTRCTRL_TOCTRE | LAN8651_CTRCTRL_BCNCTRE);
+        shellPrint(shell, "(CTRCTRL counters enabled)\r\n");
+    }
+    bcn0 = ctr32(LAN8651_BCNCNTH, LAN8651_BCNCNTL);
+    to0 = ctr32(LAN8651_TOCNTH, LAN8651_TOCNTL);
+    { uint32_t s = g_TickCount_1ms; while ((g_TickCount_1ms - s) < 1000U) {
+        Ifx_Lwip_pollTimerFlags(); Ifx_Lwip_pollReceiveFlags(); } }
+    bcn1 = ctr32(LAN8651_BCNCNTH, LAN8651_BCNCNTL);
+    to1 = ctr32(LAN8651_TOCNTH, LAN8651_TOCNTL);
+    s1 = 0U;
+    lan8651_read_reg(&g_lan8651, LAN8651_STS1, &s1); /* RC: read-clear */
+    shellPrint(shell, "PLCA en=%u id=%lu ncnt=%lu pst=%u tot=0x%04lX burst=0x%04lX maxid=%lu\r\n",
+        (unsigned)((c0 & LAN8651_PLCA_CTRL0_EN) != 0U),
+        (unsigned long)(c1 & 0xFFU), (unsigned long)((c1 >> 8) & 0xFFU),
+        (unsigned)((sts & LAN8651_PLCA_STS_PST) != 0U),
+        (unsigned long)(tot & 0xFFFFU), (unsigned long)(bst & 0xFFFFU),
+        (unsigned long)((prs >> LAN8651_PRSSTS_MAXID_SHIFT) & 0xFFU));
+    shellPrint(shell, "BEACON %lu/s, TO %lu/s (1s window, 32-bit wrap-aware diff)\r\n",
+        (unsigned long)(bcn1 - bcn0), (unsigned long)(to1 - to0));
+    shellPrint(shell, "STS1(RC,read-clear)=0x%04lX: EMPCYC=%u RXINTO=%u UNEXPB=%u BCNBFTO=%u PSTC=%u\r\n",
+        (unsigned long)(s1 & 0xFFFFU),
+        (unsigned)((s1 & LAN8651_STS1_EMPCYC) != 0U),
+        (unsigned)((s1 & LAN8651_STS1_RXINTO) != 0U),
+        (unsigned)((s1 & LAN8651_STS1_UNEXPB) != 0U),
+        (unsigned)((s1 & LAN8651_STS1_BCNBFTO) != 0U),
+        (unsigned)((s1 & LAN8651_STS1_PSTC) != 0U));
+    return 0;
+}
+
+static int cmd_pcsdiag(int argc, char *argv[])
+{
+    (void)argc; (void)argv;
+    Shell *shell = shellGetCurrent();
+    uint32_t s1 = 0, s2 = 0, s3 = 0, ncr = 0, ncfgr = 0, nsr = 0, tsr = 0, rsr = 0;
+    lan8651_read_reg(&g_lan8651, LAN8651_STS1, &s1); /* RC */
+    lan8651_read_reg(&g_lan8651, LAN8651_STS2, &s2); /* RC */
+    lan8651_read_reg(&g_lan8651, LAN8651_STS3, &s3); /* RC */
+    lan8651_read_reg(&g_lan8651, LAN8651_MAC_NCR, &ncr);
+    lan8651_read_reg(&g_lan8651, LAN8651_MAC_NCFGR, &ncfgr);
+    lan8651_read_reg(&g_lan8651, LAN8651_MAC_NSR, &nsr);
+    lan8651_read_reg(&g_lan8651, LAN8651_MAC_TSR, &tsr);
+    lan8651_read_reg(&g_lan8651, LAN8651_MAC_RSR, &rsr);
+    shellPrint(shell, "STS1(RC)=0x%04lX: DEC5B=%u ESDERR=%u PLCASYM=%u UNCRS=%u SQI=%u TXCOL=%u TXJAB=%u TSSI=%u\r\n",
+        (unsigned long)(s1 & 0xFFFFU),
+        (unsigned)((s1 & LAN8651_STS1_DEC5B) != 0U),
+        (unsigned)((s1 & LAN8651_STS1_ESDERR) != 0U),
+        (unsigned)((s1 & LAN8651_STS1_PLCASYM) != 0U),
+        (unsigned)((s1 & LAN8651_STS1_UNCRS) != 0U),
+        (unsigned)((s1 & LAN8651_STS1_SQI) != 0U),
+        (unsigned)((s1 & LAN8651_STS1_TXCOL) != 0U),
+        (unsigned)((s1 & LAN8651_STS1_TXJAB) != 0U),
+        (unsigned)((s1 & LAN8651_STS1_TSSI) != 0U));
+    shellPrint(shell, "STS2(RC)=0x%04lX: UV33=%u OT=%u IWDTO=%u WKEMDI=%u WKEWI=%u; STS3(RC)=0x%04lX ERRTOID=%lu\r\n",
+        (unsigned long)(s2 & 0xFFFFU),
+        (unsigned)((s2 & LAN8651_STS2_UV33) != 0U),
+        (unsigned)((s2 & LAN8651_STS2_OT) != 0U),
+        (unsigned)((s2 & LAN8651_STS2_IWDTO) != 0U),
+        (unsigned)((s2 & LAN8651_STS2_WKEMDI) != 0U),
+        (unsigned)((s2 & LAN8651_STS2_WKEWI) != 0U),
+        (unsigned long)(s3 & 0xFFFFU), (unsigned long)(s3 & 0xFFU));
+    shellPrint(shell, "MAC ncr=0x%02lX ncfgr=0x%08lX nsr=0x%02lX(IDLE=%u) tsr=0x%02lX(COL=%u TXCOMP=%u) rsr=0x%02lX(REC=%u)\r\n",
+        (unsigned long)(ncr & 0xFFU), (unsigned long)ncfgr, (unsigned long)(nsr & 0xFFU),
+        (unsigned)((nsr & LAN8651_MAC_NSR_IDLE) != 0U),
+        (unsigned long)(tsr & 0xFFU),
+        (unsigned)((tsr & LAN8651_MAC_TSR_COL) != 0U),
+        (unsigned)((tsr & LAN8651_MAC_TSR_TXCOMP) != 0U),
+        (unsigned long)(rsr & 0xFFU),
+        (unsigned)((rsr & LAN8651_MAC_RSR_REC) != 0U));
+    shellPrint(shell, "(STS1/2/3 are read-clear: bits show events since last pcsdiag/plcadiag)\r\n");
+    return 0;
+}
+
+static int cmd_evcnt(int argc, char *argv[])
+{
+    (void)argc; (void)argv;
+    Shell *shell = shellGetCurrent();
+    uint32_t ctr = 0;
+    lan8651_read_reg(&g_lan8651, LAN8651_CTRCTRL, &ctr);
+    if ((ctr & (LAN8651_CTRCTRL_TOCTRE | LAN8651_CTRCTRL_BCNCTRE)) !=
+        (LAN8651_CTRCTRL_TOCTRE | LAN8651_CTRCTRL_BCNCTRE)) {
+        lan8651_write_reg(&g_lan8651, LAN8651_CTRCTRL,
+            ctr | LAN8651_CTRCTRL_TOCTRE | LAN8651_CTRCTRL_BCNCTRE);
+    }
+    shellPrint(shell, "TO_cnt=%lu BCN_cnt=%lu (cumulative since counter enable)\r\n",
+        (unsigned long)ctr32(LAN8651_TOCNTH, LAN8651_TOCNTL),
+        (unsigned long)ctr32(LAN8651_BCNCNTH, LAN8651_BCNCNTL));
+    return 0;
+}
+
+static int cmd_cable(int argc, char *argv[])
+{
+    Shell *shell = shellGetCurrent();
+    uint32_t toid = 0xFFU;
+    uint32_t sqival = 0U, errc = 0U;
+    uint32_t s1 = 0, s2 = 0, bmsr = 0;
+    int rc;
+    if (argc >= 2 && parse_u32(argv[1], &toid)) {
+        shellPrint(shell, "usage: cable [toid, default 0xFF=all]\r\n");
+        shellPrint(shell, "  cable health = SQI + error sticky bits (note: Microchip HDD algorithm is NDA-only)\r\n");
+        return -1;
+    }
+    shellPrint(shell, "cable health check (SQI up to 6s, needs RX traffic)...\r\n");
+    rc = sqi_measure(toid, 6000U, &sqival, &errc);
+    lan8651_read_reg(&g_lan8651, LAN8651_STS1, &s1); /* RC */
+    lan8651_read_reg(&g_lan8651, LAN8651_STS2, &s2); /* RC */
+    lan8651_read_reg(&g_lan8651, LAN8651_PHY_BMSR, &bmsr);
+    lan8651_read_reg(&g_lan8651, LAN8651_PHY_BMSR, &bmsr);
+    if (rc == 0) {
+        const char *verdict =
+            (sqival >= 6) ? "GOOD" :
+            (sqival >= 4) ? "MARGINAL" : "POOR (check wiring/termination/length)";
+        shellPrint(shell, "SQI=%lu (%s) -> cable %s\r\n", (unsigned long)sqival, sqi_text(sqival), verdict);
+    } else if (rc == -2) {
+        shellPrint(shell, "SQI error code=0x%lX -> cable check inconclusive, retry with traffic\r\n", (unsigned long)errc);
+    } else {
+        shellPrint(shell, "SQI timeout -> cable check inconclusive (generate RX traffic and retry)\r\n");
+    }
+    shellPrint(shell, "phy_link=%u STS1err(DEC5B/ESDERR/PLCASYM/UNCRS)=%u%u%u%u UV33=%u OT=%u\r\n",
+        (unsigned)((bmsr & LAN8651_PHY_BMSR_LINK_STATUS) != 0U),
+        (unsigned)((s1 & LAN8651_STS1_DEC5B) != 0U),
+        (unsigned)((s1 & LAN8651_STS1_ESDERR) != 0U),
+        (unsigned)((s1 & LAN8651_STS1_PLCASYM) != 0U),
+        (unsigned)((s1 & LAN8651_STS1_UNCRS) != 0U),
+        (unsigned)((s2 & LAN8651_STS2_UV33) != 0U),
+        (unsigned)((s2 & LAN8651_STS2_OT) != 0U));
+    return 0;
+}
+
 /* ---------- System commands (no LAN) ---------- */
 
 static int cmd_mem(int argc, char *argv[])
@@ -632,6 +894,11 @@ SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), t1
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), t1w, cmd_t1w, LAN8651 reg write);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), plca, cmd_plca, show or set PLCA id/count);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), link, cmd_link, T1S link status);
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), sqi, cmd_sqi, SQI signal quality 0-7);
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), plcadiag, cmd_plcadiag, PLCA diag + beacon rate);
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), pcsdiag, cmd_pcsdiag, PCS/MAC error sticky bits);
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), evcnt, cmd_evcnt, TO/BEACON cumulative counters);
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), cable, cmd_cable, cable health via SQI+errors);
 
 /* ---------- Shell init ---------- */
 int Shell_Init(void)

@@ -61,6 +61,21 @@
 #define LAN8651_PLCA_BURST              0x0004CA05U
 #define LAN8651_COL_DET_CTRL0           0x00040087U
 
+/* Diagnostics: status/event registers (MMS4). STS1/2/3 are read-clear. */
+#define LAN8651_STS1                    0x0004CA18U
+#define LAN8651_STS2                    0x0004CA19U
+#define LAN8651_STS3                    0x0004CA1AU
+#define LAN8651_CTRCTRL                 0x00040020U
+#define LAN8651_TOCNTH                  0x00040024U
+#define LAN8651_TOCNTL                  0x00040025U
+#define LAN8651_BCNCNTH                 0x00040026U
+#define LAN8651_BCNCNTL                 0x00040027U
+#define LAN8651_PRSSTS                  0x00040036U
+#define LAN8651_SQICTL                  0x000400A0U
+#define LAN8651_SQISTS0                 0x000400A1U
+#define LAN8651_SQICFG0                 0x000400AAU
+#define LAN8651_SQICFG2                 0x000400ACU
+
 /* ------------------------------------------------------------------
  *  Register bit fields
  * ------------------------------------------------------------------ */
@@ -99,6 +114,52 @@
 #define LAN8651_COL_DET_CTRL0_PLCA      0x0083U
 #define LAN8651_PLCA_TOTMR_DEFAULT      0x0020U
 #define LAN8651_PLCA_BURST_DEFAULT      0x0080U
+
+/* STS1 (RC): bit12 SQI, bit11 PSTC, bit10 TXCOL, bit9 TXJAB, bit8 TSSI,
+ * bit7 EMPCYC, bit6 RXINTO, bit5 UNEXPB, bit4 BCNBFTO,
+ * bit3 UNCRS, bit2 PLCASYM, bit1 ESDERR, bit0 DEC5B */
+#define LAN8651_STS1_SQI                0x1000U
+#define LAN8651_STS1_PSTC               0x0800U
+#define LAN8651_STS1_TXCOL              0x0400U
+#define LAN8651_STS1_TXJAB              0x0200U
+#define LAN8651_STS1_TSSI               0x0100U
+#define LAN8651_STS1_EMPCYC             0x0080U
+#define LAN8651_STS1_RXINTO             0x0040U
+#define LAN8651_STS1_UNEXPB             0x0020U
+#define LAN8651_STS1_BCNBFTO            0x0010U
+#define LAN8651_STS1_UNCRS              0x0008U
+#define LAN8651_STS1_PLCASYM            0x0004U
+#define LAN8651_STS1_ESDERR             0x0002U
+#define LAN8651_STS1_DEC5B              0x0001U
+
+/* STS2: bit10 WKEMDI, bit9 WKEWI, bit8 UV33, bit6 OT, bit5 IWDTO */
+#define LAN8651_STS2_WKEMDI             0x0400U
+#define LAN8651_STS2_WKEWI              0x0200U
+#define LAN8651_STS2_UV33               0x0100U
+#define LAN8651_STS2_OT                 0x0040U
+#define LAN8651_STS2_IWDTO              0x0020U
+
+/* Counter control */
+#define LAN8651_CTRCTRL_TOCTRE          0x0002U
+#define LAN8651_CTRCTRL_BCNCTRE         0x0001U
+
+/* PRSSTS: MAXID in bits 15:8 */
+#define LAN8651_PRSSTS_MAXID_SHIFT      8U
+
+/* SQI: SQICTL bit15 SQIRST(SC) / bit14 SQIEN; SQISTS0 bit7 SQIERR /
+ * bit6 SQIVLD(RC) / bit5:3 SQIVAL / bit2:0 SQIERRC; SQICFG0 TOID in
+ * bits 11:4 (0xFF = all nodes); SQICFG2 SQIINTTHR bits 12:8 (0x1F = off) */
+#define LAN8651_SQICTL_SQIRST           0x8000U
+#define LAN8651_SQICTL_SQIEN            0x4000U
+#define LAN8651_SQISTS0_SQIERR          0x0080U
+#define LAN8651_SQISTS0_SQIVLD          0x0040U
+#define LAN8651_SQISTS0_SQIVAL_SHIFT    3U
+#define LAN8651_SQISTS0_SQIVAL_MASK     0x0038U
+#define LAN8651_SQISTS0_SQIERRC_MASK    0x0007U
+#define LAN8651_SQICFG0_TOID_SHIFT      4U
+#define LAN8651_SQICFG0_TOID_MASK       0x0FF0U
+#define LAN8651_SQICFG2_INTTHR_MASK     0x1F00U
+#define LAN8651_SQICFG2_INTTHR_OFF      0x1F00U
 
 /* ------------------------------------------------------------------
  *  TC6 control header / response bits
