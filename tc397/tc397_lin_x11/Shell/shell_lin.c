@@ -641,7 +641,155 @@ SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), li
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linslp, cmd_linslp, transceiver sleep);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linwake, cmd_linwake, transceiver wake);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), lintgl, cmd_lintgl, TX pin probe toggle);
+/* ---------- linana: external-analyzer full-receive test ----------
+ * Topology: LIN1..LIN11 tied together + LIN analyzer (external master,
+ * 1 frame/s). All 11 channels are put to slave, then each round sniffs one
+ * external frame (header+response). Known analyzer frames:
+ *   ID 0x17 PID 0x97 classic  2B: 22 33
+ *   ID 0x31 PID 0xB1 enhanced 8B: 11 22 33 44 55 66 77 88
+ * Usage: linana [rounds 1..20] [timeoutMs 500..10000]
+ * Each round prints PID/ID/len/mode, header mask, response mask, data
+ * (from LIN1 as reference) and per-channel ok list. */
+static int cmd_linana(int argc, char *argv[])
+{
+    Shell *shell = shellGetCurrent();
+    int rounds = 4, r, passRounds = 0;
+    uint32 timeoutMs = 3000;
+    uint32 hdrTot[LIN_NUM], okTot[LIN_NUM];
+    int i;
+
+    if (argc >= 2) {
+        rounds = atoi(argv[1]);
+        if (rounds < 1) rounds = 1;
+        if (rounds > 20) rounds = 20;
+    }
+    if (argc >= 3) {
+        long t = atol(argv[2]);
+        if (t < 500) t = 500;
+        if (t > 10000) t = 10000;
+        timeoutMs = (uint32)t;
+    }
+    for (i = 0; i < LIN_NUM; i++) { hdrTot[i] = 0; okTot[i] = 0; }
+    shellPrint(shell, "linana: all LIN1..11 -> slave, sniff %d frame(s), timeout %lu ms\r\n",
+               rounds, (unsigned long)timeoutMs);
+    shellPrint(shell, "  expect ID 0x17 (2B classic 22 33) + ID 0x31 (8B enhanced 11..88), 1/s\r\n");
+    lin_all_slave();
+    for (r = 0; r < rounds; r++) {
+        uint8 pid = 0, exp = 0, classic = 0;
+        uint32 hdr = 0, resp = 0;
+        uint8 data[12][10];
+        uint8 rawLen[12];
+        int rc, k, nhdr = 0, nok = 0;
+        memset(data, 0, sizeof(data));
+        memset(rawLen, 0, sizeof(rawLen));
+        shellPrint(shell, "round %d: listening...\r\n", r + 1);
+        rc = lin_sniff_ext_frame(&pid, &exp, &classic, &hdr, &resp,
+                                 (uint8 (*)[10])data, rawLen, timeoutMs);
+        for (i = 1; i <= 11; i++) {
+            if (hdr & (1u << i)) { nhdr++; hdrTot[i]++; }
+            if (resp & (1u << i)) { nok++; okTot[i]++; }
+        }
+        if (rc == -1) {
+            shellPrint(shell, "  TIMEOUT: no external header in %lu ms (baud? try 'linbaud'; wiring? try 'lindomf')\r\n",
+                       (unsigned long)timeoutMs);
+            continue;
+        }
+        {
+            int ref = -1;
+            for (i = 1; i <= 11; i++) {
+                if (resp & (1u << i)) { ref = i; break; }
+            }
+            if (ref < 0) {
+                for (i = 1; i <= 11; i++) {
+                    if (hdr & (1u << i)) { ref = i; break; }
+                }
+            }
+            shellPrint(shell, "  %s pid=0x%02X id=0x%02X exp=%dB %s hdr=%d/11 resp=%d/11\r\n",
+                       rc ? "PARTIAL" : "GOT", pid, pid & 0x3F, exp,
+                       classic ? "classic" : "enhanced", nhdr, nok);
+            shellPrint(shell, "  hdr : ");
+            for (i = 1; i <= 11; i++) shellPrint(shell, "%d", (hdr & (1u << i)) ? 1 : 0);
+            shellPrint(shell, "  resp: ");
+            for (i = 1; i <= 11; i++) shellPrint(shell, "%d", (resp & (1u << i)) ? 1 : 0);
+            shellPrint(shell, "\r\n");
+            if (ref > 0) {
+                shellPrint(shell, "  raw(LIN%d,%dB): ", ref, rawLen[ref]);
+                for (k = 0; k < rawLen[ref] && k < 10; k++)
+                    shellPrint(shell, "%02X%s", data[ref][k], (k + 1 < rawLen[ref]) ? " " : "");
+                shellPrint(shell, "\r\n");
+            }
+            /* payload check against known analyzer frames (raw incl. checksum) */
+            if ((pid & 0x3F) == 0x17) {
+                uint8 expRaw[3] = {0x22, 0x33, 0x00};
+                int refOk;
+                expRaw[2] = lin_checksum(pid, expRaw, 2, 1);
+                refOk = (ref > 0 && rawLen[ref] == 3 &&
+                         data[ref][0] == 0x22 && data[ref][1] == 0x33 &&
+                         data[ref][2] == expRaw[2]);
+                shellPrint(shell, "  expect 22 33 %02X classic: %s\r\n",
+                           expRaw[2], refOk ? "MATCH" : "MISMATCH");
+                if (refOk && nok == 11) passRounds++;
+            } else if ((pid & 0x3F) == 0x31) {
+                uint8 expPay[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+                uint8 ck = lin_checksum(pid, expPay, 8, 0);
+                int refOk = (ref > 0 && rawLen[ref] == 9);
+                if (refOk) {
+                    for (k = 0; k < 8; k++) {
+                        if (data[ref][k] != expPay[k]) { refOk = 0; break; }
+                    }
+                    if (data[ref][8] != ck) refOk = 0;
+                }
+                shellPrint(shell, "  expect 11..88 %02X enhanced: %s\r\n",
+                           ck, refOk ? "MATCH" : "MISMATCH");
+                if (refOk && nok == 11) passRounds++;
+            } else {
+                shellPrint(shell, "  unknown ID (not 0x17/0x31): no payload check\r\n");
+            }
+        }
+    }
+    shellPrint(shell, "linana summary (hdr/resp hits per ch over %d rounds):\r\n", rounds);
+    for (i = 1; i <= 11; i++) {
+        shellPrint(shell, "  LIN%2d: hdr=%lu resp=%lu%s\r\n", i,
+                   (unsigned long)hdrTot[i], (unsigned long)okTot[i],
+                   (okTot[i] == (uint32)rounds) ? " FULL" : "");
+    }
+    shellPrint(shell, "linana done: %d/%d full-11 rounds. See 'linstat'/'lindump all'.\r\n",
+               passRounds, rounds);
+    return (passRounds > 0) ? 0 : -1;
+}
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linbusact, cmd_linbusact, bus activity probe);
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linana, cmd_linana, analyzer full-receive test);
+
+/* ---------- linpas: passive GPIO census (no ASCLIN, baud-independent) ---------- */
+static int cmd_linpas(int argc, char *argv[])
+{
+    Shell *shell = shellGetCurrent();
+    uint32 ms = 3000, cnt[12];
+    uint32 low = 0;
+    int i;
+    if (argc >= 2) {
+        long v = atol(argv[1]);
+        if (v < 100) v = 100;
+        if (v > 10000) v = 10000;
+        ms = (uint32)v;
+    }
+    shellPrint(shell, "linpas: sampling RX nets as GPIO for %lu ms (analyzer should send ~%lu frames)...\r\n",
+               (unsigned long)ms, (unsigned long)(ms / 1000));
+    lin_passive_census(ms, cnt, &low);
+    shellPrint(shell, "  edges 1..11: ");
+    for (i = 1; i <= 11; i++) shellPrint(shell, "%lu ", (unsigned long)cnt[i]);
+    shellPrint(shell, "\r\n  everLow 1..11: ");
+    for (i = 1; i <= 11; i++) shellPrint(shell, "%d", (low & (1u << i)) ? 1 : 0);
+    shellPrint(shell, " (expect 40+ edges + all 1 if bus common with analyzer)\r\n");
+    shellPrint(shell, "  idle now: ");
+    {
+        uint32 idle = lin_rx_levels();
+        for (i = 1; i <= 11; i++) shellPrint(shell, "%d", (idle & (1u << i)) ? 1 : 0);
+        shellPrint(shell, " (expect all 0; 1=dominant stuck)\r\n");
+    }
+    return 0;
+}
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), linpas, cmd_linpas, passive bus census);
 
 /* ---------- linbb ---------- */
 static int cmd_linbb(int argc, char *argv[])

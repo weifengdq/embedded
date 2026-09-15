@@ -78,6 +78,26 @@ void lin12_init_all(float32 baud);
 void lin12_init_all_19200(void);
 /* Re-init a single channel with the given role (LIN0 rejected). Counters kept. */
 int lin_set_role(linChannel ch, uint8 isMaster);
+/* All LIN1..LIN11 as slaves (external-analyzer listen mode). Counters kept. */
+void lin_all_slave(void);
+/* LIN checksum over data (classic) or PID+data (enhanced), per LIN spec
+ * (sum with carry-fold, inverted). */
+uint8 lin_checksum(uint8 pid, const uint8 *data, uint8 len, uint8 classic);
+/* Sniff one external-master frame (raw-monitor style, like the proven
+ * TC387 uart8lin reference): arm LIN1..LIN11 for header, wait up to
+ * timeoutMs for an external header, then capture the response with
+ * DATLEN=9 + HW checksum OFF (no length/checksum assumption).
+ * Out: pid, expLen (expected data bytes: 0x17->2, 0x31->8, else 8),
+ * classicUsed (expected mode), hdrMask (bit i = LINi header hit),
+ * respMask (bit i = LINi captured expected byte count),
+ * rawLen[ch] (captured bytes incl. checksum), data[ch] (raw bytes, max 9+1).
+ * Returns 0 if >=1 channel captured the expected count, -1 on header
+ * timeout, -2 on header ok but no complete response. Normal HW-checksum
+ * mode is restored before return. Updates g_lin counters/last frame. */
+int lin_sniff_ext_frame(uint8 *pidOut, uint8 *expLen, uint8 *classicUsed,
+                        uint32 *hdrMask, uint32 *respMask,
+                        uint8 data[LIN_NUM][10], uint8 rawLen[LIN_NUM],
+                        uint32 timeoutMs);
 /* Pairwise transactions between an explicit master and one slave
  * (independent of LIN_MASTER_CH default; roles must be configured first,
  * e.g. via lin_set_role). m2s: master header+response, slave verifies.
@@ -142,6 +162,9 @@ int lin_master_loopback(uint8 id6, const uint8 *data, uint8 len, uint8 classic,
                         uint8 *treSeen, uint32 *flagSnap);
 /* RX level snapshot: bit i = LINi RX pin currently low (dominant). */
 uint32 lin_rx_levels(void);
+/* Passive GPIO census: sample all LIN1..11 RX nets as GPIO for ms,
+ * no ASCLIN traffic. edgeCnt[i] = transitions, lowMask bit i = ever low. */
+void lin_passive_census(uint32 ms, uint32 edgeCnt[LIN_NUM], uint32 *lowMask);
 /* Dominant-hold probe: drive one channel's TXD net dominant (GPIO low) for
  * holdMs, sampling all RX nets early (2 ms, must follow if bus common) and
  * late (300 ms, TLIN DTO may have released the bus). Full LIN re-init after.

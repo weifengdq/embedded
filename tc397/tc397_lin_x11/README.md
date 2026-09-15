@@ -128,6 +128,10 @@ linbaud <2400|4800|9600|10417|19200> 全通道重配波特率（默认19200）
 linslp <group 0..2|all> <0|1>        EN控制：1=normal(H)，0=sleep(L)
 linwake                              3组EN全部回normal
 linerr <parity|cksum|timeout>        错误注入（以对线F即11→10为例）
+linana [rounds] [timeoutMs]        外部分析仪全接收：LIN1~11全从，嗅探外部主帧
+  e.g. linana 4  (分析仪1帧/s：ID0x17/2B经典22 33 + ID0x31/8B增强11..88)
+linpas [ms]                        被动普查：GPIO采样全部RX电平/边沿（与波特率无关）
+  e.g. linpas 4000
 ```
 
 ### LIN 命令（诊断类，无需对端配合）
@@ -174,6 +178,13 @@ UART/LED 旧命令（`help/version/mcu/uid/uptime/reset/temp/sysinfo/mem/led`）
   **轮询模式也必须显式使能 LIN 事件标志**（`FLAGSENABLE` 的 RHE/RRE/THE/TRE
   及各错误位），否则从机 RHE/RRE 永不锁存——本工程 `lin_enable_polling_flags()`
   已处理（无此修复时全员 header 超时，见 §7.2）。
+* 全接收（外部主）：`linana` 把 LIN1~11 全置 slave，用 **raw-monitor 方式**
+  嗅探外部主帧（照抄已通过测试的 TC387 `uart8lin` 参考：`DATLEN=9` + 硬件校验关 +
+  response-timeout 模式 + FIFO 排空收数，不预设长度/校验；`lin_sniff_ext_frame()`，
+  退出前恢复常规寄存器）。已知分析仪帧：ID `0x17`/PID `0x97`/classic/2B `22 33`
+  （线字节含校验共 3B：`22 33 AA`）；ID `0x31`/PID `0xB1`/enhanced/8B
+  `11 22 33 44 55 66 77 88`（线字节共 9B，校验 `E7`）；校验用 `lin_checksum()`
+  软件核对。`linpas` 为波特率无关的 GPIO 被动普查（分析仪帧若上总线则必有边沿）。
 
 ---
 
@@ -193,6 +204,19 @@ UART/LED 旧命令（`help/version/mcu/uid/uptime/reset/temp/sysinfo/mem/led`）
 | 8 | `linsend 11 10 0x3C` | 通过（classic） | 诊断帧 master-req（classic 默认已修） |
 | 9 | `linbb 1/3/4/5/10/11` | 通过 | GPIO bit-bang 自证全部从机 ASCLIN 收通路（含 11 切 slave 后） |
 | 10 | `lindomf` 全扫 + `linact/linpulse` | 通过 | 总线分组/DTO/边沿/脉冲时序（LIN10 与 LIN11 波形一致） |
+| 11 | `linana 2`（外部分析仪全接收，2026-09-15） | **未收到：TIMEOUT** | 分析仪标称19200/1帧/s发送0x17+0x31；11路全从raw嗅探6s无header（`hdr=0`）；见下 |
+| 12 | `linpas 4000`（被动普查，同上） | **总线空闲** | 11路RX零边沿、everLow全0（与波特率/ASCLIN配置无关的GPIO实测） |
+| 13 | `linsend 11 10 0x12 …`（同窗口对照） | 通过 | 板级收发通路正常（raw改动未破坏成对事务） |
+
+**2026-09-15 外部分析仪全接收结论（原始日志 `tc397/temp/linana_test.log`，不进 git）：**
+固件已对齐已通过测试的 TC387 `uart8lin` 参考（raw-monitor：DATLEN=9/硬件校验关/
+response-timeout 128/软件核对校验），`linsend 11→10` 同窗口 PASS 自证板级通路。
+但 `linpas 4000`（4s ≈ 4 帧）11 路 RX **零边沿** + `linana` 2 轮 **TIMEOUT** +
+`linact 11` 仅 (10,11) 有边沿（其余 9 路 0）：分析仪帧在此窗口内未到达 MCU 引脚。
+GPIO 采样绕过 ASCLIN（`linact` 自证采样有效），故与从机配置/波特率/校验模式无关。
+请检查分析仪实际驱动的物理总线与 11 路 LIN 网的连接点（哪路/哪个连接器、共地、
+分析仪侧 TX 指示/ACK 报错），确认后再跑 `linana 4`（期望每轮 `hdr=11/11 resp=11/11`
++ `22 33 AA` / `11..88 E7` MATCH）。
 
 注意事项：
 

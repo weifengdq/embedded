@@ -383,6 +383,260 @@ int lin_set_role(linChannel ch, uint8 isMaster)
     return 0;
 }
 
+void lin_all_slave(void)
+{
+    linChannel ch;
+    for (ch = LIN1; ch <= LIN11; ch++) {
+        lin_init_channel(ch, g_linBaud, 0);
+    }
+}
+
+/* External-master sniff: all LIN1..LIN11 listen for one header+response.
+ * Raw-monitor style (mirrors the proven TC387 uart8lin reference which
+ * passed full-receive tests): the response is captured with DATLEN=9 and
+ * HW checksum OFF, so no length/checksum assumption is needed; the payload
+ * is validated by the caller against the known analyzer frames.
+ * Timing: header and response arrive back-to-back from the external master,
+ * so after the first RHE latch we do exactly one more full scan pass (catch
+ * late latchers on the same bus, ~us apart) and immediately arm responses.
+ * No extra ms-scale wait: that would miss the response already on the bus. */
+uint8 lin_checksum(uint8 pid, const uint8 *data, uint8 len, uint8 classic)
+{
+    uint32 sum = 0;
+    uint8 i;
+    if (!classic) sum += pid;
+    for (i = 0; i < len; i++) sum += data[i];
+    while (sum > 255u) sum -= 255u;
+    return (uint8)(~sum & 0xFFu);
+}
+
+/* Normal slave response registers (iLLD defaults, also used by pairwise). */
+static void lin_apply_normal_response(Ifx_ASCLIN *sfr)
+{
+    IfxAsclin_setChecksumInjection(sfr, IfxAsclin_ChecksumInjection_written);
+    IfxAsclin_enableHardwareChecksum(sfr, TRUE);
+    IfxAsclin_setLinResponseTimeoutMode(sfr, IfxAsclin_LinResponseTimeoutMode_frameTimeout);
+    IfxAsclin_setLinResponseTimeoutThreshold(sfr, 255U);
+    IfxAsclin_setHeaderResponseSelect(sfr, IfxAsclin_HeaderResponseSelect_headerAndResponse);
+}
+
+/* Raw-monitor response registers (TC387 uart8lin reference). */
+static void lin_apply_raw_response(Ifx_ASCLIN *sfr)
+{
+    IfxAsclin_setChecksumInjection(sfr, IfxAsclin_ChecksumInjection_written);
+    IfxAsclin_enableHardwareChecksum(sfr, FALSE);
+    IfxAsclin_setDataLength(sfr, IfxAsclin_DataLength_9);
+    IfxAsclin_setLinResponseTimeoutMode(sfr, IfxAsclin_LinResponseTimeoutMode_responseTimeout);
+    IfxAsclin_setLinResponseTimeoutThreshold(sfr, 128U);
+}
+
+int lin_sniff_ext_frame(uint8 *pidOut, uint8 *expLen, uint8 *classicUsed,
+                        uint32 *hdrMask, uint32 *respMask,
+                        uint8 data[LIN_NUM][10], uint8 rawLen[LIN_NUM],
+                        uint32 timeoutMs)
+{
+    linChannel ch;
+    uint32 t0, hdr = 0, done = 0, okm = 0;
+    uint8 pids[LIN_NUM];
+    uint8 pidFirst = 0, firstSeen = 0;
+    uint8 id6 = 0, exp = 8, classic = 0, expRaw = 9;
+    uint8 acc[LIN_NUM][10];
+    uint8 accN[LIN_NUM];
+    int i;
+
+    if (timeoutMs < 500u) timeoutMs = 500u;
+    if (timeoutMs > 10000u) timeoutMs = 10000u;
+    memset(pids, 0, sizeof(pids));
+    memset(acc, 0, sizeof(acc));
+    memset(accN, 0, sizeof(accN));
+    if (data) memset(data, 0, LIN_NUM * 10u);
+    if (rawLen) memset(rawLen, 0, LIN_NUM);
+
+    /* 1) normal registers + arm all for header */
+    for (ch = LIN1; ch <= LIN11; ch++) {
+        lin_apply_normal_response(linSfr[ch]);
+        lin_arm_header(linSfr[ch]);
+    }
+
+    /* 2) wait for external header (RHE latches per channel, poll round-robin) */
+    t0 = g_TickCount_1ms;
+    while ((g_TickCount_1ms - t0) < timeoutMs) {
+        for (ch = LIN1; ch <= LIN11; ch++) {
+            Ifx_ASCLIN *sfr;
+            if (hdr & (1u << ch)) continue;
+            sfr = linSfr[ch];
+            if (IfxAsclin_getRxHeaderEndFlagStatus(sfr)) {
+                uint8 b = 0;
+                IfxAsclin_clearRxHeaderEndFlag(sfr);
+                IfxAsclin_read8(sfr, &b, 1U);
+                pids[ch] = b;
+                hdr |= (1u << ch);
+                g_lin[ch].rxHdr++;
+                if (IfxAsclin_getLinParityErrorFlagStatus(sfr)) g_lin[ch].parityErr++;
+                if (!firstSeen) { pidFirst = b; firstSeen = 1; }
+                IfxAsclin_clearAllFlags(sfr);
+            } else if (IfxAsclin_getHeaderTimeoutFlagStatus(sfr) ||
+                       IfxAsclin_getFrameErrorFlagStatus(sfr) ||
+                       IfxAsclin_getCollisionDetectionErrorFlagStatus(sfr) ||
+                       IfxAsclin_getLinParityErrorFlagStatus(sfr)) {
+                /* header error latched before RHE: count once, re-arm so a
+                 * later frame in the same window can still be caught */
+                g_lin[ch].hdrErr++;
+                if (IfxAsclin_getLinParityErrorFlagStatus(sfr)) g_lin[ch].parityErr++;
+                else if (IfxAsclin_getHeaderTimeoutFlagStatus(sfr)) g_lin[ch].timeoutErr++;
+                else g_lin[ch].frameErr++;
+                IfxAsclin_clearAllFlags(sfr);
+                lin_arm_header(sfr);
+            }
+        }
+        if (hdr) break; /* first pass with any hit: one more pass below */
+    }
+    if (!hdr) {
+        if (hdrMask) *hdrMask = 0;
+        if (respMask) *respMask = 0;
+        return -1;
+    }
+    /* one more scan pass for same-bus late latchers (no ms wait) */
+    for (ch = LIN1; ch <= LIN11; ch++) {
+        Ifx_ASCLIN *sfr;
+        if (hdr & (1u << ch)) continue;
+        sfr = linSfr[ch];
+        if (IfxAsclin_getRxHeaderEndFlagStatus(sfr)) {
+            uint8 b = 0;
+            IfxAsclin_clearRxHeaderEndFlag(sfr);
+            IfxAsclin_read8(sfr, &b, 1U);
+            pids[ch] = b;
+            hdr |= (1u << ch);
+            g_lin[ch].rxHdr++;
+            if (IfxAsclin_getLinParityErrorFlagStatus(sfr)) g_lin[ch].parityErr++;
+            IfxAsclin_clearAllFlags(sfr);
+        }
+    }
+
+    /* 3) expected payload from first PID */
+    id6 = pidFirst & 0x3FU;
+    if (id6 == 0x17) { exp = 2; classic = 1; expRaw = 3; }
+    else if (id6 == 0x31) { exp = 8; classic = 0; expRaw = 9; }
+    else if (id6 >= 0x3C) { exp = 8; classic = 1; expRaw = 9; }
+    else { exp = 8; classic = 0; expRaw = 9; }
+    if (pidOut) *pidOut = pidFirst;
+    if (expLen) *expLen = exp;
+    if (classicUsed) *classicUsed = classic;
+    if (hdrMask) *hdrMask = hdr;
+
+    /* 4) arm header-hit channels for raw response capture */
+    for (ch = LIN1; ch <= LIN11; ch++) {
+        Ifx_ASCLIN *sfr;
+        if (!(hdr & (1u << ch))) continue;
+        sfr = linSfr[ch];
+        lin_apply_raw_response(sfr);
+        IfxAsclin_clearAllFlags(sfr);
+        IfxAsclin_flushRxFifo(sfr);
+        IfxAsclin_enableTxFifoOutlet(sfr, FALSE);
+        IfxAsclin_enableRxFifoInlet(sfr, TRUE);
+    }
+
+    /* 5) capture: drain FIFO continuously, finish per channel on RRE (full
+     * 9B), RT (short frame done, e.g. 2B+CK), or bus error / next break. */
+    t0 = g_TickCount_1ms;
+    while ((g_TickCount_1ms - t0) < 500u) {
+        for (ch = LIN1; ch <= LIN11; ch++) {
+            Ifx_ASCLIN *sfr;
+            uint8 n;
+            if (!(hdr & (1u << ch))) continue;
+            if (done & (1u << ch)) continue;
+            sfr = linSfr[ch];
+            /* drain whatever arrived */
+            for (;;) {
+                n = IfxAsclin_getRxFifoFillLevel(sfr);
+                if (n == 0) break;
+                if (n > 10u) n = 10u;
+                {
+                    uint8 tmp[10];
+                    uint8 k, take;
+                    if (n > 10u) n = 10u;
+                    IfxAsclin_read8(sfr, tmp, n);
+                    take = (uint8)(10u - accN[ch]);
+                    if (take > n) take = n;
+                    for (k = 0; k < take; k++) acc[ch][accN[ch] + k] = tmp[k];
+                    accN[ch] = (uint8)(accN[ch] + take);
+                }
+            }
+            if (IfxAsclin_getRxResponseEndFlagStatus(sfr) ||
+                IfxAsclin_getResponseTimeoutFlagStatus(sfr) ||
+                IfxAsclin_getFrameErrorFlagStatus(sfr) ||
+                IfxAsclin_getCollisionDetectionErrorFlagStatus(sfr) ||
+                IfxAsclin_getRxFifoOverflowFlagStatus(sfr) ||
+                IfxAsclin_getBreakDetectedFlagStatus(sfr)) {
+                /* one final drain after the end flag */
+                for (;;) {
+                    n = IfxAsclin_getRxFifoFillLevel(sfr);
+                    if (n == 0) break;
+                    if (n > 10u) n = 10u;
+                    {
+                        uint8 tmp[10];
+                        uint8 k, take;
+                        IfxAsclin_read8(sfr, tmp, n);
+                        take = (uint8)(10u - accN[ch]);
+                        if (take > n) take = n;
+                        for (k = 0; k < take; k++) acc[ch][accN[ch] + k] = tmp[k];
+                        accN[ch] = (uint8)(accN[ch] + take);
+                    }
+                }
+                if (IfxAsclin_getFrameErrorFlagStatus(sfr) ||
+                    IfxAsclin_getCollisionDetectionErrorFlagStatus(sfr) ||
+                    IfxAsclin_getRxFifoOverflowFlagStatus(sfr)) {
+                    g_lin[ch].respErr++;
+                    g_lin[ch].frameErr++;
+                    g_lin[ch].lastOk = 0;
+                } else {
+                    /* RRE / RT / next-break: captured bytes are the frame */
+                    g_lin[ch].rxResp++;
+                    if (accN[ch] == expRaw) {
+                        okm |= (1u << ch);
+                        g_lin[ch].lastId = id6;
+                        g_lin[ch].lastLen = (exp > 8) ? 8 : exp;
+                        for (i = 0; i < g_lin[ch].lastLen; i++) {
+                            g_lin[ch].lastData[i] = acc[ch][i];
+                        }
+                        g_lin[ch].lastClassic = classic ? 1 : 0;
+                        g_lin[ch].lastDir = 0;
+                        g_lin[ch].lastTick = g_TickCount_1ms;
+                        g_lin[ch].lastOk = 1;
+                    } else {
+                        g_lin[ch].respErr++;
+                        g_lin[ch].timeoutErr++;
+                        g_lin[ch].lastOk = 0;
+                    }
+                    if (IfxAsclin_getLinChecksumErrorFlagStatus(sfr)) {
+                        /* HW checksum is OFF in raw mode; ignore if set */
+                    }
+                }
+                IfxAsclin_clearAllFlags(sfr);
+                done |= (1u << ch);
+            }
+        }
+        if ((done & hdr) == hdr) break;
+    }
+    /* still pending -> timeout */
+    for (ch = LIN1; ch <= LIN11; ch++) {
+        if ((hdr & (1u << ch)) && !(done & (1u << ch))) {
+            g_lin[ch].respErr++;
+            g_lin[ch].timeoutErr++;
+            g_lin[ch].lastOk = 0;
+            IfxAsclin_clearAllFlags(linSfr[ch]);
+            done |= (1u << ch);
+        }
+        /* restore normal registers for the next command */
+        if (hdr & (1u << ch)) lin_apply_normal_response(linSfr[ch]);
+        if (rawLen) rawLen[ch] = accN[ch];
+        if (data) for (i = 0; i < 10; i++) data[ch][i] = acc[ch][i];
+    }
+    if (respMask) *respMask = okm;
+    if (okm) return 0;
+    return -2;
+}
+
 /* Pairwise master -> slave (header + response from master, slave verifies). */
 int lin_xact_m2s(linChannel master, linChannel slave, uint8 id6,
                  const uint8 *data, uint8 len, uint8 classic)
@@ -785,6 +1039,37 @@ uint32 lin_rx_levels(void)
         if (low) mask |= (1u << ch);
     }
     return mask;
+}
+
+void lin_passive_census(uint32 ms, uint32 edgeCnt[LIN_NUM], uint32 *lowMask)
+{
+    uint32 t0, last[LIN_NUM], cnt[LIN_NUM], low = 0;
+    linChannel ch;
+    int i;
+    if (ms < 100u) ms = 100u;
+    if (ms > 10000u) ms = 10000u;
+    for (i = 0; i < LIN_NUM; i++) { cnt[i] = 0; last[i] = 1; }
+    /* snapshot initial levels */
+    for (ch = LIN1; ch <= LIN11; ch++) {
+        last[ch] = (IfxPort_getPinState(linPins[ch].rx->pin.port,
+                                        linPins[ch].rx->pin.pinIndex)
+                    == FALSE) ? 0u : 1u;
+        if (last[ch] == 0) low |= (1u << ch);
+    }
+    t0 = g_TickCount_1ms;
+    while ((g_TickCount_1ms - t0) < ms) {
+        for (ch = LIN1; ch <= LIN11; ch++) {
+            uint32 lvl = (IfxPort_getPinState(linPins[ch].rx->pin.port,
+                                              linPins[ch].rx->pin.pinIndex)
+                          == FALSE) ? 0u : 1u;
+            if (lvl == 0) low |= (1u << ch);
+            if (lvl != last[ch]) { cnt[ch]++; last[ch] = lvl; }
+        }
+    }
+    for (i = 0; i < LIN_NUM; i++) {
+        if (edgeCnt) edgeCnt[i] = (i >= LIN1 && i <= LIN11) ? cnt[i] : 0;
+    }
+    if (lowMask) *lowMask = low;
 }
 
 void lin_dominant_hold(linChannel ch, uint32 *earlyMask, uint32 *lateMask)
