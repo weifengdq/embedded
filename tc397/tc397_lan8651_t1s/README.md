@@ -117,7 +117,7 @@ lwIP iperf server ready (TCP 5001)
 | `plca [id] [count]` | 查看/ live 修改 PLCA（0=主/协调器） | `plca 0 8`→pst=1 |
 | `link` | T1S 链路（sync/pst/phy_link/irq；判据见 §5 末） | `link: UP (sync=0 pst=0 phy_link=1 …)` |
 
-`t1stat`（从节点 ID1，常态）：
+`t1stat`（从节点 ID1；下为 CSMA 回退旧值，PLCA 见 §5）：
 
 ```
 DEVID=0x00086512 SYNC=0 RESETC=0 oa_cfg=0x9006
@@ -127,8 +127,10 @@ MAC ncr=0x0C(TXEN=1 RXEN=1) ncfgr=0x02020040 nsr=0x04
 BUF rba=0 txc=48 irq=idle(1)
 ```
 
-诊断寄存器：`STS1 (0x0004CA18)=0`（无 RXINTO/UNEXPB/BCNBFTO），
-`BCNCNT (0xCA26/27)=0`（适配器不发 BEACON，纯 CSMA 回退）。
+诊断寄存器：`STS1 (0x0004CA18)=0`（无 RXINTO/UNEXPB/BCNBFTO）。
+BEACON/TO 计数器在 MMS4 `0x20+` 区（注意不是 `0xCA20+`），默认关闭，
+` t1w 0x00040020 0x3` 使能后读 `0x00040026/27`（BCN）、`0x00040024/25`（TO）；
+计数器读后不清零（只增，32 位回绕）。
 
 `link`/`lan8651_link_up()` 判据为 `SYNC || PST || PHY_LINK`（BMSR link 位，
 latch-low 故读两次取第二次）：K2L 适配器无 BEACON 时 `sync=0/pst=0` 但
@@ -137,9 +139,12 @@ netif 侧另有 `LAN8651_FORCE_LINK_UP=1` 兜底。
 
 ---
 
-## 5 实测数据（2026-09-14）
+## 5 实测数据
 
-从节点（PLCA ID1，默认）：
+> 2026-09-14 的数据为 **CSMA 回退**下测得（当时适配器侧 PLCA 未使能，
+> 板端恒 `pst=0`）；2026-09-15 起为 **PLCA 模式**（见 §5.3）。
+
+### 5.1 CSMA 回退：从节点（PLCA ID1，默认）
 
 * PC→板 `ping 192.168.1.100`：3/3，avg ~0.7ms，ttl=255
 * 板→PC `ping 192.168.1.1 3/4 32`：0% loss，0~1ms
@@ -148,20 +153,63 @@ netif 侧另有 `LAN8651_FORCE_LINK_UP=1` 兜底。
   与客户端一致；接近 10M 理论极限，对标 tc387 的 8.3Mbps）
 * Shell 自动化 `temp/test_lan8651_shell.py`：9/9 PASS
 
-主节点（`plca 0 8` live 切换，ID0/协调器）：
+### 5.2 CSMA 回退：主节点（`plca 0 8` live 切换，ID0/协调器）
 
 * `t1stat`：`pst=1`，串口 `LAN8651 link up` + `gratuitous_arp=sent`
 * `STS1=0`（适配器不做协调器，无 BEACON 冲突）
 * PC→板 ping：2/2、3/3，0% loss
 * **iperf2 TCP：Debug 20s/11.6MB/4.79Mbps；Release 15s/14.3MB/7.89Mbps**
 
+### 5.3 PLCA 模式（2026-09-15，适配器 ID0 协调器 + 板 ID1 跟随）
+
+使能命令（见 §6 表 `set-plca-cfg` 行）：适配器 `ethtool --set-plca-cfg … node-id 0 …` 后，
+板端 `t1stat` 从 `pst=0` 变 `pst=1`，`link: UP (sync=0 pst=1 phy_link=1 …)`；
+BEACON 计数 3s 内 +70739（~23.6k/s，NCNT=8/TOT=32 下合理），TO 计数同步涨。
+
+* PC→板 ping 4/4（~0.8ms），UDP echo 5/5×100B
+* **iperf2 TCP（Release）：20s / 20.9MB / 8.70Mbps**（8.60~8.81 各 interval，
+  高于 CSMA 的 7.69——PLCA 免碰撞的收益）；测后 ping 3/3 存活（此前 CSMA 下
+  iperf 后常 wedged，PLCA 下本次全程无 wedged，样本有限仅供参考）
+* 角色对调（板 `plca 0 8` 协调器 + 适配器 `node-id 1` 跟随）：
+  适配器 `Link detected: yes`（跟随侧 link 反映 PLCA 同步，即收到了板端 BEACON），
+  ping 3/3，**iperf 15s/15.8MB/8.76Mbps**；板端 `STS1=0`（无 UNEXPB）；
+  测完已恢复板 ID1 + 适配器 ID0（`t1stat` 回 `pst=1`，ping 2/2）
+
 ---
 
-## 6 已知问题
+## 6 Linux 侧文档命令汇总（实测）
+
+文档（已转 txt，均在 `tc397/ref/`，不进 git）：
+`LAN867x-Linux-Driver-Install-Application-Note-00005992.txt`（AN5992），
+`EVB-LAN8670-USB_Linux_Driver_3v0_README.txt`。
+本机：内核 `7.0.0-31-generic`，ethtool `6.19`（≥6.7 ✓）。
+
+| 文档命令 | 本机实测 | 结果 |
+| --- | --- | --- |
+| `uname -r` | `7.0.0-31-generic` | ✓ |
+| `ip link show`（§7 找 `enx<MAC>`） | `enx001ec0d1c337`（`00:1e:c0:d1:c3:37`） | ✓ |
+| `lsmod \| grep microchip_t1s` | 已加载（Used by 1），免编译驱动 | ✓ |
+| `dmesg` 绑定证据 | `LAN867X Rev.C2 usb-001:018:00: attached PHY driver` | ✓（需 sudo） |
+| `/sys/bus/mdio_bus/devices/usb-001:018:00/driver` | → `LAN867X Rev.C2`，`phy_id 0x0007c165` | ✓ |
+| `ethtool --version`（文档要 ≥6.7） | `6.19` | ✓ |
+| `ethtool --get-plca-cfg enx…` | 初始 `Enabled: No, node 255`（即之前全跑 CSMA 的原因） | ✓ |
+| `ethtool --set-plca-cfg enx… enable on node-id 0 node-cnt 8 to-tmr 0x20 burst-cnt 0x0 burst-tmr 0x80` | 回读 `Enabled: Yes, node 0 (coordinator)`，8/32/0/128 | ✓，见 §5.3 |
+| `ethtool enx…` 链路 | `10Mb/s Half, Link detected: yes` | ✓ |
+| `ip addr add 192.168.1.1/24` + `ip link set up` | 替代文档 nmcli，`nmcli device` 显示 connected (externally) | ✓ |
+| `iperf3 -s` / `iperf3 -c … -u -b 10M`（文档 §10，UDP 9.43M） | 板端无 UDP iperf server（仅 TCP lwiperf + UDP echo 9）：`iperf3 -c 192.168.1.100 -u -b 10M` 报 `control socket has closed unexpectedly`；UDP 能力由 echo 覆盖（§5） | 按预期不适用，已记录 |
+| `ethtool --cable-test`（文档 §12，仅 D0） | `PHY driver does not support cable testing`（本机 C2） | 按预期不支持，已记录 |
+| `insmod microchip_t1s.ko …` / `load.sh` | 本机驱动已内置绑定，无需编译加载 | 未执行（不需要） |
+| PLCA Configurator TUI | 需求简单，直接 ethtool 命令即可 | 未用 |
+
+---
+
+## 7 已知问题
 
 1. **K2L USB-10BASE-T1S 适配器会 wedged**（双向无包，`ip -s` TX 涨 RX 停，
    板端 Shell/SPI 一切正常；板复位无效，复位适配器即恢复）：
-   轻载几十秒~几分钟或 iperf 后偶发。 workaround（屡试屡爽）：
+   CSMA 回退下轻载几十秒~几分钟或 iperf 后偶发；**PLCA 使能后本次全程
+   （ping+UDP+两轮 iperf+主从对调）未再 wedged**（样本有限，仅供参考，
+   workaround 照旧有效）。 workaround（屡试屡爽）：
    ```bash
    echo -n 0 | sudo tee /sys/bus/usb/devices/1-7/authorized > /dev/null; sleep 2
    echo -n 1 | sudo tee /sys/bus/usb/devices/1-7/authorized > /dev/null; sleep 3
@@ -176,7 +224,7 @@ netif 侧另有 `LAN8651_FORCE_LINK_UP=1` 兜底。
 
 ---
 
-## 7 许可
+## 8 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * Letter-Shell：MIT；`aurix_flasher`：MIT + Apache 2.0
