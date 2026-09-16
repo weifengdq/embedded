@@ -1,180 +1,110 @@
-# tc397_uart_lettershell — TC397XX (292pin) ASCLIN0 Letter-Shell (921600) + P13.0 LED
+# tc397_tlf35584 — TC397 + TLF35584 安全电源 SBC 全功能调试工程
 
-本工程以 `tc397_0` (ADS, TC39XB) 为蓝本，在 **Ubuntu 26.04 + tricore-gcc 13.4.1 + CMake/Ninja**
-下重建，移植 `tc387_1` 的 **Letter-Shell + 921600 高速串口** 方案（不含以太网），目标
-**TC397XX 292pin**，调试串口 **ASCLIN0 TX P14.0 / RX P14.1, 921600-8N1**，
-LED **P13.0（低电平点亮）** 通过 Shell 命令控制。
+以 `tc397_uart_lettershell`（ASCLIN0 921600 + Letter-Shell + P13.0 LED）为蓝本，
+新增 **QSPI2 主机驱动 + TLF35584 全功能 `tlf` Shell 命令**。覆盖 TLF35584 的
+电源轨、状态机、SPI 寄存器、保护锁、窗口/功能看门狗、ERR 监控、安全状态、
+ABIST、Buck 微调、唤醒定时器等全部功能（官方 `SPI_TLF_1_KIT_TC397_TFT` 例程仅
+演示 unlock→关 WWD/ERR→进 NORMAL，本工程将其扩展为可交互调试全集）。
 
-* 参考移植：`/home/z/lz/tc387/tc387_1`（Shell/UART/CMake/build.sh，见其 README §5.4 921600 优化）
-* 工具链/下载：tricore-gcc 13.4.1（`/opt/tricore-gcc`）+ TAS/DAS 8.3.0 + `aurix_flasher`
- （复用 `/home/z/lz/tc387/ref/aurix_flasher_linux-master/linux/aurix_flasher`，TC3xx 通用）
-* 串口：`/dev/ttyACM0`（1a86:55d3），DAP MiniWiggler `058b:0043` 仅用于 TAS 下载
-
----
-
-## 1 硬件
-
-| 信号 | TC397 Pin | 说明 |
-| --- | --- | --- |
-| UART TX | P14.0 | `IfxAsclin0_TX_P14_0_OUT`, `cmosAutomotiveSpeed4` |
-| UART RX | P14.1 | `IfxAsclin0_RXA_P14_1_IN`, `pullUp`, `Ifx_RxSel_a` |
-| LED | P13.0 | 低电平点亮，上电短亮后 1 Hz 心跳（`Shell_Process`），`led` 命令控制 |
-| DAP | USB 058b:0043 | TAS 下载 |
-| MCU | TC397XX 292pin | `DEVICE_TC39XB` + `IFX_PIN_PACKAGE_LFBGA292`，6 核（Shell 跑 Core0） |
+* 基线：`tc397_uart_lettershell`（见其 README；UART/时钟/LED 均保留）
+* 工具链：tricore-gcc 13.4.1（`/opt/tricore-gcc`）+ CMake/Ninja + TAS/DAS 8.3.0 +
+  `aurix_flasher`（复用 `/home/z/lz/tc387/ref/aurix_flasher_linux-master/linux/aurix_flasher`）
+* 串口：`/dev/ttyACM0`（1a86:55d3），921600-8N1；DAP MiniWiggler `058b:0043` 仅用于下载
+* 实测状态（2026-09-16，板上即本 commit 的 Debug 版）：TLF **NORMAL**，
+  全轨就绪，全部标志清零，`tlf` 全命令验证通过（§7）
 
 ---
 
-## 2 目录结构
+## 1 硬件与原理
 
-```
-tc397_uart_lettershell/
-├── cmake/tricore-gcc-toolchain.cmake  # /opt/tricore-gcc/bin, 13.4.1
-├── cmake/AurixProject.cmake           # 递归收集 + 排除 build/.ads/.settings
-├── Configurations/
-│   ├── Configuration.h / ConfigurationIsr.h  # STM 100k ticks/ms, OS_TICK 10, ASCLIN0 TX31/RX32
-│   └── Ifx_Cfg.h (LFBGA292) / Ifx_Cfg_Ssw.*  # 保留 tc397_0
-├── Libraries/
-│   ├── iLLD/TC3xx/...                 # 保留 tc397_0 原版（TC39xB），勿用 tc387 的覆盖
-│   ├── UART/UART_Logging.c/h          # ASCLIN0 921600, FIFO 1024, RX Level 1, TX/RX ISR + UART_Poll
-│   └── Infra/Service/...              # Bsp, Ssw, Platform（保留 tc397_0）
-├── Shell/
-│   ├── letter-shell/src/              # 3.2.4
-│   ├── shell_cfg_user.h               # 1024 Shell缓冲, 8历史, tick=g_TickCount_1ms
-│   └── shell_port.c/h                 # 环形缓冲 1024B + led/mcu/temp 等命令
-├── Lcf_Gnuc_Tricore_Tc.lsl            # 已增 .shellCommand/.shellVar (KEEP, PROVIDE)
-├── Cpu0_Main.c                        # STM 1ms + P13.0 + UART/Shell/DTS
-├── Cpu1..5_Main.c                     # 仅同步，空转（保留 tc397_0）
-├── build.sh / serial_monitor.py       # 一键构建/烧录/监控
-└── build/gcc/tc397_uart_lettershell.{elf,hex,map}
-```
+### 1.1 引脚连接（本工程）
 
----
+| TLF35584 引脚 | TC397 引脚 | 方向（MCU 视角） | 说明 |
+| --- | --- | --- | --- |
+| SDI (MOSI) | P15.6 | 输出（QSPI2 MTSR alt3） | SPI 主→从 |
+| SDO (MISO) | P15.7 | 输入（QSPI2 MRST RxSel_b，下拉） | SPI 从→主；读回首位恒 1 |
+| SCL | P15.8 | 输出（QSPI2 SCLK alt3） | 默认 2MHz（`tlf baud` 可改 100k–10M；SLEEP 态 TLF 侧上限 1.5M） |
+| SCS | P14.2 | 输出（QSPI2 SLSO1 alt3，硬件片选） | 每帧自动拉低/释放 |
+| WDI | P14.3 | 输出（GPIO，idle 低） | 看门狗触发输入（TLF 内下拉 150–330µA）；`tlf wdi` |
+| SS1 | P33.9 | 输入（GPIO 上拉） | 安全状态输出；**低 = 安全状态**；`tlf ss` |
+| ERR | P33.8 | 输出（GPIO，idle 高） | 台架位 bang 模拟；量产应路由 SMU FSP0（`IfxSmu_FSP0_P33_8_OUT`，idle 高）；`tlf err` |
+| ROT | nPORST | （专用复位脚，无 SW 动作） | 本次台架 6+ 次 INIT 迁移均**未观察到复位**（见 §7.7，MPS=1 阻断） |
+| INT | nESR1 | （专用中断脚，无 SW 动作） | 推挽低脉冲；由 `IF` 寄存器读回（`INTMISS` 置位即证明 INT 曾跳变，§7.5） |
+| MPS | →VCO（高） | 台架 strapping | **Test Mode 1**（编程支持模式）：INIT 定时器停止；WWD/FWD/ERR 对 ROT 的贡献被阻断，但状态机照常迁移（DS §11.7）。证据见 §7.7 |
+| SEC | 悬空 | strapping | 使用 step-up 前级（`DEVCFG2.STU=1` 实测确认） |
+| FRE | 悬空 | strapping | Buck 高频 2.2MHz（`DEVCFG2.FRE=1` 实测确认） |
+| VCI | 电阻分压约 0.8V | 模拟输入 | 外部芯核电源检测 |
+| EVC | 外部 DC-DC 使能 | 输出使能 | 外部后级芯核电源使能（`DEVCFG2.EVCEN=1` 实测确认） |
 
-## 3 构建与下载（Ubuntu 26.04）
+> 注意：P14.2/P14.3 是 TC397 的 HWCFG 引脚（复位采样），但不影响其复位后作
+> QSPI/GPIO 使用（本工程实测正常）。
 
-```bash
-export PATH=/opt/tricore-gcc/bin:$PATH
-tricore-elf-gcc --version  # 13.4.1
+### 1.2 TLF35584 电源树（一句话）
 
-cd tc397_uart_lettershell
-./build.sh build                        # Debug
-./build.sh build --build-type Release
-./build.sh download                     # 需 TAS: systemctl status tas-server
-./build.sh download --build-type Release --id 0
-./build.sh clean
-./build.sh all                          # rebuild + download
-./build.sh reset                        # 触发 RESET + Application Reset
-```
+VS（电池）→ 前级 **Buck（2.2MHz，FRE=开）+ Step-up（SEC=开）** → 预稳 VPRE →
+后级：`LDO_µC (QUC)` 给 MCU、`VCI` 外挂 DC-DC 给芯核、`QST` 待机、`QCO` 通信、
+`QVR` 基准、`QT1/QT2` 传感器 tracker。每路独立 OV/UV/StG 监控，
+故障记入 `MONSF0/1/2/3`，严重故障触发状态机迁移（§1.3）。
 
-产物 `build/gcc/tc397_uart_lettershell.{elf,hex,map}`（`build/` 已全局忽略，不进 git）。
+### 1.3 状态机（DS Ch.11，实测行为见 §7）
 
-手动 CMake：
+`POR → INIT → NORMAL ⇄ SLEEP/STANDBY/WAKE`，另有 `FAILSAFE`（严重故障）、
+`POWERDOWN`。关键实测结论：
 
-```bash
-cmake -S . -B build/gcc -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/tricore-gcc-toolchain.cmake -DCMAKE_BUILD_TYPE=Debug
-cmake --build build/gcc -j$(nproc)
-tricore-elf-size --format=berkeley build/gcc/tc397_uart_lettershell.elf
-```
+* 上电默认停在 **INIT**（`DEVSTAT=0xF9`，SS1=0），等 MCU 经 SPI 配置后发
+  `DEVCTRL+DEVCTRLN` 进 NORMAL（`tlf demo` 一键完成：unlock→关 WWD/ERR→
+  lock→开 COM/VREF→清标志→goto NORMAL）。
+* `INIT→NORMAL` 的前提（DS §11.3.2，台架证实）：WWD/FWD 安静（关闭或被正确
+  服务）+ ERR 关闭或翻转正常 + 标志清零，否则请求被静默拒绝（`DEVSTAT` 保持
+  INIT，本工程复现过 2 次，见 §7.8）。
+* **`*R3` 寄存器在 INIT 迁移后并不复位**（与 DS Table 22 标注不符，3 次独立
+  复现）：`RWDCFG0/RWWDCFGx/RWDCFG1/RFWDCFG/RSYSPCFG1`、看门狗计数值全部保留，
+  利于 post-mortem，但要求软件显式关闭/清理。详见 §7.6。
 
-下载说明：`build.sh` 默认 flasher 为
-`/home/z/lz/tc387/ref/aurix_flasher_linux-master/linux/aurix_flasher`
-（`resolve_flasher` 另试 `tools/aurix_flasher/`），可用 `--flash-tool <path>` 覆盖。
-TAS 需运行：`systemctl status tas-server`（`ss -tlnp | grep 24817`），
-验证 `./aurix_flasher -id list`。
+### 1.4 SPI 协议（DS Ch.13）
 
----
+* 16 clocks/帧：`CMD(1) + ADDR(6) + DATA(8) + PARITY(1)`。
+  MOSI 在 SCL 上升沿采样；MISO 写时环回 MOSI，读时返回
+  `1'b1 + STATUS[5:0](=0) + DATA[7:0] + PARITY`。
+* 奇偶：15 位异或（= 偶校验语义），本工程用 QSPI **硬件偶校验**
+ （`dataWidth=15, parityCheck=TRUE, parityMode=even`），与官方例程一致；
+  MOSI 下降沿移位（`shiftTransmitDataOnTrailingEdge`）。
+* **保护寄存器**（`SYSPCFG0/1, WDCFG0/1, FWDCFG, WWDCFG0/1`）写前必须
+  `UNLOCK（AB EF 56 12）`，写后 `LOCK（DF 34 BE CA）` 生效；期间穿插其它写会
+  中断序列（`SPISF.LOCK` 置位）。读保护请求寄存器返回**按位取反**值
+  （与对应状态寄存器 XOR 应为 `0xFF`，本工程以此自检链路，§7.2）。
+* `DEVCTRL(0x15)+DEVCTRLN(0x16)` 必须连写且后者按位取反，CS 上升沿生效；
+  否则 `SYSSF.NO_OP` 置位。`STATEREQ` 被硬件清零即表示已受理（实测 `DEVCTRL`
+  回读 `STATEREQ=000`）。
+* SPI 错误（PARE/LENE/ADDRE/DURE/LOCK）置位 `SPISF` 并产生 INT 中断
+ （`IF.SPI`）。SCS 拉低超 ~2ms 即 DURE（复位/下载期间引脚浮空会在上电残留
+  该标志，属正常，开工前 `tlf clear spisf` 即可，§7.2）。
 
-## 4 串口与 Shell
+### 1.5 看门狗（DS Ch.15，两份 window-watchdog 应用笔记已转 txt 在 `ref/`）
 
-```bash
-python3 -m serial.tools.miniterm /dev/ttyACM0 921600 --raw
-python3 serial_monitor.py --port /dev/ttyACM0 --baud 921600
-python3 serial_monitor.py --port /dev/ttyACM0 --baud 921600 --cmd help --duration 5
-```
+* **WWD（窗口）**：INIT 的 ROT 上升沿后从 LONG OPEN WINDOW 启动；
+  触发源可选 WDI 引脚或 SPI 写 `WWDSCMD`（读 `TRIG_STATUS` 后写反值）。
+  OW 内有效触发进 CW，CW 内触发或 OW 超时皆判无效：无效 +2 / 有效 −1；
+  计数器 ≥ `WWDETHR` 即溢出进 INIT（`INITERR.WWDF`）。
+  窗长单位 50×`WDCYC`（0.1ms/1ms）。
+  WDI 引脚需“2 高采样 + 2 低采样”，判决点（第 2 个低采样）落在 OW 内才有效。
+* **FWD（功能/问答）**：使能后按 `WDHBTP×50` 心跳出题（`FWDSTAT0.QUEST`），
+  按 Table 26 把 `RESP3→FWDRSP, RESP2→FWDRSP, RESP1→FWDRSP, RESP0→FWDRSPSYNC`
+  依次作答；末字节必须走 SYNC 寄存器才复位心跳。答对 −1 / 答错 +2，
+  ≥ `FWDETHR` 进 INIT（`INITERR.FWDF`）。
+* **本工程的关键实测发现（§7.4）**：FWD FSM 每心跳周期最多消费 **1 个响应字节**，
+  字节间隔必须大于心跳周期（600ms 心跳用 700ms 间隔 2 次成功；
+  10ms/150ms 间隔一律丢弃且每次 +2）。`tlf fwd answer/bgauto` 已按
+  “心跳+100ms 自适应间隔”实现为后台非阻塞序列机。
+* WWD-SPI 连续喂狗的正确姿势（§7.3 实测 56 次全有效）：窗口配成
+  CW=OW（如 100ms/100ms），首次手动触发定相后，以 **CW+OW 周期**
+  自动喂（`tlf wwd auto on 200`），命中 CW 的触发会终止 CW 实现自同步；
+  启动初相随机，头几次 CW 命中 +2 属正常，需给 `WWDETHR` 留余量。
 
-启动日志（921600）：
+### 1.6 ERR 监控与安全状态（DS Ch.12）
 
-```
-After Shell_Init direct
-TC397 Letter-Shell ...
-TC397 UART0 + Letter-Shell
-Board: TC397XX 292pin (ASCLIN0 P14.0 TX / P14.1 RX, 921600)
-Type 'help' for commands, ...
-ChipID: 0x... CHREV=0x...
-SCU_ID: 0x... RSTSTAT: 0x...
-STM Freq: 100000000 Hz Tick: 0
-DTS raw=0x... -> .. C
-```
-
-| 命令 | 说明 |
-| --- | --- |
-| `help` | 列出全部命令 |
-| `version` / `ver` | 固件版本、编译时间、板卡 |
-| `mcu` | ChipID/SCU_ID/RSTSTAT/RSTCON/CCUCON/STM |
-| `uid` | CHIPID + DTSSTAT |
-| `uptime` | g_TickCount 天时分秒 |
-| `reset` / `reboot` | 软件复位 |
-| `temp` | DTS 温度 |
-| `sysinfo` | mcu+temp+uptime |
-| `led` | P13.0 控制（见下） |
-| `mem` | 提示（NO_SYS） |
-
-LED（P13.0，低=亮）：
-
-```
-letter:/$ led
-letter:/$ led on        # 点亮，心跳关
-letter:/$ led off       # 熄灭，心跳关
-letter:/$ led toggle
-letter:/$ led blink 5 200   # 闪 5 次 x 200ms
-letter:/$ led hb on     # 1Hz 心跳开（默认开）
-letter:/$ led hb off    # 心跳关
-```
-
----
-
-## 5 移植要点（vs tc397_0 / tc387_1）
-
-* **保留 tc397_0**：`Libraries/iLLD`（TC39xB 全套 SFR/PinMap）、`Infra/Service`、
-  `Configurations/Ifx_Cfg_Ssw.*`、`Lcf` 内存布局（6 核 stacks/CSA）、`Cpu1..5_Main.c`。
-  切勿用 tc387 的 iLLD 覆盖（版本不同）。
-* **修改 `Ifx_Cfg.h`**：`IFX_PIN_PACKAGE_LFBGA292`（原 516），`DEVICE_TC39XB` 不变。
-* **新增**：`cmake/`（3 文件，直拷 tc387_1）、`CMakeLists.txt`
-  （`project(tc397_uart_lettershell)`，GCC `-mcpu=tc39xx` / TASKING `tc39xb`）、
-  `build.sh`（同上 + flasher 多路径）、`serial_monitor.py`、
-  `Configurations/Configuration.h` + `ConfigurationIsr.h`
-  （`OS_TICK 10`，`ASCLIN0_TX 31 / RX 32`）、`Libraries/UART/`（ASCLIN0 版）、
-  `Shell/`（letter-shell + `shell_cfg_user.h` + `shell_port.c` TC397 版 + `led`）、
-  `Lcf` 追加 `.shellCommand/.shellVar`（KEEP/PROVIDE，同 tc387_1）。
-* **UART0**：`MODULE_ASCLIN0`，`IfxAsclin0_TX_P14_0_OUT` / `IfxAsclin0_RXA_P14_1_IN`，
-  `921600/oversampling 16/medianFilter three/samplePoint 12/prescaler 1`，
-  `PadDriver cmosAutomotiveSpeed4`，`TX/RX 1024`，`RX Level 1 / TX 8`，
-  `RX 32 > TX 31 > STM 10`，ISR 批量 64B `Shell_RxPush`，
-  `UART_Poll` 仅作 `RFL` 丢失回退（见 tc387_1 README §5.4）。
-* **时钟/温度**：STM0 1ms（`100k ticks/ms`，`increaseCompare`），
-  DTS `LOW -40 UPPER 170`，`convertToCelsius`。
-* **CPU**：`CMake -mcpu=tc39xx`（`--target-help` 实测支持 `tc39xx`），
-  `.cproject` 仍为 `tc39xb`（TASKING 名，供 ADS 参考）。
-
----
-
-## 6 常见问题
-
-* **串口无输出**：确认 `921600` 且为 `/dev/ttyACM0` 非 `ttyUSB0`；
-  `stty -F /dev/ttyACM0 921600 raw -echo` 后重读；按 RESET；
-  `aurix_flasher -id 0 -read 0x80000000` 触发 RESET + Application Reset。
-* **烧录后仍 halt**：`build.sh download` 末尾已自动 `-read 0x80000000` 一次；
-  无效则 `./build.sh reset` 或按板载 RESET。
-* **`tricore-elf-gcc not found`**：`export PATH=/opt/tricore-gcc/bin:$PATH`。
-* **TAS 连不上**：`systemctl status tas-server`，`ss -tlnp | grep 24817`，
-  `ldd /opt/Tools/DAS/8.3.0/bin/tas_server` 查 `libftd2xx`。
-* **LED 不亮**：P13.0 低=亮；`led on` 后用万用表量 P13.0 应 ~0V；
-  `led hb off` 排除心跳干扰后再测。
-
----
-
-## 7 许可
-
-* iLLD/Libraries：Infineon Boost Software License 1.0
-* Letter-Shell：MIT
-* 其余移植代码内部许可
+* `ERR` 引脚期望翻转信号（量产接 SMU FSP，典型百 Hz 量级）；常高/常低超
+  `ΔtDET` 即判错：`ERRRECEN=0` 直接进 INIT（`INITERR.ERRF`），
+  `ERRRECEN=1` 则先给恢复窗（`ERRREC` 1/2.5/5/10ms），窗内恢复则只告警。
+* 错
+...[truncated 10976 chars]

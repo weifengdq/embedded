@@ -16,6 +16,7 @@
 #include "ConfigurationIsr.h"
 #include "UART_Logging.h"
 #include "shell_port.h"
+#include "tlf35584.h"
 #include "Dts/Dts/IfxDts_Dts.h"
 #include "Dts/Std/IfxDts.h"
 #include "IfxScu_reg.h"
@@ -61,6 +62,9 @@ void core0_main(void)
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
 
+    /* TLF35584: QSPI2 + WDI/ERR/SS1 GPIOs (no TLF config touched here) */
+    Tlf_Init();
+
     /* DTS init */
     {
         IfxDts_Dts_Config dtsConf;
@@ -93,6 +97,9 @@ void core0_main(void)
         const char *msg5 = "Type 'help' for commands, 'mcu' for chip info, 'temp' for temperature, 'led' for LED\r\n";
         Ifx_SizeT cnt5 = strlen(msg5);
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg5, &cnt5, TIME_INFINITE);
+        const char *msg6 = "TLF35584 on QSPI2 (P15.6/15.7/15.8 + nCS P14.2, 2MHz HW-parity), try 'tlf link'\r\n";
+        Ifx_SizeT cnt6 = strlen(msg6);
+        IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg6, &cnt6, TIME_INFINITE);
     }
     /* Also print early system info via direct */
     {
@@ -121,5 +128,6 @@ void core0_main(void)
     {
         UART_Poll();
         Shell_Process();
+        Tlf_Background(g_TickCount_1ms);
     }
 }
