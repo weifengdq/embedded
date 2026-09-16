@@ -17,6 +17,7 @@
 #include "UART_Logging.h"
 #include "shell_port.h"
 #include "adc.h"
+#include "hss.h"
 #include "Dts/Dts/IfxDts_Dts.h"
 #include "Dts/Std/IfxDts.h"
 #include "IfxScu_reg.h"
@@ -91,7 +92,7 @@ void core0_main(void)
         const char *msg4 = "Board: TC397XX 292pin (ASCLIN0 P14.0 TX / P14.1 RX, 921600)\r\n";
         Ifx_SizeT cnt4 = strlen(msg4);
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg4, &cnt4, TIME_INFINITE);
-        const char *msg5 = "Type 'help' for commands, 'mcu' for chip info, 'temp' for temperature, 'led' for LED, 'adc' for AN0..AN47\r\n";
+        const char *msg5 = "Type 'help' for commands, 'mcu' for chip info, 'temp' for temperature, 'led' for LED, 'adc' for AN0..AN47, 'hss' for switches\r\n";
         Ifx_SizeT cnt5 = strlen(msg5);
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg5, &cnt5, TIME_INFINITE);
     }
@@ -126,6 +127,19 @@ void core0_main(void)
         const char *msg7 = "ADC ready, try 'adc' (AN0..AN47)\r\n";
         Ifx_SizeT cnt7 = strlen(msg7);
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg7, &cnt7, TIME_INFINITE);
+    }
+
+    /* HSS control pins P40.0..7, safe state = all low (OUT off, DEN off) */
+    {
+        const char *msg8 = "HSS init (P40.0..7 outputs, all low)...\r\n";
+        Ifx_SizeT cnt8 = strlen(msg8);
+        IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg8, &cnt8, TIME_INFINITE);
+    }
+    Hss_Init();
+    {
+        const char *msg9 = "HSS ready (safe: IN/DEN low), try 'hss'\r\n";
+        Ifx_SizeT cnt9 = strlen(msg9);
+        IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg9, &cnt9, TIME_INFINITE);
     }
 
     /* LED on briefly to show boot, then heartbeat takes over (1 Hz in Shell_Process) */
