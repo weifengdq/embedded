@@ -19,6 +19,7 @@
 #include "shell.h"
 #include "adc.h"
 #include "hss.h"
+#include "IfxPort.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -82,6 +83,8 @@ static void Hss_PrintDev(Shell *shell, uint8 dev)
 static void Hss_PrintStatus(Shell *shell)
 {
     shellPrint(shell, "WSTD6020AN x2 (P40.0-7), IS 1K->GND, AN14=HSS0 AN15=HSS1\r\n");
+    shellPrint(shell, "NOTE: P40.0-7 are INPUT-ONLY on TC397 LFBGA292 (no output\r\n");
+    shellPrint(shell, "driver); levels below are board net levels, not driven.\r\n");
     Hss_PrintDev(shell, 0);
     Hss_PrintDev(shell, 1);
     shellPrint(shell, "Expect 1K load @12V: Iout~12mA -> Vis~7.7mV(K0); DEN=0 => IS Hi-Z ~0V\r\n");
@@ -97,6 +100,7 @@ static void Hss_PrintUsage(Shell *shell)
     shellPrint(shell, "  hss dsel <dev> <0|1>      IS mux (0=ch0 1=ch1)\r\n");
     shellPrint(shell, "  hss diag [dev [ch]]       IN on + DEN/DSEL select, 3ms, read IS\r\n");
     shellPrint(shell, "  hss offall                all IN/DEN low (safe)\r\n");
+    shellPrint(shell, "  hss regs                  dump P40 OUT/IN/IOCR (GPIO debug)\r\n");
 }
 
 static int Hss_ParseDevCh(Shell *shell, const char *sDev, const char *sCh,
@@ -146,7 +150,8 @@ static int cmd_hss(int argc, char *argv[])
             return -1;
         }
         Hss_SetIn(dev, ch, 1);
-        shellPrint(shell, "HSS%u CH%u IN=1 (OUT on)\r\n", (unsigned)dev, (unsigned)ch);
+        shellPrint(shell, "HSS%u CH%u IN=1 req (rb=%d; P40 input-only, no drive)\r\n",
+                   (unsigned)dev, (unsigned)ch, Hss_GetIn(dev, ch));
         return 0;
     }
     if (strcmp(argv[1], "off") == 0)
@@ -159,7 +164,8 @@ static int cmd_hss(int argc, char *argv[])
             return -1;
         }
         Hss_SetIn(dev, ch, 0);
-        shellPrint(shell, "HSS%u CH%u IN=0 (OUT off)\r\n", (unsigned)dev, (unsigned)ch);
+        shellPrint(shell, "HSS%u CH%u IN=0 req (rb=%d; P40 input-only, no drive)\r\n",
+                   (unsigned)dev, (unsigned)ch, Hss_GetIn(dev, ch));
         return 0;
     }
     if (strcmp(argv[1], "den") == 0)
@@ -179,7 +185,8 @@ static int cmd_hss(int argc, char *argv[])
             return -1;
         }
         Hss_SetDen((uint8)d, (uint8)v);
-        shellPrint(shell, "HSS%ld DEN=%ld\r\n", d, v);
+        shellPrint(shell, "HSS%ld DEN=%ld req (rb=%d; P40 input-only)\r\n",
+                   d, v, Hss_GetDen((uint8)d));
         return 0;
     }
     if (strcmp(argv[1], "dsel") == 0)
@@ -199,7 +206,8 @@ static int cmd_hss(int argc, char *argv[])
             return -1;
         }
         Hss_SetDsel((uint8)d, (uint8)v);
-        shellPrint(shell, "HSS%ld DSEL=%ld (mux->ch%ld)\r\n", d, v, v);
+        shellPrint(shell, "HSS%ld DSEL=%ld req (rb=%d; P40 input-only)\r\n",
+                   d, v, Hss_GetDsel((uint8)d));
         return 0;
     }
     if (strcmp(argv[1], "diag") == 0)
@@ -244,12 +252,92 @@ static int cmd_hss(int argc, char *argv[])
     if (strcmp(argv[1], "offall") == 0)
     {
         Hss_AllOff();
-        shellPrint(shell, "All HSS IN/DEN low (safe, IS Hi-Z)\r\n");
+        shellPrint(shell, "HSS safe req (P40 input-only; board pulldowns hold IN/DEN low)\r\n");
         return 0;
     }
     if (strcmp(argv[1], "status") == 0)
     {
         Hss_PrintStatus(shell);
+        return 0;
+    }
+    if (strcmp(argv[1], "regs") == 0)
+    {
+        /* P40 OUT latch vs IN pin vs IOCR mode: tells latch-write failure
+         * (OUT clear) apart from electrical pull-down (OUT set, IN clear). */
+        shellPrint(shell, "P40 OUT=0x%08lX IN=0x%08lX\r\n",
+                   (unsigned long)MODULE_P40.OUT.U,
+                   (unsigned long)MODULE_P40.IN.U);
+        shellPrint(shell, "P40 IOCR0=0x%08lX IOCR4=0x%08lX OMR=0x%08lX\r\n",
+                   (unsigned long)MODULE_P40.IOCR0.U,
+                   (unsigned long)MODULE_P40.IOCR4.U,
+                   (unsigned long)MODULE_P40.OMR.U);
+        shellPrint(shell, "P40 PDISC=0x%08lX PDR0=0x%08lX PDR1=0x%08lX\r\n",
+                   (unsigned long)MODULE_P40.PDISC.U,
+                   (unsigned long)MODULE_P40.PDR0.U,
+                   (unsigned long)MODULE_P40.PDR1.U);
+        return 0;
+    }
+    if (strcmp(argv[1], "dbg") == 0)
+    {
+        /* Settled electrical probe of a P40 pin (default 0 = HSS0_IN0,
+         * same ball as AN24 = G3CH0): each mode gets 5ms to settle so IN
+         * reads are steady-state, not stale. Restores output-low (safe). */
+        int v;
+        uint16 raw;
+        float vp;
+        long pin = 0;
+
+        if (argc >= 3)
+        {
+            pin = strtol(argv[2], 0, 0);
+            if (pin < 0 || pin > 7)
+            {
+                shellPrint(shell, "Usage: hss dbg [0..7]\r\n");
+                return -1;
+            }
+        }
+        IfxPort_setPinMode(&MODULE_P40, (uint8)pin,
+                           IfxPort_Mode_inputNoPullDevice);
+        Hss_DelayMs(5);
+        v = IfxPort_getPinState(&MODULE_P40, (uint8)pin);
+        shellPrint(shell, "P40.%ld inputNoPull(settled): IN=%d\r\n", pin, v);
+        IfxPort_setPinMode(&MODULE_P40, (uint8)pin, IfxPort_Mode_inputPullUp);
+        Hss_DelayMs(5);
+        v = IfxPort_getPinState(&MODULE_P40, (uint8)pin);
+        shellPrint(shell, "P40.%ld inputPullUp(settled): IN=%d\r\n", pin, v);
+        IfxPort_setPinMode(&MODULE_P40, (uint8)pin, IfxPort_Mode_inputPullDown);
+        Hss_DelayMs(5);
+        v = IfxPort_getPinState(&MODULE_P40, (uint8)pin);
+        shellPrint(shell, "P40.%ld inputPullDown(settled): IN=%d\r\n", pin, v);
+        IfxPort_setPinMode(&MODULE_P40, (uint8)pin,
+                           IfxPort_Mode_outputPushPullGeneral);
+        IfxPort_setPinPadDriver(&MODULE_P40, (uint8)pin,
+                                IfxPort_PadDriver_cmosAutomotiveSpeed4);
+        IfxPort_setPinHigh(&MODULE_P40, (uint8)pin);
+        Hss_DelayMs(10);
+        v = IfxPort_getPinState(&MODULE_P40, (uint8)pin);
+        if (pin == 0 && Adc_ReadAn24(&raw, &vp))
+        {
+            shellPrint(shell, "P40.0 outHigh(settled): IN=%d AN24=%5.3fV raw=%4u\r\n",
+                       v, (double)vp, (unsigned)raw);
+        }
+        else
+        {
+            shellPrint(shell, "P40.%ld outHigh(settled): IN=%d\r\n", pin, v);
+        }
+        IfxPort_setPinLow(&MODULE_P40, (uint8)pin);
+        Hss_DelayMs(10);
+        v = IfxPort_getPinState(&MODULE_P40, (uint8)pin);
+        if (pin == 0 && Adc_ReadAn24(&raw, &vp))
+        {
+            shellPrint(shell, "P40.0 outLow(settled): IN=%d AN24=%5.3fV raw=%4u\r\n",
+                       v, (double)vp, (unsigned)raw);
+        }
+        else
+        {
+            shellPrint(shell, "P40.%ld outLow(settled): IN=%d\r\n", pin, v);
+        }
+        shellPrint(shell, "P40.%ld restored to out-low\r\n", pin);
         return 0;
     }
     Hss_PrintUsage(shell);

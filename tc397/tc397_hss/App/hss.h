@@ -37,7 +37,8 @@ extern "C" {
 #define HSS_K1          (2500.0f)   /* Iout = 0.5A, +/-5% */
 #define HSS_K2          (2630.0f)   /* Iout = 2A/4A/7A, +/-3% */
 
-/* Safe power-on state: all outputs OFF, diagnostics OFF */
+/* Safe state: P40.0..7 are input-only balls, kept as no-pull inputs;
+ * board pulldowns hold HSS IN/DEN low (OUT off, IS Hi-Z). */
 void Hss_Init(void);
 
 /* IN control: dev 0..1, ch 0..1, on 0/1. Returns 0 on bad args, 1 on OK. */

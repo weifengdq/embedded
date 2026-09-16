@@ -173,6 +173,52 @@ void Adc_Init(void)
     Adc_InitChannelsForGroup(&s_grp8);
 }
 
+/* Debug channel: P40.0 ball (board AN24) = EVADC G3CH0 (see
+ * IfxEvadc_G3CH0_P40_0_IN in IfxEvadc_PinMap_TC39xB_LFBGA292.h).
+ * RES0 is free in G3 (AN30/31 use CH6/RES6 + CH7/RES7). */
+static IfxEvadc_Adc_Channel s_chAn24;
+static boolean s_an24Init = FALSE;
+
+int Adc_ReadAn24(uint16 *raw, float *voltPin)
+{
+    IfxEvadc_Adc_ChannelConfig chCfg;
+    Ifx_EVADC_G_RES res;
+    uint32 timeout;
+
+    if (!s_an24Init)
+    {
+        IfxEvadc_Adc_initChannelConfig(&chCfg, &s_grp3);
+        chCfg.channelId      = IfxEvadc_ChannelId_0;
+        chCfg.resultRegister = IfxEvadc_ChannelResult_0;
+        IfxEvadc_Adc_initChannel(&s_chAn24, &chCfg);
+        IfxEvadc_Adc_addToQueue(&s_chAn24, IfxEvadc_RequestSource_queue0,
+                                IFXEVADC_QUEUE_REFILL);
+        s_an24Init = TRUE;
+    }
+    timeout = 200000u;
+    do
+    {
+        res = IfxEvadc_Adc_getResult(&s_chAn24);
+        if (res.B.VF)
+        {
+            break;
+        }
+    } while (--timeout != 0u);
+    if (!res.B.VF)
+    {
+        return 0;
+    }
+    if (raw != 0)
+    {
+        *raw = (uint16)res.B.RESULT;
+    }
+    if (voltPin != 0)
+    {
+        *voltPin = Adc_RawToVolt((uint16)res.B.RESULT);
+    }
+    return 1;
+}
+
 int Adc_ReadAn(uint8 an, uint16 *raw, float *voltPin)
 {
     Ifx_EVADC_G_RES res;

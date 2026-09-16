@@ -129,15 +129,15 @@ void core0_main(void)
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg7, &cnt7, TIME_INFINITE);
     }
 
-    /* HSS control pins P40.0..7, safe state = all low (OUT off, DEN off) */
+    /* HSS sense nets P40.0..7 are input-only balls: monitor as inputs */
     {
-        const char *msg8 = "HSS init (P40.0..7 outputs, all low)...\r\n";
+        const char *msg8 = "HSS init (P40.0..7 inputs, board pulldowns)...\r\n";
         Ifx_SizeT cnt8 = strlen(msg8);
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg8, &cnt8, TIME_INFINITE);
     }
     Hss_Init();
     {
-        const char *msg9 = "HSS ready (safe: IN/DEN low), try 'hss'\r\n";
+        const char *msg9 = "HSS ready (P40 input-only, try 'hss')\r\n";
         Ifx_SizeT cnt9 = strlen(msg9);
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg9, &cnt9, TIME_INFINITE);
     }

@@ -40,6 +40,12 @@ void Adc_Init(void);
 /* Sample one AN. Returns 1 on success (raw+volt valid), 0 if skipped/failed. */
 int Adc_ReadAn(uint8 an, uint16 *raw, float *voltPin);
 
+/* Debug: sample the P40.0 ball (board AN24) via EVADC G3CH0/RES0.
+ * P40.0 is driven as GPIO by the HSS driver; this reads the actual ball
+ * level independent of the digital IN register. Lazy-inits the channel
+ * on first call. Returns 1 on success. */
+int Adc_ReadAn24(uint16 *raw, float *voltPin);
+
 /* Convert raw code to pin voltage */
 static inline float Adc_RawToVolt(uint16 raw)
 {
