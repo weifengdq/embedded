@@ -246,6 +246,90 @@ void Tlf_GotoState(uint8 state, uint8 trk2en, uint8 trk1en, uint8 comen, uint8 v
     Tlf_Write(TLF_DEVCTRLN, (uint8)(~dev));
 }
 
+boolean Tlf_LinkOk(void)
+{
+    Tlf_Frame f;
+    uint16 rx = Tlf_Transfer(0, TLF_DEVSTAT, 0, &f);
+    return (boolean)(f.ok && (((rx >> 14) & 0x3u) == 0x1u));
+}
+
+/* ~1ms spin on STM0 (100MHz); STM0 is already running when Tlf_Init() returns. */
+static void Tlf_SpinMs(uint32 ms)
+{
+    uint32 start = MODULE_STM0.TIM0.U;
+    uint32 wait  = ms * 100000u;
+    while ((MODULE_STM0.TIM0.U - start) < wait) { }
+}
+
+static boolean Tlf_GotoNormalOnce(void)
+{
+    uint8 dev = Tlf_Read(TLF_DEVSTAT);
+    Tlf_GotoState(TLF_STATE_NORMAL,
+                  (uint8)((dev >> 7) & 1u), (uint8)((dev >> 6) & 1u),
+                  1, 1);  /* keep trackers, force COM+VREF on */
+    Tlf_SpinMs(2);
+    return (boolean)((Tlf_Read(TLF_DEVSTAT) & 0x07u) == TLF_STATE_NORMAL);
+}
+
+boolean Tlf_AutoInit(void)
+{
+    uint8 w, s1;
+    int attempt;
+
+    if (!Tlf_LinkOk())
+    {
+        return FALSE;  /* no TLF on the bus: stay passive, don't hang boot */
+    }
+    if ((Tlf_Read(TLF_DEVSTAT) & 0x07u) == TLF_STATE_NORMAL)
+    {
+        return TRUE;  /* already there (e.g. warm reboot with config retained) */
+    }
+
+    Tlf_Unlock();
+    /* Quiet both watchdogs (either one blocks INIT->NORMAL when noisy). */
+    w = Tlf_Read(TLF_RWDCFG0);
+    Tlf_Write(TLF_WDCFG0, (uint8)(w & 0xF3u));  /* clear WWDEN + FWDEN */
+    /* Disable ERR monitor (bench ERR is static; production uses SMU FSP). */
+    s1 = Tlf_Read(TLF_RSYSPCFG1);
+    Tlf_Write(TLF_SYSPCFG1, (uint8)(s1 & 0xF7u));  /* clear ERREN */
+    Tlf_Lock();  /* applies config + 2ms settle */
+
+    /* Rails: keep current enables, force COM+VREF on (prevents EVR UV alarm). */
+    {
+        uint8 cur = (uint8)(Tlf_Read(TLF_DEVSTAT) & 0x07u);
+        if (cur == TLF_STATE_NONE)
+        {
+            cur = TLF_STATE_INIT;
+        }
+        {
+            uint8 dev = Tlf_Read(TLF_DEVSTAT);
+            Tlf_GotoState(cur, (uint8)((dev >> 7) & 1u), (uint8)((dev >> 6) & 1u), 1, 1);
+        }
+    }
+
+    /* Clear all rw1c flags, then go NORMAL (one retry). */
+    for (attempt = 0; attempt < 2; attempt++)
+    {
+        Tlf_Write(TLF_SYSFAIL, 0xFFu);
+        Tlf_Write(TLF_INITERR, 0xFFu);
+        Tlf_Write(TLF_IF, 0xFFu);
+        Tlf_Write(TLF_SYSSF, 0xFFu);
+        Tlf_Write(TLF_WKSF, 0xFFu);
+        Tlf_Write(TLF_SPISF, 0xFFu);
+        Tlf_Write(TLF_MONSF0, 0xFFu);
+        Tlf_Write(TLF_MONSF1, 0xFFu);
+        Tlf_Write(TLF_MONSF2, 0xFFu);
+        Tlf_Write(TLF_MONSF3, 0xFFu);
+        Tlf_Write(TLF_OTFAIL, 0xFFu);
+        Tlf_Write(TLF_OTWRNSF, 0xFFu);
+        if (Tlf_GotoNormalOnce())
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 uint8 Tlf_WwdTrigger(void)
 {
     uint8 cur  = Tlf_Read(TLF_WWDSCMD);

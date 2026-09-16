@@ -104,6 +104,16 @@ extern "C" {
  * (1.5 MHz max in SLEEP). Change at runtime via Tlf_SetBaudrate(). */
 #define TLF_QSPI_BAUD_DEFAULT 2000000u
 
+/* Boot auto-init: run the INIT->NORMAL sequence (unlock, disable WWD+FWD+ERR,
+ * enable rails, clear flags, goto NORMAL) automatically after Tlf_Init().
+ * REQUIRED for MPS=0 normal mode: otherwise the INIT timer / WWD / ERR monitor
+ * (all enabled by default) drive the TLF back to INIT and pulse ROT, so the
+ * MCU resets in a loop. Set to 0 to keep Tlf_Init() fully passive (bench
+ * TestMode debugging); the same sequence stays available as `tlf demo`. */
+#ifndef TLF_AUTO_INIT
+#define TLF_AUTO_INIT 1
+#endif
+
 /* Raw SPI transfer result */
 typedef struct
 {
@@ -166,6 +176,14 @@ uint8   Tlf_WwdTrigger(void);
 boolean Tlf_FwdKick(boolean repeat, uint32 tickMs, uint32 periodMs);
 boolean Tlf_FwdBusy(void);
 void    Tlf_FwdRepeatStop(void);
+/* SPI link check: TRUE if a DEVSTAT read returns with MISO MSB=1 and no timeout
+ * (MISO has a pulldown, so an absent/floating TLF reads 0x0000). */
+boolean Tlf_LinkOk(void);
+/* Boot INIT->NORMAL sequence (quiet, no shell dependency):
+ * unlock -> disable WWD+FWD -> disable ERR mon -> lock -> enable rails
+ * (keep current enables, force COM+VREF on) -> clear all flags -> goto NORMAL.
+ * Retries once. Returns TRUE if DEVSTAT reads NORMAL afterwards. */
+boolean Tlf_AutoInit(void);
 /* GPIO helpers */
 void    Tlf_WdiHigh(void);
 void    Tlf_WdiLow(void);

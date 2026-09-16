@@ -735,44 +735,19 @@ static int cmd_tlf(int argc, char *argv[])
     /* ---------- demo (Infineon sequence) ---------- */
     if (strcmp(argv[1], "demo") == 0 || strcmp(argv[1], "init") == 0)
     {
-        uint8 w, s1;
-        shellPrint(sh, "demo: unlock...\r\n");
-        Tlf_Unlock();
-        shellPrint(sh, "PROTSTAT=0x%02X\r\n", Tlf_Read(TLF_PROTSTAT));
-        /* disable WWD + FWD (both must be quiet for INIT->NORMAL) */
-        w = Tlf_Read(TLF_RWDCFG0);
-        shellPrint(sh, "RWDCFG0=0x%02X -> disable WWD+FWD...\r\n", w);
-        Tlf_Unlock();
-        Tlf_Write(TLF_WDCFG0, (uint8)(w & 0xF3u));
-        /* disable ERR mon */
-        s1 = Tlf_Read(TLF_RSYSPCFG1);
-        shellPrint(sh, "RSYSPCFG1=0x%02X -> clear ERREN...\r\n", s1);
-        Tlf_Write(TLF_SYSPCFG1, (uint8)(s1 & 0xF7u));
-        Tlf_Lock();
-        shellPrint(sh, "locked; RWDCFG0=0x%02X RSYSPCFG1=0x%02X\r\n",
-            Tlf_Read(TLF_RWDCFG0), Tlf_Read(TLF_RSYSPCFG1));
-        /* enable rails COM+VREF, keep state */
-        {
-            uint8 cur = (uint8)(Tlf_Read(TLF_DEVSTAT) & 0x07u);
-            if (cur == TLF_STATE_NONE) cur = TLF_STATE_INIT;
-            Tlf_GotoState(cur, 0, 0, 1, 1);
-        }
-        shellPrint(sh, "rails COM+VREF on; DEVSTAT=0x%02X VMONSTAT=0x%02X\r\n",
-            Tlf_Read(TLF_DEVSTAT), Tlf_Read(TLF_VMONSTAT));
-        /* clear + goto normal */
-        Tlf_Write(TLF_SYSSF, 0xFFu);
-        Tlf_BusyWaitMs(1);
-        {
-            uint8 cur = (uint8)(Tlf_Read(TLF_DEVSTAT) & 0x07u);
-            uint8 dev = Tlf_Read(TLF_DEVSTAT);
-            Tlf_GotoState(TLF_STATE_NORMAL, (uint8)((dev >> 7) & 1u), (uint8)((dev >> 6) & 1u),
-                          1, 1);
-            (void)cur;
-        }
-        Tlf_BusyWaitMs(2);
-        shellPrint(sh, "goto NORMAL; DEVSTAT=0x%02X (%s) SYSSF=0x%02X SS1=%u\r\n",
+        uint8 pre = Tlf_Read(TLF_DEVSTAT);
+        boolean ok;
+        shellPrint(sh, "demo: pre DEVSTAT=0x%02X (%s), running boot sequence...\r\n",
+            pre, Tlf_StateName(pre & 0x07u));
+        ok = Tlf_AutoInit();
+        shellPrint(sh, "demo %s; DEVSTAT=0x%02X (%s) SYSSF=0x%02X SS1=%u lock=%s\r\n",
+            ok ? "OK (NORMAL)" : "FAILED (see flags)",
             Tlf_Read(TLF_DEVSTAT), Tlf_StateName(Tlf_Read(TLF_DEVSTAT) & 0x07u),
-            Tlf_Read(TLF_SYSSF), Tlf_Ss1Level());
+            Tlf_Read(TLF_SYSSF), Tlf_Ss1Level(), Tlf_IsLocked() ? "locked" : "UNLOCKED");
+        if (!ok)
+        {
+            shellPrint(sh, "hint: run 'tlf flags' + 'tlf wwd status' + 'tlf fwd status' to find the blocker\r\n");
+        }
         return 0;
     }
 

@@ -62,8 +62,24 @@ void core0_main(void)
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
 
-    /* TLF35584: QSPI2 + WDI/ERR/SS1 GPIOs (no TLF config touched here) */
+    /* TLF35584: QSPI2 + WDI/ERR/SS1 GPIOs, then boot INIT->NORMAL sequence
+     * (required for MPS=0 normal mode: quiet WWD/FWD/ERR, enable rails,
+     * clear flags, goto NORMAL; skipped silently if no TLF on the bus) */
     Tlf_Init();
+#if TLF_AUTO_INIT
+    {
+        uint8 pre = Tlf_Read(TLF_DEVSTAT);
+        boolean ok = Tlf_AutoInit();
+        uint8 post = Tlf_Read(TLF_DEVSTAT);
+        char buf[128];
+        int len = snprintf(buf, sizeof(buf),
+            "TLF auto-init: %s (DEVSTAT 0x%02X->0x%02X %s, SS1=%u)\r\n",
+            ok ? "NORMAL ok" : "FAILED (no TLF or blocked; try 'tlf demo')",
+            pre, post, Tlf_StateName(post & 0x07u), Tlf_Ss1Level());
+        Ifx_SizeT cnt = len;
+        IfxAsclin_Asc_write(&g_asc, (uint8_t*)buf, &cnt, TIME_INFINITE);
+    }
+#endif
 
     /* DTS init */
     {
