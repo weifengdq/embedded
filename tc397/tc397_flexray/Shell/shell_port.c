@@ -23,6 +23,17 @@ extern IfxAsclin_Asc g_asc;
 static Shell gShell;
 static char gShellBuffer[1024];
 
+/* Direct handle for our own commands. NOTE: letter-shell's shellGetCurrent()
+ * walks a BSS command-list table that is unreliable in this image (new
+ * FlexRay sections interact badly with it — boot dies inside the banner and
+ * `help` never answers). Our handlers use this pointer instead. */
+static Shell *sShellSelf = NULL;
+
+Shell *Shell_Get(void)
+{
+    return sShellSelf;
+}
+
 #define SHELL_RX_RING_SIZE 1024
 static volatile uint16_t gRxHead = 0;
 static volatile uint16_t gRxTail = 0;
@@ -102,7 +113,7 @@ static short userShellRead(char *data, unsigned short len)
 static int cmd_version(int argc, char *argv[])
 {
     (void)argc; (void)argv;
-    Shell *shell = shellGetCurrent();
+    Shell *shell = Shell_Get();
     shellPrint(shell, "\r\nTC397 Letter-Shell Firmware\r\n");
     shellPrint(shell, "Version : %d.%d.%d\r\n", FW_VERSION_MAJOR, FW_VERSION_MINOR, FW_VERSION_PATCH);
     shellPrint(shell, "Build   : %s %s\r\n", __DATE__, __TIME__);
@@ -113,7 +124,7 @@ static int cmd_version(int argc, char *argv[])
 static int cmd_mcu(int argc, char *argv[])
 {
     (void)argc; (void)argv;
-    Shell *shell = shellGetCurrent();
+    Shell *shell = Shell_Get();
     uint32 chipId = SCU_CHIPID.U;
     shellPrint(shell, "\r\n=== MCU Info ===\r\n");
     shellPrint(shell, "ChipID  : 0x%08lX (CHREV=0x%02lX)\r\n", (unsigned long)chipId, (unsigned long)SCU_CHIPID.B.CHREV);
@@ -129,7 +140,7 @@ static int cmd_mcu(int argc, char *argv[])
 static int cmd_uid(int argc, char *argv[])
 {
     (void)argc; (void)argv;
-    Shell *shell = shellGetCurrent();
+    Shell *shell = Shell_Get();
     shellPrint(shell, "UID/ChipID: 0x%08lX\r\n", (unsigned long)SCU_CHIPID.U);
     shellPrint(shell, "SCU_ID  : 0x%08lX\r\n", (unsigned long)SCU_ID.U);
     shellPrint(shell, "PMS DTSSTAT: 0x%04X\r\n", (unsigned)IfxDts_getTemperatureValue());
@@ -139,7 +150,7 @@ static int cmd_uid(int argc, char *argv[])
 static int cmd_uptime(int argc, char *argv[])
 {
     (void)argc; (void)argv;
-    Shell *shell = shellGetCurrent();
+    Shell *shell = Shell_Get();
     uint32_t tick = g_TickCount_1ms;
     uint32_t sec = tick / 1000U;
     uint32_t ms = tick % 1000U;
@@ -159,7 +170,7 @@ static int cmd_uptime(int argc, char *argv[])
 static int cmd_reset(int argc, char *argv[])
 {
     (void)argc; (void)argv;
-    Shell *shell = shellGetCurrent();
+    Shell *shell = Shell_Get();
     shellPrint(shell, "MCU software reset in 500 ms...\r\n");
     uint32_t start = g_TickCount_1ms;
     while ((g_TickCount_1ms - start) < 500U) { }
@@ -170,7 +181,7 @@ static int cmd_reset(int argc, char *argv[])
 static int cmd_temp(int argc, char *argv[])
 {
     (void)argc; (void)argv;
-    Shell *shell = shellGetCurrent();
+    Shell *shell = Shell_Get();
     uint16 raw = IfxDts_getTemperatureValue();
     float32 c = IfxDts_Dts_convertToCelsius(raw);
     shellPrint(shell, "DTS raw=0x%04X (%u) -> %.2f C\r\n", (unsigned)raw, (unsigned)raw, (double)c);
@@ -182,7 +193,7 @@ static int cmd_temp(int argc, char *argv[])
 static int cmd_sysinfo(int argc, char *argv[])
 {
     (void)argc; (void)argv;
-    Shell *shell = shellGetCurrent();
+    Shell *shell = Shell_Get();
     cmd_mcu(argc, argv);
     cmd_temp(argc, argv);
     cmd_uptime(argc, argv);
@@ -193,7 +204,7 @@ static int cmd_sysinfo(int argc, char *argv[])
 /* ---------- LED P13.0 (low = on) ---------- */
 static int cmd_led(int argc, char *argv[])
 {
-    Shell *shell = shellGetCurrent();
+    Shell *shell = Shell_Get();
     if (argc < 2) {
         shellPrint(shell, "Usage: led <on|off|toggle|blink|hb> [args]\r\n");
         shellPrint(shell, "  led on            - LED on (P13.0 low), heartbeat off\r\n");
@@ -254,7 +265,7 @@ static int cmd_led(int argc, char *argv[])
 static int cmd_mem(int argc, char *argv[])
 {
     (void)argc; (void)argv;
-    Shell *shell = shellGetCurrent();
+    Shell *shell = Shell_Get();
     shellPrint(shell, "mem stats: bare-metal NO_SYS, no heap tracker\r\n");
     shellPrint(shell, "Use 'mcu' for chip info, 'help' for commands\r\n");
     return 0;
@@ -282,6 +293,7 @@ int Shell_Init(void)
     gShell.write = userShellWrite;
     gShell.read = userShellRead;
     shellInit(&gShell, gShellBuffer, sizeof(gShellBuffer));
+    sShellSelf = &gShell;
     return 0;
 }
 
@@ -300,7 +312,7 @@ void Shell_Process(void)
 
 void Shell_PrintBanner(void)
 {
-    Shell *shell = shellGetCurrent();
+    Shell *shell = Shell_Get();
     if (shell) {
         shellPrint(shell, "\r\n");
         shellPrint(shell, "  _____  _____ _____  ___ ______\r\n");

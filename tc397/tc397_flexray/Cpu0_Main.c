@@ -20,6 +20,10 @@
 #include "Dts/Std/IfxDts.h"
 #include "IfxScu_reg.h"
 #include "IfxPms_reg.h"
+#include "flexray_dual.h"
+
+/* BISECT: link-only reference, never called pre-banner */
+static const void * const bisect_linkref __attribute__((used)) = (const void *)frd_poll;
 #include <stdio.h>
 #include <string.h>
 
@@ -72,16 +76,13 @@ void core0_main(void)
     }
 
     Shell_Init();
+    /* NOTE: Shell_PrintBanner() (letter-shell shellPrint path) is not used:
+     * shellPrint hangs in this image (see Shell_Get note in shell_port.c),
+     * so the banner is emitted with direct writes instead. */
     {
         const char *msg = "After Shell_Init direct\r\n";
         Ifx_SizeT cnt = strlen(msg);
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg, &cnt, TIME_INFINITE);
-    }
-    Shell_PrintBanner();
-    {
-        const char *msg2 = "After Banner direct\r\n";
-        Ifx_SizeT cnt2 = strlen(msg2);
-        IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg2, &cnt2, TIME_INFINITE);
     }
     {
         const char *msg3 = "\r\nTC397 UART0 + Letter-Shell\r\n";
@@ -91,8 +92,11 @@ void core0_main(void)
         Ifx_SizeT cnt4 = strlen(msg4);
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg4, &cnt4, TIME_INFINITE);
         const char *msg5 = "Type 'help' for commands, 'mcu' for chip info, 'temp' for temperature, 'led' for LED\r\n";
+        const char *msg6 = "FlexRay: FR0A(ERAY0 P02.0/02.4/02.1,slot11) FR1A(ERAY1 P14.10/14.9/14.8,slot12), try 'fr test'\r\n";
         Ifx_SizeT cnt5 = strlen(msg5);
         IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg5, &cnt5, TIME_INFINITE);
+        Ifx_SizeT cnt6 = strlen(msg6);
+        IfxAsclin_Asc_write(&g_asc, (uint8_t*)msg6, &cnt6, TIME_INFINITE);
     }
     /* Also print early system info via direct */
     {
@@ -121,5 +125,6 @@ void core0_main(void)
     {
         UART_Poll();
         Shell_Process();
+        frd_poll();     /* FlexRay RX background poll (no-op until 'fr init') */
     }
 }
