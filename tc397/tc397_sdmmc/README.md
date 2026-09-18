@@ -264,7 +264,25 @@ sd st / sd regs / sd recover # 诊断链路
 
 ---
 
-## 7 许可
+## 7 Windows 11 + TASKING 构建（2026-09-18 已验证编译，卡待恢复后复测速率）
+
+* 工具链：`C:\z\app\TASKING\TriCore_v6.3r1`，Studio 1.10.36，串口 COM165。
+  `build.sh`（Ubuntu/GCC）不受影响：
+
+```powershell
+.\build.ps1 -Compiler tasking -Action download     # Tasking 编译并烧录
+```
+
+* 本工程 Tasking 实测：编译 305 obj 0 error，烧录 Pass，`help` 中 `sd` 命令正常。
+  TF 卡（128GB，32GB FAT32 分区）当前 wedged：`disk_initialize=0x00` 成功但
+  `disk_read` 全败 → `f_mount` DISK_ERR；同条件 GCC 对比版同样失败，
+  证实为卡硬件状态（本 README §6 已记载需物理掉电），与编译器无关。
+  待断电恢复后复测 `sd bench` 速率（GCC 基线：写 4.4~6.1MB/s，读 2.8~13.8MB/s）。
+* 通用兼容改动见 `tc397/temp/tasking_porting_log.md`（GCC 行为不变）。
+
+---
+
+## 8 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * FatFs R0.16：ChaN 许可（`Libraries/FatFS/LICENSE` 见 ref/fatfs/LICENSE.txt，

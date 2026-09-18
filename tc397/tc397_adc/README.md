@@ -185,7 +185,22 @@ G2/G3/G8 的 QSR 非空，转换在各组正常进行。
 
 ---
 
-## 7 许可
+## 7 Windows 11 + TASKING 构建（2026-09-18 已验证）
+
+* 工具链：`C:\z\app\TASKING\TriCore_v6.3r1`，Studio 1.10.36，串口 COM165。
+  `build.sh`（Ubuntu/GCC）不受影响，两套脚本共存：
+
+```powershell
+.\build.ps1 -Compiler tasking -Action download     # Tasking 编译并烧录
+```
+
+* 本工程 Tasking 实测：编译 303 obj 0 error；`adc` 48 路电压正常
+ （VUC 3.309V / 3V3 3.248V / 1V25 1.235V / 0V9 0.916V / VBAT 11.8V / IG 12.0V）。
+* 通用兼容改动见 `tc397/temp/tasking_porting_log.md`（GCC 行为不变）。
+
+---
+
+## 8 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * Letter-Shell：MIT

@@ -109,7 +109,10 @@
 #ifdef __cplusplus
 #define IFX_SSW_INLINE   static inline
 #else
-#define IFX_SSW_INLINE   inline
+/* TASKING C: bare "inline" emits a global definition per TU (C99 extern-inline
+ * semantics) -> ltc E108 multiple definitions at link. "static inline" keeps
+ * each definition TU-local, matching the GCC variant (always_inline). */
+#define IFX_SSW_INLINE   static inline
 #endif
 
 #define IFX_SSW_NULL_PTR ((void *)0x0U)

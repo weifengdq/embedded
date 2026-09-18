@@ -38,6 +38,13 @@ SHELL_USED const ShellCommand shellUserDefault SHELL_SECTION("shellCommand") =
         extern const unsigned int shellCommand$$Limit;
     #elif defined(__ICCARM__) || defined(__ICCRX__)
         #pragma section="shellCommand"
+    #elif defined(__TASKING__)
+        /* TASKING: 与 GCC 同名段 "shellCommand"，起止符号由 LSL group 标签
+         * _lc_gb/_lc_ge_shellCommand 提供（见 Lcf_Tasking_Tricore_Tc.lsl）。 */
+        extern const unsigned int _lc_gb_shellCommand;
+        extern const unsigned int _lc_ge_shellCommand;
+        #define _shell_command_start _lc_gb_shellCommand
+        #define _shell_command_end   _lc_ge_shellCommand
     #elif defined(__GNUC__)
         extern const unsigned int _shell_command_start;
         extern const unsigned int _shell_command_end;
@@ -211,7 +218,7 @@ void shellInit(Shell *shell, char *buffer, unsigned short size)
         shell->commandList.count = ((size_t)(__section_end("shellCommand"))
                                 - (size_t)(__section_begin("shellCommand")))
                                 / sizeof(ShellCommand);
-    #elif defined(__GNUC__)
+    #elif defined(__TASKING__) || defined(__GNUC__)
         shell->commandList.base = (ShellCommand *)(&_shell_command_start);
         shell->commandList.count = ((size_t)(&_shell_command_end)
                                 - (size_t)(&_shell_command_start))

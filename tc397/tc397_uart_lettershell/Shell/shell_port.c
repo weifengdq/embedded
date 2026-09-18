@@ -38,14 +38,24 @@ static inline void Led_On(void)  { IfxPort_setPinLow(&MODULE_P13, 0); }
 static inline void Led_Off(void) { IfxPort_setPinHigh(&MODULE_P13, 0); }
 static inline void Led_Toggle(void) { IfxPort_togglePin(&MODULE_P13, 0); }
 
+/* TASKING 不支持 GCC 扩展内联汇编 __asm__ volatile("dsync")；iLLD 的 __dsync()
+ * 内联函数在双工具链下都可用（GCC 走 IntrinsicsGnuc，TASKING 走 IntrinsicsTasking）。
+ * 此处仅做写屏障（volatile 环形队列索引），用 __dsync() 等价。 */
+#if defined(__TASKING__)
+#include "IfxCpu_Intrinsics.h"
+#define SHELL_DSYNC() __dsync()
+#else
+#define SHELL_DSYNC() __asm__ volatile("dsync":::"memory")
+#endif
+
 void Shell_RxPush(uint8_t ch)
 {
     uint16_t next = (uint16_t)((gRxHead + 1U) % SHELL_RX_RING_SIZE);
     if (next != gRxTail) {
         gRxRing[gRxHead] = ch;
-        __asm__ volatile("dsync":::"memory");
+        SHELL_DSYNC();
         gRxHead = next;
-        __asm__ volatile("dsync":::"memory");
+        SHELL_DSYNC();
     } else {
         gShellRxOverflow++;
     }
@@ -90,7 +100,7 @@ static short userShellRead(char *data, unsigned short len)
         tail = (uint16_t)((tail + 1U) % SHELL_RX_RING_SIZE);
     }
     gRxTail = tail;
-    __asm__ volatile("dsync":::"memory");
+    SHELL_DSYNC();
     return (short)i;
 }
 

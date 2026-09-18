@@ -1354,6 +1354,14 @@ derivative tc39
             select ".rodata.farConst.cpu0.16bit";
             select ".rodata.farConst.cpu0.8bit";
             select "(.rodata|.rodata.*)";
+            // letter-shell command table (TASKING shares section name
+            // "shellCommand" with GCC). Exact-name select protects it
+            // from unreferenced-section removal; the named group auto
+            // generates _lc_gb/_lc_ge_shellCommand labels used by shell.c.
+            group shellCommand (ordered, align = 4, contiguous)
+            {
+                select "shellCommand";
+            }
         }
     }
     

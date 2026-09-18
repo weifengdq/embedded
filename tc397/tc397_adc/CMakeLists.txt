@@ -108,7 +108,7 @@ if(AURIX_TOOLCHAIN_TYPE STREQUAL "TASKING")
     # TASKING C 编译选项（与 ADS TriCore Debug(TASKING) 配置对应）。
     target_compile_options(${PROJECT_NAME} PRIVATE
         -D__CPU__=${AURIX_CPU}
-        --language=+volatile
+        --language=+volatile,+gcc
         --fp-model=3
         --tradeoff=4
         --compact-max-size=200

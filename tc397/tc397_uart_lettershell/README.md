@@ -173,7 +173,29 @@ letter:/$ led hb off    # 心跳关
 
 ---
 
-## 7 许可
+## 7 Windows 11 + TASKING 构建（2026-09-18 已验证）
+
+* 工具链：`C:\z\app\TASKING\TriCore_v6.3r1`（cctc v6.3r1），
+  AURIX-Studio-1.10.36（GCC 11.3.1 / AURIXFlasher v3.0.18），串口 COM165。
+* 命令（`build.sh` 的 Ubuntu/GCC 流程不受影响，两套脚本共存）：
+
+```powershell
+.\build.ps1 -Compiler tasking                      # Tasking Debug 编译
+.\build.ps1 -Compiler tasking -Action download     # 编译并烧录
+.\build.ps1 -Compiler gcc                          # Windows GCC 编译（ADS tricore-gcc11）
+```
+
+* 本工程 Tasking 实测：编译 300 obj 0 error，`help` 列出 18 条命令，
+  `version`/`mcu` 正常（ChipID 0xAF239793）。
+* Tasking 兼容改动（GCC 行为不变，见 `tc397/temp/tasking_porting_log.md`）：
+  `--language=+volatile,+gcc`（空变参宏需 GNU 扩展）、`shell.h` 加
+  `__TASKING__` 分支、`shell.c` 用 LSL 命名组标签取命令表、
+  `shell_port.c` dsync 改 `SHELL_DSYNC()` 宏、LSL 加 `shellCommand` 命名组、
+  `Ifx_Ssw_CompilersTasking.h` 改 `static inline`（避 E108）。
+
+---
+
+## 8 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * Letter-Shell：MIT

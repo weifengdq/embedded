@@ -6,11 +6,13 @@ set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
 # 工具链 bin 目录，可通过 -DAURIX_TOOLCHAIN_BIN=... 覆盖。
 # Linux 默认路径为 /opt/tricore-gcc/bin (符号链接到 /opt/tricore-gcc-13.4.1/bin)
-# Windows 示例: C:/Infineon/AURIX-Studio-1.10.28/tools/Compilers/tricore-gcc11/bin
+# Windows 默认: C:/Infineon/AURIX-Studio-1.10.36/tools/Compilers/tricore-gcc11/bin
+# （与 build.ps1 的 AurixStudioPath 默认一致；try_compile 子项目拿不到命令行 -D，
+#   会回退到此默认值，故必须与本机实际安装一致。Ubuntu 分支不受影响。）
 if(UNIX)
     set(_default_toolchain_bin "/opt/tricore-gcc/bin")
 else()
-    set(_default_toolchain_bin "C:/Infineon/AURIX-Studio-1.10.28/tools/Compilers/tricore-gcc11/bin")
+    set(_default_toolchain_bin "C:/Infineon/AURIX-Studio-1.10.36/tools/Compilers/tricore-gcc11/bin")
 endif()
 set(AURIX_TOOLCHAIN_BIN
     "${_default_toolchain_bin}"

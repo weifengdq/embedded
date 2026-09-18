@@ -148,7 +148,23 @@ RX FIFO 32/TX FIFO 16）。`g_can`（~70KB）显式放 `.bss`（NOBITS），不�
 
 ---
 
-## 8 许可
+## 8 Windows 11 + TASKING 构建（2026-09-18 已验证）
+
+* 工具链：`C:\z\app\TASKING\TriCore_v6.3r1`，Studio 1.10.36，串口 COM165。
+  `build.sh`（Ubuntu/GCC）不受影响：
+
+```powershell
+.\build.ps1 -Compiler tasking -Action download     # Tasking 编译并烧录
+```
+
+* 本工程 Tasking 实测：编译 302 obj 0 error；`canpair` 12 路双向全 PASS
+ （CAN0-CAN1 … CAN10-CAN11 两两相连，终端电阻已接；首轮 can0 首包偶发超时 1 次，
+  重跑 ALL PASS，见 §7.2 同类现象）。
+* 通用兼容改动见 `tc397/temp/tasking_porting_log.md`（GCC 行为不变）。
+
+---
+
+## 9 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * Letter-Shell：MIT

@@ -80,6 +80,10 @@
         #define SHELL_SECTION(x)                __attribute__((section(x), aligned(1)))
     #elif defined (__IAR_SYSTEMS_ICC__)
         #define SHELL_SECTION(x)                @ x
+    #elif defined(__TASKING__)
+        /* TASKING: __attribute__((section)) 可用；aligned(1) 会报 W770（已忽略对齐），
+         * 故只用 section，保证与 GCC 同名段 "shellCommand"，链接脚本统一收敛。 */
+        #define SHELL_SECTION(x)                __attribute__((section(x)))
     #elif defined(__GNUC__)
         #define SHELL_SECTION(x)                __attribute__((section(x), aligned(1)))
     #else
@@ -92,6 +96,8 @@
         #define SHELL_USED                      __attribute__((used))
     #elif defined (__IAR_SYSTEMS_ICC__)
         #define SHELL_USED                      __root
+    #elif defined(__TASKING__)
+        #define SHELL_USED                      __attribute__((used))
     #elif defined(__GNUC__)
         #define SHELL_USED                      __attribute__((used))
     #else

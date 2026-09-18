@@ -100,9 +100,11 @@ if(AURIX_TOOLCHAIN_TYPE STREQUAL "TASKING")
     set(CMAKE_C_FLAGS_RELEASE "" CACHE STRING "" FORCE)
 
     # TASKING C 编译选项（与 ADS TriCore Debug(TASKING) 配置对应）。
+    # --language=+gcc: 允许 GNU C 扩展（letter-shell 的 ", ##__VA_ARGS__" 空变参写法需要它，
+    #   否则 cctc 报 E250）。实测 +gcc 不会定义 __GNUC__，不影响 iLLD 头文件路径选择。
     target_compile_options(${PROJECT_NAME} PRIVATE
         -D__CPU__=${AURIX_CPU}
-        --language=+volatile
+        --language=+volatile,+gcc
         --fp-model=3
         --tradeoff=4
         --compact-max-size=200

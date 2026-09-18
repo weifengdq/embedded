@@ -269,7 +269,22 @@ BEACON 约 1061/s（bus cycle ~0.94ms，见 `plcadiag`），TO 计数同步涨�
 
 ---
 
-## 8 许可
+## 8 Windows 11 + TASKING 构建（2026-09-18 已验证）
+
+* 工具链：`C:\z\app\TASKING\TriCore_v6.3r1`，Studio 1.10.36，串口 COM165。
+  `build.sh`（Ubuntu/GCC）不受影响：
+
+```powershell
+.\build.ps1 -Compiler tasking -Action download     # Tasking 编译并烧录
+```
+
+* 本工程 Tasking 实测：编译 388 obj 0 error；`t1stat` link=1 PLCA 使能，
+  板→PC ping 4/4，PC→板 ping 4/4（<1ms；板 IP 192.168.1.100，PC 以太网 16 为 192.168.1.1）。
+* 通用兼容改动见 `tc397/temp/tasking_porting_log.md`（GCC 行为不变）。
+
+---
+
+## 9 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * Letter-Shell：MIT；`aurix_flasher`：MIT + Apache 2.0

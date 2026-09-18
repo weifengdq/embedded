@@ -386,7 +386,22 @@ strapping 与任务书一致。
 
 ---
 
-## 9 许可
+## 9 Windows 11 + TASKING 构建（2026-09-18 已验证）
+
+* 工具链：`C:\z\app\TASKING\TriCore_v6.3r1`，Studio 1.10.36，串口 COM165。
+  `build.sh`（Ubuntu/GCC）不受影响：
+
+```powershell
+.\build.ps1 -Compiler tasking -Action download     # Tasking 编译并烧录
+```
+
+* 本工程 Tasking 实测：编译 302 obj 0 error；`tlf` 显示 DEVSTAT=0xFA NORMAL，
+  电压轨全 ready（MPS 拉高 TestMode，SPI 2MHz xfer=39 tout=0）。
+* 通用兼容改动见 `tc397/temp/tasking_porting_log.md`（GCC 行为不变）。
+
+---
+
+## 10 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * Letter-Shell：MIT

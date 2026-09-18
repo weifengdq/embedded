@@ -12,6 +12,14 @@
 #include "IfxScu_reg.h"
 #include "IfxPms_reg.h"
 #include "Configuration.h"
+
+/* TASKING has no GCC extended asm; use iLLD __dsync() instead (both toolchains). */
+#if defined(__TASKING__)
+#include "IfxCpu_Intrinsics.h"
+#define SHELL_DSYNC() __dsync()
+#else
+#define SHELL_DSYNC() __asm__ volatile("dsync":::"memory")
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -54,9 +62,9 @@ void Shell_RxPush(uint8_t ch)
     uint16_t next = (uint16_t)((gRxHead + 1U) % SHELL_RX_RING_SIZE);
     if (next != gRxTail) {
         gRxRing[gRxHead] = ch;
-        __asm__ volatile("dsync":::"memory");
+        SHELL_DSYNC();
         gRxHead = next;
-        __asm__ volatile("dsync":::"memory");
+        SHELL_DSYNC();
     } else {
         gShellRxOverflow++;
     }
@@ -101,7 +109,7 @@ static short userShellRead(char *data, unsigned short len)
         tail = (uint16_t)((tail + 1U) % SHELL_RX_RING_SIZE);
     }
     gRxTail = tail;
-    __asm__ volatile("dsync":::"memory");
+    SHELL_DSYNC();
     return (short)i;
 }
 
