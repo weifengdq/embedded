@@ -173,25 +173,99 @@ letter:/$ led hb off    # 心跳关
 
 ---
 
-## 7 Windows 11 + TASKING 构建（2026-09-18 已验证）
+## 7 Windows 11 + TASKING 构建与实测（2026-09-18）
 
-* 工具链：`C:\z\app\TASKING\TriCore_v6.3r1`（cctc v6.3r1），
-  AURIX-Studio-1.10.36（GCC 11.3.1 / AURIXFlasher v3.0.18），串口 COM165。
-* 命令（`build.sh` 的 Ubuntu/GCC 流程不受影响，两套脚本共存）：
+### 7.1 测试背景
+
+* 目标：本工程为 8 个 Tasking 移植的基线（letter-shell + LSL 命令表 +
+  dsync 屏障均在此验证），Ubuntu GCC 功能已验证，现验证同一套源码在
+  Windows 11 + TASKING TriCore v6.3r1（`C:\z\app\TASKING\TriCore_v6.3r1`）
+  下的命令行构建与功能。
+* 约束：增量改动不得影响 Ubuntu GCC（`build.sh` 原样保留；源码改动包在
+  `__TASKING__` 分支或工具链无关形式；Windows GCC 对照编译通过）。
+* 环境：AURIX-Studio-1.10.36（GCC 11.3.1 / AURIXFlasher v3.0.18 /
+  WinGet 官方 ninja 1.13.2），COM165（CH343，921600-8N1），DAP MiniWiggler。
+
+### 7.2 构建命令
 
 ```powershell
 .\build.ps1 -Compiler tasking                      # Tasking Debug 编译
 .\build.ps1 -Compiler tasking -Action download     # 编译并烧录
-.\build.ps1 -Compiler gcc                          # Windows GCC 编译（ADS tricore-gcc11）
+.\build.ps1 -Compiler gcc                          # Windows GCC 对照编译（ADS tricore-gcc11）
 ```
 
-* 本工程 Tasking 实测：编译 300 obj 0 error，`help` 列出 18 条命令，
-  `version`/`mcu` 正常（ChipID 0xAF239793）。
-* Tasking 兼容改动（GCC 行为不变，见 `tc397/temp/tasking_porting_log.md`）：
-  `--language=+volatile,+gcc`（空变参宏需 GNU 扩展）、`shell.h` 加
-  `__TASKING__` 分支、`shell.c` 用 LSL 命名组标签取命令表、
-  `shell_port.c` dsync 改 `SHELL_DSYNC()` 宏、LSL 加 `shellCommand` 命名组、
-  `Ifx_Ssw_CompilersTasking.h` 改 `static inline`（避 E108）。
+### 7.3 通用兼容改动（GCC 行为不变，详见 `tc397/temp/tasking_porting_log.md`）
+
+* `CMakeLists.txt`：`--language=+volatile` → `--language=+volatile,+gcc`
+  （letter-shell `, ##__VA_ARGS__` 空变参需 GNU 扩展，否则 cctc E250；
+  实测 `+gcc` 不定义 `__GNUC__`，不影响 iLLD 头文件路径选择）。
+* `Shell/letter-shell/src/shell.h`：新增 `__TASKING__` 分支，
+  `SHELL_SECTION` 只用 `section`（去 `aligned(1)` 避 W770），
+  `SHELL_USED` 用 `__attribute__((used))`。
+* `Shell/letter-shell/src/shell.c`：新增 `__TASKING__` 分支，
+  用 LSL 命名组标签 `_lc_gb/_lc_ge_shellCommand` 作命令表起止
+  （与 GCC 同名段 `shellCommand`）；取表条件加 `defined(__TASKING__)`。
+* `Shell/shell_port.c`：`__asm__ volatile("dsync")` → `SHELL_DSYNC()` 宏，
+  Tasking 用 iLLD `__dsync()`（`IfxCpu_Intrinsics.h`），GCC 保持原样。
+* `Lcf_Tasking_Tricore_Tc.lsl`：Far Const 组内加命名组 `shellCommand`
+  （精确名 select 防未引用删除，自动生成起止标签；注释用 `//`，LSL 不认 `/* */`）。
+* `Libraries/.../Ifx_Ssw_CompilersTasking.h`：`IFX_SSW_INLINE` 的 C 分支
+  `inline` → `static inline`（裸 inline 每 TU 生成全局符号，链接报 ltc E108；
+  与 GCC 版 `static inline always_inline` 对齐）。
+
+### 7.4 本工程实测日志（Tasking Debug）
+
+编译（300 obj，0 error；仅 W560/W549/W577 类警告，无 error）：
+
+```
+[297/300] Building C object CMakeFiles\tc397_uart_lettershell.dir\Shell\letter-shell\src\shell.c.obj
+[298/300] Building C object CMakeFiles\tc397_uart_lettershell.dir\Shell\shell_port.c.obj
+[299/300] Linking C executable tc397_uart_lettershell.elf
+```
+
+map 确认命令表落盘（`_lc_gb_shellCommand = 0x80006898`，
+`_lc_ge_shellCommand = 0x80006a68`，差值 0x2D0 = 720B = 18 条 × 40B/条，
+含 shell.c 内建 7 条 + shell_port 11 条）。
+
+`help`（命令表正确性的直接证据）：
+
+```
+Command List:
+version               CMD   version info
+ver                   CMD   version alias
+mcu                   CMD   MCU info
+uid                   CMD   chip UID
+uptime                CMD   uptime
+reset                 CMD   software reset
+reboot                CMD   reboot alias
+temp                  CMD   die temperature
+sysinfo               CMD   system info
+mem                   CMD   memory info
+led                   CMD   P13.0 LED control
+help                  CMD   show command info
+setVar                CMD   set var
+users                 CMD   list all user
+cmds                  CMD   list all cmd
+vars                  CMD   list all var
+keys                  CMD   list all key
+clear                 CMD   clear console
+```
+
+`version` / `mcu`：
+
+```
+TC397 Letter-Shell Firmware / Version : 1.0.0 / Build : Sep 18 2026 11:38:07
+ChipID  : 0xAF239793 (CHREV=0x13) / STM Freq: 100000000 Hz
+```
+
+Windows GCC 对照：`.\build.ps1 -Compiler gcc` 编译通过（301 obj），
+证明上述改动不影响 GCC 路径（Ubuntu GCC 13.4.1 同理）。
+
+### 7.5 测试结果
+
+* 编译/烧录/shell 全 PASS；命令表链接正确性由 `help` 输出直接证明。
+* 构建机注记：Python 自带 ninja 1.13.0（kitware 版）增量构建失败，
+  WinGet 官方 1.13.2 正常；`rebuild` 可规避。
 
 ---
 

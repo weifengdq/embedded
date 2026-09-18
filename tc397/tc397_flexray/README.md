@@ -247,18 +247,59 @@ Phase A（逐节点到 RUN）→ Phase B（双节点联合等 NORMAL，12 s）�
 
 ---
 
-## 9 Windows 11 + TASKING 构建（2026-09-18 已验证）
+## 9 Windows 11 + TASKING 构建与实测（2026-09-18）
 
-* 工具链：`C:\z\app\TASKING\TriCore_v6.3r1`，Studio 1.10.36，串口 COM165。
-  `build.sh`（Ubuntu/GCC）不受影响：
+### 9.1 测试背景
+
+* 目标：Ubuntu GCC 功能已验证，现验证同一套源码在 Windows 11 +
+  TASKING TriCore v6.3r1（`C:\z\app\TASKING\TriCore_v6.3r1`）下的命令行构建与功能。
+* 约束：增量改动不得影响 Ubuntu GCC（`build.sh` 原样保留；源码改动包在
+  `__TASKING__` 分支或工具链无关形式）。
+* 环境：AURIX-Studio-1.10.36（AURIXFlasher v3.0.18），COM165（921600），
+  DAP MiniWiggler；FlexRay 两个 A 通道对连，终端电阻已接。
+
+### 9.2 构建命令
 
 ```powershell
-.\build.ps1 -Compiler tasking -Action download     # Tasking 编译并烧录
+.\build.ps1 -Compiler tasking -Action download     # Tasking Debug 编译并烧录
 ```
 
-* 本工程 Tasking 实测：编译 302 obj 0 error；`fr test 5` 双节点
-  NORMAL_ACTIVE，5 轮双向 10/10 PASS（A 通道对连，终端电阻已接）。
-* 通用兼容改动见 `tc397/temp/tasking_porting_log.md`（GCC 行为不变）。
+### 9.3 通用兼容改动（GCC 行为不变，详见 `tc397/temp/tasking_porting_log.md`）
+
+与 uart 基线同 6 项（`+gcc` 语言扩展、shell.h/shell.c 的 `__TASKING__` 分支、
+`SHELL_DSYNC()` 宏、LSL `shellCommand` 命名组、`static inline`）。
+
+### 9.4 本工程实测日志（Tasking Debug）
+
+编译（302 obj，0 error）：
+
+```
+[301/302] Linking C executable tc397_flexray.elf
+Done.
+```
+
+`fr test 5`（双节点 NORMAL_ACTIVE，5 轮双向）：
+
+```
+FR0A(ERAY0) boot: rc=0@OK poc=2(NORMAL_ACTIVE) SUCC1=0x04004304 CCSV=0x00360302 EIR=0x00000016
+FR1A(ERAY1) boot: rc=0@OK poc=2(NORMAL_ACTIVE) SUCC1=0x04004304 CCSV=0x00410302 EIR=0x00000016
+FR selftest: both nodes NORMAL, 5 rounds each direction
+[0] FR0->FR1 slot11 OK
+[0] FR1->FR0 slot12 OK
+[1] FR0->FR1 slot11 OK
+[1] FR1->FR0 slot12 OK
+[2] FR0->FR1 slot11 OK
+[2] FR1->FR0 slot12 OK
+[3] FR0->FR1 slot11 OK
+[3] FR1->FR0 slot12 OK
+[4] FR0->FR1 slot11 OK
+[4] FR1->FR0 slot12 OK
+FR selftest: PASS (5 rounds, 0 fails)
+```
+
+### 9.5 测试结果
+
+* 编译/烧录/双节点 5 轮双向全 PASS（10/10，rxErr 恒 0）。
 
 ---
 

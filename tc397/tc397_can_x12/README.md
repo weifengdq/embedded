@@ -148,19 +148,60 @@ RX FIFO 32/TX FIFO 16）。`g_can`（~70KB）显式放 `.bss`（NOBITS），不�
 
 ---
 
-## 8 Windows 11 + TASKING 构建（2026-09-18 已验证）
+## 8 Windows 11 + TASKING 构建与实测（2026-09-18）
 
-* 工具链：`C:\z\app\TASKING\TriCore_v6.3r1`，Studio 1.10.36，串口 COM165。
-  `build.sh`（Ubuntu/GCC）不受影响：
+### 8.1 测试背景
+
+* 目标：Ubuntu GCC 功能已验证，现验证同一套源码在 Windows 11 +
+  TASKING TriCore v6.3r1（`C:\z\app\TASKING\TriCore_v6.3r1`）下的命令行构建与功能。
+* 约束：增量改动不得影响 Ubuntu GCC（`build.sh` 原样保留；源码改动包在
+  `__TASKING__` 分支或工具链无关形式）。
+* 环境：AURIX-Studio-1.10.36（AURIXFlasher v3.0.18），COM165（921600），
+  DAP MiniWiggler；12 路 CAN 两两相连（CAN0-CAN1 … CAN10-CAN11），终端电阻已接。
+
+### 8.2 构建命令
 
 ```powershell
-.\build.ps1 -Compiler tasking -Action download     # Tasking 编译并烧录
+.\build.ps1 -Compiler tasking -Action download     # Tasking Debug 编译并烧录
 ```
 
-* 本工程 Tasking 实测：编译 302 obj 0 error；`canpair` 12 路双向全 PASS
- （CAN0-CAN1 … CAN10-CAN11 两两相连，终端电阻已接；首轮 can0 首包偶发超时 1 次，
-  重跑 ALL PASS，见 §7.2 同类现象）。
-* 通用兼容改动见 `tc397/temp/tasking_porting_log.md`（GCC 行为不变）。
+### 8.3 通用兼容改动（GCC 行为不变，详见 `tc397/temp/tasking_porting_log.md`）
+
+与 uart 基线同 6 项（`+gcc` 语言扩展、shell.h/shell.c 的 `__TASKING__` 分支、
+`SHELL_DSYNC()` 宏、LSL `shellCommand` 命名组、`static inline`）。
+
+### 8.4 本工程实测日志（Tasking Debug）
+
+编译（302 obj，0 error）：
+
+```
+[300/302] Linking C executable tc397_can_x12.elf
+Done.
+```
+
+`canpair`（1 轮，len=8 FD+BRS）：
+
+```
+round 1:
+  can0->can1: TIMEOUT FAIL        # 首轮首包偶发（复位后首帧瞬态，见 §7.2 同类现象）
+  can1->can0: PASS (id=140 len=8 FD+BRS)
+  can2->can3 ... can11->can10: PASS（余 10 向全过）
+canpair done: FAIL (1 fail(s))
+```
+
+重跑一次：
+
+```
+round 1:
+  can0->can1: PASS (id=100 len=8 FD+BRS)
+  ...（余 11 向全过）
+canpair done: ALL PASS (0 fail(s))
+```
+
+### 8.5 测试结果
+
+* 编译/烧录/12 路回环全 PASS（首轮 can0 首包偶发超时 1 次，重跑全过；
+  与 Ubuntu GCC 记录的“首次上电第一帧超时”同类现象，属 TCAN1043 使能后首帧瞬态）。
 
 ---
 

@@ -108,6 +108,10 @@ if(AURIX_TOOLCHAIN_TYPE STREQUAL "TASKING")
     set(CMAKE_C_FLAGS_RELEASE "" CACHE STRING "" FORCE)
 
     # TASKING C 编译选项（与 ADS TriCore Debug(TASKING) 配置对应）。
+    # --tradeoff 保持 4（体积优先，ADS 默认）：实测 iperf Release（-O2）下
+    #   tradeoff=4 → 73.7Mbps，tradeoff=0 → 28.1Mbps，tradeoff=2 → 19.6Mbps，
+    #   体积优先反而最快（代码更紧凑，cache/取指更友好），故全配置统一用 4。
+    #   与 GCC Release 592Mbps 的差距属编译器优化质量差异，如实记录，不硬追。
     target_compile_options(${PROJECT_NAME} PRIVATE
         -D__CPU__=${AURIX_CPU}
         --language=+volatile,+gcc

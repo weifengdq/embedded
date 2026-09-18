@@ -185,18 +185,56 @@ G2/G3/G8 的 QSR 非空，转换在各组正常进行。
 
 ---
 
-## 7 Windows 11 + TASKING 构建（2026-09-18 已验证）
+## 7 Windows 11 + TASKING 构建与实测（2026-09-18）
 
-* 工具链：`C:\z\app\TASKING\TriCore_v6.3r1`，Studio 1.10.36，串口 COM165。
-  `build.sh`（Ubuntu/GCC）不受影响，两套脚本共存：
+### 7.1 测试背景
+
+* 目标：Ubuntu GCC 功能已验证，现验证同一套源码在 Windows 11 +
+  TASKING TriCore v6.3r1（`C:\z\app\TASKING\TriCore_v6.3r1`）下的命令行构建与功能。
+* 约束：增量改动不得影响 Ubuntu GCC（`build.sh` 原样保留；源码改动包在
+  `__TASKING__` 分支或工具链无关形式）。
+* 环境：AURIX-Studio-1.10.36（AURIXFlasher v3.0.18），COM165（921600），DAP MiniWiggler。
+
+### 7.2 构建命令
 
 ```powershell
-.\build.ps1 -Compiler tasking -Action download     # Tasking 编译并烧录
+.\build.ps1 -Compiler tasking -Action download     # Tasking Debug 编译并烧录
 ```
 
-* 本工程 Tasking 实测：编译 303 obj 0 error；`adc` 48 路电压正常
- （VUC 3.309V / 3V3 3.248V / 1V25 1.235V / 0V9 0.916V / VBAT 11.8V / IG 12.0V）。
-* 通用兼容改动见 `tc397/temp/tasking_porting_log.md`（GCC 行为不变）。
+### 7.3 通用兼容改动（GCC 行为不变，详见 `tc397/temp/tasking_porting_log.md`）
+
+与 uart 基线同 6 项（`+gcc` 语言扩展、shell.h/shell.c 的 `__TASKING__` 分支、
+`SHELL_DSYNC()` 宏、LSL `shellCommand` 命名组、`static inline`）。
+
+### 7.4 本工程实测日志（Tasking Debug）
+
+编译（303 obj，0 error）：
+
+```
+[302/303] Linking C executable tc397_adc.elf
+Done.
+```
+
+`help` 列出 `adc`/`adcdbg` 特有命令；`adc` 采样（48 路）：
+
+```
+AN00 SPARE     pin=0.376V raw= 308 (G0CH0)
+...
+AN08 VPREREG   pin=0.352V ext= 5.859V raw= 288 (G1CH0)
+AN09 VS1       pin=0.685V ext=11.414V raw= 561 (G1CH1)
+AN10 VBAT      pin=0.708V ext=11.800V raw= 580 (G1CH2)
+AN13 IG        pin=0.720V ext=12.004V raw= 590 (G1CH5)
+AN16 VUC       pin=3.309V raw=2711 (G2CH0)
+AN20 3V3       pin=3.248V raw=2661 (G2CH4)
+AN21 1V25      pin=1.235V raw=1012 (G2CH5)
+AN22 0V9       pin=0.916V raw= 750 (G2CH6)
+AN35 T1S_INH   pin=3.243V raw=2657 (G8CH3)
+```
+
+### 7.5 测试结果
+
+* 编译/烧录/48 路采样全 PASS（电源轨读数与 Ubuntu GCC 基线一致：
+  VUC 3.3V / 3V3 3.25V / 1V25 1.24V / 0V9 0.92V / VBAT 11.8V / IG 12.0V）。
 
 ---
 

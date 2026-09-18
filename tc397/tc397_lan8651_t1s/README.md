@@ -269,18 +269,106 @@ BEACON 约 1061/s（bus cycle ~0.94ms，见 `plcadiag`），TO 计数同步涨�
 
 ---
 
-## 8 Windows 11 + TASKING 构建（2026-09-18 已验证）
+## 8 Windows 11 + TASKING 构建与实测（2026-09-18）
 
-* 工具链：`C:\z\app\TASKING\TriCore_v6.3r1`，Studio 1.10.36，串口 COM165。
-  `build.sh`（Ubuntu/GCC）不受影响：
+### 8.1 测试背景
+
+* 目标：Ubuntu GCC 功能已验证（见 §5），现验证同一套源码在 Windows 11 +
+  TASKING TriCore v6.3r1（`C:\z\app\TASKING\TriCore_v6.3r1`）下的命令行构建与功能。
+* 约束：增量改动不得影响 Ubuntu GCC（`build.sh` 原样保留，两套脚本共存；
+  所有源码改动均包在 `#if defined(__TASKING__)` 或工具链无关形式，GCC 路径不变）。
+* 环境：AURIX-Studio-1.10.36（GCC 11.3.1 / AURIXFlasher v3.0.18 /
+  WinGet 官方 ninja 1.13.2），调试串口 COM165（CH343，921600-8N1），
+  DAP MiniWiggler（DAS JDS COM67），对端 USB-10BASE-T1S（PC `以太网 16` = 192.168.1.1）。
+* iperf 工具：`tc397/tools/iperf.exe`（iperf 1.7.0 win32，即 iperf2 协议，
+  与板端 lwiperf 对接；已进 git）。
+
+### 8.2 构建命令
 
 ```powershell
-.\build.ps1 -Compiler tasking -Action download     # Tasking 编译并烧录
+.\build.ps1 -Compiler tasking                      # Tasking Debug 编译
+.\build.ps1 -Compiler tasking -Action download     # 编译并烧录（-erase/-prog/-ver on，-connect 6，-start on）
+.\build.ps1 -Compiler tasking -Action rebuild -BuildType Release  # Release 编译
+.\build.ps1 -Compiler gcc                          # Windows GCC 对照编译（ADS tricore-gcc11）
 ```
 
-* 本工程 Tasking 实测：编译 388 obj 0 error；`t1stat` link=1 PLCA 使能，
-  板→PC ping 4/4，PC→板 ping 4/4（<1ms；板 IP 192.168.1.100，PC 以太网 16 为 192.168.1.1）。
-* 通用兼容改动见 `tc397/temp/tasking_porting_log.md`（GCC 行为不变）。
+### 8.3 通用兼容改动（GCC 行为不变，详见 `tc397/temp/tasking_porting_log.md`）
+
+* `CMakeLists.txt`：`--language=+volatile` → `--language=+volatile,+gcc`
+  （letter-shell `, ##__VA_ARGS__` 空变参需 GNU 扩展，否则 cctc E250；
+  实测 `+gcc` 不定义 `__GNUC__`，不影响 iLLD 头文件路径选择）。
+* `Shell/letter-shell/src/shell.h`：新增 `__TASKING__` 分支，
+  `SHELL_SECTION` 只用 `section`（去 `aligned(1)` 避 W770），
+  `SHELL_USED` 用 `__attribute__((used))`。
+* `Shell/letter-shell/src/shell.c`：新增 `__TASKING__` 分支，
+  用 LSL 命名组标签 `_lc_gb/_lc_ge_shellCommand` 作命令表起止
+  （与 GCC 同名段 `shellCommand`）；取表条件加 `defined(__TASKING__)`。
+* `Shell/shell_port.c`：`__asm__ volatile("dsync")` → `SHELL_DSYNC()` 宏，
+  Tasking 用 iLLD `__dsync()`，GCC 保持原样。
+* `Lcf_Tasking_Tricore_Tc.lsl`：Far Const 组内加命名组 `shellCommand`
+  （精确名 select 防未引用删除，自动生成起止标签；注释用 `//`，LSL 不认 `/* */`）。
+* `Libraries/.../Ifx_Ssw_CompilersTasking.h`：`IFX_SSW_INLINE` 的 C 分支
+  `inline` → `static inline`（裸 inline 每 TU 生成全局符号，链接报 ltc E108；
+  与 GCC 版 `static inline always_inline` 对齐）。
+
+### 8.4 本工程实测日志（Tasking Debug，PLCA ID1 从节点）
+
+编译（388 obj，0 error）：
+
+```
+[386/388] Building C object CMakeFiles\tc397_lan8651_t1s.dir\Shell\shell_port.c.obj
+[387/388] Linking C executable tc397_lan8651_t1s.elf
+Done.
+```
+
+烧录（AURIXFlasher 3.0.18，TC39x）：
+
+```
+::Loading  HEX file ..........(Pass)
+::Erasing Flash memory .......... (Pass)
+::Programming Flash memory ..........(Pass)
+::Verifying Flash memory ..........
+::Flash memory matches expected value (Pass)
+Overall time: 4734 ms / AURIXFlasher Exit Status: Pass
+```
+
+链路（`t1stat`）：
+
+```
+DEVID=0x00086512 SYNC=0 RESETC=0 oa_cfg=0x9006
+PLCA en=1 id=1 ncnt=8 pst=1 tot=0x0020 burst=0x0080
+PHY bmcr=0x0000 bmsr=0x0805(link=1) id=0x0007/0xC1B3
+MAC ncr=0x0C(TXEN=1 RXEN=1) ncfgr=0x02020040 nsr=0x04
+BUF rba=0 txc=48 irq=idle(1)
+```
+
+ping（双向）：
+
+```
+# 板→PC
+PING 192.168.1.1 : 32 bytes count 4
+Reply from 192.168.1.1: bytes=32 seq=0..3 time=2/0/0/0 ms
+PING statistics: 4 sent, 4 received, 0% loss
+# PC→板
+ping -n 4 192.168.1.100 → 4/4，<1ms，0% 丢失
+```
+
+iperf2 TCP（PC→板，lwiperf server 5001，`iperf.exe -c 192.168.1.100 -p 5001`）：
+
+```
+# Debug，-t 15 -w 32K -M 1024
+[380]  0.0-15.0 sec  15.5 MBytes  8.66 Mbits/sec
+# Debug 复测，-t 20
+[352]  0.0-20.0 sec  20.6 MBytes  8.64 Mbits/sec
+# Release（rebuild -BuildType Release），-t 20
+[376]  0.0-20.0 sec  20.7 MBytes  8.65 Mbits/sec
+```
+
+### 8.5 测试结果
+
+* 编译/烧录/链路/ping/iperf 全 PASS；Debug 与 Release 速率一致
+  （8.64~8.66Mbps，瓶颈在 10M 线速，与 Ubuntu GCC 的 7.69~8.76Mbps 同量级）。
+* 两次 Debug + 一次 Release 共 55s 背景流量下无 wedged（PLCA 收益延续，样本有限仅供参考）。
 
 ---
 

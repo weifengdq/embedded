@@ -386,18 +386,48 @@ strapping 与任务书一致。
 
 ---
 
-## 9 Windows 11 + TASKING 构建（2026-09-18 已验证）
+## 9 Windows 11 + TASKING 构建与实测（2026-09-18）
 
-* 工具链：`C:\z\app\TASKING\TriCore_v6.3r1`，Studio 1.10.36，串口 COM165。
-  `build.sh`（Ubuntu/GCC）不受影响：
+### 9.1 测试背景
+
+* 目标：Ubuntu GCC 功能已验证，现验证同一套源码在 Windows 11 +
+  TASKING TriCore v6.3r1（`C:\z\app\TASKING\TriCore_v6.3r1`）下的命令行构建与功能。
+* 约束：增量改动不得影响 Ubuntu GCC（`build.sh` 原样保留；源码改动包在
+  `__TASKING__` 分支或工具链无关形式）。
+* 环境：AURIX-Studio-1.10.36（AURIXFlasher v3.0.18），COM165（921600），
+  DAP MiniWiggler；TLF35584 MPS 拉高 TestMode（仅本工程涉及）。
+
+### 9.2 构建命令
 
 ```powershell
-.\build.ps1 -Compiler tasking -Action download     # Tasking 编译并烧录
+.\build.ps1 -Compiler tasking -Action download     # Tasking Debug 编译并烧录
 ```
 
-* 本工程 Tasking 实测：编译 302 obj 0 error；`tlf` 显示 DEVSTAT=0xFA NORMAL，
-  电压轨全 ready（MPS 拉高 TestMode，SPI 2MHz xfer=39 tout=0）。
-* 通用兼容改动见 `tc397/temp/tasking_porting_log.md`（GCC 行为不变）。
+### 9.3 通用兼容改动（GCC 行为不变，详见 `tc397/temp/tasking_porting_log.md`）
+
+与 uart 基线同 6 项（`+gcc` 语言扩展、shell.h/shell.c 的 `__TASKING__` 分支、
+`SHELL_DSYNC()` 宏、LSL `shellCommand` 命名组、`static inline`）。
+
+### 9.4 本工程实测日志（Tasking Debug）
+
+编译（302 obj，0 error）：
+
+```
+[301/302] Linking C executable tc397_tlf35584.elf
+Done.
+```
+
+`tlf`（TestMode，SPI 2MHz）：
+
+```
+DEVSTAT=0xFA STATE=NORMAL TRK2=1 TRK1=1 COM=1 STBY=1 VREF=1
+VMONSTAT=0xFC (TRK2/1/VREF/COM/VCORE/STBY ready)
+SS1(P33.9)=1(high/normal) WDI(P14.3)=0 ERR(P33.8)=1 lock=locked baud=2000000 xfer=39 tout=0
+```
+
+### 9.5 测试结果
+
+* 编译/烧录/TLF 状态全 PASS（NORMAL，电压轨全 ready，SPI 零超时）。
 
 ---
 

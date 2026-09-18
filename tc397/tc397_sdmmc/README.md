@@ -264,21 +264,67 @@ sd st / sd regs / sd recover # 诊断链路
 
 ---
 
-## 7 Windows 11 + TASKING 构建（2026-09-18 已验证编译，卡待恢复后复测速率）
+## 7 Windows 11 + TASKING 构建与实测（2026-09-18）
 
-* 工具链：`C:\z\app\TASKING\TriCore_v6.3r1`，Studio 1.10.36，串口 COM165。
-  `build.sh`（Ubuntu/GCC）不受影响：
+### 7.1 测试背景
+
+* 目标：Ubuntu GCC 功能已验证（含 `sd bench` 速率基线：写 4.4~6.1MB/s，
+  读 2.8~13.8MB/s），现验证同一套源码在 Windows 11 + TASKING v6.3r1 下的构建；
+  速率待卡恢复后复测。
+* 约束：增量改动不得影响 Ubuntu GCC（`build.sh` 原样保留；源码改动包在
+  `__TASKING__` 分支或工具链无关形式）。
+* 环境：AURIX-Studio-1.10.36（AURIXFlasher v3.0.18），COM165（921600），
+  DAP MiniWiggler；TF 卡 128GB（32GB FAT32 分区）。
+* 现状：本卡当前 wedged（见 §7.4），Tasking/GCC 均复现，属卡硬件状态，
+  与编译器无关；待物理断电恢复后复测 `sd bench`。
+
+### 7.2 构建命令
 
 ```powershell
-.\build.ps1 -Compiler tasking -Action download     # Tasking 编译并烧录
+.\build.ps1 -Compiler tasking -Action download     # Tasking Debug 编译并烧录
+.\build.ps1 -Compiler gcc -Action download         # Windows GCC 对照（ADS tricore-gcc11）
 ```
 
-* 本工程 Tasking 实测：编译 305 obj 0 error，烧录 Pass，`help` 中 `sd` 命令正常。
-  TF 卡（128GB，32GB FAT32 分区）当前 wedged：`disk_initialize=0x00` 成功但
-  `disk_read` 全败 → `f_mount` DISK_ERR；同条件 GCC 对比版同样失败，
-  证实为卡硬件状态（本 README §6 已记载需物理掉电），与编译器无关。
-  待断电恢复后复测 `sd bench` 速率（GCC 基线：写 4.4~6.1MB/s，读 2.8~13.8MB/s）。
-* 通用兼容改动见 `tc397/temp/tasking_porting_log.md`（GCC 行为不变）。
+### 7.3 通用兼容改动（GCC 行为不变，详见 `tc397/temp/tasking_porting_log.md`）
+
+与 uart 基线同 6 项，另修 `cmake/tricore-gcc-toolchain.cmake` 的 Windows 默认
+GCC 路径 `1.10.28` → `1.10.36`（`try_compile` 子项目回退默认值问题；仅 Windows 分支，
+Ubuntu `/opt/tricore-gcc` 不动——本工程 Windows GCC 对照编译即用此验证通过）。
+
+### 7.4 本工程实测日志（Tasking Debug + Windows GCC 对照）
+
+编译（Tasking 305 obj / GCC 306 obj，均 0 error）：
+
+```
+[304/305] Linking C executable tc397_sdmmc.elf
+Done.
+```
+
+`sd init`（Tasking，重新上电后复测，仍失败）：
+
+```
+sd init: CD P10.7=0 ...
+disk_initialize(0) -> 0x00
+f_mount -> DISK_ERR(hard error in low level disk I/O) (1)
+```
+
+`sd raw r 0 1` → `disk_read(lba=0,n=1) -> 3`（RES_ERROR）；
+`sd regs` → `PSTATE=0x03070202`（解码：DAT3-0=0000 全低、DAT_INHIBIT=1，
+CARD_INSERTED/STABLE/DETECT=1；正常空闲应 DAT 全高）；
+`sd recover`（CMD12 中止 + SW_RST + 重初始化）后 PSTATE 一度回到
+`0x03F70000`（DAT 全高），但下一次读又拉低，EISTR 恒 0——卡内写状态机卡死
+（busy 拉 DAT0 低，但控制器无超时上报）。
+
+Windows GCC 对照版（同板同卡）：`sd init` 同样 `DISK_ERR`，
+证实为卡硬件 wedged（本 README §6 已记载“需物理掉电，MCU 复位不清 SD 卡状态”），
+与 Tasking/GCC 编译器无关。
+
+### 7.5 测试结果
+
+* 编译/烧录/`help`（`sd` 命令集完整）PASS；卡读写待物理断电恢复后，
+  用 Tasking 版复测 `sd bench` 并与 GCC 基线（写 4.4~6.1MB/s）对照。
+* PSTATE 解码方法（`0x03070202` → DAT 全低 + DAT_INHIBIT）可作为后续
+  “CMD 通、DAT 败”类故障的一线判据。
 
 ---
 

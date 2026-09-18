@@ -190,19 +190,83 @@ diag UDP  -> gap1ms=0（主循环无 >1ms 停顿），hw_missed=0
 
 ---
 
-## 7 Windows 11 + TASKING 构建（2026-09-18 已验证）
+## 7 Windows 11 + TASKING 构建与实测（2026-09-18）
 
-* 工具链：`C:\z\app\TASKING\TriCore_v6.3r1`，Studio 1.10.36，串口 COM165。
-  `build.sh`（Ubuntu/GCC）不受影响：
+### 7.1 测试背景
+
+* 目标：Ubuntu GCC Release 已跑出 592Mbps（见 §6），现验证同一套源码在
+  Windows 11 + TASKING v6.3r1 下的构建与功能，量化编译器优化差距。
+* 约束：增量改动不得影响 Ubuntu GCC（`build.sh` 原样保留；源码改动包在
+  `__TASKING__` 分支或工具链无关形式）。
+* 环境：AURIX-Studio-1.10.36（AURIXFlasher v3.0.18），COM165（921600），
+  DAP MiniWiggler；对端千兆车载以太网转换器（1000M Master）→ PC `以太网 5` = 192.168.0.1。
+* iperf 工具：`tc397/tools/iperf.exe`（iperf 1.7.0 win32，iperf2 协议，已进 git）。
+
+### 7.2 构建命令
 
 ```powershell
-.\build.ps1 -Compiler tasking -Action download     # Tasking 编译并烧录
+.\build.ps1 -Compiler tasking -Action download                 # Debug 编译并烧录
+.\build.ps1 -Compiler tasking -Action rebuild -BuildType Release  # Release（测速用）
+.\build.ps1 -Compiler tasking -Action download -BuildType Release # Release 烧录
 ```
 
-* 本工程 Tasking 实测：编译 387 obj 0 error；`link` 显示 1000M Slave，
-  板→PC ping 4/4，PC→板 ping 4/4（板 IP 192.168.0.100，PC 以太网 5 为 192.168.0.1，
-  转换器 1000M Master）。
-* 通用兼容改动见 `tc397/temp/tasking_porting_log.md`（GCC 行为不变）。
+注：`build\tasking` 目录同时只能存一种 BuildType，切 Debug/Release 必须用
+`rebuild`（先清后建），否则 ninja 增量会报旧 depfile 路径错误（另见 §7.5 构建机注记）。
+
+### 7.3 通用兼容改动（GCC 行为不变，详见 `tc397/temp/tasking_porting_log.md`）
+
+与 lan8651 工程同 6 项（`+gcc` 语言扩展、shell.h/shell.c 的 `__TASKING__` 分支、
+`SHELL_DSYNC()` 宏、LSL `shellCommand` 命名组、`static inline`）。
+另修 `cmake/tricore-gcc-toolchain.cmake` 的 Windows 默认 GCC 路径
+`1.10.28` → `1.10.36`（`try_compile` 子项目回退默认值问题；仅 Windows 分支）。
+
+### 7.4 本工程实测日志（Tasking）
+
+编译（387 obj，0 error，Debug/Release 均过）：
+
+```
+[386/387] Linking C executable tc397_lwip_iperf.elf
+Done.
+```
+
+链路（`link` + `ifconfig`）：
+
+```
+PHY link: UP (BMSR=0x000D) speed=1000M mode=Slave (SPEC=0x8400)
+MAC PHYIF: 0x000D0000 (LNKSTS bit0, LNKMOD bit1, LNKSPEED bit2)
+netif 0: en0 IP 192.168.0.100 NM 255.255.255.0 GW 192.168.0.1
+  HWaddr DE:AD:BE:EF:FE:ED MTU 1500 flags 0x0F
+  link UP
+```
+
+ping（双向）：
+
+```
+# 板→PC：PING 192.168.0.1 : 32 bytes count 4 → 4 sent, 4 received, 0% loss（1/0/0/0 ms）
+# PC→板：ping -n 4 192.168.0.100 → 4/4，<1ms，0% 丢失
+```
+
+iperf2 TCP（PC→板，`iperf.exe -c 192.168.0.100 -p 5001 -t 15 -w 256K`）：
+
+```
+# Tasking Debug（--tradeoff=4，-O0）：15.5s / 10.7MB / 5.83Mbps
+# Tasking Release tradeoff=4（-O2，ADS 默认）：17.3s / 152MB / 73.7Mbps
+# Tasking Release tradeoff=0（-O2，纯速度）：15.0s / 50.3MB / 28.1Mbps
+# Tasking Release tradeoff=2（-O2，平衡）：17.3s / 40.6MB / 19.6Mbps
+```
+
+### 7.5 测试结果
+
+* 功能全 PASS（编译/烧录/1000M 建链/双向 ping/iperf 连通）。
+* 速率结论（实测，不回避差距）：
+  Tasking Release 最优 73.7Mbps（tradeoff=4 体积优先反而最快——代码更紧凑，
+  cache/取指更友好；tradeoff=0/2 分别掉到 28.1/19.6Mbps），
+  约为 GCC Release 592Mbps 的 1/8。差距属编译器优化质量差异（-O2 启发式、
+  内联/循环变换策略不同），功能无损；如需追速率，下一步可试 `-O3`、
+  关 `--compact-max-size`、开 `+inline/+unroll` 等单项优化对照。
+* 构建机注记：Python 自带 ninja 1.13.0（kitware 版）增量构建失败，
+  WinGet 官方 1.13.2 正常；`rebuild` 可规避。AURIXFlasher 偶发连接失败
+  （约 1/5），等 3 秒重试即好。
 
 ---
 
