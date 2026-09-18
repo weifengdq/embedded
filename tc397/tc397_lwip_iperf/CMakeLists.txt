@@ -93,6 +93,9 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE SHELL_CFG_USER="shell_cfg_use
 # GETH DMA 描述符数量（必须全局定义，保证 iLLD 与 lwIP port 编译单元一致）
 # RX 环必须大于 TCP 窗口内的最大在途包数（44），否则线速突发下必然丢包，
 # 触发 Go-Back-N + 客户端 RTO，吞吐崩溃。64 x 1536 = 96KB，放 LMU。
+# NOTE 2026-09-18: TX 描述符试过 8 -> 32 想给 ACK 更多缓冲，实测吞吐反而崩到
+#   ~4 Mbps（ping 正常但 RX 几乎收不到包）。本工程对 DMA 描述符/缓冲的
+#   LMU 布局很敏感，未定位到根因前**不要**改这两个数字，保持 64/8。
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     IFXGETH_MAX_RX_DESCRIPTORS=64
     IFXGETH_MAX_TX_DESCRIPTORS=8
@@ -108,15 +111,44 @@ if(AURIX_TOOLCHAIN_TYPE STREQUAL "TASKING")
     set(CMAKE_C_FLAGS_RELEASE "" CACHE STRING "" FORCE)
 
     # TASKING C 编译选项（与 ADS TriCore Debug(TASKING) 配置对应）。
-    # --tradeoff 保持 4（体积优先，ADS 默认）：实测 iperf Release（-O2）下
-    #   tradeoff=4 → 73.7Mbps，tradeoff=0 → 28.1Mbps，tradeoff=2 → 19.6Mbps，
-    #   体积优先反而最快（代码更紧凑，cache/取指更友好），故全配置统一用 4。
-    #   与 GCC Release 592Mbps 的差距属编译器优化质量差异，如实记录，不硬追。
+    #
+    # ===== 2026-09-18 测速根因复盘（为什么 Release 必须显式 -O3 + --tradeoff=0）=====
+    # 现象：Tasking Release 只跑出 73.7Mbps，Ubuntu GCC Release（-O3）是 592Mbps，差 8 倍。
+    # 根因 1（主因）：不写 -O 时 cctc 用默认优化级 = -O2，而 -O2 是"关内联"的。
+    #   手册 ctc_user_guide.pdf p.446-447「--optimize (-O)」的预定义别名（大写字母=关闭该项）：
+    #     -O0 = -OaCEFGIKLMNOPRSUVWY,-predict            （全关）
+    #     -O2 = -OacefgIklMnoprsUvwy,+predict  ← 默认     I=inline 关、U=unroll 关、
+    #                                                     M=simd 关、N=align-loop 关，
+    #                                                     而小写 r=compact(反向内联) 反而开着
+    #     -O3 = -Oacefgiklmnoprsuvwy,+predict            i/u/m/n 全开
+    #   lwIP 热路径（tcp_input/tcp_output/pbuf/etharp/memcpy）是"深调用链 + 大量小函数"，
+    #   关内联等于每个小函数都真调用一次，在 TriCore 上代价极大。
+    # 根因 2：--tradeoff 不只调"大小/速度权重"，它直接改变指令选择（本目录小实验实测）：
+    #     --tradeoff=0：循环用 TriCore 硬件 loop 指令（零开销循环）
+    #     --tradeoff=4：循环退化成 add + jlt.u 的软件计数循环（每个循环多 2~3 条指令）
+    #   手册 p.222-224「Optimize for Code Size or Execution Speed」也写明 LD.D/ST.D 只在
+    #   tradeoff 0/1/2 才使用、loop 对齐只在 tradeoff<=2 才生效。
+    #
+    # 因此 Release 固定 -O3 + --tradeoff=0，与 tc387_lwip_iperf_gcc2 的 Tasking 千兆配置
+    # （TC387 实测 ~945Mbps）完全一致；Debug 保持 --tradeoff=4（体积优先，配 -O0 好调试）。
+    # GCC 分支在下面的 else 中，完全不受影响（Ubuntu 26 + GCC 基线保持）。
+    #
+    # ===== 上板实测（2026-09-18，TC397 + COM165 + 千兆转换盒）=====
+    # iperf 客户端为 C:\github\embedded\tc397\tools\iperf-2.2.1-win64.exe，参数 `-w 1M`。
+    #   Tasking -O3/tradeoff=0：30s 测试 90.9 / 279 Mbps（input=706 tk/pkt）
+    #   Tasking --tradeoff=4   ：30s 测试 77.9 / 43.8 Mbps（input=803 tk/pkt）
+    # -O3 的 input（lwIP 协议处理）每包快约 12%，峰值也明显更高，故选 -O3。
+    # 单流 TCP 20s 分区间报告可见峰值 331 Mbps，但会周期性掉到 2~8 Mbps：
+    #   那是**链路丢包**导致客户端 cwnd 崩溃（UDP 灌流实测 300M→4.6%、
+    #   600M→14.5%、900M→19.1% 丢包，与编译器无关），不是 CPU 不够
+    #   （掉速时 busy 仅 4~17%）。详见 README §7.6。
     target_compile_options(${PROJECT_NAME} PRIVATE
         -D__CPU__=${AURIX_CPU}
         --language=+volatile,+gcc
         --fp-model=3
-        --tradeoff=4
+        $<$<CONFIG:Release>:-O3>
+        $<$<CONFIG:Release>:--tradeoff=0>
+        $<$<NOT:$<CONFIG:Release>>:--tradeoff=4>
         --compact-max-size=200
         -Wc-w544
         -Wc-w557

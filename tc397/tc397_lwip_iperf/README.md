@@ -255,18 +255,131 @@ iperf2 TCP（PC→板，`iperf.exe -c 192.168.0.100 -p 5001 -t 15 -w 256K`）：
 # Tasking Release tradeoff=2（-O2，平衡）：17.3s / 40.6MB / 19.6Mbps
 ```
 
-### 7.5 测试结果
+### 7.5 测试结果（第一轮）
 
 * 功能全 PASS（编译/烧录/1000M 建链/双向 ping/iperf 连通）。
-* 速率结论（实测，不回避差距）：
-  Tasking Release 最优 73.7Mbps（tradeoff=4 体积优先反而最快——代码更紧凑，
-  cache/取指更友好；tradeoff=0/2 分别掉到 28.1/19.6Mbps），
-  约为 GCC Release 592Mbps 的 1/8。差距属编译器优化质量差异（-O2 启发式、
-  内联/循环变换策略不同），功能无损；如需追速率，下一步可试 `-O3`、
-  关 `--compact-max-size`、开 `+inline/+unroll` 等单项优化对照。
 * 构建机注记：Python 自带 ninja 1.13.0（kitware 版）增量构建失败，
   WinGet 官方 1.13.2 正常；`rebuild` 可规避。AURIXFlasher 偶发连接失败
   （约 1/5），等 3 秒重试即好。
+
+---
+
+## 7.6 速率专项追查（2026-09-18 第二轮，深度）
+
+> 结论先行：**上一轮"Tasking 73.7Mbps vs GCC 592Mbps，差 8 倍，属编译器优化差异"
+> 的判断是错的。** 真正原因是 **iperf 客户端工具/参数** + **链路在 >300Mbps 时丢包**，
+> 与编译器基本无关。下面按"发现顺序"记录证据。
+
+### 7.6.1 关键发现一：iperf 客户端参数决定测量值（影响 >10 倍）
+
+上一轮用的是 `iperf.exe`（**iperf 1.7.0 win32，2003 年版**），其 **TCP 默认块只有 8KB**
+（`-l` 默认值很小），而 Linux 上的 iperf2 默认块大得多。同一块板、同一份固件，
+只换客户端参数：
+
+| iperf 客户端 / 参数 | 实测 TCP 速率 |
+| --- | --- |
+| iperf 1.7.0 `-w 256K`（默认块） | **15.4 Mbps** |
+| iperf 1.7.0 `-w 256K -l 8K` | 10.4 Mbps |
+| iperf 1.7.0 `-w 256K -l 64K` | 79.8 Mbps |
+| iperf 1.7.0 `-w 1M -l 64K` | 199~285 Mbps |
+| **iperf 2.2.1 `-w 1M`（默认块）** | **93~331 Mbps** |
+| iperf 2.2.1 `-w 256K -l 64K` | 187 Mbps |
+
+**➜ 所以"Tasking 比 Ubuntu 慢 8 倍"的第一层原因是 iperf 版本/参数，不是编译器。**
+Ubuntu 上那 592Mbps 是用 Linux iperf2（大默认块）测的，而 Windows 侧最初用的是
+2003 年的 iperf 1.7.0 默认 8KB 块 —— 两者不可直接比较。
+
+补充：`iperf-2.2.1-win64.exe` 已随本轮放入 `tc397/tools/`。注意 **`-l` 指定大块
+（如 128K/256K）反而会崩到 3 Mbps 量级，甚至让固件挂死**（见 §7.6.4），
+建议就用 `-w 1M` 走默认块。
+
+### 7.6.2 关键发现二：Release 用 `-O3 --tradeoff=0` 确实优于 `--tradeoff=4`
+
+用 `iperf-2.2.1 -w 1M`、每次 30s、同板同链路，只切 CMake 的 Tasking 选项：
+
+| Tasking Release 选项 | 30s 实测 | `input`（lwIP 协议处理） |
+| --- | --- | --- |
+| `--tradeoff=4`（`-O2` 默认级别） | 77.9 / 43.8 Mbps | 803 tk/pkt |
+| **`-O3 --tradeoff=0`** | **90.9 / 279 Mbps** | **706 tk/pkt** |
+
+`input` 每包快约 12%，峰值也明显更高，故 Release 固定 `-O3 --tradeoff=0`
+（与 `tc387_lwip_iperf_gcc2` 的 Tasking 千兆配置一致）。
+
+依据（cctc 手册 `ctc_user_guide.pdf`）：
+* p.446-447：`-O2` 别名 `-OacefgIklMnoprsUvwy`（**大写字母=关闭**，`I`=不内联、
+  `U`=不展开、`M`=不用 SIMD、`N`=不做 loop 对齐），而 `-O3` 为全小写（全开）；
+* p.222-224：`--tradeoff` 会改变指令选择 —— 小实验实测 `tradeoff=0` 的循环用
+  TriCore 硬件 `loop` 指令，`tradeoff=4` 退化为 `add + jlt.u` 软件循环。
+
+### 7.6.3 关键发现三：瓶颈是"链路丢包"，不是 CPU / 不是编译器
+
+用当前 Tasking `-O3` 固件做 UDP 灌流（打到 sink 端口 5003，不回复），
+按目标速率扫描丢包率（PC 网卡 `txDiscard=0`、`txErr=0`，即 PC 侧没丢）：
+
+| 目标速率 | PC 发出 | 板子收到 | 丢包率 |
+| --- | --- | --- | --- |
+| 100 M | 51185 | 51187 | **~0%** |
+| 300 M | 152825 | 145775 | **4.6%** |
+| 600 M | 311538 | 266324 | **14.5%** |
+| 900 M | 441735 | 357165 | **19.1%** |
+
+* 用 **GCC 固件**测，丢包率几乎相同（4.0% / 13.4% / 17.9%）➜ **与编译器无关**。
+* 同一固件单流 TCP 20s 分区间报告：峰值 **331 Mbps**，但周期性掉到 **2~8 Mbps**
+  并持续约 4s —— 正是 TCP RTO 退避（1s+2s+4s）的典型形态，即**丢包把客户端
+  cwnd 打崩**。掉速期间板子 `busy` 仅 4~17%、`rx_nobuf=0`，**CPU 完全不是瓶颈**。
+* 丢包随速率单调上升 ➜ 是"缓冲/瞬时排队"型丢包。板子侧 `hw_fifo_ovf` 确有增长，
+  但 MTU 8KB 的 MTL RX FIFO 只够约 5 个满帧，链路突发时很容易溢出。
+
+### 7.6.4 已排除项与"试过但失败"的改动（重要，别重踩）
+
+* **DMA 突发配置已是最优且确认生效**（通过 UDP 诊断口 `rd` 读回寄存器）：
+  `CH0_CONTROL.PBLX8=1`、`SYSBUS_MODE`：`AAL=1`、`MB=1`、`FB=0`、
+  `CH0_RX/TX_CONTROL` 的 `RXPBL=TXPBL=32`，`MTL_RXQ0_OPERATION_MODE` 的
+  `EHFC=1、RFA=1、RFD=4、RSF=1`。`fGETH=150MHz`（TC39x 手册上限 100–150MHz）。
+  ➜ **不是配置没生效**，不要再怀疑这一层。
+* **RX 缓存失效代码正常**：`netif.c` 的 `__TASKING__` 分支 `cachea.i` 生成的
+  汇编是 `cachea.i [a2]0` + `loop`，无问题。
+* **试过 TX 描述符 8→32（失败）**：想让 ACK 有更多缓冲，实测吞吐**崩到 ~4 Mbps**
+  （ping 正常但 RX 几乎收不到包）。本工程对 DMA 描述符/缓冲的 LMU 布局很敏感，
+  未定位根因前**保持 64/8 不要动**（已在 `CMakeLists.txt` 就地注释）。
+* **试过开 RFC1323 窗口缩放（失败）**：`TCP_WND=64240` 是单流上限的硬约束
+  （反推 RTT：Tasking 5.2ms、GCC 2.2ms，`吞吐≈窗口×8/RTT`），所以试过
+  `LWIP_WND_SCALE=1 + TCP_RCV_SCALE=2 + TCP_WND=65535<<2`（256KB）：
+  * 首次烧录后**整机启动挂死**（串口无 banner、ping 不通）；
+  * 改成 128KB（`SCALE=1`）后能启动、ping 通，但 **UDP 诊断与 TCP 都不响应**，
+    稍后彻底挂死。
+  * 回滚后一切正常（`ping` 4/4）。两版 map 显示 `lwip_lmuram_heap` 只后移
+    `0x64` 字节、DSPR0（240K）远未溢出、工程内只有一份 `lwipopts.h`，
+    **根因未明**（疑与 lwIP memp 池布局变化 + 本工程的 Ssw 初始化/对齐敏感性有关，
+    参见本工程 §5.1 曾出现的"`.lmudata` 奇地址 copy → Ssw 字拷贝 trap"）。
+  * ➜ **要冲 >300Mbps 必须解决窗口问题，但当前不能直接用 `LWIP_WND_SCALE`。**
+
+### 7.6.5 本轮净收益
+
+| 项目 | 第一轮 | 本轮 |
+| --- | --- | --- |
+| 测量工具 | iperf 1.7.0，默认 8KB 块 | iperf 2.2.1 `-w 1M` |
+| Tasking Release 配置 | `--tradeoff=4`（`-O2`） | `-O3 --tradeoff=0` |
+| 最好成绩（单流 TCP） | 73.7 Mbps | **331 Mbps 峰值 / 279 Mbps 30s** |
+| 与 GCC 的关系 | 误判为"编译器差距 8 倍" | 同参数下两者量级相当 |
+
+**仍未达成 592Mbps 的原因**：不是编译器，而是
+① 链路在 >300Mbps 丢包（4.6%→19.1%，打崩 cwnd）；
+② 单流 TCP 的 64KB 窗口上限（需窗口缩放，但当前会挂死）。
+下一步方向见 §7.7。
+
+### 7.7 下一步（未完成，留给后会话）
+
+1. **查丢包源头（优先）**：UDP 100M 丢 0% 但 300M 就丢 4.6%，说明链路中间
+   （1000BASE-T1 转换盒 / T1 线缆 / YT8011AN RGMII 时序）在高负载下缓冲不足。
+   本工程 `hw_crc=0`（收到的包 CRC 全对），说明不是 RGMII 采样错，而是**包没到 MAC**。
+   建议：换一条 T1 线/换转换盒对照；或用 PC 侧抓包对照重传数。
+2. **解决窗口缩放挂死**：这是冲 592Mbps 的必要条件。建议从"改变
+   `struct tcp_pcb` 大小是否触发初始化 trap"入手，先只开 `LWIP_WND_SCALE=1`
+   并保持 `TCP_WND=64240`（窗口不变、仅验证结构体变化是否挂死），再逐步加大。
+3. **降低 RTT**：`input=706 tk/pkt` 里已含协议处理开销，可尝试把 lwIP 热代码
+   放 PSPR（LSL 已有 `.text.text_cpu0` 归 PFLASH，可改用 `psram_text_cpu0` 组），
+   但需同步启动拷贝表，风险较高。
 
 ---
 
