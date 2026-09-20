@@ -633,6 +633,646 @@ static int sd_cmd_erase(Shell *sh, DWORD lba, UINT count)
     return 0;
 }
 
+/* ---------------- diagnostics: register dump + transfer experiments ---------------- */
+
+/* second buffer for verify-after-write */
+static uint32 s_chkBuf[128];
+
+static const char *sd_pstate_extra(uint32 ps, char *buf, int n)
+{
+    /* decode PSTATE_REG per IfxSdmmc_regdef.h */
+    (void)snprintf(buf, (size_t)n,
+                   "CMD_INH=%u CMD_INH_DAT=%u DAT_ACT=%u WR_XFER=%u RD_XFER=%u BUFWR=%u BUFRD=%u\r\n"
+                   "CARD_INS=%u STABLE=%u CD=%u WP=%u DAT3_0=%X CMD_LVL=%u CMD_ISSUE_ERR=%u",
+                   (unsigned)(ps & 1U), (unsigned)((ps >> 1) & 1U), (unsigned)((ps >> 2) & 1U),
+                   (unsigned)((ps >> 8) & 1U), (unsigned)((ps >> 9) & 1U),
+                   (unsigned)((ps >> 10) & 1U), (unsigned)((ps >> 11) & 1U),
+                   (unsigned)((ps >> 16) & 1U), (unsigned)((ps >> 17) & 1U),
+                   (unsigned)((ps >> 18) & 1U), (unsigned)((ps >> 19) & 1U),
+                   (unsigned)((ps >> 20) & 0xFU), (unsigned)((ps >> 24) & 1U),
+                   (unsigned)((ps >> 27) & 1U));
+    return buf;
+}
+
+static void sd_regdump(Shell *sh)
+{
+    Ifx_SDMMC *p = &MODULE_SDMMC0;
+    uint32 c1 = p->CAPABILITIES1.U;
+    uint32 c2 = p->CAPABILITIES2.U;
+    char dec[220];
+
+    shellPrint(sh, "ID=0x%08lX CLC=0x%08lX VERS=0x%04X MSHCID=0x%08lX MSHCTYP=0x%08lX\r\n",
+               (unsigned long)p->ID.U, (unsigned long)p->CLC.U, (unsigned)p->HOST_CNTRL_VERS.U,
+               (unsigned long)p->MSHC_VER_ID.U, (unsigned long)p->MSHC_VER_TYPE.U);
+    shellPrint(sh, "CAP1=0x%08lX CAP2=0x%08lX MBIU=0x%08lX\r\n",
+               (unsigned long)c1, (unsigned long)c2, (unsigned long)p->MBIU_CTRL.U);
+    shellPrint(sh, "  BASE_CLK=%luMHz SDMA_SUP=%u ADMA2_SUP=%u HS_SUP=%u MAXBLK=%u TOUTCLK=%lu CLKMUL=%u\r\n",
+               (unsigned long)((c1 >> 8) & 0xFFU), (unsigned)((c1 >> 22) & 1U),
+               (unsigned)((c1 >> 19) & 1U), (unsigned)((c1 >> 21) & 1U),
+               (unsigned)((c1 >> 16) & 3U), (unsigned long)(c1 & 0x3FU),
+               (unsigned)((c2 >> 15) & 1U));
+    shellPrint(sh, "HOST1=0x%02X(DMA_SEL=%u WIDTH=%u HS=%u EXT=%u)\r\n",
+               (unsigned)p->HOST_CTRL1.U, (unsigned)((p->HOST_CTRL1.U >> 3) & 3U),
+               (unsigned)((p->HOST_CTRL1.U >> 1) & 1U), (unsigned)((p->HOST_CTRL1.U >> 2) & 1U),
+               (unsigned)((p->HOST_CTRL1.U >> 5) & 1U));
+    shellPrint(sh, "HOST2=0x%04X(V4=%u ADDR64=%u PRESET=%u UHSMODE=%u DRVSTR=%u SMPCLK=%u)\r\n",
+               (unsigned)p->HOST_CTRL2.U, (unsigned)((p->HOST_CTRL2.U >> 12) & 1U),
+               (unsigned)((p->HOST_CTRL2.U >> 13) & 1U), (unsigned)((p->HOST_CTRL2.U >> 15) & 1U),
+               (unsigned)(p->HOST_CTRL2.U & 7U), (unsigned)((p->HOST_CTRL2.U >> 4) & 3U),
+               (unsigned)((p->HOST_CTRL2.U >> 7) & 1U));
+    shellPrint(sh, "CLKCTL=0x%04X PWR=0x%02X TOUT=0x%02X BGAP=0x%02X PRESET_HS=0x%04X\r\n",
+               (unsigned)p->CLK_CTRL.U, (unsigned)p->PWR_CTRL.U, (unsigned)p->TOUT_CTRL.U,
+               (unsigned)p->BGAP_CTRL.U, (unsigned)p->PRESET_HS.U);
+    shellPrint(sh, "BLKSIZE=0x%04X BLKCNT=0x%04X XFER=0x%04X SDMASA=0x%08lX ADMASA=0x%08lX\r\n",
+               (unsigned)p->BLOCKSIZE.U, (unsigned)p->BLOCKCOUNT.U, (unsigned)p->XFER_MODE.U,
+               (unsigned long)p->SDMASA.U, (unsigned long)p->ADMA_SA_LOW.U);
+    shellPrint(sh, "NISTR=0x%04X EISTR=0x%04X NISTR_EN=0x%04X EISTR_EN=0x%04X\r\n",
+               (unsigned)p->NORMAL_INT_STAT.U, (unsigned)p->ERROR_INT_STAT.U,
+               (unsigned)p->NORMAL_INT_STAT_EN.U, (unsigned)p->ERROR_INT_STAT_EN.U);
+    shellPrint(sh, "AUTOCMD=0x%04X ADMAERR=0x%02X PSTATE=0x%08lX\r\n",
+               (unsigned)p->AUTO_CMD_STAT.U, (unsigned)p->ADMA_ERR_STAT.U,
+               (unsigned long)p->PSTATE_REG.U);
+    shellPrint(sh, "%s\r\n", sd_pstate_extra(p->PSTATE_REG.U, dec, (int)sizeof(dec)));
+    shellPrint(sh, "buf s_ioBuf=0x%08lX s_chkBuf=0x%08lX\r\n",
+               (unsigned long)(uintptr_t)s_ioBuf, (unsigned long)(uintptr_t)s_chkBuf);
+}
+
+/* strict single-block PIO write: gate each word with PSTATE.BUF_WR_ENABLE */
+static int sd_pio_write(Shell *sh, DWORD lba, const uint32 *data)
+{
+    Ifx_SDMMC        *p = &MODULE_SDMMC0;
+    IfxSdmmc_Response rsp;
+    IfxSdmmc_Status   st;
+    uint32            i;
+
+    if (p->PSTATE_REG.B.CMD_INHIBIT_DAT)
+    {
+        shellPrint(sh, "  pre: CMD_INHIBIT_DAT=1 -> SW_RST_DAT\r\n");
+        p->SW_RST.B.SW_RST_DAT = 1U;
+        while (p->SW_RST.B.SW_RST_DAT) { }
+    }
+    p->NORMAL_INT_STAT.U = 0xFFFFU;
+    p->ERROR_INT_STAT.U  = 0xFFFFU;
+
+    p->BLOCKSIZE.B.XFER_BLOCK_SIZE = 512U;
+    p->BLOCKSIZE.B.SDMA_BUF_BDARY  = 0U;
+    p->BLOCKCOUNT.B.BLOCK_CNT      = 1U;
+    p->XFER_MODE.U                 = 0U;   /* clears DMA_ENABLE / MULTI_BLK_SEL / ... */
+    p->XFER_MODE.B.DATA_XFER_DIR   = 0U;   /* host -> card */
+
+    shellPrint(sh, "  pre  PSTATE=0x%08lX XFER=0x%04X BLKSIZE=0x%04X\r\n",
+               (unsigned long)p->PSTATE_REG.U, (unsigned)p->XFER_MODE.U, (unsigned)p->BLOCKSIZE.U);
+
+    st = IfxSdmmc_sendCommand(p, IfxSdmmc_Command_writeBlock, (uint32)lba,
+                              IfxSdmmc_ResponseType_r1, &rsp);
+    if (st != IfxSdmmc_Status_success)
+    {
+        shellPrint(sh, "  CMD24 st=%d PSTATE=0x%08lX EISTR=0x%04X NISTR=0x%04X\r\n",
+                   (int)st, (unsigned long)p->PSTATE_REG.U,
+                   (unsigned)p->ERROR_INT_STAT.U, (unsigned)p->NORMAL_INT_STAT.U);
+        return -1;
+    }
+    shellPrint(sh, "  CMD24 ok R1=0x%08lX PSTATE=0x%08lX BUFWR=%u\r\n",
+               (unsigned long)rsp.cardStatus.U, (unsigned long)p->PSTATE_REG.U,
+               (unsigned)p->PSTATE_REG.B.BUF_WR_ENABLE);
+
+    {
+        uint32 datAnd = 0xFFFFFFFFUL, datOr = 0U, datChg = 0U, datLast = 0xFFFFFFFFUL;
+        for (i = 0; i < 128U; i++)
+        {
+            uint32 to = 4000000UL;
+            while ((p->PSTATE_REG.B.BUF_WR_ENABLE == 0U) && (to > 0U)) { to--; }
+            if (to == 0U)
+            {
+                shellPrint(sh, "  word %lu: BUF_WR_ENABLE timeout PSTATE=0x%08lX EISTR=0x%04X NISTR=0x%04X\r\n",
+                           (unsigned long)i, (unsigned long)p->PSTATE_REG.U,
+                           (unsigned)p->ERROR_INT_STAT.U, (unsigned)p->NORMAL_INT_STAT.U);
+                return -2;
+            }
+            p->BUF_DATA.U = data[i];
+            {
+                uint32 d = (p->PSTATE_REG.U >> 20) & 0xFU;
+                if (d != datLast) { datChg++; datLast = d; }
+                datAnd &= d; datOr |= d;
+            }
+        }
+        /* keep sampling while the FIFO shifts out onto the DAT lines */
+        {
+            uint32 n;
+            for (n = 0; n < 300000UL; n++)
+            {
+                uint32 d = (p->PSTATE_REG.U >> 20) & 0xFU;
+                if (d != datLast) { datChg++; datLast = d; }
+                datAnd &= d; datOr |= d;
+            }
+        }
+        shellPrint(sh, "  pushed: DAT and=0x%lX or=0x%lX chg=%lu (and==or==0xF => never driven)\r\n",
+                   (unsigned long)datAnd, (unsigned long)datOr, (unsigned long)datChg);
+        shellPrint(sh, "  post PSTATE=0x%08lX NISTR=0x%04X EISTR=0x%04X\r\n",
+                   (unsigned long)p->PSTATE_REG.U,
+                   (unsigned)p->NORMAL_INT_STAT.U, (unsigned)p->ERROR_INT_STAT.U);
+    }
+
+    {
+        uint32 to = 40000000UL;
+        while ((p->NORMAL_INT_STAT.B.XFER_COMPLETE == 0U) && (to > 0U)) { to--; }
+        shellPrint(sh, "  wait XFER_COMPLETE: to=%lu NISTR=0x%04X EISTR=0x%04X PSTATE=0x%08lX\r\n",
+                   (unsigned long)to, (unsigned)p->NORMAL_INT_STAT.U,
+                   (unsigned)p->ERROR_INT_STAT.U, (unsigned long)p->PSTATE_REG.U);
+        if (to == 0U) { return -3; }
+        p->NORMAL_INT_STAT.B.XFER_COMPLETE = 1U;
+    }
+    return 0;
+}
+
+/* strict single-block PIO read */
+static int sd_pio_read(Shell *sh, DWORD lba, uint32 *data)
+{
+    Ifx_SDMMC        *p = &MODULE_SDMMC0;
+    IfxSdmmc_Response rsp;
+    IfxSdmmc_Status   st;
+    uint32            i;
+
+    if (p->PSTATE_REG.B.CMD_INHIBIT_DAT)
+    {
+        shellPrint(sh, "  pre: CMD_INHIBIT_DAT=1 -> SW_RST_DAT\r\n");
+        p->SW_RST.B.SW_RST_DAT = 1U;
+        while (p->SW_RST.B.SW_RST_DAT) { }
+    }
+    p->NORMAL_INT_STAT.U = 0xFFFFU;
+    p->ERROR_INT_STAT.U  = 0xFFFFU;
+
+    p->BLOCKSIZE.B.XFER_BLOCK_SIZE = 512U;
+    p->BLOCKSIZE.B.SDMA_BUF_BDARY  = 0U;
+    p->BLOCKCOUNT.B.BLOCK_CNT      = 1U;
+    p->XFER_MODE.U                 = 0U;
+    p->XFER_MODE.B.DATA_XFER_DIR   = 1U;   /* card -> host */
+
+    st = IfxSdmmc_sendCommand(p, IfxSdmmc_Command_readSingleBlock, (uint32)lba,
+                              IfxSdmmc_ResponseType_r1, &rsp);
+    if (st != IfxSdmmc_Status_success)
+    {
+        shellPrint(sh, "  CMD17 st=%d PSTATE=0x%08lX EISTR=0x%04X\r\n",
+                   (int)st, (unsigned long)p->PSTATE_REG.U, (unsigned)p->ERROR_INT_STAT.U);
+        return -1;
+    }
+    shellPrint(sh, "  CMD17 ok R1=0x%08lX PSTATE=0x%08lX\r\n",
+               (unsigned long)rsp.cardStatus.U, (unsigned long)p->PSTATE_REG.U);
+
+    for (i = 0; i < 128U; i++)
+    {
+        uint32 to = 4000000UL;
+        while ((p->PSTATE_REG.B.BUF_RD_ENABLE == 0U) && (to > 0U)) { to--; }
+        if (to == 0U)
+        {
+            shellPrint(sh, "  word %lu: BUF_RD_ENABLE timeout PSTATE=0x%08lX EISTR=0x%04X\r\n",
+                       (unsigned long)i, (unsigned long)p->PSTATE_REG.U,
+                       (unsigned)p->ERROR_INT_STAT.U);
+            return -2;
+        }
+        data[i] = p->BUF_DATA.U;
+    }
+    {
+        uint32 to = 40000000UL;
+        while ((p->NORMAL_INT_STAT.B.XFER_COMPLETE == 0U) && (to > 0U)) { to--; }
+        shellPrint(sh, "  XFER_COMPLETE to=%lu NISTR=0x%04X EISTR=0x%04X\r\n",
+                   (unsigned long)to, (unsigned)p->NORMAL_INT_STAT.U,
+                   (unsigned)p->ERROR_INT_STAT.U);
+        if (to == 0U) { return -3; }
+        p->NORMAL_INT_STAT.B.XFER_COMPLETE = 1U;
+    }
+    return 0;
+}
+
+/* Probe: issue CMD24 with NO data, then read CMD13 to see the card's state.
+ *   state 6 (RCV) => the card accepted CMD24 and is waiting for the data block
+ *                    (=> host->card data path broken)
+ *   state 4 (TRAN) => CMD24 was never really executed (stale response) */
+static int sd_cmd_c24probe(Shell *sh, DWORD lba)
+{
+    Ifx_SDMMC         *p = &MODULE_SDMMC0;
+    IfxSdmmc_Response  rsp;
+    IfxSdmmc_CardStatus cs;
+    IfxSdmmc_Status    st;
+    uint32             rst1 = 0;
+
+    if (!Sdmmc_IsInited())
+    {
+        shellPrint(sh, "SD not initialized (run 'sd init')\r\n");
+        return -1;
+    }
+    if (Sdmmc_ReadR1(&cs) == 0) { rst1 = cs.U; }
+    shellPrint(sh, "before : R1=0x%08lX state=%lu\r\n",
+               (unsigned long)rst1, (unsigned long)((rst1 >> 9) & 0xFU));
+
+    p->NORMAL_INT_STAT.U = 0xFFFFU;
+    p->ERROR_INT_STAT.U  = 0xFFFFU;
+    p->BLOCKSIZE.B.XFER_BLOCK_SIZE = 512U;
+    p->BLOCKCOUNT.B.BLOCK_CNT      = 1U;
+    p->XFER_MODE.U                 = 0U;
+    p->XFER_MODE.B.DATA_XFER_DIR   = 0U;
+
+    st = IfxSdmmc_sendCommand(p, IfxSdmmc_Command_writeBlock, (uint32)lba,
+                              IfxSdmmc_ResponseType_r1, &rsp);
+    shellPrint(sh, "cmd24 : st=%d RESP01=0x%08lX (ILLEGAL_CMD=%u) PSTATE=0x%08lX\r\n",
+               (int)st, (unsigned long)rsp.resp01,
+               (unsigned)((rsp.resp01 >> 22) & 1U), (unsigned long)p->PSTATE_REG.U);
+    shellPrint(sh, "quirk : XFER=0x%04X BLOCKSIZE=0x%04X BLKCNT=0x%04X NISTR=0x%04X EISTR=0x%04X\r\n",
+               (unsigned)p->XFER_MODE.U, (unsigned)p->BLOCKSIZE.U,
+               (unsigned)p->BLOCKCOUNT.U, (unsigned)p->NORMAL_INT_STAT.U,
+               (unsigned)p->ERROR_INT_STAT.U);
+
+    if (Sdmmc_ReadR1(&cs) == 0)
+    {
+        uint32 r = cs.U;
+        shellPrint(sh, "after : R1=0x%08lX state=%lu ready=%u ILLEGAL=%u ERRR=%u\r\n",
+                   (unsigned long)r, (unsigned long)((r >> 9) & 0xFU),
+                   (unsigned)((r >> 8) & 1U), (unsigned)((r >> 22) & 1U),
+                   (unsigned)((r >> 19) & 1U));
+    }
+    else
+    {
+        shellPrint(sh, "after : CMD13 failed (card busy/RCV)\r\n");
+    }
+    return 0;
+}
+
+/* Experiment: PIO single-block write with configurable host flags.
+ *   bce=1 -> BLOCK_COUNT_ENABLE=1 + BLOCKCOUNT=1
+ *   mbs=1 -> MULTI_BLK_SEL=1
+ *   v4    -> HOST_VER4_ENABLE (0/1)
+ *   width -> HOST_CTRL1.DAT_XFER_WIDTH (1 or 4) */
+static int sd_exp_write(Shell *sh, DWORD lba, uint32 bce, uint32 mbs, uint32 v4, uint32 width)
+{
+    Ifx_SDMMC         *p = &MODULE_SDMMC0;
+    IfxSdmmc_Response  rsp;
+    IfxSdmmc_Status    st;
+    uint32             i;
+    uint32             datAnd = 0xFFFFFFFFUL, datOr = 0U, datChg = 0U, datLast = 0xFFFFFFFFUL;
+
+    if (!Sdmmc_IsInited())
+    {
+        shellPrint(sh, "SD not initialized (run 'sd init')\r\n");
+        return -1;
+    }
+    shellPrint(sh, "exp w lba=%lu bce=%lu mbs=%lu v4=%lu width=%lu\r\n",
+               (unsigned long)lba, (unsigned long)bce, (unsigned long)mbs,
+               (unsigned long)v4, (unsigned long)width);
+
+    p->HOST_CTRL2.B.HOST_VER4_ENABLE = (v4 != 0U) ? 1U : 0U;
+    p->HOST_CTRL1.B.DAT_XFER_WIDTH   = (width == 1U) ? 1U : 0U;
+    p->HOST_CTRL2.B.PRESET_VAL_ENABLE = 0U;
+
+    if (p->PSTATE_REG.B.CMD_INHIBIT_DAT)
+    {
+        p->SW_RST.B.SW_RST_DAT = 1U;
+        while (p->SW_RST.B.SW_RST_DAT) { }
+    }
+    p->NORMAL_INT_STAT.U = 0xFFFFU;
+    p->ERROR_INT_STAT.U  = 0xFFFFU;
+
+    p->BLOCKSIZE.B.XFER_BLOCK_SIZE = 512U;
+    p->BLOCKSIZE.B.SDMA_BUF_BDARY  = 0U;
+    p->BLOCKCOUNT.B.BLOCK_CNT      = 1U;
+    p->XFER_MODE.U                 = 0U;
+    p->XFER_MODE.B.DATA_XFER_DIR   = 0U;
+    if (bce != 0U) { p->XFER_MODE.B.BLOCK_COUNT_ENABLE = 1U; }
+    if (mbs != 0U) { p->XFER_MODE.B.MULTI_BLK_SEL      = 1U; }
+
+    sd_fill_pattern(s_ioBuf, sizeof(s_ioBuf) / 4U, lba);
+
+    shellPrint(sh, "  pre PSTATE=0x%08lX XFER=0x%04X HOST1=0x%02X HOST2=0x%04X\r\n",
+               (unsigned long)p->PSTATE_REG.U, (unsigned)p->XFER_MODE.U,
+               (unsigned)p->HOST_CTRL1.U, (unsigned)p->HOST_CTRL2.U);
+
+    st = IfxSdmmc_sendCommand(p, IfxSdmmc_Command_writeBlock, (uint32)lba,
+                              IfxSdmmc_ResponseType_r1, &rsp);
+    shellPrint(sh, "  cmd24 st=%d R1=0x%08lX PSTATE=0x%08lX\r\n",
+               (int)st, (unsigned long)rsp.cardStatus.U, (unsigned long)p->PSTATE_REG.U);
+    if (st != IfxSdmmc_Status_success) { return -1; }
+
+    for (i = 0; i < 128U; i++)
+    {
+        uint32 to = 4000000UL;
+        while ((p->PSTATE_REG.B.BUF_WR_ENABLE == 0U) && (to > 0U)) { to--; }
+        if (to == 0U)
+        {
+            shellPrint(sh, "  word %lu BUF_WR_ENABLE timeout PSTATE=0x%08lX EISTR=0x%04X\r\n",
+                       (unsigned long)i, (unsigned long)p->PSTATE_REG.U,
+                       (unsigned)p->ERROR_INT_STAT.U);
+            return -2;
+        }
+        p->BUF_DATA.U = s_ioBuf[i];
+        {
+            uint32 d = (p->PSTATE_REG.U >> 20) & 0xFU;
+            if (d != datLast) { datChg++; datLast = d; }
+            datAnd &= d; datOr |= d;
+        }
+    }
+    {
+        uint32 n;
+        for (n = 0; n < 300000UL; n++)
+        {
+            uint32 d = (p->PSTATE_REG.U >> 20) & 0xFU;
+            if (d != datLast) { datChg++; datLast = d; }
+            datAnd &= d; datOr |= d;
+        }
+    }
+    shellPrint(sh, "  DAT and=0x%lX or=0x%lX chg=%lu | PSTATE=0x%08lX NISTR=0x%04X EISTR=0x%04X\r\n",
+               (unsigned long)datAnd, (unsigned long)datOr, (unsigned long)datChg,
+               (unsigned long)p->PSTATE_REG.U, (unsigned)p->NORMAL_INT_STAT.U,
+               (unsigned)p->ERROR_INT_STAT.U);
+    {
+        uint32 to = 20000000UL;
+        while ((p->NORMAL_INT_STAT.B.XFER_COMPLETE == 0U) && (to > 0U)) { to--; }
+        shellPrint(sh, "  xfc to=%lu NISTR=0x%04X EISTR=0x%04X PSTATE=0x%08lX\r\n",
+                   (unsigned long)to, (unsigned)p->NORMAL_INT_STAT.U,
+                   (unsigned)p->ERROR_INT_STAT.U, (unsigned long)p->PSTATE_REG.U);
+        p->NORMAL_INT_STAT.B.XFER_COMPLETE = 1U;
+        return (to == 0U) ? -3 : 0;
+    }
+}
+
+/* Control experiment: PIO single-block read with the same DAT sampling as the write,
+ * to prove the sampling method itself can observe toggling DAT lines. */
+static int sd_exp_read(Shell *sh, DWORD lba)
+{
+    Ifx_SDMMC         *p = &MODULE_SDMMC0;
+    IfxSdmmc_Response  rsp;
+    IfxSdmmc_Status    st;
+    uint32             i;
+    uint32             datAnd = 0xFFFFFFFFUL, datOr = 0U, datChg = 0U, datLast = 0xFFFFFFFFUL;
+
+    if (!Sdmmc_IsInited())
+    {
+        shellPrint(sh, "SD not initialized (run 'sd init')\r\n");
+        return -1;
+    }
+    if (p->PSTATE_REG.B.CMD_INHIBIT_DAT)
+    {
+        p->SW_RST.B.SW_RST_DAT = 1U;
+        while (p->SW_RST.B.SW_RST_DAT) { }
+    }
+    p->NORMAL_INT_STAT.U = 0xFFFFU;
+    p->ERROR_INT_STAT.U  = 0xFFFFU;
+    p->BLOCKSIZE.B.XFER_BLOCK_SIZE = 512U;
+    p->BLOCKSIZE.B.SDMA_BUF_BDARY  = 0U;
+    p->BLOCKCOUNT.B.BLOCK_CNT      = 1U;
+    p->XFER_MODE.U                 = 0U;
+    p->XFER_MODE.B.DATA_XFER_DIR   = 1U;
+
+    st = IfxSdmmc_sendCommand(p, IfxSdmmc_Command_readSingleBlock, (uint32)lba,
+                              IfxSdmmc_ResponseType_r1, &rsp);
+    shellPrint(sh, "exp r lba=%lu: cmd17 st=%d R1=0x%08lX PSTATE=0x%08lX\r\n",
+               (unsigned long)lba, (int)st, (unsigned long)rsp.cardStatus.U,
+               (unsigned long)p->PSTATE_REG.U);
+    if (st != IfxSdmmc_Status_success) { return -1; }
+
+    for (i = 0; i < 128U; i++)
+    {
+        uint32 to = 8000000UL;
+        while ((p->PSTATE_REG.B.BUF_RD_ENABLE == 0U) && (to > 0U))
+        {
+            uint32 d = (p->PSTATE_REG.U >> 20) & 0xFU;
+            if (d != datLast) { datChg++; datLast = d; }
+            datAnd &= d; datOr |= d;
+            to--;
+        }
+        if (to == 0U)
+        {
+            shellPrint(sh, "  word %lu BUF_RD_ENABLE timeout PSTATE=0x%08lX EISTR=0x%04X\r\n",
+                       (unsigned long)i, (unsigned long)p->PSTATE_REG.U,
+                       (unsigned)p->ERROR_INT_STAT.U);
+            shellPrint(sh, "  DAT and=0x%lX or=0x%lX chg=%lu\r\n",
+                       (unsigned long)datAnd, (unsigned long)datOr, (unsigned long)datChg);
+            return -2;
+        }
+        s_chkBuf[i & 127U] = p->BUF_DATA.U;
+        {
+            uint32 d = (p->PSTATE_REG.U >> 20) & 0xFU;
+            if (d != datLast) { datChg++; datLast = d; }
+            datAnd &= d; datOr |= d;
+        }
+    }
+    shellPrint(sh, "  DAT and=0x%lX or=0x%lX chg=%lu | PSTATE=0x%08lX NISTR=0x%04X EISTR=0x%04X\r\n",
+               (unsigned long)datAnd, (unsigned long)datOr, (unsigned long)datChg,
+               (unsigned long)p->PSTATE_REG.U, (unsigned)p->NORMAL_INT_STAT.U,
+               (unsigned)p->ERROR_INT_STAT.U);
+    return 0;
+}
+
+/* Port-level inspection of the SDMMC pads (read-only).
+ * Compares the SDMMC CMD pad (P15.3, known to drive commands fine) with the
+ * DAT pads (P20.x) to spot a pad-configuration difference. */
+static int sd_cmd_portinfo(Shell *sh)
+{
+    Ifx_SDMMC *p   = &MODULE_SDMMC0;
+    Ifx_P     *p15 = &MODULE_P15;
+    Ifx_P     *p20 = &MODULE_P20;
+
+    shellPrint(sh, "P15 IOCR0=0x%08lX PDR0=0x%08lX IN=0x%08lX\r\n",
+               (unsigned long)p15->IOCR0.U, (unsigned long)p15->PDR0.U,
+               (unsigned long)p15->IN.U);
+    shellPrint(sh, "P20 IOCR4=0x%08lX IOCR8=0x%08lX PDR0=0x%08lX PDR1=0x%08lX IN=0x%08lX\r\n",
+               (unsigned long)p20->IOCR4.U, (unsigned long)p20->IOCR8.U,
+               (unsigned long)p20->PDR0.U, (unsigned long)p20->PDR1.U,
+               (unsigned long)p20->IN.U);
+    /* per-pin 8-bit PC fields: IOCR<n> holds 4 pins, lowest byte = first pin */
+    shellPrint(sh, "P15.1(CLK)=0x%02lX P15.3(CMD)=0x%02lX\r\n",
+               (unsigned long)((p15->IOCR0.U >> 8) & 0xFFU),
+               (unsigned long)((p15->IOCR0.U >> 24) & 0xFFU));
+    shellPrint(sh, "P20.7(DAT0)=0x%02lX P20.8(DAT1)=0x%02lX P20.10(DAT2)=0x%02lX P20.11(DAT3)=0x%02lX\r\n",
+               (unsigned long)((p20->IOCR4.U >> 24) & 0xFFU),
+               (unsigned long)((p20->IOCR8.U) & 0xFFU),
+               (unsigned long)((p20->IOCR8.U >> 16) & 0xFFU),
+               (unsigned long)((p20->IOCR8.U >> 24) & 0xFFU));
+
+    shellPrint(sh, "PSTATE.DAT3_0=0x%lX (read-only probe)\r\n",
+               (unsigned long)((p->PSTATE_REG.U >> 20) & 0xFU));
+    return 0;
+}
+
+/* Experiment: pre-fill the 512-byte FIFO BEFORE issuing CMD24.
+ * Some host controllers start the write data phase only when the TX FIFO is
+ * already populated at command time. */
+static int sd_exp_prewrite(Shell *sh, DWORD lba)
+{
+    Ifx_SDMMC         *p = &MODULE_SDMMC0;
+    IfxSdmmc_Response  rsp;
+    IfxSdmmc_Status    st;
+    uint32             i;
+    uint32             datAnd = 0xFFFFFFFFUL, datOr = 0U, datChg = 0U, datLast = 0xFFFFFFFFUL;
+
+    if (!Sdmmc_IsInited())
+    {
+        shellPrint(sh, "SD not initialized (run 'sd init')\r\n");
+        return -1;
+    }
+    sd_fill_pattern(s_ioBuf, sizeof(s_ioBuf) / 4U, lba);
+
+    if (p->PSTATE_REG.B.CMD_INHIBIT_DAT)
+    {
+        p->SW_RST.B.SW_RST_DAT = 1U;
+        while (p->SW_RST.B.SW_RST_DAT) { }
+    }
+    p->NORMAL_INT_STAT.U = 0xFFFFU;
+    p->ERROR_INT_STAT.U  = 0xFFFFU;
+    p->BLOCKSIZE.B.XFER_BLOCK_SIZE = 512U;
+    p->BLOCKSIZE.B.SDMA_BUF_BDARY  = 0U;
+    p->BLOCKCOUNT.B.BLOCK_CNT      = 1U;
+    p->XFER_MODE.U                 = 0U;
+    p->XFER_MODE.B.DATA_XFER_DIR   = 0U;
+
+    /* pre-load 128 words while idle */
+    for (i = 0; i < 128U; i++)
+    {
+        uint32 to = 4000000UL;
+        while ((p->PSTATE_REG.B.BUF_WR_ENABLE == 0U) && (to > 0U)) { to--; }
+        if (to == 0U)
+        {
+            shellPrint(sh, "  preload word %lu: BUF_WR_ENABLE never set (PSTATE=0x%08lX)\r\n",
+                       (unsigned long)i, (unsigned long)p->PSTATE_REG.U);
+            return -1;
+        }
+        p->BUF_DATA.U = s_ioBuf[i];
+    }
+    shellPrint(sh, "  preloaded 128 words, PSTATE=0x%08lX (now CMD24)\r\n",
+               (unsigned long)p->PSTATE_REG.U);
+
+    st = IfxSdmmc_sendCommand(p, IfxSdmmc_Command_writeBlock, (uint32)lba,
+                              IfxSdmmc_ResponseType_r1, &rsp);
+    shellPrint(sh, "  cmd24 st=%d R1=0x%08lX PSTATE=0x%08lX\r\n",
+               (int)st, (unsigned long)rsp.cardStatus.U, (unsigned long)p->PSTATE_REG.U);
+
+    {
+        uint32 n;
+        for (n = 0; n < 400000UL; n++)
+        {
+            uint32 d = (p->PSTATE_REG.U >> 20) & 0xFU;
+            if (d != datLast) { datChg++; datLast = d; }
+            datAnd &= d; datOr |= d;
+        }
+    }
+    shellPrint(sh, "  DAT and=0x%lX or=0x%lX chg=%lu | PSTATE=0x%08lX NISTR=0x%04X EISTR=0x%04X\r\n",
+               (unsigned long)datAnd, (unsigned long)datOr, (unsigned long)datChg,
+               (unsigned long)p->PSTATE_REG.U, (unsigned)p->NORMAL_INT_STAT.U,
+               (unsigned)p->ERROR_INT_STAT.U);
+    return 0;
+}
+
+/* Experiment: SDMA multi-block transfer with DAT sampling */
+static int sd_exp_dma(Shell *sh, DWORD lba, uint32 count, uint32 dirRead)
+{
+    IfxSdmmc_Sd     *h = Sdmmc_GetHandle();
+    Ifx_SDMMC       *p = &MODULE_SDMMC0;
+    IfxSdmmc_Status  st;
+    uint32           n;
+    uint32           datAnd = 0xFFFFFFFFUL, datOr = 0U, datChg = 0U, datLast = 0xFFFFFFFFUL;
+
+    if (!Sdmmc_IsInited())
+    {
+        shellPrint(sh, "SD not initialized (run 'sd init')\r\n");
+        return -1;
+    }
+    if ((count == 0U) || (count > 8U)) { count = 2U; }
+    sd_fill_pattern(s_ioBuf, sizeof(s_ioBuf) / 4U, lba);
+    sdmmc_cache_invalidate(s_ioBuf, (uint32_t)count * 512U);
+
+    shellPrint(sh, "exp dma %s lba=%lu n=%lu\r\n", dirRead ? "r" : "w",
+               (unsigned long)lba, (unsigned long)count);
+
+    if (dirRead)
+    {
+        st = IfxSdmmc_Sd_readMultiBlock(h, (uint32)lba, s_ioBuf, count,
+                                        IfxSdmmc_BlockBoundarySize_512K);
+    }
+    else
+    {
+        /* start the transfer then sample DAT while it runs */
+        st = IfxSdmmc_Sd_writeMultiBlock(h, (uint32)lba, s_ioBuf, count,
+                                         IfxSdmmc_BlockBoundarySize_512K);
+    }
+    /* sample whatever the lines are doing */
+    for (n = 0; n < 400000UL; n++)
+    {
+        uint32 d = (p->PSTATE_REG.U >> 20) & 0xFU;
+        if (d != datLast) { datChg++; datLast = d; }
+        datAnd &= d; datOr |= d;
+    }
+    shellPrint(sh, "  st=%d DAT and=0x%lX or=0x%lX chg=%lu\r\n",
+               (int)st, (unsigned long)datAnd, (unsigned long)datOr, (unsigned long)datChg);
+    shellPrint(sh, "  PSTATE=0x%08lX NISTR=0x%04X EISTR=0x%04X XFER=0x%04X BLKSIZE=0x%04X\r\n",
+               (unsigned long)p->PSTATE_REG.U, (unsigned)p->NORMAL_INT_STAT.U,
+               (unsigned)p->ERROR_INT_STAT.U, (unsigned)p->XFER_MODE.U,
+               (unsigned)p->BLOCKSIZE.U);
+    return (st == IfxSdmmc_Status_success) ? 0 : -1;
+}
+
+static int sd_cmd_tx(Shell *sh, const char *mode, const char *dir, DWORD lba, UINT count)
+{
+    int rc = -1;
+    if (!Sdmmc_IsInited())
+    {
+        shellPrint(sh, "SD not initialized (run 'sd init')\r\n");
+        return -1;
+    }
+    if ((count == 0U) || (count > 8U))
+    {
+        shellPrint(sh, "count 1..8\r\n");
+        return -1;
+    }
+    sd_fill_pattern(s_ioBuf, sizeof(s_ioBuf) / 4U, lba);
+
+    if (strcmp(mode, "pio") == 0)
+    {
+        UINT i;
+        shellPrint(sh, "tx pio %s lba=%lu n=%u\r\n", dir, (unsigned long)lba, count);
+        rc = 0;
+        for (i = 0; i < count; i++)
+        {
+            int r;
+            if (strcmp(dir, "w") == 0)
+            {
+                shellPrint(sh, " blk %u:\r\n", i);
+                r = sd_pio_write(sh, lba + i, &s_ioBuf[i * 128U]);
+            }
+            else
+            {
+                shellPrint(sh, " blk %u:\r\n", i);
+                r = sd_pio_read(sh, lba + i, &s_ioBuf[i * 128U]);
+            }
+            if (r != 0) { shellPrint(sh, " -> block %u FAIL rc=%d\r\n", i, r); rc = -1; break; }
+        }
+        if (rc == 0) { shellPrint(sh, " -> pio %s OK\r\n", dir); }
+        return rc;
+    }
+    if (strcmp(mode, "dma") == 0)
+    {
+        IfxSdmmc_Sd *h = Sdmmc_GetHandle();
+        IfxSdmmc_Status st;
+        shellPrint(sh, "tx dma %s lba=%lu n=%u\r\n", dir, (unsigned long)lba, count);
+        sdmmc_cache_invalidate(s_ioBuf, (uint32_t)count * 512U);
+        if (strcmp(dir, "w") == 0)
+        {
+            st = IfxSdmmc_Sd_writeMultiBlock(h, (uint32)lba, s_ioBuf, (uint32)count,
+                                             IfxSdmmc_BlockBoundarySize_512K);
+        }
+        else
+        {
+            st = IfxSdmmc_Sd_readMultiBlock(h, (uint32)lba, s_ioBuf, (uint32)count,
+                                            IfxSdmmc_BlockBoundarySize_512K);
+        }
+        shellPrint(sh, " -> dma st=%d PSTATE=0x%08lX NISTR=0x%04X EISTR=0x%04X XFER=0x%04X\r\n",
+                   (int)st, (unsigned long)h->sdmmcSFR->PSTATE_REG.U,
+                   (unsigned)h->sdmmcSFR->NORMAL_INT_STAT.U,
+                   (unsigned)h->sdmmcSFR->ERROR_INT_STAT.U,
+                   (unsigned)h->sdmmcSFR->XFER_MODE.U);
+        return (st == IfxSdmmc_Status_success) ? 0 : -1;
+    }
+    shellPrint(sh, "usage: sd tx <pio|dma> <r|w> <lba> [count 1..8]\r\n");
+    return -1;
+}
+
 /* ---------------- main sd command ---------------- */
 
 static void sd_usage(Shell *sh)
@@ -657,6 +1297,11 @@ static void sd_usage(Shell *sh)
     shellPrint(sh, "  sd st                   - link status + card R1 state\r\n");
     shellPrint(sh, "  sd regs                 - host regs + last error\r\n");
     shellPrint(sh, "  sd recover              - CMD12 abort + host reset + re-init\r\n");
+    shellPrint(sh, "  sd diag                 - FULL register dump + decoded PSTATE\r\n");
+    shellPrint(sh, "  sd tx <pio|dma> <r|w> <lba> [n] - transfer experiment (traced)\r\n");
+    shellPrint(sh, "  sd chk <lba>            - verify sector == sd_fill_pattern(seed=lba)\r\n");
+    shellPrint(sh, "  sd host [v4|dsel|preset|mbui|print] [val] - poke host regs\r\n");
+    shellPrint(sh, "  sd clk [kHz]            - get/set SDCLK (e.g. 'sd clk 400')\r\n");
     shellPrint(sh, "128GB TF: use 'sd mkfs exfat'. 'sd bench' default file 0:/BENCH.BIN.\r\n");
 }
 
@@ -948,6 +1593,247 @@ static int cmd_sd(int argc, char *argv[])
         ds = disk_initialize(0);
         shellPrint(sh, "re-init ds=0x%02X\r\n", (unsigned)ds);
         return (ds & STA_NOINIT) ? -1 : 0;
+    }
+    if (strcmp(argv[1], "diag") == 0)
+    {
+        sd_regdump(sh);
+        return 0;
+    }
+    if (strcmp(argv[1], "clk") == 0)
+    {
+        Ifx_SDMMC *p = &MODULE_SDMMC0;
+        uint32 khz = (argc >= 3) ? (uint32)strtoul(argv[2], NULL, 0) : 0U;
+        if (khz == 0U)
+        {
+            shellPrint(sh, "CLKCTL=0x%04X FREQ_SEL=%u UPPER=%u SDCLKEN=%u PLLEN=%u PRESETEN=%u\r\n",
+                       (unsigned)p->CLK_CTRL.U, (unsigned)((p->CLK_CTRL.U >> 8) & 0xFFU),
+                       (unsigned)((p->CLK_CTRL.U >> 6) & 3U),
+                       (unsigned)((p->CLK_CTRL.U >> 2) & 1U), (unsigned)((p->CLK_CTRL.U >> 3) & 1U),
+                       (unsigned)((p->HOST_CTRL2.U >> 15) & 1U));
+            return 0;
+        }
+        {
+            uint32 baseHz = ((p->CAPABILITIES1.U >> 8) & 0xFFU) * 1000000U;
+            uint32 div, setVal;
+            if (baseHz == 0U) { baseHz = 100000000U; }
+            div = baseHz / (2U * khz * 1000U);
+            if (div == 0U) { div = 1U; }
+            setVal = div - 1U;
+            p->HOST_CTRL2.B.PRESET_VAL_ENABLE = 0U;
+            p->CLK_CTRL.B.SD_CLK_EN = 0U;
+            p->CLK_CTRL.B.FREQ_SEL       = setVal & 0xFFU;
+            p->CLK_CTRL.B.UPPER_FREQ_SEL = (setVal >> 8) & 3U;
+            {
+                volatile uint32 spin;
+                for (spin = 0; spin < 30000UL; spin++) { }
+            }
+            p->CLK_CTRL.B.SD_CLK_EN = 1U;
+            shellPrint(sh, "SDCLK ~%lu kHz: div=%lu base=%luHz CLKCTL=0x%04X\r\n",
+                       (unsigned long)khz, (unsigned long)div, (unsigned long)baseHz,
+                       (unsigned)p->CLK_CTRL.U);
+        }
+        return 0;
+    }
+    if (strcmp(argv[1], "c24") == 0)
+    {
+        DWORD lba = (argc >= 3) ? (DWORD)strtoul(argv[2], NULL, 0) : 0UL;
+        return sd_cmd_c24probe(sh, lba);
+    }
+    if (strcmp(argv[1], "exp") == 0)
+    {
+        DWORD lba = 45000000UL;
+        uint32 bce = 0, mbs = 0, v4 = 1, width = 4;
+        if ((argc >= 3) && (strcmp(argv[2], "r") == 0))
+        {
+            if (argc >= 4) { lba = (DWORD)strtoul(argv[3], NULL, 0); }
+            return sd_exp_read(sh, lba);
+        }
+        if ((argc >= 3) && (strcmp(argv[2], "w") == 0))
+        {
+            if (argc >= 4) { lba   = (DWORD)strtoul(argv[3], NULL, 0); }
+            if (argc >= 5) { bce   = (uint32)strtoul(argv[4], NULL, 0); }
+            if (argc >= 6) { mbs   = (uint32)strtoul(argv[5], NULL, 0); }
+            if (argc >= 7) { v4    = (uint32)strtoul(argv[6], NULL, 0); }
+            if (argc >= 8) { width = (uint32)strtoul(argv[7], NULL, 0); }
+            return sd_exp_write(sh, lba, bce, mbs, v4, width);
+        }
+        if ((argc >= 3) && (strcmp(argv[2], "pre") == 0))
+        {
+            if (argc >= 4) { lba = (DWORD)strtoul(argv[3], NULL, 0); }
+            return sd_exp_prewrite(sh, lba);
+        }
+        if ((argc >= 3) && (strcmp(argv[2], "dma") == 0))
+        {
+            uint32 n = 2, rd = 0;
+            if (argc >= 4) { lba = (DWORD)strtoul(argv[3], NULL, 0); }
+            if (argc >= 5) { n   = (uint32)strtoul(argv[4], NULL, 0); }
+            if (argc >= 6) { rd  = ((argv[5][0] == 'r') || (argv[5][0] == 'R')) ? 1U : 0U; }
+            return sd_exp_dma(sh, lba, n, rd);
+        }
+        shellPrint(sh, "usage: sd exp r|w|pre|dma ...\r\n");
+        return -1;
+    }
+    if (strcmp(argv[1], "portinfo") == 0)
+    {
+        return sd_cmd_portinfo(sh);
+    }
+    if (strcmp(argv[1], "mpeek") == 0)
+    {
+        uint32 addr = (argc >= 3) ? (uint32)strtoul(argv[2], NULL, 16) : 0xF003B400UL;
+        uint32 n    = (argc >= 4) ? (uint32)strtoul(argv[3], NULL, 0) : 8U;
+        uint32 i;
+        for (i = 0; i < n; i++)
+        {
+            uint32 v = *(volatile uint32 *)(uintptr_t)(addr + i * 4U);
+            shellPrint(sh, "%08lX=%08lX ", (unsigned long)(addr + i * 4U), (unsigned long)v);
+            if ((i & 1U) == 1U) { shellPrint(sh, "\r\n"); }
+        }
+        shellPrint(sh, "\r\n");
+        return 0;
+    }
+    if (strcmp(argv[1], "poke") == 0)
+    {
+        /* raw SDMMC register poke: sd poke <byteOffsetHex> <valueHex> [8|16|32] */
+        uint32 off, val, w = 32;
+        volatile uint8  *p8  = (volatile uint8  *)(0xF02B0000UL);
+        if (argc < 4)
+        {
+            shellPrint(sh, "usage: sd poke <byteOffsetHex> <valueHex> [8|16|32]\r\n");
+            return -1;
+        }
+        off = (uint32)strtoul(argv[2], NULL, 16);
+        val = (uint32)strtoul(argv[3], NULL, 16);
+        if (argc >= 5) { w = (uint32)strtoul(argv[4], NULL, 0); }
+        if (w == 8U)
+        {
+            p8[off] = (uint8)val;
+            shellPrint(sh, "[%03lX] <- 0x%02lX (rd 0x%02lX)\r\n", (unsigned long)off,
+                       (unsigned long)(val & 0xFFU), (unsigned long)p8[off]);
+        }
+        else if (w == 16U)
+        {
+            volatile uint16 *p16 = (volatile uint16 *)(0xF02B0000UL);
+            p16[off / 2U] = (uint16)val;
+            shellPrint(sh, "[%03lX] <- 0x%04lX (rd 0x%04lX)\r\n", (unsigned long)off,
+                       (unsigned long)(val & 0xFFFFU), (unsigned long)p16[off / 2U]);
+        }
+        else
+        {
+            volatile uint32 *p32 = (volatile uint32 *)(0xF02B0000UL);
+            p32[off / 4U] = val;
+            shellPrint(sh, "[%03lX] <- 0x%08lX (rd 0x%08lX)\r\n", (unsigned long)off,
+                       (unsigned long)val, (unsigned long)p32[off / 4U]);
+        }
+        return 0;
+    }
+    if (strcmp(argv[1], "peek") == 0)
+    {
+        uint32 off = (argc >= 3) ? (uint32)strtoul(argv[2], NULL, 16) : 0U;
+        uint32 n   = (argc >= 4) ? (uint32)strtoul(argv[3], NULL, 0) : 16U;
+        uint32 i;
+        volatile uint32 *p32 = (volatile uint32 *)(0xF02B0000UL);
+        for (i = 0; i < n; i++)
+        {
+            shellPrint(sh, "%03lX=%08lX ", (unsigned long)(off + i * 4U),
+                       (unsigned long)p32[(off / 4U) + i]);
+            if ((i & 1U) == 1U) { shellPrint(sh, "\r\n"); }
+        }
+        shellPrint(sh, "\r\n");
+        return 0;
+    }
+    if (strcmp(argv[1], "tx") == 0)
+    {
+        DWORD lba;
+        UINT count = 1;
+        if (argc < 5)
+        {
+            shellPrint(sh, "usage: sd tx <pio|dma> <r|w> <lba> [count 1..8]\r\n");
+            return -1;
+        }
+        lba = (DWORD)strtoul(argv[4], NULL, 0);
+        if (argc >= 6)
+        {
+            count = (UINT)strtoul(argv[5], NULL, 0);
+        }
+        return sd_cmd_tx(sh, argv[2], argv[3], lba, count);
+    }
+    if (strcmp(argv[1], "chk") == 0)
+    {
+        DWORD lba;
+        UINT i;
+        int bad = -1;
+        if (argc < 3)
+        {
+            shellPrint(sh, "usage: sd chk <lba>\r\n");
+            return -1;
+        }
+        lba = (DWORD)strtoul(argv[2], NULL, 0);
+        memset(s_chkBuf, 0, sizeof(s_chkBuf));
+        if (sd_pio_read(sh, lba, s_chkBuf) != 0)
+        {
+            shellPrint(sh, "chk: read failed\r\n");
+            return -1;
+        }
+        for (i = 0; i < 128U; i++)
+        {
+            uint32 exp = (uint32)i ^ (uint32)lba;
+            if (s_chkBuf[i] != exp) { bad = (int)i; break; }
+        }
+        if (bad < 0)
+        {
+            shellPrint(sh, "chk lba=%lu: MATCH (128 words)\r\n", (unsigned long)lba);
+            return 0;
+        }
+        shellPrint(sh, "chk lba=%lu: MISMATCH word %d got=0x%08lX exp=0x%08lX\r\n",
+                   (unsigned long)lba, bad, (unsigned long)s_chkBuf[bad],
+                   (unsigned long)((uint32)bad ^ (uint32)lba));
+        return -1;
+    }
+    if (strcmp(argv[1], "host") == 0)
+    {
+        Ifx_SDMMC *p = &MODULE_SDMMC0;
+        if ((argc < 3) || (strcmp(argv[2], "print") == 0))
+        {
+            shellPrint(sh, "HOST1=0x%02X HOST2=0x%04X CLKCTL=0x%04X MBIU=0x%08lX CAP1=0x%08lX\r\n",
+                       (unsigned)p->HOST_CTRL1.U, (unsigned)p->HOST_CTRL2.U,
+                       (unsigned)p->CLK_CTRL.U, (unsigned long)p->MBIU_CTRL.U,
+                       (unsigned long)p->CAPABILITIES1.U);
+            return 0;
+        }
+        if (strcmp(argv[2], "v4") == 0)
+        {
+            uint32 v = (argc >= 4) ? (uint32)strtoul(argv[3], NULL, 0) : 0U;
+            p->HOST_CTRL2.B.HOST_VER4_ENABLE = (v != 0U) ? 1U : 0U;
+            shellPrint(sh, "HOST_VER4_ENABLE -> %u (HOST2=0x%04X)\r\n",
+                       (unsigned)p->HOST_CTRL2.B.HOST_VER4_ENABLE, (unsigned)p->HOST_CTRL2.U);
+            return 0;
+        }
+        if (strcmp(argv[2], "preset") == 0)
+        {
+            uint32 v = (argc >= 4) ? (uint32)strtoul(argv[3], NULL, 0) : 0U;
+            p->HOST_CTRL2.B.PRESET_VAL_ENABLE = (v != 0U) ? 1U : 0U;
+            shellPrint(sh, "PRESET_VAL_ENABLE -> %u (HOST2=0x%04X CLKCTL=0x%04X)\r\n",
+                       (unsigned)p->HOST_CTRL2.B.PRESET_VAL_ENABLE,
+                       (unsigned)p->HOST_CTRL2.U, (unsigned)p->CLK_CTRL.U);
+            return 0;
+        }
+        if (strcmp(argv[2], "dsel") == 0)
+        {
+            uint32 v = (argc >= 4) ? (uint32)strtoul(argv[3], NULL, 0) : 0U;
+            p->HOST_CTRL1.B.DMA_SEL = v & 3U;
+            shellPrint(sh, "DMA_SEL -> %u (HOST1=0x%02X)\r\n",
+                       (unsigned)p->HOST_CTRL1.B.DMA_SEL, (unsigned)p->HOST_CTRL1.U);
+            return 0;
+        }
+        if (strcmp(argv[2], "mbui") == 0)
+        {
+            uint32 v = (argc >= 4) ? (uint32)strtoul(argv[3], NULL, 0) : 0U;
+            p->MBIU_CTRL.U = v;
+            shellPrint(sh, "MBIU_CTRL -> 0x%08lX\r\n", (unsigned long)p->MBIU_CTRL.U);
+            return 0;
+        }
+        shellPrint(sh, "usage: sd host [v4|dsel|preset|mbui|print] [val]\r\n");
+        return -1;
     }
     shellPrint(sh, "unknown sd subcmd '%s'\r\n", argv[1]);
     sd_usage(sh);

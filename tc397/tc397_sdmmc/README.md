@@ -5,13 +5,17 @@ CMake/Ninja** 下构建，目标 **TC397XX 292pin**。在 UART Letter-Shell 基�
 P14.0/P14.1, 921600-8N1，P13.0 LED）之上，新增 **SDMMC0 SD 卡 + FatFs 文件系统**
 完整测试能力。
 
-> **当前状态（2026-09-20，新 32GB TF 卡）**：
+> **当前状态（2026-09-20 第二轮攻坚）**：
 > **读通路全部 PASS**（初始化/挂载/FAT32 识别/目录/空闲空间/裸扇区读），
-> **写通路仍 FAIL**（`DISK_ERR`，根因未完全定位）。
-> 本轮已修复两个真实缺陷：**SDCLK 实际 100MHz（应为 25MHz）** 与
-> **SDMA 多块读不产生 `transferComplete`**（改用单块 PIO 读绕过）。
-> 详见 **§8**（含完整日志、根因定位过程、踩坑清单与下一步建议）。
-> 历史 128GB 卡测试见 §6/§7。
+> **写通路仍 FAIL**（`DISK_ERR`）。
+> 本轮把写失败**定位到硬件级根因**：**主机控制器在写（host→card）方向从不驱动 DAT 线**
+> —— CMD24 被卡正常接受（卡进入 `state=6 RCV` 等数据），FIFO 也接收了 512B，
+> 但 DAT0-3 全程恒定高电平（用 `PSTATE.DAT_3_0` 采样 + 读方向对照实验证明），
+> 因此数据从未到达卡，`XFER_COMPLETE`/`WR_XFER_ACTIVE` 永不置位，最后卡超时。
+> 已排除：卡本身、时钟、位宽、DMA 类型、`BLOCK_COUNT_ENABLE`/`MULTI_BLK_SEL`、
+> HostV4、`PRESET_VAL_ENABLE`、`PWR_CTRL` 电压、引脚/pad 配置（CMD 与 DAT 引脚
+> IOCR 完全相同且 CMD 能正常驱动）、命令表 `DATA_PRESENT_SEL`。
+> 详见 **§9**（含完整日志、对照实验、排除矩阵、下一步建议）。历史记录见 §6/§7/§8。
 
 * 基线：`tc397_uart_lettershell`（Shell/UART/CMake/build.sh，命令兼容）
 * FatFs：`ref/fatfs`（`abbrev/fatfs` master，即 ChaN FatFs **R0.16**，2025），
@@ -162,6 +166,9 @@ python3 serial_monitor.py --port /dev/ttyACM0 --baud 921600 --duration 10
 | `sd recover` | CMD12 中止 + SW_RST_DAT/CMD + 重初始化 |
 
 读写 pattern：`word[i] = (chunk偏移字 + i) ^ seed`，读回逐字校验。
+
+> 另有本轮新增的**诊断命令族**（`sd diag / tx / exp r|w|pre|dma / c24 / clk /
+> host / poke / peek / mpeek / portinfo / chk`），用途与用法见 **§9.1**。
 
 ---
 
@@ -526,7 +533,219 @@ BPB 算出的空闲空间是正确的（~29805 MiB）。说明
 
 ---
 
-## 9 许可
+## 9 写通路攻坚：主机不驱动 DAT 线（2026-09-20 第二轮）
+
+### 9.1 目标与方法
+
+目标：解决 32GB TF 卡**写通路**失败（§8 遗留的最高优先级问题）。
+
+方法（本轮新增的诊断命令，全部保留在 `Shell/shell_sd.c`）：
+
+| 命令 | 作用 |
+| --- | --- |
+| `sd diag` | 全量寄存器 dump（CAP1/2、HOST1/2、CLK/MBIU/PRESET、XFER/BLKSIZE/BLKCNT、NISTR/EISTR/EN、AUTOCMD、PSTATE 逐位解码、缓冲区地址） |
+| `sd tx <pio\|dma> <r\|w> <lba> [n]` | 受控传输实验（PIO 严格按 `PSTATE.BUF_WR_ENABLE` 逐字门控；dma 走 iLLD 多块） |
+| `sd exp w <lba> <bce> <mbs> <v4> <width>` | 可切换 `BLOCK_COUNT_ENABLE`/`MULTI_BLK_SEL`/`HOST_VER4_ENABLE`/位宽 的写实验 |
+| `sd exp r <lba>` | **对照实验**：读通路做同样的 DAT 采样 |
+| `sd exp dma <lba> <n> <r\|w>` | SDMA 多块 + DAT 采样 |
+| `sd exp pre <lba>` | 先预填充 FIFO 再发 CMD24 |
+| `sd c24 <lba>` | 只发 CMD24（不发数据），随后 CMD13 读卡状态机，判断 CMD24 是否真被接受 |
+| `sd clk [kHz]` | 运行时改 SDCLK（按 SDHCI 时序重编程分频） |
+| `sd host [v4\|dsel\|preset\|mbui\|print] [v]` | 运行时改 Host 配置位 |
+| `sd poke/peek/mpeek <off\|addr> ...` | 原始寄存器/内存读写（诊断用，慎用） |
+| `sd portinfo` | 打印 SDMMC 各引脚所在端口的 IOCR/PDR/IN（**只读**） |
+| `sd chk <lba>` | 读回校验 `word[i]=i^lba` |
+
+关键测量手段：**在数据传输期间高频采样 `PSTATE.DAT_3_0`（bits 23:20，即 DAT3-0 引脚电平）**，
+统计 `and`/`or`/变化次数 `chg`：
+`and==or==0xF && chg==1` ⇒ 该方向**从未有人驱动** DAT 线。
+
+### 9.2 决定性实验结果（原始日志）
+
+**(1) 写：DAT 线恒定高，从未被驱动**（干净卡、首次写）
+
+```
+letter:/$ sd tx pio w 45000000 1
+tx pio w lba=45000000 n=1
+ blk 0:
+  pre  PSTATE=0x03F70000 XFER=0x0000 BLKSIZE=0x0200
+  CMD24 ok R1=0x00000900 PSTATE=0x03F70400 BUFWR=1
+  pushed: DAT and=0xF or=0xF chg=1 (and==or==0xF => never driven)
+  post PSTATE=0x03F70000 NISTR=0x0010 EISTR=0x0000
+  wait XFER_COMPLETE: to=0 NISTR=0x0010 EISTR=0x0000 PSTATE=0x03F70000
+ -> block 0 FAIL rc=-3
+```
+
+**(2) 读：对照实验证明采样方法有效，DAT 明显翻转**
+
+```
+letter:/$ sd exp r 45000000
+exp r lba=45000000: cmd17 st=0 R1=0x00000900 PSTATE=0x03F70206
+  DAT and=0x0 or=0xF chg=3 | PSTATE=0x03F70000 NISTR=0x0022 EISTR=0x0000
+```
+
+**(3) CMD24 探针：卡确实接受了写命令并进入 RCV 等数据**
+
+```
+letter:/$ sd c24 45000000
+before : R1=0x00000900 state=4
+cmd24 : st=0 RESP01=0x00000900 (ILLEGAL_CMD=0) PSTATE=0x03F70400
+quirk : XFER=0x0000 BLOCKSIZE=0x0200 BLKCNT=0x0000 NISTR=0x0010 EISTR=0x0000
+after : R1=0x00000D00 state=6 ready=1 ILLEGAL=0 ERRR=0
+```
+
+`state=6` 即 **RCV**：卡已在等数据块 ⇒ 命令链路完全正常，问题在主机侧数据驱动。
+
+**(4) 写的数据并未落盘**
+
+```
+letter:/$ sd raw r 45000000 1
+disk_read(lba=45000000,n=1) -> 0
+5D4A8000: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+...
+```
+
+**(5) SDMA 多块：读方向 DAT 大量翻转（卡在发数据），写方向 DAT 恒高**
+
+```
+letter:/$ sd exp dma 45000000 2 r
+exp dma r lba=45000000 n=2
+  st=6 DAT and=0x0 or=0xF chg=3275
+  PSTATE=0x03F70202 NISTR=0x8000 EISTR=0x0001 XFER=0x0037 BLKSIZE=0x7200
+
+letter:/$ sd exp dma 45000000 2 w        # 干净卡首次写
+exp dma w lba=45000000 n=2
+  st=1 DAT and=0xF or=0xF chg=1
+  PSTATE=0x03F70000 NISTR=0x0000 EISTR=0x0000 XFER=0x0027 BLKSIZE=0x7200
+```
+
+**(6) 引脚端口配置：CMD 与 DAT 完全相同（排除 pad 配置）**
+
+```
+letter:/$ sd portinfo
+P15 IOCR0=0x1000B800 PDR0=0x22220202 IN=0x0000FC3E
+P20 IOCR4=0x10000000 IOCR8=0x10100010 PDR0=0x02222222 PDR1=0x22220020 IN=0x00000DCF
+P15.1(CLK)=0xB8 P15.3(CMD)=0x10
+P20.7(DAT0)=0x10 P20.8(DAT1)=0x10 P20.10(DAT2)=0x10 P20.11(DAT3)=0x10
+PSTATE.DAT3_0=0xF
+```
+
+`0xB8` = `IfxPort_Mode_outputPushPullAlt7`（CLK）；`0x10` = `IfxPort_Mode_inputPullUp`
+（CMD 与 DAT0-3 一模一样）。CMD 用同样配置可以正常驱动（命令全部有响应）
+⇒ **pad/端口配置不是原因**，是控制器没有拉高 DAT 输出使能。
+
+**(7) 控制器能力与配置（`sd diag`，节选）**
+
+```
+ID=0x00E9C001 CLC=0x00000000 VERS=0x1005 MSHCID=0x3135302A MSHCTYP=0x6C703032
+CAP1=0x216C6483 CAP2=0x08000007 MBIU=0x03030006
+  BASE_CLK=100MHz SDMA_SUP=1 ADMA2_SUP=1 HS_SUP=1 MAXBLK=0 TOUTCLK=3 CLKMUL=0
+HOST1=0x06(DMA_SEL=0 WIDTH=1 HS=1 EXT=0)
+HOST2=0x1000(V4=1 ADDR64=0 PRESET=0 UHSMODE=0 DRVSTR=0 SMPCLK=0)
+CLKCTL=0x010F PWR=0x01 TOUT=0x0E BGAP=0x00 PRESET_HS=0x0000
+BLKSIZE=0x0200 BLKCNT=0x0000 XFER=0x0010 SDMASA=0x00000000 ADMASA=0x00000000
+NISTR=0x0000 EISTR=0x0000 NISTR_EN=0x003B EISTR_EN=0xFFFF
+AUTOCMD=0x0000 ADMAERR=0x00 PSTATE=0x03F70000
+CMD_INH=0 CMD_INH_DAT=0 DAT_ACT=0 WR_XFER=0 RD_XFER=0 BUFWR=0 BUFRD=0
+CARD_INS=1 STABLE=1 CD=1 WP=0 DAT3_0=F CMD_LVL=1 CMD_ISSUE_ERR=0
+buf s_ioBuf=0x70001C3C s_chkBuf=0x700017E8
+```
+
+结论：**这是 Synopsys DesignWare MSHC（SDHCI 兼容）IP**（有 `MSHC_VER_ID`/`MSHC_VER_TYPE`/
+`MBIU_CTRL`/`P_VENDOR_SPECIFIC_AREA`，`VERS=0x1005` 即 spec 5.0）；
+SDMA 与 ADMA2 都声明支持；SD 卡总线电压、时钟、位宽、高速均正常。
+**关键异常：写传输中 `WR_XFER_ACTIVE` 始终为 0**（`PSTATE` bit8），
+说明控制器从未进入写数据传输态。
+
+**(8) 标准回归（失败现场，供后续对照）**
+
+```
+letter:/$ sd bench 4
+bench 4 MB (0:/BENCH.BIN)...
+write FAILED at 0/4096 KB: DISK_ERR(hard error in low level disk I/O) (1)
+
+letter:/$ sd regs
+PSTATE=0x0BF70000 NISTR=0x8000 EISTR=0x0100
+CLKCTL=0x010F HOST1=0x06 XFER=0x0027 BLKCNT=0
+AUTOCMD=0x0003 lastErr: op=2 sector=24576 EISTR=0x0100
+```
+
+解码：`XFER=0x0027`（DMA_ENABLE=1, BLOCK_COUNT_ENABLE=1, AUTO_CMD=CMD12, MULTI_BLK_SEL=1,
+方向=写）；`EISTR=0x0100`=**AUTO_CMD_ERR**；`AUTOCMD=0x0003`=Auto CMD12 not executed
++ Auto CMD timeout；`PSTATE` bit27=**CMD_ISSUE_ERR**=1（Auto CMD12 发不出去）。
+
+### 9.3 结果汇总
+
+| 项目 | 结果 | 证据 |
+| --- | --- | --- |
+| 读：初始化/挂载/目录/空闲/裸读 | **PASS** | §9.2(2)、§8.4 |
+| 读：DAT 线由卡驱动 | **PASS** | `and=0x0 or=0xF chg=3`（PIO）、`chg=3275`（SDMA） |
+| 写：卡接受 CMD24 并进入 RCV | **PASS** | §9.2(3) `state=6` |
+| 写：主机驱动 DAT0-3 | **FAIL** | `and=or=0xF chg=1`（PIO 与 SDMA 均是） |
+| 写：`WR_XFER_ACTIVE` | **FAIL** | 传输中恒 0 |
+| 写：`XFER_COMPLETE` | **FAIL** | 永不置位（无任何 NISTR/EISTR 报错） |
+| 写：数据落盘 | **FAIL** | 读回 `FF FF ...`（擦除态） |
+| 引脚/pad 配置 | **正常** | CMD 与 DAT IOCR 均为 `0x10`，CMD 能驱动 |
+
+### 9.4 已排除项（本轮实测）
+
+| 假设 | 实验 | 结果 |
+| --- | --- | --- |
+| 卡不接写命令 | `sd c24` + CMD13 | 卡进入 `RCV(6)` ⇒ 卡侧正常 |
+| SDCLK 频率/分频不当 | `sd clk 400/12500/25000/50000` | 均同现象 |
+| `PRESET_VAL_ENABLE` | `sd host preset 0/1` | 无差异 |
+| Host Version 4 模式 | `sd exp w ... v4=0` | 无差异 |
+| `BLOCK_COUNT_ENABLE`+`BLOCKCOUNT` | `sd exp w <lba> 1 ...`（已确认 BLKCNT 写入生效：`poke 6 0001`→回读 1） | 无差异 |
+| `MULTI_BLK_SEL` | `sd exp w <lba> 1 1 ...` | 无差异 |
+| 位宽（1-bit） | `sd exp w <lba> 0 0 1 1` | 无差异 |
+| SDMA vs ADMA/PIO | `sd tx dma w`、`sd exp dma w` | 均不驱动 DAT |
+| `PWR_CTRL` 电压选择（原为 0） | `sd poke 29 0F 8` | 无差异 |
+| 命令表 `DATA_PRESENT_SEL` | 查 `IfxSdmmc_CMD[]`：CMD17/18/24/25 均 `withData` | 正常 |
+| 引脚/pad 配置 | `sd portinfo` 对比 | 完全相同 |
+| 预填充 FIFO 后发命令 | `sd exp pre` | 命令前 `BUF_WR_ENABLE=0`，无法预填充（该 IP 只在命令后才开 FIFO） |
+
+### 9.5 结论与下一步建议
+
+**结论（可复现）**：TC397 的 SDMMC0 在本板上**读方向完全正常**（命令 + 卡→主机数据），
+但**写方向（主机→卡）的 DAT 输出使能始终不激活**。这不是卡、不是时钟、不是软件配置
+（已逐项排除），而是**控制器级/板级写数据通路**问题。
+
+**下一步（按性价比排序）**：
+
+1. **逻辑分析仪抓波形**（最直接）：同时抓 SDCLK / CMD / DAT0，看 CMD24 后
+   DAT0 是否有起始位 0、是否有 512B 数据与 CRC 状态令牌。可一锤定音区分
+   “控制器没驱动” vs “驱动了但线上没有”。
+2. **量 SD 卡座 VDD 与 DAT 线上拉/串阻/电平转换器**：若板上 DAT 线有方向控制
+   （level shifter 的 DIR、或 SD 卡电源开关使能脚），确认写方向是否被正确使能。
+   同时确认卡座 VDD 在传输期间稳定（读正常但驱动能力/电压不足也会只挂写）。
+3. **与官方 example 二进制对拍**：直接烧 Infineon
+   `iLLD_TC397_3V3_ADS_SDCard_SDMMC_Read_Write` 官方 hex（同引脚）到本板，
+   跑它的 `f_write`。若官方例程也写不进去 ⇒ 硬件/板级问题；若官方能写
+   ⇒ 逐行 diff 我们的 host 配置。
+4. **换 SDMMC1**（若板上有第二组 SDMMC 引脚）或换一张卡/换板，交叉验证。
+5. **板端 `f_mkfs`**：依赖写通路，暂不可做。
+
+### 9.6 本轮踩到的坑
+
+1. **ninja 增量构建会自我破坏**：树里有 `file(GLOB ... CONFIGURE_DEPENDS)` 时，
+   每次 build 前 ninja 要 “Re-checking globbed directories”，在本机报
+   `ninja: error: FindFirstFileExA(".../Configurations/Debug): The filename, directory
+   name, or volume label syntax is incorrect.`，导致**第二次构建必失败**。
+   已通过去掉 `CONFIGURE_DEPENDS`（`cmake/AurixProject.cmake`）缓解；
+   若仍遇到，删除 `build/<compiler>/.ninja_deps` 与 `.ninja_log` 后重建即可
+   （代价是全量重编）。`build.ps1/build.sh` 每次都会重新 configure，所以去掉
+   `CONFIGURE_DEPENDS` 不损失自动发现能力。
+2. **改代码后必须重建**：`-Action download` 不会重新编译（沿用已有 hex）。
+3. **`sd portinfo` 里对 P20.x 做 `IfxPort_setPinModeOutput` 会让 MCU 直接挂死**
+   （shell 无响应，需 `build.ps1 -Action reset`）。已改成**只读**版本，勿再加写 pad 的代码。
+4. **一次失败的写会把卡留在 RCV 态**，后续所有数据命令都会挂；
+   必须 `sd recover` 或复位；`sd recover` 后 CMD24 的 R1 会带 `ILLEGAL_COMMAND`，
+   **这是卡状态残留，不代表命令本身有问题**（干净卡上 R1=0x00000900）。
+5. `BLOCKCOUNT` 寄存器在命令后会被控制器清零，回读 0 属正常，不代表写入失败。
+
+---
+
+## 10 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * FatFs R0.16：ChaN 许可（`Libraries/FatFS/LICENSE` 见 ref/fatfs/LICENSE.txt，

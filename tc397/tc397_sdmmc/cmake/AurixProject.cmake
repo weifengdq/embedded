@@ -45,7 +45,14 @@ function(aurix_path_is_excluded candidate_path excluded_dirs excluded_files resu
 endfunction()
 
 function(aurix_collect_directory_entries current_dir excluded_dirs excluded_files out_sources out_headers out_include_dirs)
-    file(GLOB directory_entries CONFIGURE_DEPENDS "${current_dir}/*")
+    # NOTE: no CONFIGURE_DEPENDS here on purpose.
+    # CMake's glob verification makes ninja stat every globbed directory before
+    # each build ("Re-checking globbed directories..."), which fails on this tree
+    # with: ninja: error: FindFirstFileExA(".../Configurations/Debug): The
+    # filename, directory name, or volume label syntax is incorrect.
+    # build.ps1/build.sh always re-run the CMake configure step before building,
+    # so the glob is refreshed anyway and CONFIGURE_DEPENDS adds nothing.
+    file(GLOB directory_entries "${current_dir}/*")
 
     set(local_sources)
     set(local_headers)
