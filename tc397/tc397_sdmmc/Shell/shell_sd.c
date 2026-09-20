@@ -1300,7 +1300,8 @@ static void sd_usage(Shell *sh)
     shellPrint(sh, "  sd diag                 - FULL register dump + decoded PSTATE\r\n");
     shellPrint(sh, "  sd tx <pio|dma> <r|w> <lba> [n] - transfer experiment (traced)\r\n");
     shellPrint(sh, "  sd chk <lba>            - verify sector == sd_fill_pattern(seed=lba)\r\n");
-    shellPrint(sh, "  sd host [v4|dsel|preset|mbui|print] [val] - poke host regs\r\n");
+    shellPrint(sh, "  sd host [v4|dsel|preset|mbui|print] [val] - poke host regs (v4 re-inits card)\r\n");
+    shellPrint(sh, "  sd reinit               - re-run card identification\r\n");
     shellPrint(sh, "  sd clk [kHz]            - get/set SDCLK (e.g. 'sd clk 400')\r\n");
     shellPrint(sh, "128GB TF: use 'sd mkfs exfat'. 'sd bench' default file 0:/BENCH.BIN.\r\n");
 }
@@ -1673,6 +1674,16 @@ static int cmd_sd(int argc, char *argv[])
         shellPrint(sh, "usage: sd exp r|w|pre|dma ...\r\n");
         return -1;
     }
+    if (strcmp(argv[1], "reinit") == 0)
+    {
+        /* re-run card identification with the current host settings
+           (needed after changing HOST_CTRL2 bits) */
+        sint32 rc = Sdmmc_ReInitCard();
+        shellPrint(sh, "reinitCard -> %d (RCA=0x%04X cap=0x%02X)\r\n", (int)rc,
+                   (unsigned)Sdmmc_GetHandle()->cardInfo.rca,
+                   (unsigned)Sdmmc_GetHandle()->cardCapacity);
+        return (rc == 0) ? 0 : -1;
+    }
     if (strcmp(argv[1], "portinfo") == 0)
     {
         return sd_cmd_portinfo(sh);
@@ -1803,9 +1814,10 @@ static int cmd_sd(int argc, char *argv[])
         if (strcmp(argv[2], "v4") == 0)
         {
             uint32 v = (argc >= 4) ? (uint32)strtoul(argv[3], NULL, 0) : 0U;
-            p->HOST_CTRL2.B.HOST_VER4_ENABLE = (v != 0U) ? 1U : 0U;
-            shellPrint(sh, "HOST_VER4_ENABLE -> %u (HOST2=0x%04X)\r\n",
-                       (unsigned)p->HOST_CTRL2.B.HOST_VER4_ENABLE, (unsigned)p->HOST_CTRL2.U);
+            sint32 rc = Sdmmc_SetHostVer4((v != 0U) ? TRUE : FALSE);
+            shellPrint(sh, "HOST_VER4_ENABLE=%u reinitCard=%d (HOST2=0x%04X CLKCTL=0x%04X)\r\n",
+                       (unsigned)((p->HOST_CTRL2.U >> 12) & 1U), (int)rc,
+                       (unsigned)p->HOST_CTRL2.U, (unsigned)p->CLK_CTRL.U);
             return 0;
         }
         if (strcmp(argv[2], "preset") == 0)

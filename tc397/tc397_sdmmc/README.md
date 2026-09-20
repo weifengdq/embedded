@@ -551,7 +551,8 @@ BPB 算出的空闲空间是正确的（~29805 MiB）。说明
 | `sd exp pre <lba>` | 先预填充 FIFO 再发 CMD24 |
 | `sd c24 <lba>` | 只发 CMD24（不发数据），随后 CMD13 读卡状态机，判断 CMD24 是否真被接受 |
 | `sd clk [kHz]` | 运行时改 SDCLK（按 SDHCI 时序重编程分频） |
-| `sd host [v4\|dsel\|preset\|mbui\|print] [v]` | 运行时改 Host 配置位 |
+| `sd host [v4\|dsel\|preset\|mbui\|print] [v]` | 运行时改 Host 配置位（**`v4` 会清/置 `HOST_VER4_ENABLE` 并重新识别卡**） |
+| `sd reinit` | 用当前 Host 设置重跑卡识别（CMD0/CMD8/ACMD41/CMD2/3/7/ACMD6/CMD6） |
 | `sd poke/peek/mpeek <off\|addr> ...` | 原始寄存器/内存读写（诊断用，慎用） |
 | `sd portinfo` | 打印 SDMMC 各引脚所在端口的 IOCR/PDR/IN（**只读**） |
 | `sd chk <lba>` | 读回校验 `word[i]=i^lba` |
@@ -694,7 +695,8 @@ AUTOCMD=0x0003 lastErr: op=2 sector=24576 EISTR=0x0100
 | 卡不接写命令 | `sd c24` + CMD13 | 卡进入 `RCV(6)` ⇒ 卡侧正常 |
 | SDCLK 频率/分频不当 | `sd clk 400/12500/25000/50000` | 均同现象 |
 | `PRESET_VAL_ENABLE` | `sd host preset 0/1` | 无差异 |
-| Host Version 4 模式 | `sd exp w ... v4=0` | 无差异 |
+| Host Version 4 模式 | `sd exp w ... v4=0`（运行时切换） | 无差异 |
+| Host Version 4 模式（**含重跑卡识别**） | `sd host v4 0` ⇒ `Sdmmc_SetHostVer4()`：清 V4 + 重跑 `IfxSdmmc_Sd_initCard` | 无差异（`reinitCard=6`，写仍不驱动 DAT） |
 | `BLOCK_COUNT_ENABLE`+`BLOCKCOUNT` | `sd exp w <lba> 1 ...`（已确认 BLKCNT 写入生效：`poke 6 0001`→回读 1） | 无差异 |
 | `MULTI_BLK_SEL` | `sd exp w <lba> 1 1 ...` | 无差异 |
 | 位宽（1-bit） | `sd exp w <lba> 0 0 1 1` | 无差异 |

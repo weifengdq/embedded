@@ -31,6 +31,12 @@ boolean Sdmmc_IsInited(void);
 /** \brief Card capacity in 512B sectors via CMD9/CSD. Returns 0 on success. */
 sint32 Sdmmc_GetCapacitySectors(DWORD *sectors, int *csdVer);
 
+/** \brief Re-run card identification with the current host settings. 0 = ok. */
+sint32 Sdmmc_ReInitCard(void);
+
+/** \brief Set HOST_CTRL2.HOST_VER4_ENABLE and re-identify the card. 0 = ok. */
+sint32 Sdmmc_SetHostVer4(boolean enable);
+
 /* DEBUG read-trace accessors */
 
 #ifdef __cplusplus

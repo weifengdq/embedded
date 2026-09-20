@@ -75,6 +75,9 @@ typedef struct
 
 App_Sdmmc_Mmc g_Sdmmc_Mmc;
 static boolean g_Sdmmc_Inited = FALSE;
+/* card configuration kept from the last disk_initialize, so the card can be
+   re-identified after changing structural host settings (HOST_CTRL2 mode bits). */
+static IfxSdmmc_Sd_CardConfig s_cardCfg;
 /* Capacity (sectors) cached at init: avoids re-issuing CMD9 (R2) on the data
    path. The 128GB SDXC + this SDMMC combo deterministically fails the first
    data WRITE after an R2 response (reads are unaffected and "prime" it), so
@@ -161,6 +164,31 @@ IfxSdmmc_Sd *Sdmmc_GetHandle(void)
 boolean Sdmmc_IsInited(void)
 {
     return g_Sdmmc_Inited;
+}
+
+/** \brief Re-run CMD0/CMD8/ACMD41/CMD2/CMD3/CMD7/ACMD6/CMD6 with the current
+ * host settings. Required after changing structural HOST_CTRL2 bits (e.g.
+ * HOST_VER4_ENABLE) because this IP latches them during card identification.
+ * Returns 0 on success. */
+sint32 Sdmmc_ReInitCard(void)
+{
+    if (!g_Sdmmc_Inited)
+    {
+        return -1;
+    }
+    return (sint32)IfxSdmmc_Sd_initCard(&g_Sdmmc_Mmc.sd, &s_cardCfg);
+}
+
+/** \brief Switch Host Version 4.00 mode and re-identify the card. */
+sint32 Sdmmc_SetHostVer4(boolean enable)
+{
+    if (!g_Sdmmc_Inited)
+    {
+        return -1;
+    }
+    g_Sdmmc_Mmc.sd.sdmmcSFR->HOST_CTRL2.B.PRESET_VAL_ENABLE = 0;
+    g_Sdmmc_Mmc.sd.sdmmcSFR->HOST_CTRL2.B.HOST_VER4_ENABLE   = (enable == TRUE) ? 1U : 0U;
+    return Sdmmc_ReInitCard();
 }
 
 /** \brief Capacity in 512B sectors via CMD9 (CSD). -1 on error. */
@@ -306,6 +334,7 @@ DSTATUS disk_initialize_sdmmc(BYTE pdrv)
     /* 4-bit bus, high-speed mode, SDMA multi-block */
     config.cardConfig.dataWidth = IfxSdmmc_SdDataTransferWidth_4Bit;
     config.cardConfig.speedMode = IfxSdmmc_SdSpeedMode_high;
+    s_cardCfg = config.cardConfig;
 
     config.useDma = TRUE;
     config.dmaConfig.dmaType = IfxSdmmc_DmaType_sdma;
