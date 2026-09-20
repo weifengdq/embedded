@@ -48,13 +48,39 @@
 
 // iperf tcp optimizations
 #define TCP_MSS                 1460
-#define TCP_WND                 (44 * TCP_MSS)      /* RX window: 64240 (max without RFC1323 scaling) */
+/* ---- Receive window sizing (2026-09-20) ----
+ * Symptom: when the PC side uses a large socket buffer (iperf -w 64K) the
+ * transfer collapses into "0 bytes/sec" seconds, i.e. the peer sees a zero
+ * window and falls into TCP persist backoff (1s/2s/4s); with -w 16K it runs
+ * flat out instead (578 Mbps on Ubuntu and on Windows with interrupt
+ * moderation disabled).
+ * Cause: the window this board advertised (TCP_WND = 64240) was the same
+ * order of magnitude as the PC's 64K socket buffer, so the PC filled it and
+ * then oscillated between "window closed" and "window re-opened"; with 16K
+ * the PC can never fill the board's window, so that path is never entered.
+ * Fix: shrink the advertised window to ~16K as well, so the PC cannot fill
+ * it whatever socket buffer it uses.
+ * Ceiling = window x 8 / RTT; measured RTT is only ~0.23 ms, so 16K still
+ * supports ~570 Mbps (matching the 578 Mbps measured on Ubuntu).
+ * NOTE: do NOT try to enlarge the window via RFC1323 scaling instead -- merely
+ * defining LWIP_WND_SCALE=1 (even with TCP_RCV_SCALE=0) breaks UDP/TCP in
+ * this project, see README section 7.8. */
+#define TCP_WND                 (11 * TCP_MSS)      /* RX window: 16060 (~16K) */
 #define TCP_SND_BUF             (44 * TCP_MSS)      /* TX buffer: 64240 */
 #define MEMP_NUM_TCP_SEG        44                  /* in-flight segments for one stream (window/MSS) */
 #define MEMP_NUM_PBUF           64                  /* PBUF headers available */
 #define PBUF_POOL_SIZE          32                  /* PBUF_POOL: copy-based RX needs one pbuf per frame */
 #define TCP_QUEUE_OOSEQ         1                   /* queue OOO segs: one lost pkt must NOT discard the rest of the window */
 #define TCP_OOSEQ_MAX_PBUFS     16                  /* cap OOO queue so PBUF_POOL is not exhausted */
+
+/* NOTE 2026-09-20: lowering TCP_WND_UPDATE_THRESHOLD to TCP_MSS was tried in
+ * order to advertise window progress on every consumed segment and so relieve
+ * the "0 bytes/sec / zero window persist" behaviour seen with a large peer
+ * socket buffer (-w 64K). It measured WORSE (16K..128K all collapsed to
+ * 35..59 Mbps and lwIP input rose from 706 to 956 tk/pkt) because every
+ * segment then triggers tcp_ack_now()+tcp_output(), so the ACK/TX cost ate the
+ * gain. Reverted to the lwIP default LWIP_MIN(TCP_WND/4, TCP_MSS*4) = 5840.
+ * The real variable here is the PC-side NIC, not this watermark (README 7.8). */
 #define LWIP_DISABLE_TCP_SANITY_CHECKS 1
 #define LWIP_STATS              0                   /* No statistic counters in hot path */
 #define LWIP_NOASSERT           1                   /* tcp_input runs dozens of asserts per packet - too hot for 1Gbps */
