@@ -333,6 +333,37 @@ DSTATUS disk_initialize_sdmmc(BYTE pdrv)
 
     IfxSdmmc_configureClock(g_Sdmmc_Mmc.sd.sdmmcSFR, 25000000);
 
+    /* Force the software clock divider to take effect.
+     *
+     * iLLD's default hostConfig.usePresetValues=TRUE makes
+     * IfxSdmmc_Sd_configureSpeedAndBusWidth() set HOST_CTRL2.PRESET_VAL_ENABLE=1,
+     * after which the controller ignores CLK_CTRL.FREQ_SEL. Measured on TC397:
+     * FREQ_SEL stayed 0 (CLKCTL=0x000F) => SDCLK ran at the base clock
+     * (SPB=100MHz), i.e. 4x above the 25MHz SD limit. Reads happened to work,
+     * writes failed with EISTR.CMD_TOUT_ERR and the card was left in RCV state.
+     *
+     * Fix: clear PRESET_VAL_ENABLE, then program the divider explicitly using
+     * the SDHCI sequence (stop SDCLK -> change divider -> wait stable -> start).
+     * Verified: CLKCTL becomes 0x010F (FREQ_SEL=1 => 100MHz/(2*2)=25MHz). */
+    {
+        Ifx_SDMMC *p = g_Sdmmc_Mmc.sd.sdmmcSFR;
+        uint32 spb = (uint32)IfxScuCcu_getSpbFrequency();
+        uint32 div = (spb != 0U) ? (spb / (2U * 25000000U)) : 2U;
+        uint16 setVal;
+        if (div == 0U) { div = 1U; }
+        setVal = (uint16)(div - 1U);
+
+        p->HOST_CTRL2.B.PRESET_VAL_ENABLE = 0;
+        p->CLK_CTRL.B.SD_CLK_EN = 0;
+        p->CLK_CTRL.B.FREQ_SEL       = (uint32)(setVal & 0xFFU);
+        p->CLK_CTRL.B.UPPER_FREQ_SEL = (uint32)((setVal >> 8) & 0x3U);
+        {
+            uint32 spin;
+            for (spin = 0; spin < 100000UL; spin++) { }
+        }
+        p->CLK_CTRL.B.SD_CLK_EN = 1;
+    }
+
     /* refresh cached capacity once per (re-)init; later callers use cache */
     s_cachedValid = FALSE;
     {
@@ -378,8 +409,30 @@ DRESULT disk_read_sdmmc(BYTE pdrv, BYTE *buff, LBA_t sector, UINT count)
         IfxSdmmc_Status st = IfxSdmmc_Status_failure;
         for (tries = 0; tries < 3; tries++)
         {
-            st = IfxSdmmc_Sd_readMultiBlock(&(g_Sdmmc_Mmc.sd), (uint32)sector, (uint32 *)buff,
-                                            (uint32)count, IfxSdmmc_BlockBoundarySize_512K);
+            /* Single-block PIO read.
+             *
+             * The SDMA multi-block path (IfxSdmmc_Sd_readMultiBlock) never raises
+             * NORMAL_INT_STAT.transferComplete on this controller: it times out
+             * with IfxSdmmc_Status_dataError, NISTR=0, EISTR=0 and
+             * PSTATE=0x03070202 (DAT_INHIBIT set, DAT lines stuck low), which
+             * makes f_mount fail with FR_DISK_ERR. The single-block PIO path
+             * (IfxSdmmc_Sd_singleBlockTransfer) works reliably, so use it for
+             * every sector and loop over the requested count. */
+            UINT i;
+            st = IfxSdmmc_Status_success;
+            for (i = 0; i < count; i++)
+            {
+                st = IfxSdmmc_Sd_singleBlockTransfer(&(g_Sdmmc_Mmc.sd),
+                                                     IfxSdmmc_Command_readSingleBlock,
+                                                     (uint32)(sector + i),
+                                                     IFXSDMMC_BLOCK_SIZE_DEFAULT,
+                                                     (uint32 *)(buff + (i * 512U)),
+                                                     IfxSdmmc_TransferDirection_read);
+                if (st != IfxSdmmc_Status_success)
+                {
+                    break;
+                }
+            }
             if (st == IfxSdmmc_Status_success)
             {
                 break;

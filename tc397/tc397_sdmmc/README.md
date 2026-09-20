@@ -3,7 +3,15 @@
 本工程由 `tc397_uart_lettershell` 拷贝而来，在 **Ubuntu 26.04 + tricore-gcc 13.4.1 +
 CMake/Ninja** 下构建，目标 **TC397XX 292pin**。在 UART Letter-Shell 基线（ASCLIN0
 P14.0/P14.1, 921600-8N1，P13.0 LED）之上，新增 **SDMMC0 SD 卡 + FatFs 文件系统**
-完整测试能力，配套 128GB TF 卡验证。
+完整测试能力。
+
+> **当前状态（2026-09-20，新 32GB TF 卡）**：
+> **读通路全部 PASS**（初始化/挂载/FAT32 识别/目录/空闲空间/裸扇区读），
+> **写通路仍 FAIL**（`DISK_ERR`，根因未完全定位）。
+> 本轮已修复两个真实缺陷：**SDCLK 实际 100MHz（应为 25MHz）** 与
+> **SDMA 多块读不产生 `transferComplete`**（改用单块 PIO 读绕过）。
+> 详见 **§8**（含完整日志、根因定位过程、踩坑清单与下一步建议）。
+> 历史 128GB 卡测试见 §6/§7。
 
 * 基线：`tc397_uart_lettershell`（Shell/UART/CMake/build.sh，命令兼容）
 * FatFs：`ref/fatfs`（`abbrev/fatfs` master，即 ChaN FatFs **R0.16**，2025），
@@ -328,7 +336,197 @@ Windows GCC 对照版（同板同卡）：`sd init` 同样 `DISK_ERR`，
 
 ---
 
-## 8 许可
+## 8 新 32GB TF 卡实测（2026-09-20，Tasking Debug）
+
+### 8.1 测试背景
+
+* 旧 128GB 卡已 wedged（§6.4/§7.4），用户**更换为新的 32GB TF 卡**，
+  并已在 PC 上格式化为 **FAT32**（用户明确要求：**无需再格式化或分区，直接测试**）。
+* 目标：验证新卡在 TC397 SDMMC0 + FatFs R0.16 下的初始化、挂载、目录、
+  容量、读写与测速，并把过程与结果汇总到本 README。
+* 环境：Windows 11 + TASKING v6.3r1（`build.ps1 -Compiler tasking`），
+  COM165 @921600，DAP MiniWiggler + AURIXFlasher v3.0.18。
+
+### 8.2 测试命令
+
+```powershell
+cd c:\github\embedded\tc397\tc397_sdmmc
+.\build.ps1 -Compiler tasking -Action rebuild     # 必须 rebuild（见 §8.6 坑1）
+.\build.ps1 -Compiler tasking -Action download
+# 串口交互（c:\github\embedded\tc397\temp\shell_cmd.ps1）
+.\shell_cmd.ps1 -Port COM165 -Cmd "sd init"  -WaitSec 12
+.\shell_cmd.ps1 -Port COM165 -Cmd "sd ls 0:/" -WaitSec 8
+.\shell_cmd.ps1 -Port COM165 -Cmd "sd free"   -WaitSec 8
+.\shell_cmd.ps1 -Port COM165 -Cmd "sd raw r 0 1" -WaitSec 10
+.\shell_cmd.ps1 -Port COM165 -Cmd "sd bench 4"   -WaitSec 60
+```
+
+### 8.3 实测日志（原始输出）
+
+`sd init`（**PASS**）：
+
+```
+sd init: CD P10.7=0 ...
+disk_initialize(0) -> 0x00
+f_mount -> OK (0)
+CD P10.7 : 0 (LOW(card inserted, typical))
+SDMMC: RCA=0x0001 state=0x00 type=SDmem cap=SDHC/SDXC(block)(0x0C)
+Pins: CMD P15.3 / CLK P15.1 / DAT0-3 P20.7/P20.8/P20.10/P20.11, 4-bit HS SDMA 25MHz
+Capacity: 1024 sectors x 512B = 0 MiB (~0.0 GiB), CSD v1
+FS: FAT32, cluster=64 sectors, free=953788 clusters (~29805 MiB)
+```
+
+`sd ls 0:/`（**PASS**，新卡 PC 格式化后仅有一个系统目录）：
+
+```
+ls 0:/:
+  d          0  System Volume Information
+1 entries
+```
+
+`sd free`（**PASS**）：
+
+```
+Capacity: 1024 sectors x 512B = 0 MiB (~0.0 GiB), CSD v1
+FS: FAT32, cluster=64 sectors, free=953788 clusters (~29805 MiB)
+```
+
+`sd raw r 0 1`（**PASS**，底层扇区读通路正常）：
+
+```
+disk_read(lba=0,n=1) -> 0
+00000000: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+...
+(showing first 64 of 512 bytes)
+```
+
+`sd st`（**PASS**，卡在传输态）：
+
+```
+disk_status=0x00 send_status=0 lock=0
+R1=0x00000900 state=4 (TRAN) ready=1
+```
+
+`sd bench 4`（**FAIL**，写通路失败）：
+
+```
+bench 4 MB (0:/BENCH.BIN)...
+write FAILED at 0/4096 KB: DISK_ERR(hard error in low level disk I/O) (1)
+```
+
+### 8.4 测试结果汇总
+
+| 项目 | 结果 | 证据 |
+| --- | --- | --- |
+| 卡在位检测 `sd cd` | **PASS** | `CD P10.7=0` |
+| 卡初始化 `disk_initialize` | **PASS** | 返回 `0x00` |
+| 卡识别 | **PASS** | `RCA=0x0001`、`type=SDmem`、`cap=SDHC/SDXC(block)` |
+| 挂载 `f_mount` | **PASS** | `OK (0)` |
+| 文件系统识别 | **PASS** | `FS: FAT32, cluster=64 sectors` |
+| 空闲空间 | **PASS** | `free=953788 clusters (~29805 MiB)` ≈ 29.1 GiB |
+| 目录列举 `sd ls` | **PASS** | 1 条 `System Volume Information` |
+| 底层扇区读 `sd raw r` | **PASS** | `disk_read -> 0` |
+| 卡状态机 `sd st` | **PASS** | `state=4 (TRAN) ready=1` |
+| **写通路（`sd bench`/`sd write`/`sd raw w`）** | **FAIL** | `DISK_ERR`；详见 §8.5 |
+| 容量解析（CSD） | **异常** | 报 `1024 sectors`（应为 ~62.5M 扇区），见 §8.5 |
+| 读速率 | **未测** | 依赖 `sd bench` 的读阶段，写失败即中止 |
+
+**结论**：新 32GB 卡**读通路完全可用**（初始化/挂载/目录/容量/裸读全部 PASS），
+**写通路仍不可用**。相比旧卡（读写全不可用）是实质性进展。
+
+### 8.5 写通路失败：根因定位过程（重要）
+
+本轮通过**逐层二分**定位到两个真实缺陷，均已修复其一：
+
+#### 缺陷 1（已修复）：SDCLK 实际远高于 25MHz
+
+* **现象**：`CLK_CTRL` 恒读 `0x000F`，即 `FREQ_SEL=0`（分频比 1 → SDCLK = 基频）。
+  SPB=100MHz，故 SDCLK 实际 **100MHz**，是 SD 卡 25MHz 上限的 4 倍。
+* **根因**：iLLD 默认 `hostConfig.usePresetValues = TRUE`，
+  `IfxSdmmc_Sd_configureSpeedAndBusWidth()` 会置
+  `HOST_CTRL2.PRESET_VAL_ENABLE = 1`，此后控制器**忽略软件写入的 `CLK_CTRL.FREQ_SEL`**。
+  所以 `IfxSdmmc_configureClock(..., 25000000)` 形同虚设。
+* **修复**（`Libraries/FatFS/mmc_sdmmc.c`，`disk_initialize_sdmmc` 末尾）：
+  清 `PRESET_VAL_ENABLE`，再按 SDHCI 时序显式编程分频
+  （停 SDCLK → 改 `FREQ_SEL`/`UPPER_FREQ_SEL` → 等稳定 → 开 SDCLK）。
+* **验证**：`CLKCTL` 由 `0x000F` 变为 **`0x010F`**（`FREQ_SEL=1` → 100MHz/(2×2)=25MHz）✓
+
+#### 缺陷 2（已绕过）：SDMA 多块传输不产生 `transferComplete`
+
+* **现象**：`IfxSdmmc_Sd_readMultiBlock()` 超时返回 `IfxSdmmc_Status_dataError`，
+  且 `NISTR=0x00000000`、`EISTR=0x00000000`、`PSTATE=0x03070202`
+  （`DAT_INHIBIT=1`，DAT 线被拉低）。`f_mount` 因此报 `FR_DISK_ERR`。
+* **对照实验**：改用 `IfxSdmmc_Sd_singleBlockTransfer()`（单块 PIO）后
+  **`f_mount` 立即 OK**，`sd ls`/`sd raw r` 全部正常。
+  ⇒ 问题在**多块 SDMA 路径**，不在卡、不在时钟、不在 4-bit 位宽
+  （1-bit 模式同样失败，已排除）。
+* **修复**（`Libraries/FatFS/mmc_sdmmc.c`，`disk_read_sdmmc`）：
+  改为**逐扇区调用单块 PIO 读**，循环覆盖请求的 `count`。
+  代价是吞吐低于 SDMA，但功能正确。
+
+#### 缺陷 3（未解决）：写数据无法送达卡
+
+* **现象**：`disk_write` 无论走 SDMA 多块（`writeMultiBlock`）还是单块 PIO，
+  均失败。单块 PIO 写时逐字诊断显示：
+  * 第 1 个 word 写入后 `bufferWriteReady` 不再置位（`NISTR=0`），
+    `PSTATE=0x03F70400`（`DAT_LINE_ACTIVE=1`，DAT3-0 全低）；
+  * 最终 `EISTR=0x00000001`（`CMD_TOUT_ERR`），卡被留在 **`state=6 (RCV)`**。
+* **已尝试且无效**：
+  1. 每次 word 前等 `bufferWriteReady`（改为等一次后连续写 128 word）；
+  2. `BLOCK_COUNT_ENABLE=1` + `BLOCKCOUNT=1`（期望触发 `transferComplete`）；
+  3. 不依赖 `transferComplete`，改用 `PSTATE.CMD_INHIBIT_DAT` 清零 + CMD13 轮询
+     `READY_FOR_DATA` 判定完成 —— **`disk_write` 会返回成功，但随后 `sd recover`
+     再读回该扇区，内容仍是 `FF FF ...`（擦除态），证明数据实际未写入**；
+  4. 1-bit 位宽 + 默认速度（排除位宽/高速时序）。
+* **当前判断**：写数据阶段（DAT0 方向）存在硬件/时序层面的问题，
+  可能是 SDMMC0 写路径的 DAT 线驱动、上拉强度或控制器 FIFO 时序配置。
+  **未定位到最终根因**，如实记录，留待后续（见 §8.7）。
+
+#### 附带发现：CSD 容量解析异常
+
+`sd info`/`sd free` 报 `Capacity: 1024 sectors`（0 MiB），而 FatFs 通过
+BPB 算出的空闲空间是正确的（~29805 MiB）。说明
+`Sdmmc_GetCapacitySectors()` 的 CMD9/CSD 解析有问题
+（`resp01=0x00000900` 明显不是 CSD 内容，疑似 R2 响应读取或 CSD 解码缺陷）。
+**不影响挂载与读写**（FatFs 用 BPB），但 `sd info` 的容量显示不可信。
+
+### 8.6 本轮踩到的坑（新会话必读）
+
+1. **`build.ps1 -Action download` 不会重新编译！**
+   本轮多次出现“改了代码、烧录了、现象不变”，根因是 `download` 只烧录**已有 hex**，
+   而增量构建因 ninja 版本问题静默失败（见 §7.3 与 handover 记载）。
+   **改代码后必须 `-Action rebuild`**，或先 `-Action build` 确认编译产物时间戳更新。
+   验证方法：对比 `Shell/shell_sd.c` 与 `build/tasking/.../shell_sd.c.obj` 的 `LastWriteTime`。
+2. **Tasking 下寄存器名与 GCC 不同**：`Ifx_SDMMC` 的成员是
+   `PSTATE_REG` / `ERROR_INT_STAT` / `NORMAL_INT_STAT`（不是 `PSTATE`/`EISTR`/`NISTR`）；
+   `IfxSdmmc_Response.cardStatus` 是 union，需 `.U`；
+   `cardInfo.scr` 是位域 union，Tasking 拒绝直接 cast（`ctc E300`），需 `memcpy` 取原始字节。
+3. **枚举名易错**：`IfxSdmmc_SdSpeedMode_normal`（不是 `_default`）、
+   `IfxSdmmc_Command_writeBlock`（不是 `_writeSingleBlock`）、
+   `IfxSdmmc_AutoCmdSelect_disable`（不是 `_disabled`）。
+4. **`shellPrint` 单次缓冲 256B**（`SHELL_PRINT_BUFFER`），
+   诊断输出要拆成多行；`printf` 重定向到 ASCLIN0 可用但易被 shell 回显干扰，
+   排查底层驱动时用 `sendUARTMessage()` 直接输出更可靠。
+5. **`sd recover` 是救卡利器**：写失败后卡会停在 `state=6 (RCV)`，
+   `sd recover`（CMD12 + SW_RST + 重初始化）能把它拉回 `state=4 (TRAN)`。
+
+### 8.7 未完成项与下一步建议
+
+1. **写通路根因**（最高优先级）：建议用逻辑分析仪抓 SDMMC0 的
+   CMD/DAT0/CLK 波形，对比 CMD24 后 DAT0 的 busy 时序与数据波形；
+   或对照 Infineon 官方 `iLLD_TC397_3V3_ADS_SDCard_SDMMC_Read_Write` example
+   的写路径配置（`XFER_MODE`/`BLOCKSIZE`/`TOUT_CTRL` 逐项比对）。
+2. **SDMA 多块传输**：查 `SDMA_BUF_BDARY`、`HOST_CTRL1.DMA_SEL`、
+   `TOUT_CTRL.TOUT_CNT` 与 `AUTO_CMD_STAT` 的配合；
+   当前已用单块 PIO 绕过，功能可用但慢。
+3. **CSD 容量解析**：修 `sdmmc_decode_csd()` 或 R2 响应读取。
+4. **读速率**：写通路修好后用 `sd bench` 测；当前可先用
+   `sd raw r <lba> 16` 循环粗测。
+5. **板端 `f_mkfs`**：仍从未成功（§6.4），依赖写通路修复。
+
+---
+
+## 9 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * FatFs R0.16：ChaN 许可（`Libraries/FatFS/LICENSE` 见 ref/fatfs/LICENSE.txt，
