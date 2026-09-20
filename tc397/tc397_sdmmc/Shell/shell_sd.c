@@ -168,6 +168,15 @@ static void sd_print_info(Shell *sh)
                (unsigned)h->cardInfo.rca, (unsigned)h->cardState,
                sd_card_type_str(h->cardType),
                sd_card_cap_str(h->cardCapacity), (unsigned)h->cardCapacity);
+    /* Internal driver state that decides which transfer path is taken. */
+    shellPrint(sh, "Drv: dmaUsed=%u dmaType=%u presetMode=%u userFreq=%lu\r\n",
+               (unsigned)h->dmaUsed, (unsigned)h->dmaType,
+               (unsigned)h->presetMode, (unsigned long)h->userFrequency);
+    shellPrint(sh, "Drv: flags memInit=%u ioInit=%u f2=%u f8=%u memPresent=%u supMEM=%u supIO=%u\r\n",
+               (unsigned)h->flags.memInit, (unsigned)h->flags.ioInit,
+               (unsigned)h->flags.f2, (unsigned)h->flags.f8,
+               (unsigned)h->flags.memoryPresent, (unsigned)h->flags.supportMEM,
+               (unsigned)h->flags.supportIO);
     shellPrint(sh, "Pins: CMD P15.3 / CLK P15.1 / DAT0-3 P20.7/P20.8/P20.10/P20.11, 4-bit HS SDMA 25MHz\r\n");
     sd_print_capacity(sh);
     if (s_mounted)
@@ -1673,6 +1682,56 @@ static int cmd_sd(int argc, char *argv[])
         }
         shellPrint(sh, "usage: sd exp r|w|pre|dma ...\r\n");
         return -1;
+    }
+    if (strcmp(argv[1], "align") == 0)
+    {
+        /* SDMA needs a 4-byte aligned source/destination address. Print the
+           addresses of every buffer that can end up in an SDMA transfer. */
+        shellPrint(sh, "align: s_fs      =0x%08lX (mod4=%lu)\r\n",
+                   (unsigned long)(uintptr_t)&s_fs,
+                   (unsigned long)((uintptr_t)&s_fs & 3U));
+        shellPrint(sh, "align: s_fs.win  =0x%08lX (mod4=%lu)\r\n",
+                   (unsigned long)(uintptr_t)s_fs.win,
+                   (unsigned long)((uintptr_t)s_fs.win & 3U));
+        shellPrint(sh, "align: s_ioBuf   =0x%08lX (mod4=%lu)\r\n",
+                   (unsigned long)(uintptr_t)s_ioBuf,
+                   (unsigned long)((uintptr_t)s_ioBuf & 3U));
+        shellPrint(sh, "align: s_chkBuf  =0x%08lX (mod4=%lu)\r\n",
+                   (unsigned long)(uintptr_t)s_chkBuf,
+                   (unsigned long)((uintptr_t)s_chkBuf & 3U));
+        shellPrint(sh, "align: sizeof(FATFS)=%u winOff=%u\r\n",
+                   (unsigned)sizeof(FATFS),
+                   (unsigned)((uintptr_t)s_fs.win - (uintptr_t)&s_fs));
+        return 0;
+    }
+    if (strcmp(argv[1], "wmb") == 0)
+    {
+        /* Call IfxSdmmc_Sd_multiBlockDmaTransfer() directly (bypassing the
+           writeMultiBlock() wrapper that collapses every error into
+           IfxSdmmc_Status_failure) so the raw status is visible. */
+        IfxSdmmc_Sd *h = Sdmmc_GetHandle();
+        Ifx_SDMMC   *p = &MODULE_SDMMC0;
+        IfxSdmmc_Status st;
+        DWORD lba = 45000000UL;
+        if (!Sdmmc_IsInited()) { shellPrint(sh, "SD not initialized\r\n"); return -1; }
+        if (argc >= 3) { lba = (DWORD)strtoul(argv[2], NULL, 0); }
+        sd_fill_pattern(s_ioBuf, sizeof(s_ioBuf) / 4U, lba);
+        shellPrint(sh, "wmb lba=%lu\r\n", (unsigned long)lba);
+        shellPrint(sh, "  before: XFER=0x%04X BLKSIZE=0x%04X BLKCNT=0x%04X SDMASA=0x%08lX\r\n",
+                   (unsigned)p->XFER_MODE.U, (unsigned)p->BLOCKSIZE.U,
+                   (unsigned)p->BLOCKCOUNT.U, (unsigned long)p->SDMASA.U);
+        st = IfxSdmmc_Sd_multiBlockDmaTransfer(h, IfxSdmmc_Command_writeMultipleBlock,
+                                               (uint32)lba, IFXSDMMC_BLOCK_SIZE_DEFAULT,
+                                               s_ioBuf, IfxSdmmc_TransferDirection_write,
+                                               1U, IfxSdmmc_BlockBoundarySize_512K);
+        shellPrint(sh, "  raw st=%d\r\n", (int)st);
+        shellPrint(sh, "  after : XFER=0x%04X BLKSIZE=0x%04X BLKCNT=0x%04X SDMASA=0x%08lX\r\n",
+                   (unsigned)p->XFER_MODE.U, (unsigned)p->BLOCKSIZE.U,
+                   (unsigned)p->BLOCKCOUNT.U, (unsigned long)p->SDMASA.U);
+        shellPrint(sh, "  after : PSTATE=0x%08lX NISTR=0x%04X EISTR=0x%04X AUTOCMD=0x%04X\r\n",
+                   (unsigned long)p->PSTATE_REG.U, (unsigned)p->NORMAL_INT_STAT.U,
+                   (unsigned)p->ERROR_INT_STAT.U, (unsigned)p->AUTO_CMD_STAT.U);
+        return (st == IfxSdmmc_Status_success) ? 0 : -1;
     }
     if (strcmp(argv[1], "reinit") == 0)
     {

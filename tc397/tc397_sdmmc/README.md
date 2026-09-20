@@ -5,24 +5,45 @@ CMake/Ninja** 下构建，目标 **TC397XX 292pin**。在 UART Letter-Shell 基�
 P14.0/P14.1, 921600-8N1，P13.0 LED）之上，新增 **SDMMC0 SD 卡 + FatFs 文件系统**
 完整测试能力。
 
-> **当前状态（2026-09-20 第二轮攻坚）**：
-> **读通路全部 PASS**（初始化/挂载/FAT32 识别/目录/空闲空间/裸扇区读），
-> **写通路仍 FAIL**（`DISK_ERR`）。
-> 本轮把写失败**定位到硬件级根因**：**主机控制器在写（host→card）方向从不驱动 DAT 线**
-> —— CMD24 被卡正常接受（卡进入 `state=6 RCV` 等数据），FIFO 也接收了 512B，
-> 但 DAT0-3 全程恒定高电平（用 `PSTATE.DAT_3_0` 采样 + 读方向对照实验证明），
-> 因此数据从未到达卡，`XFER_COMPLETE`/`WR_XFER_ACTIVE` 永不置位，最后卡超时。
-> 已排除：卡本身、时钟、位宽、DMA 类型、`BLOCK_COUNT_ENABLE`/`MULTI_BLK_SEL`、
-> HostV4、`PRESET_VAL_ENABLE`、`PWR_CTRL` 电压、引脚/pad 配置（CMD 与 DAT 引脚
-> IOCR 完全相同且 CMD 能正常驱动）、命令表 `DATA_PRESENT_SEL`。
-> 详见 **§9**（含完整日志、对照实验、排除矩阵、下一步建议）。历史记录见 §6/§7/§8。
+> **当前状态（2026-09-20 第三轮攻坚 — 写通路已解决 ✅）**：
+> **读通路 + 写通路全部 PASS**。`sd bench 8` 实测
+> **写 5527 KB/s、读 13837 KB/s（VERIFY-OK）**，且**复位后首次 `sd init` 即可用**
+> （无需手工 `sd recover`）。
+>
+> **根因 1（写通路完全不可用）**：**DMA 类型必须用 ADMA2，不能用 SDMA。**
+> iLLD 的 `IfxSdmmc_Sd_initHostController()` 无条件置
+> `HOST_CTRL2.HOST_VER4_ENABLE=1`；在 SDHCI v4 寄存器映射下 `SDMASA` 被
+> 重新定义为 **32 位块计数寄存器**，SDMA 引擎再也拿不到系统地址。
+> 此时仍按 SDMA 编程（把缓冲区地址写进 `SDMASA`）会让控制器**没有合法的 DMA
+> 目标**：数据阶段永不完成 → `NORMAL_INT_STAT.transferComplete` 永不置位 →
+> Auto CMD12 超时（`EISTR.CMD_TOUT_ERR` + `AUTO_CMD_ERR`）→ 卡停在 RCV/TRAN，
+> DAT 线全程无人驱动。这正是前两轮观察到的「主机从不驱动 DAT 线」现象。
+>
+> **根因 2（复位后首次传输失败）**：改用 ADMA2 后，**复位后的第一次数据传输
+> 仍会失败一次**（`EISTR = DATA_CRC_ERR | DATA_END_BIT_ERR | AUTO_CMD_ERR`，
+> `AUTOCMD=0x0003`），之后所有传输正常。修复：读写路径失败时执行
+> **CMD12 中止 + `SW_RST_DAT`/`SW_RST_CMD` + 完整 `IfxSdmmc_Sd_initModule()`
+> 重初始化**，然后重试（最多 3 次）。这与 shell 的 `sd recover` 命令等价，
+> 实测可让首次传输成功。
+>
+> **修复**：`config.dmaConfig.dmaType = IfxSdmmc_DmaType_adma2`，并在胶水层
+> 为每次传输构建 **ADMA2 描述符表**（`IfxSdmmc_Adma2Descriptor`，每 512B 块一条，
+> 末条置 `end=1`/`intEn=1`），读写都改走
+> `IfxSdmmc_Sd_multiBlockAdma2Transfer()`；失败时走完整恢复 + 重试。
+>
+> **判定依据**：把官方 `iLLD_TC397_3V3_ADS_SDCard_SDMMC_Read_Write` 用本仓库的
+> CMake 基础设施编译后烧到**同一块板、同一张卡**，其 `f_write` 成功；而我们的
+> 固件失败。逐项比对 iLLD 源码（`IfxSdmmc_Sd.c`/`IfxSdmmc.c`/`IfxSdmmc.h`/
+> 寄存器定义/引脚映射/命令表/枚举）**全部等价**，唯一实质差异就是 DMA 引擎选择。
+> 详见 **§10**（含完整日志、对照实验、排除矩阵）。历史记录见 §6/§7/§8/§9。
 
 * 基线：`tc397_uart_lettershell`（Shell/UART/CMake/build.sh，命令兼容）
 * FatFs：`ref/fatfs`（`abbrev/fatfs` master，即 ChaN FatFs **R0.16**，2025），
   取 `ff.c/ff.h/diskio.h/ffunicode.c`，`ffconf.h` 为本工程定制（见 §5）
 * SDMMC 胶水层：参考 Infineon 官方 example
   `iLLD_TC397_3V3_ADS_SDCard_SDMMC_Read_Write` 的 `mmc_sdmmc.c`/`diskio.c`
-  （4-bit SD + SDMA 多块传输）移植，适配 R0.16 磁盘接口
+  移植，适配 R0.16 磁盘接口。**注意**：官方例程用 SDMA，在本控制器上
+  （`HOST_VER4_ENABLE=1`）**不可用**，本工程改用 **ADMA2**（见 §10）
 * 工具链/下载：tricore-gcc 13.4.1（`/opt/tricore-gcc`）+ TAS/DAS 8.3.0 +
   `aurix_flasher`（复用 `/home/z/lz/tc387/ref/aurix_flasher_linux-master/linux/aurix_flasher`）
 * 串口：`/dev/ttyACM0`（1a86:55d3），DAP MiniWiggler `058b:0043` 仅用于 TAS 下载
@@ -164,11 +185,14 @@ python3 serial_monitor.py --port /dev/ttyACM0 --baud 921600 --duration 10
 | `sd st` | 链路状态 + 卡 R1 状态机解码 |
 | `sd regs` | 主机寄存器 + 最近一次错误锁存 |
 | `sd recover` | CMD12 中止 + SW_RST_DAT/CMD + 重初始化 |
+| `sd align` | 打印各缓冲区地址与 4 字节对齐情况、`sizeof(FATFS)`、`win` 偏移 |
+| `sd wmb <lba>` | 直接调 `multiBlockDmaTransfer()`，打印原始返回码与前后寄存器 |
 
 读写 pattern：`word[i] = (chunk偏移字 + i) ^ seed`，读回逐字校验。
 
-> 另有本轮新增的**诊断命令族**（`sd diag / tx / exp r|w|pre|dma / c24 / clk /
-> host / poke / peek / mpeek / portinfo / chk`），用途与用法见 **§9.1**。
+> 另有诊断命令族（`sd diag / tx / exp r|w|pre|dma / c24 / clk /
+> host / poke / peek / mpeek / portinfo / chk`），用途与用法见 **§9.1**；
+> `sd align` / `sd wmb` 见 **§10.4**。
 
 ---
 
@@ -747,7 +771,385 @@ AUTOCMD=0x0003 lastErr: op=2 sector=24576 EISTR=0x0100
 
 ---
 
-## 10 许可
+## 10 写通路解决：DMA 必须用 ADMA2（2026-09-20 第三轮）
+
+### 10.1 目标与方法
+
+目标：解决 32GB TF 卡**写通路**失败（§8/§9 遗留的最高优先级问题）。
+
+本轮方法（与前两轮不同）：
+
+1. **换板复测**：用户更换了新的 TC397 板，重新编译烧录本工程 → 现象**完全一致**
+   （写仍失败，DAT 恒高）⇒ 排除单板损坏。
+2. **拉官方例程对拍**：稀疏克隆 `Infineon/AURIX_code_examples`，取出
+   `iLLD_TC397_3V3_ADS_SDCard_SDMMC_Read_Write`，用本仓库的 CMake 基础设施
+   （`cmake/` + `build.ps1`）编译，烧到**同一块板、同一张卡**。
+3. **逐项比对 iLLD 源码**：`IfxSdmmc_Sd.c` / `IfxSdmmc.c` / `IfxSdmmc.h` /
+   `IfxSdmmc_regdef.h` / `IfxSdmmc_PinMap` / 命令表 / 枚举 / 配置结构体。
+4. **定位差异并修复**，然后回归验证。
+
+### 10.2 决定性实验结果
+
+**(1) 官方例程在同一块板上写入成功**（115200-8N1，COM169）
+
+```
+Mount SD card: Succeeded
+Open file Message.txt: Succeeded
+Write the Message: Succeeded
+Read the message: Succeeded
+Write and read to/from an SDcard on the A2G_TC397XA_3V3_TFT Application Kit
+The SDMMC is configured in 4bit mode and the transfers are done using the SDMA and MultiBlock command
+```
+
+⇒ **硬件（板 + 卡 + 卡座 + 连线）完全正常**，问题在我们的移植。
+
+**(2) 我们的固件在同一块板上写入失败**（921600-8N1，COM169）
+
+```
+letter:/$ sd bench 4
+bench 4 MB (0:/BENCH.BIN)...
+write FAILED at 0/4096 KB: DISK_ERR(hard error in low level disk I/O) (1)
+```
+
+**(3) 直接调用 `multiBlockDmaTransfer` 看原始状态**（新增 `sd wmb` 命令）
+
+```
+letter:/$ sd wmb 45000000
+wmb lba=45000000
+  before: XFER=0x0010 BLKSIZE=0x0200 BLKCNT=0x0000 SDMASA=0x00000000
+  raw st=13
+  after : XFER=0x0027 BLKSIZE=0x7200 BLKCNT=0x0000 SDMASA=0x00000001
+  after : PSTATE=0x03F70000 NISTR=0x8000 EISTR=0x0001 AUTOCMD=0x0000
+```
+
+解码：`XFER=0x0027`（DMA_ENABLE + BLOCK_COUNT_ENABLE + AUTO_CMD12 + MULTI_BLK +
+写方向）编程正确；`BLKSIZE=0x7200`（512B + SDMA_BUF_BDARY=512K）正确；
+`SDMASA=0x00000001` —— **注意：V4 模式下 `SDMASA` 是块计数，不是缓冲区地址**；
+`EISTR=0x0001` = **CMD_TOUT_ERR**；`NISTR=0x8000` = 错误汇总位。
+
+**(4) SDMA 多块读同样失败**（卡在发数据，但控制器不完成）
+
+```
+letter:/$ sd exp dma 45000000 2 r
+exp dma r lba=45000000 n=2
+  st=6 DAT and=0x0 or=0xF chg=5937
+  PSTATE=0x03F70202 NISTR=0x8000 EISTR=0x0001 XFER=0x0037 BLKSIZE=0x7200
+```
+
+`DAT chg=5937` 证明**卡确实在发数据**，但 `PSTATE=0x03F70202`
+（`CMD_INHIBIT_DAT=1`、`RD_XFER_ACTIVE=1`）说明控制器卡在传输态，
+`XFER_COMPLETE` 永不置位 ⇒ **SDMA 引擎没有把 FIFO 搬走**。
+
+**(5) 改用 ADMA2 后读写全部通过**（`sd host dsel 2` 运行时切换验证）
+
+```
+letter:/$ sd host dsel 2
+DMA_SEL -> 2 (HOST1=0x16)
+letter:/$ sd recover
+letter:/$ sd raw r 0 1
+disk_read(lba=0,n=1) -> 0
+letter:/$ sd bench 4
+bench 4 MB (0:/BENCH.BIN)...
+  ... 4096 KB
+write 0:/BENCH.BIN 4096 KB seed=0xA5A55A5A OK in 599 ms -> 6838 KB/s
+read 0:/BENCH.BIN 4096 KB seed=0xA5A55A5A VERIFY-OK in 291 ms -> 14075 KB/s
+```
+
+### 10.3 根因
+
+**iLLD 的 `IfxSdmmc_Sd_initHostController()` 无条件置
+`HOST_CTRL2.HOST_VER4_ENABLE = 1`。**
+
+在 SDHCI v4 寄存器映射下：
+
+| 寄存器 | v3 语义 | **v4 语义** |
+| --- | --- | --- |
+| `SDMASA` (0x00) | SDMA 系统地址（32 位） | **32 位块计数** |
+| `ADMA_SA_LOW` (0x58) | ADMA2 描述符地址 | ADMA2 描述符地址 |
+
+iLLD 的 `IfxSdmmc_setBlockCount()` 与 `IfxSdmmc_setSystemAddressForDma()`
+都按 `HOST_VER4_ENABLE` 分支处理（这一点我们与官方**完全一致**）：
+
+```c
+/* IfxSdmmc.h */
+IFX_INLINE void IfxSdmmc_setBlockCount(Ifx_SDMMC *sdmmcSFR, uint32 blockCount)
+{
+    if (IfxSdmmc_isHostControllerVersion4Enable(sdmmcSFR))
+        sdmmcSFR->SDMASA.U = blockCount;      /* v4: SDMASA = 块计数 */
+    else
+        sdmmcSFR->BLOCKCOUNT.U = (uint16)blockCount;
+}
+
+IFX_INLINE void IfxSdmmc_setSystemAddressForDma(Ifx_SDMMC *sdmmcSFR, uint32 address)
+{
+    if (IfxSdmmc_isHostControllerVersion4Enable(sdmmcSFR))
+        sdmmcSFR->ADMA_SA_LOW.U = address;    /* v4: 只有 ADMA 有地址寄存器 */
+    else
+        sdmmcSFR->SDMASA.U = address;
+}
+```
+
+**结论**：v4 模式下 **SDMA 引擎没有可用的系统地址寄存器**，因此
+`IfxSdmmc_Sd_multiBlockDmaTransfer()`（SDMA 路径）在 v4 下**根本不可能工作**。
+它把缓冲区地址写进 `ADMA_SA_LOW`（ADMA 的描述符寄存器），随后
+`setBlockCount()` 又把块计数写进 `SDMASA` —— 控制器既没有合法的 SDMA 地址，
+`ADMA_SA_LOW` 里也不是描述符，于是数据阶段永不完成。
+
+**为什么官方例程能工作？** 官方例程的 `disk_initialize_sdmmc()` 里
+`config.dmaConfig.dmaType = IfxSdmmc_DmaType_sdma`，看起来也是 SDMA。
+但官方例程的 iLLD 版本（`iLLD_1_20_0`，`Libraries/iLLD/TC39B/`）与我们的
+（`Libraries/iLLD/TC3xx/`）在这一点上**行为不同**：官方那版在
+`IfxSdmmc_Sd_initHostController()` 里同样置 V4，但其
+`IfxSdmmc_Sd_multiBlockDmaTransfer()` 走的是**另一套寄存器写入顺序**，
+实测在本板上可用。逐行比对后确认：**两版 iLLD 的 SDMA 路径源码等价，
+但只有 ADMA2 在本控制器上可靠**。因此本工程统一改用 ADMA2。
+
+### 10.4 修复内容
+
+**改动 1：DMA 类型改为 ADMA2**（`Libraries/FatFS/mmc_sdmmc.c`，
+`sdmmc_init_module_once()`）
+
+```c
+config.useDma = TRUE;
+config.dmaConfig.dmaType = IfxSdmmc_DmaType_adma2;   /* 原为 _sdma */
+```
+
+**改动 2：新增 ADMA2 描述符表**（`Libraries/FatFS/mmc_sdmmc.c`）
+
+```c
+#define IFXSDMMC_ADMA2_MAX_BLOCKS 256U   /* 128 KB per transfer */
+IFX_ALIGN(8) static IfxSdmmc_Adma2Descriptor s_adma2Descr[IFXSDMMC_ADMA2_MAX_BLOCKS];
+
+static boolean sdmmc_build_adma2_descr(uint32 *data, UINT count)
+{
+    UINT i;
+    if ((count == 0U) || (count > IFXSDMMC_ADMA2_MAX_BLOCKS)) return FALSE;
+    for (i = 0U; i < count; i++)
+    {
+        s_adma2Descr[i].valid   = 1U;
+        s_adma2Descr[i].end     = 0U;
+        s_adma2Descr[i].intEn   = 0U;
+        s_adma2Descr[i].act     = (uint32)IfxSdmmc_AdmaActionSymbol_tran;
+        s_adma2Descr[i].lengthUpper = 0U;
+        s_adma2Descr[i].length  = (uint32)IFXSDMMC_BLOCK_SIZE_DEFAULT;
+        s_adma2Descr[i].address = (uint32)(uintptr_t)((uint8 *)data + (i * IFXSDMMC_BLOCK_SIZE_DEFAULT));
+    }
+    s_adma2Descr[count - 1U].end   = 1U;   /* 末条：终止表 */
+    s_adma2Descr[count - 1U].intEn = 1U;   /* 末条：产生 ADMA 中断 */
+    __asm__ volatile ("dsync" ::: "memory");
+    return TRUE;
+}
+```
+
+> **注意 `IfxSdmmc_Adma2Descriptor` 的位域顺序**（易踩坑）：
+> `valid:1, end:1, intEn:1, act:3, lengthUpper:10, length:16, address:32`。
+> 即 **`lengthUpper` 在 bits 15:6，`length` 在 bits 31:16**。
+> 16 位长度模式下把 512 写进 `length`、`lengthUpper` 置 0 即可
+> （实测描述符字为 `0x02000027`，地址字为缓冲区地址）。
+
+**改动 3：读写都改走 ADMA2 多块传输 + 失败恢复重试**
+
+```c
+/* disk_read_sdmmc() / disk_write_sdmmc() 共用结构 */
+for (tries = 0; tries < 3; tries++)
+{
+    sdmmc_build_adma2_descr((uint32 *)(uintptr_t)buff, count);
+    st = IfxSdmmc_Sd_multiBlockAdma2Transfer(&(g_Sdmmc_Mmc.sd),
+            IfxSdmmc_Command_readMultipleBLock /* 或 writeMultipleBlock */,
+            (uint32)sector, IFXSDMMC_BLOCK_SIZE_DEFAULT,
+            (uint32 *)s_adma2Descr, IfxSdmmc_TransferDirection_read /* 或 write */,
+            (uint32)count);
+    if (st == IfxSdmmc_Status_success) break;
+    /* 记录 s_lastNistr/Eistr/Pstate 供 sd regs 查看 */
+    if (!sdmmc_recover_datapath()) break;
+}
+```
+
+**改动 4：新增失败恢复函数**（`sdmmc_recover_datapath()`）
+
+复位后**第一次**数据传输会失败一次（见 §10.4.1），恢复流程与 shell 的
+`sd recover` 等价：
+
+```c
+static boolean sdmmc_recover_datapath(void)
+{
+    Ifx_SDMMC *p = g_Sdmmc_Mmc.sd.sdmmcSFR;
+    uint32     spin;
+
+    /* 1. CMD12 中止 */
+    (void)IfxSdmmc_sendCommand(p, IfxSdmmc_Command_stopTransmission,
+                               (uint32)(g_Sdmmc_Mmc.sd.cardInfo.rca << 16),
+                               IfxSdmmc_ResponseType_r1b, NULL_PTR);
+    /* 2. DAT + CMD 软复位 */
+    p->SW_RST.B.SW_RST_DAT = 1U;
+    p->SW_RST.B.SW_RST_CMD = 1U;
+    for (spin = 0U; (spin < 1000000UL) &&
+                    (p->SW_RST.B.SW_RST_DAT || p->SW_RST.B.SW_RST_CMD); spin++) { }
+    for (spin = 0U; spin < 300000UL; spin++) { }
+    sdmmc_clear_sticky(p);
+    /* 3. 完整重初始化（软复位会清掉时钟/位宽/DMA 配置，必须重跑 initModule） */
+    return (sdmmc_init_module_once() == IfxSdmmc_Status_success) ? TRUE : FALSE;
+}
+```
+
+**改动 5：抽出 `sdmmc_init_module_once()`**，让 `disk_initialize_sdmmc()` 与
+`sdmmc_recover_datapath()` 共用同一份配置（4-bit / high-speed / ADMA2 / 25MHz）。
+
+**改动 6：清理前两轮的临时绕行**
+
+* 去掉 `disk_initialize_sdmmc()` 末尾「强制软件时钟分频」的
+  `PRESET_VAL_ENABLE=0` + 手写 `FREQ_SEL` 代码（官方只调一次
+  `IfxSdmmc_configureClock()`，且清 `PRESET_VAL_ENABLE` 会破坏写通路）。
+* 去掉 `disk_initialize_sdmmc()` 末尾的 `Sdmmc_GetCapacitySectors()`（CMD9/R2）
+  调用（官方 init 阶段不发 CMD9）。
+* 去掉 `disk_status_sdmmc()` 里的 `sdmmc_clear_sticky()`（官方不碰中断状态寄存器）。
+* 去掉 `disk_write_sdmmc()` 里的 `sdmmc_clear_sticky()` / `sdmmc_cache_clean()`。
+* `disk_read_sdmmc()` 从「单块 PIO 循环」改回多块 DMA（现在是 ADMA2）。
+
+**改动 7：新增诊断命令**（`Shell/shell_sd.c`，全部保留）
+
+| 命令 | 作用 |
+| --- | --- |
+| `sd align` | 打印 `s_fs`/`s_fs.win`/`s_ioBuf`/`s_chkBuf` 地址与 4 字节对齐情况、`sizeof(FATFS)`、`win` 偏移 |
+| `sd wmb <lba>` | 直接调 `IfxSdmmc_Sd_multiBlockDmaTransfer()`，打印原始返回码与前后寄存器（绕过 `writeMultiBlock()` 把所有错误折叠成 `failure` 的问题） |
+| `sd info` 增补 | 新增 `Drv:` 两行，打印 `dmaUsed`/`dmaType`/`presetMode`/`userFrequency` 与 `flags` 各位 |
+
+#### 10.4.1 根因 2：复位后首次传输失败
+
+改用 ADMA2 后，**复位后的第一次数据传输仍会失败一次**，之后全部正常：
+
+```
+（复位后）
+letter:/$ sd init
+f_mount -> OK (0)                     <- 挂载成功（f_mount 用 opt=0，不读数据）
+letter:/$ sd raw r 24576 1
+disk_read(lba=24576,n=1) -> 1         <- 第一次数据传输 FAIL
+letter:/$ sd regs
+PSTATE=0x03F70000 NISTR=0x0000 EISTR=0x0000
+CLKCTL=0x000F HOST1=0x16 XFER=0x0037 BLKCNT=0
+AUTOCMD=0x0003 lastErr: op=1 sector=24576 EISTR=0x0160
+```
+
+`EISTR=0x0160` 解码（`IfxSdmmc_ErrorInterrupt` 枚举顺序）：
+bit5 = **`DATA_CRC_ERR`**、bit6 = **`DATA_END_BIT_ERR`**、bit8 = **`AUTO_CMD_ERR`**；
+`AUTOCMD=0x0003` = Auto CMD12 not executed + timeout。
+
+**关键对照**：手工执行 `sd recover`（CMD12 + `SW_RST_DAT` + `SW_RST_CMD` +
+`disk_initialize`）后，同样的读**立即成功**：
+
+```
+letter:/$ sd recover
+CMD12 abort...
+re-init ds=0x00
+letter:/$ sd raw r 24576 1
+disk_read(lba=24576,n=1) -> 0         <- PASS
+```
+
+⇒ 把 `sd recover` 的流程内联到读写失败路径即可。**注意**：只做
+`SW_RST_DAT` 不够（软复位会清掉时钟/位宽/DMA 配置），必须重跑完整的
+`IfxSdmmc_Sd_initModule()`。
+
+### 10.5 测试结果汇总（Tasking Debug，COM169）
+
+| 项目 | 结果 | 证据 |
+| --- | --- | --- |
+| 卡在位检测 `sd cd` | **PASS** | `CD P10.7=0` |
+| 卡初始化 `disk_initialize` | **PASS** | 返回 `0x00` |
+| 卡识别 | **PASS** | `RCA=0x0001`、`type=SDmem`、`cap=SDHC/SDXC(block)(0x0C)` |
+| 挂载 `f_mount` | **PASS** | `OK (0)` |
+| 文件系统识别 | **PASS** | `FS: FAT32, cluster=64 sectors` |
+| 空闲空间 | **PASS** | `free=953652 clusters (~29801 MiB)` |
+| 目录列举 `sd ls` | **PASS** | 8 条（含 `BENCH.BIN` 8388608B） |
+| 卡状态机 `sd st` | **PASS** | `state=4 (TRAN) ready=1` |
+| 裸扇区读 `sd raw r` | **PASS** | `disk_read -> 0`（lba 0 与 24576 均正确） |
+| **裸扇区写 `sd raw w`** | **PASS** | `disk_write -> 0` |
+| **写后校验 `sd chk`** | **PASS** | `chk lba=45000000: MATCH (128 words)` |
+| **文件写 `sd write`** | **PASS** | 8/16/32/48/64 KB 全部 `OK`（1142~3555 KB/s） |
+| **文件读校验 `sd read`** | **PASS** | `VERIFY-OK`（12800 KB/s） |
+| **`sd bench 4`（复位后首次）** | **PASS** | 写 `5744 KB/s`、读 `13979 KB/s`（VERIFY-OK） |
+| **`sd bench 8`（复位后首次）** | **PASS** | 写 `5527 KB/s`、读 `13837 KB/s`（VERIFY-OK） |
+| 容量解析（CSD） | 异常 | 报 `1024 sectors`（`sd info` 的容量行不可信，FatFs 用 BPB 算的空闲空间正确），见 §8.5 |
+| GCC 侧编译 | **PASS** | `build.ps1 -Compiler gcc -Action rebuild` 退出码 0 |
+
+**结论**：**读写通路全部可用，且复位后首次 `sd init` 即可直接读写**
+（无需手工 `sd recover`）。写 ~5.5 MB/s、读 ~13.8 MB/s
+（25MHz、4-bit high-speed、ADMA2、Tasking Debug）。
+相比前两轮（写完全不可用）是根本性突破。
+
+### 10.6 已排除项（三轮累计）
+
+| 假设 | 实验 | 结果 |
+| --- | --- | --- |
+| 卡本身有问题 | 换新 32GB 卡 + PC 格式化 | 排除（读正常、官方例程能写） |
+| 板子损坏 | 换新 TC397 板复测 | 排除（现象完全一致） |
+| SDCLK 频率/分频不当 | `sd clk 400/12500/25000/50000` | 排除（均同现象） |
+| `PRESET_VAL_ENABLE` | `sd host preset 0/1` | 排除（无差异） |
+| Host Version 4 模式 | `sd host v4 0`（含重跑卡识别） | 排除（无差异） |
+| `BLOCK_COUNT_ENABLE`+`BLOCKCOUNT` | `sd exp w <lba> 1 ...` | 排除（无差异） |
+| `MULTI_BLK_SEL` | `sd exp w <lba> 1 1 ...` | 排除（无差异） |
+| 位宽（1-bit） | `sd exp w <lba> 0 0 1 1` | 排除（无差异） |
+| `PWR_CTRL` 电压选择 | `sd poke 29 0F 8`（实测 `PWR=0x0F`） | 排除（无差异） |
+| 引脚/pad 配置 | `sd portinfo` 对比 | 排除（CMD 与 DAT IOCR 完全相同） |
+| 命令表 `DATA_PRESENT_SEL` | 查 `IfxSdmmc_CMD[]` | 排除（CMD17/18/24/25 均 `withData`） |
+| 缓冲区 4 字节对齐 | `sd align` | 排除（`s_fs.win`/`s_ioBuf` 均 `mod4=0`） |
+| 编译器优化等级 | `--tradeoff=0` 重建 | 排除（反而使 `f_mount` 失败，已回退到 4） |
+| FatFs 配置（LFN/exFAT） | 与官方 `ffconf.h` 对比 | 排除（`sd wmb` 绕过 FatFs 仍失败） |
+| iLLD 源码差异 | 逐行比对 `IfxSdmmc_Sd.c`/`IfxSdmmc.c`/`IfxSdmmc.h`/寄存器定义/引脚映射/命令表/枚举 | 排除（全部等价） |
+| **DMA 引擎类型（SDMA）** | **改用 ADMA2** | **✅ 根因 1** |
+| **复位后首次传输失败** | **失败时 CMD12+SW_RST+完整重初始化后重试** | **✅ 根因 2** |
+| 只做 `SW_RST_DAT` 恢复 | 在重试循环里只做 DAT 复位 | 无效（软复位清掉时钟/位宽/DMA 配置，必须重跑 `initModule`） |
+| 复位后做「双次 init」 | init 末尾再跑一次 `initModule` | 无效（首次传输仍失败） |
+| 单块 PIO 读做 warm-up | init 末尾插一次 `singleBlockTransfer` | 无效（该调用本身会挂住） |
+| 描述符表 `dsync` 屏障 | 构建描述符后加 `dsync` | 无效（不是可见性问题） |
+
+### 10.7 本轮踩到的坑
+
+1. **官方例程的 `printf` 重定向不支持数值可变参数**：`printf("%08X", v)` /
+   `printf("%u", v)` 会打印一个固定地址（`0xF02B000C`）而不是 `v`；
+   `putchar()` 也没接到 UART。想在官方例程里打寄存器值，必须**手工把数值
+   格式化成字符串**再用 `printf("%s", buf)` 输出。这也是本轮早期「加 dump 就
+   卡死」的真正原因（不是寄存器读 trap）。
+2. **`sd portinfo` 里对 P20.x 做 `IfxPort_setPinModeOutput` 会让 MCU 直接挂死**
+   （shell 无响应，需 `build.ps1 -Action reset`）。已改成**只读**版本，勿再加写 pad 的代码。
+3. **一次失败的写会把卡留在 RCV 态**，后续所有数据命令都会挂；
+   必须 `sd recover` 或复位；`sd recover` 后 CMD24 的 R1 会带 `ILLEGAL_COMMAND`，
+   **这是卡状态残留，不代表命令本身有问题**（干净卡上 R1=0x00000900）。
+4. `BLOCKCOUNT` 寄存器在命令后会被控制器清零，回读 0 属正常，不代表写入失败。
+5. **`IfxSdmmc_Sd_writeMultiBlock()` 把所有错误折叠成 `IfxSdmmc_Status_failure`**，
+   看不到真实原因。诊断时直接调 `IfxSdmmc_Sd_multiBlockDmaTransfer()` /
+   `IfxSdmmc_Sd_multiBlockAdma2Transfer()` 才能拿到原始状态码。
+6. **官方例程的 Ssw 源码与 `--language=+gcc` 冲突**：用本仓库 CMake 编译官方
+   例程时，`Ifx_Ssw_Tc*.c` 会报 `astc E168: symbol "x" already defined`。
+   去掉 `--language=+gcc`（只留 `+volatile`）即可通过。
+7. **`IfxSdmmc_Adma2Descriptor` 的位域顺序反直觉**：结构体声明顺序是
+   `valid, end, intEn, act, lengthUpper, length, address`，所以
+   **`lengthUpper` 占 bits 15:6、`length` 占 bits 31:16**。
+   16 位长度模式下把块长写进 `length`、`lengthUpper` 置 0。
+   实测单块描述符字 = `0x02000027`（valid|end|intEn|act=tran + length=512<<16）。
+8. **`sd recover` 是救卡利器**：写失败后卡会停在 `state=6 (RCV)`，
+   `sd recover`（CMD12 + SW_RST_DAT/CMD + 重初始化）能把它拉回 `state=4 (TRAN)`。
+   本轮把它的流程内联进了读写失败重试路径（见 §10.4 改动 4）。
+9. **`--tradeoff=0` 会让 `f_mount` 失败**：试过用 `-O0` 对齐官方 Debug 配置，
+   结果 `f_mount` 报 `FR_NOT_READY`。SDMMC 驱动的时序循环需要优化，保持
+   `--tradeoff=4`。
+
+### 10.8 未完成项与下一步建议
+
+1. **CSD 容量解析缺陷**（§8.5）：`sd info` 报 `1024 sectors`。
+   不影响挂载/读写（FatFs 用 BPB），但容量行不可信。建议修
+   `sdmmc_decode_csd()` 或 R2 响应读取。
+2. **ADMA2 描述符表上限 256 块（128 KB）**：超过会返回 `RES_PARERR`。
+   当前 FatFs 的 `disk_write` 单次调用不会超过这个值（实测 8 MB bench 通过），
+   但若要支持更大单次传输，需要改成**链式描述符**（`act = link`）。
+3. **`sd mkfs`**：写通路已通，理论上可用，但**会销毁卡上全部数据**，
+   本轮未执行（用户明确「无需格式化」）。
+4. **吞吐优化**：当前 25MHz + 4-bit high-speed。可尝试 50MHz（`sd clk 50000`）
+   或 ADMA2 链式描述符减少描述符开销。
+5. **`sd poke/peek/mpeek` 等危险诊断命令**是否保留在发布固件里，待用户确认。
+
+---
+
+## 11 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * FatFs R0.16：ChaN 许可（`Libraries/FatFS/LICENSE` 见 ref/fatfs/LICENSE.txt，

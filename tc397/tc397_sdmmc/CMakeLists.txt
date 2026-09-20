@@ -100,6 +100,9 @@ if(AURIX_TOOLCHAIN_TYPE STREQUAL "TASKING")
     set(CMAKE_C_FLAGS_RELEASE "" CACHE STRING "" FORCE)
 
     # TASKING C 编译选项（与 ADS TriCore Debug(TASKING) 配置对应）。
+    # NOTE (2026-09-20, round 6): --tradeoff=0 was tried to match the official
+    # example's -O0 Debug build, but it makes f_mount() fail with FR_NOT_READY
+    # (the SDMMC driver needs the optimisation for its timing loops). Keep 4.
     target_compile_options(${PROJECT_NAME} PRIVATE
         -D__CPU__=${AURIX_CPU}
         --language=+volatile,+gcc
