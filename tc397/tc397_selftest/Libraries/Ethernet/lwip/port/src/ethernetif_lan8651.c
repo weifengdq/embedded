@@ -108,7 +108,16 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
 
     if (lan8651_transmit(dev, dev->tx_frame, wire_len) != kLan8651Status_Ok)
     {
-        Ifx_Lwip_printf("tx_error len=%u", (unsigned)wire_len);
+        extern uint32_t g_lan8651_tx_fail;
+        g_lan8651_tx_fail++;
+        /* Only report the first few failures: this runs in the lwIP TX path and
+         * a blocked UART write here would make the situation worse.  The total
+         * count is available through `t1stat`. */
+        if (g_lan8651_tx_fail <= 8U)
+        {
+            Ifx_Lwip_printf("tx_error len=%u (total %lu, see t1stat)",
+                            (unsigned)wire_len, (unsigned long)g_lan8651_tx_fail);
+        }
         return ERR_IF;
     }
 

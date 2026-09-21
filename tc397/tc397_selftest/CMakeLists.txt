@@ -203,7 +203,17 @@ else()
         -fmessage-length=0
         -fno-common
         -fstrict-volatile-bitfields
-        -fdata-sections
+        # NOTE: NO -fdata-sections! TriCore GCC (13.x, /opt/tricore-gcc) puts each
+        # static into a BARE .<sym> section (e.g. .shellList, not .bss.shellList).
+        # Lcf_Gnuc_Tricore_Tc.lsl only collects *(.data)/*(.data.*)/*(.bss)/*(.bss.*)
+        # into .data/.bss and only those output sections are listed in the
+        # copy/clear tables -> a bare section is an ORPHAN: it is placed but never
+        # zeroed at startup, so the variable keeps power-on garbage.  Observed in
+        # tc397_sdmmc (see its README 1.3): shellList[1..4] wild pointers,
+        # shellGetCurrent() jumped through garbage -> no serial output at all.
+        # The ADS tricore-gcc11 build emits .bss.<sym> and is not affected, but
+        # Ubuntu builds with /opt/tricore-gcc are.  Keep -ffunction-sections
+        # (code needs no initialisation, so --gc-sections still works on code).
         -ffunction-sections
         -mcpu=${AURIX_CPU}
     )

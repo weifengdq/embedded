@@ -19,7 +19,7 @@
 | 项 | 内容 |
 | --- | --- |
 | 板子 | TC397XX AppKit（LFBGA292，3V3） |
-| 调试串口 | **COM169**（USB-Enhanced-SERIAL CH343，`VID_1A86&PID_55D3`），921600-8N1 |
+| 调试串口 | **COM162**（USB-Enhanced-SERIAL CH343，`VID_1A86&PID_55D3`），921600-8N1 |
 | 调试器 | DAP MiniWiggler（`VID_058B&PID_0043`）+ TAS Server |
 | 烧录 | `C:\Infineon\AURIX-Studio-1.10.36\tools\AurixFlasherSoftwareTool_v3.0.18\AURIXFlasher.exe` |
 | TF 卡 | 32GB microSD，FAT32（≈29818 MiB，cluster 64 扇区 = 32 KB） |
@@ -284,11 +284,11 @@ FlexRay 未启动时显示 `FR0A not prepared / FR1A not prepared`（正常：�
 | UART0 (921600 8N1) | 4 KB 连续发送 | 33725 µs（理论 33333 µs，误差 +1.2%，见下面第 2 条） |
 | CAN0→CAN1 | 64 B FD+BRS 帧，500 ms 窗口 | **6900 frame/s**，≈ 3532 kbit/s 净荷，RX 无溢出 |
 | FlexRay FR0A→FR1A | 静态槽 11，5 ms 周期 | **200 frame/s**（= 1 帧/周期，单槽上限；91 槽理论 ≈18 kframe/s） |
-| SD 卡（32 KB 块） | 2 MB 写 / 读 | 写 **10778 KB/s**，读 **17355 KB/s**，校验 OK |
+| SD 卡（32 KB 块） | 2 MB 写 / 读 | 写 **11130 KB/s**，读 **17355 KB/s**，校验 OK |
 | SD 卡（32 KB 块） | 8 MB 写 / 读 | 写 **8402 KB/s**，读 **17319 KB/s**，校验 OK |
 | SD 卡（8 KB 块，`sd bench 8`） | 8 MB 写 / 读 | 写 2273 KB/s，读 12100 KB/s |
-| 10BASE-T1S | iperf2 TCP，PC 侧 | **8.79 Mbits/sec**（15.8 MB / 15 s） |
-| 1000BASE-T1 | iperf2 TCP，PC 侧 | **342 Mbits/sec**（613 MB / 15 s） |
+| 10BASE-T1S | iperf2 TCP，PC 侧 | **9.05 Mbits/sec**（21.6 MB / 20 s，首秒即满速） |
+| 1000BASE-T1 | iperf2 TCP，PC 侧 | **386 Mbits/sec**（921 MB / 20 s） |
 | 10BASE-T1S / 1000BASE-T1 | PC↔板 ping | 4/4，<1 ms |
 | 1000BASE-T1 | 板→PC ping | 4/4，0~1 ms |
 
@@ -301,7 +301,137 @@ FlexRay 未启动时显示 `FR0A not prepared / FR1A not prepared`（正常：�
    所以真正被线速"节流"的只有 3072 B → 理论 33333 µs。实测 33725 µs（+1.2%），说明 921600 波特率是对的。
    `selftest` 里的 UART 检查不靠这个时间，而是直接从 `BITCON/BRG` 反算波特率（921659，误差 0.006%）。
 
+### 5.2 修复记录：串口被阻塞 + T1S 首秒掉速（**同一个根因**，2026-09-21）
+
+用户报告两个现象：
+
+1. 串口第一次回车很久才出来，输入偶尔"失灵"；
+2. 10BASE-T1S 跑 iperf 时先打印 `tx_error`，且 0~2 s 速率明显偏低：
+
+```
+letter:/$ tx_error len=60IPERF report: type=0, remote: 192.168.1.1:7621, total bytes: 38, duration in ms: 22216728, kbits/s: 0
+[376]  0.0- 1.0 sec   704 KBytes  5.77 Mbits/sec      <- 首秒只有 2/3 速率
+[376]  1.0- 2.0 sec  1.08 MBytes  9.04 Mbits/sec
+[376]  2.0- 3.0 sec  1.08 MBytes  9.04 Mbits/sec
+```
+
+#### 测量（修复前）
+
+`C:\github\embedded\tc397\temp\st_uart_probe.py`（发送 `\r` 后测"首字节返回延迟"）：
+
+```
+== CR -> first echo byte latency (10x) ==        # 空闲时
+  #0  1.0 ms   #1  1.0 ms   #2  0.9 ms   #3  1.0 ms   #4  2.0 ms
+  #5  2.2 ms   #6  1.0 ms   #7  1.9 ms   #8  2.1 ms   #9  0.9 ms
+
+== 同一次测量，T1S 侧同时跑 iperf（temp\st_netload.ps1）==
+  #0  nan ms      <- 3 s 内一个字节都没回
+  #1  2.4 ms
+  #2  nan ms
+  #3  2.1 ms
+  #4  nan ms
+  #5  2.2 ms
+  #6  nan ms
+  #7  0.8 ms
+  #8  276.6 ms
+  #9  1.1 ms
+```
+
+即：**空闲时串口正常（~1 ms），一旦 T1S 有流量，串口会成片地"失聪"**（`nan` = 3 s 无响应）。
+另外 `300 字符粘贴` 在空闲时无丢字符（`missing chars: 0`），说明不是波特率/驱动问题。
+
+#### 根因
+
+`Ifx_Lwip_pollTimerFlags()` 把**整个 lwIP 定时器处理放在关中断区里**：
+
+```c
+boolean interruptState = IfxCpu_disableInterrupts();
+timerFlags = lwip->timerFlags; lwip->timerFlags = 0;
+if (timerFlags & IFX_LWIP_FLAG_TCP_FAST) tcp_fasttmr();   /* 会发延迟 ACK！ */
+if (timerFlags & IFX_LWIP_FLAG_TCP_SLOW) tcp_slowtmr();   /* 会重传！       */
+...
+IfxCpu_restoreInterrupts(interruptState);
+```
+
+这段代码在 `tc397_lwip_iperf`（只有 GETH 一个网口）里是**无害**的：GETH 的
+`low_level_output()` 只是填 DMA 描述符，不等中断。但本工程加了第二个网口，
+**LAN8651 走 SPI，`low_level_output()` 必须等 QSPI4 中断**才能完成一笔传输：
+
+```
+tcp_fasttmr()/tcp_slowtmr()          <- 关中断
+  -> tcp_output() -> ip4_output_if()
+     -> netif->linkoutput = low_level_output()
+        -> lan8651_transmit() -> lan8651_spi_transfer()
+           -> IfxQspi_SpiMaster_exchange() 启动传输
+           -> 等 QSPI4 TX/RX 中断把 sending/onTransfer 清零
+              *** 中断被屏蔽 => 永远等不到 ***
+           -> 原来的超时是 2,000,000 次循环 ≈ 300 ms，于是白等 300 ms
+           -> 返回 Timeout => 这一帧被丢掉
+```
+
+于是：
+
+| 现象 | 机制 |
+| --- | --- |
+| `tx_error len=60` | 60 字节 = 被填充到最小帧长的 **TCP 延迟 ACK**（14+20+20=54 → pad 60）。它在 `tcp_fasttmr()` 里发出，因关中断必然超时被丢 → 对端 RTO（≥1 s）→ 首 1~2 s 掉速 |
+| 串口"失灵" | 那 300 ms 里中断全屏蔽，ASCLIN 的 8 字节硬件 RX FIFO 溢出 → **字节真的丢了**；同时主循环被卡住，回显得等 300 ms 甚至更久（多个 ACK 连续超时就叠成数秒） |
+| `IPERF report ... duration in ms: 22216728` | 会话被上面这种丢帧/复位折腾出来的异常结束报告，属同一现象的副产物 |
+
+#### 修复
+
+**主修（`Libraries/Ethernet/lwip/port/src/Ifx_Lwip.c`）**：lwIP 定时器**不再关中断**运行。
+只在"取走并清空 timerFlags"这一小段关中断，随后开着中断跑定时器：
+
+```c
+interruptState = IfxCpu_disableInterrupts();
+timerFlags       = lwip->timerFlags;
+lwip->timerFlags = 0;
+IfxCpu_restoreInterrupts(interruptState);
+/* 下面 tcp_fasttmr/tcp_slowtmr/etharp_tmr 开着中断跑 */
+```
+
+**为什么安全**：关中断的理由是"RX ISR 会调用不可重入的 lwIP 核"。但本工程的 GETH RX ISR
+**明确不碰 lwIP**（`Ifx_Lwip.c` 里 `ISR_Geth_Rx` 注释：*no lwIP calls here*，收包只清
+DMA 状态位，真正的排空在主循环 `Ifx_Lwip_pollReceiveFlags()`）。全工程所有 ISR 都不调用
+lwIP 核（QSPI4/QSPI2/ASCLIN/STM 都只是置标志或推环形缓冲），所以不存在重入风险。
+
+**辅修 1（`Libraries/LAN8651/lan8651.c`）**：`lan8651_spi_transfer()` 的超时从
+"2,000,000 次循环"（≈300 ms）改成**基于 STM 的 1 ms**（68 字节 @20 MHz 只需 27 µs，
+1 ms 已是 35 倍余量），并加了 3 次重试 + 状态复位（清 iLLD 的 `onTransfer`/`sending`、
+清 QSPI 事件标志、释放 CS），避免一帧丢失就换来一次 TCP 重传。
+同时把失败计数暴露出来（`t1stat` 新增一行）：
+
+```
+SPI timeouts=0 busy=0 recovered=0 | TX hdrb=0 fail=0
+```
+
+**辅修 2（`ethernetif_lan8651.c`）**：`tx_error` 只在前 8 次打印（并且带上累计次数），
+避免在 TX 路径里刷串口把问题放大。
+
+#### 修复后实测
+
+```
+== 空闲 ==                          == T1S iperf 同时进行 ==
+  #0  2.3 ms                          #0  2.0 ms
+  #1  2.1 ms                          #1  2.5 ms
+  #2  2.1 ms                          #2  1.0 ms
+  ...                                 ...
+  avg 2.1 ms                          avg 1.9 ms      <- 不再有 nan/276 ms
+
+>>> t1stat
+SPI timeouts=0 busy=0 recovered=0 | TX hdrb=0 fail=0
+
+PS> .\tools\iperf.exe -c 192.168.1.100 -p 5001 -t 20 -w 64K -i 2
+[376]  0.0- 2.0 sec  2.16 MBytes  9.04 Mbits/sec     <- 首段即满速，无 tx_error
+[376]  2.0- 4.0 sec  2.16 MBytes  9.04 Mbits/sec
+...
+[376]  0.0-20.1 sec  21.6 MBytes  9.05 Mbits/sec     <- 修复前 8.85~8.90
+```
+
+千兆侧同样受益（同一段代码）：`1000BASE-T1` 从 342 Mbps → **386 Mbps**。
+
 ---
+
 
 ## 6. 网络端到端测试（需要 PC）
 
@@ -333,13 +463,13 @@ PS> ping -n 4 192.168.1.100
 PS> ping -n 4 192.168.0.100
 来自 192.168.0.100 的回复: 字节=32 时间<1ms TTL=255   （4/4，0% 丢失）
 
-PS> .\tools\iperf.exe -c 192.168.1.100 -p 5001 -t 15 -w 32K -M 1024
+PS> .\tools\iperf.exe -c 192.168.1.100 -p 5001 -t 20 -w 64K
 [ ID] Interval       Transfer     Bandwidth
-[376]  0.0-15.0 sec  15.8 MBytes  8.79 Mbits/sec
+[376]  0.0-20.1 sec  21.6 MBytes  9.05 Mbits/sec      （修复前 8.85~8.90）
 
-PS> .\tools\iperf-2.2.1-win64.exe -c 192.168.0.100 -p 5001 -t 15 -w 16K
+PS> .\tools\iperf-2.2.1-win64.exe -c 192.168.0.100 -p 5001 -t 20 -w 64K
 [ ID] Interval       Transfer     Bandwidth
-[  1] 0.00-15.01 sec   613 MBytes   342 Mbits/sec
+[  1] 0.00-20.01 sec   921 MBytes   386 Mbits/sec    （修复前 342）
 ```
 
 板端反向 ping（板 → PC）：
@@ -360,8 +490,8 @@ PING statistics: 4 sent, 4 received, 0% loss
 
 | 指标 | 独立工程 | 本工程 | 说明 |
 | --- | --- | --- | --- |
-| 10BASE-T1S iperf | 8.66 Mbps（`tc397_lan8651_t1s`） | **8.79 Mbps** | 瓶颈是 10 Mbit/s 线速，一致 |
-| 1000BASE-T1 iperf | 359 Mbps（`tc397_lwip_iperf`） | **342 Mbps** | 同一 PC、同一 `TCP_WND=16K`，受 PC 侧中断裁决限制，两次测量差 5% 以内 |
+| 10BASE-T1S iperf | 8.66 Mbps（`tc397_lan8651_t1s`） | **9.05 Mbps** | 瓶颈是 10 Mbit/s 线速，一致 |
+| 1000BASE-T1 iperf | 359 Mbps（`tc397_lwip_iperf`） | **386 Mbps** | 同一 PC，受 PC 侧中断裁决限制；修复 lwIP 定时器关中断问题后从 342 → 386 |
 | SD 写 / 读 | 4855 / 11505 KB/s（`tc397_sdmmc`，8 KB 缓冲） | **10778 / 17355 KB/s**（32 KB 缓冲） | 缓冲放到 LMU 后 DMA 不再和 CPU 抢 DSPR0，且 32 KB = 1 cluster |
 
 > 千兆 342 Mbps 与 GCC/Ubuntu 基线 592 Mbps 的差距在 **PC 侧**（网卡中断裁决），不是板子：
@@ -525,6 +655,10 @@ LINK   : UP   1000M full-duplex
 | 10 | `Configurations/ConfigurationIsr.h` | 新增 QSPI2(50/51/52)、QSPI4(60/61/62) 优先级 | GETH 保持 100/101 最高；QSPI2/QSPI4 用不同优先级避免同级别互不抢占 |
 | 11 | `build.ps1` | ninja 优先用 AURIX Studio 自带的；**每次构建前删除 `.ninja_deps`** | 见第 9 节踩坑 1 |
 | 12 | `App/selftest.c/.h`、`Shell/shell_port.c`、`Cpu0_Main.c` | **新增** `selftest`/`stat`/`bench` 命令与合并后的启动/主循环 | 本工程的核心交付 |
+| 13 | `CMakeLists.txt`（GCC 分支） | **去掉 `-fdata-sections`**（保留 `-ffunction-sections`） | TriCore-GCC 会把每个静态变量放到裸 `.<sym>` 段，LSL 的 copy/clear 表只覆盖 `.data/.bss` → 孤儿段，启动不初始化。详见第 9 节踩坑 10（与 `tc397_sdmmc` §1.3 同一个坑） |
+| 14 | `Libraries/.../Ifx_Lwip.c` | `Ifx_Lwip_pollTimerFlags()` 的 lwIP 定时器**不再关中断运行** | **串口被阻塞 + T1S 首秒掉速的根因**，详见 §5.2 |
+| 15 | `Libraries/LAN8651/lan8651.c/.h` | SPI 超时改成基于 STM 的 1 ms + 3 次重试 + 状态复位；新增 `SPI timeouts/busy/recovered`、`TX hdrb/fail` 计数器 | 原来 2,000,000 次循环 ≈ 300 ms 的超时会卡死主循环；计数器从 `t1stat` 可读 |
+| 16 | `Libraries/.../ethernetif_lan8651.c` | `tx_error` 只前 8 次打印（带累计值） | 在 TX 路径里刷串口会把问题放大 |
 
 ---
 
@@ -562,6 +696,29 @@ LINK   : UP   1000M full-duplex
 8. **串口脚本要能放大单条命令的空闲超时**：`selftest`（FlexRay 冷启动 ~1 s）、`sd mkfs`（3.7 s）
    中途可能长时间无输出。`tc397/temp/st_shell.py` 支持 `@<秒>:<命令>` 前缀。
 9. **烧录偶发 `Cannot initialize device connection`**（约 1/5 概率）：等 3 秒重试即可，与固件无关。
+10. **TriCore-GCC 的 `-fdata-sections` 会产生“孤儿段”（家族工程通用坑）**
+    tri­core-gcc（13.x，`/opt/tricore-gcc`）的 `-fdata-sections` 把每个静态变量放到**裸 `.<sym>` 段**
+    （如 `.shellList`，而不是 `.bss.shellList`）。而 `Lcf_Gnuc_Tricore_Tc.lsl` 只把
+    `*(.data)/*(.data.*)/*(.bss)/*(.bss.*)` 收进 `.data/.bss`，copy/clear 表也只列这些输出段
+    → 裸段虽被分配但**启动时不会被清零**，变量保留上电随机值。
+    实测后果（`tc397_sdmmc` README §1.3）：`shellList[1..4]` 野指针，`shellGetCurrent()` 跳野指针 trap，
+    现象是**上电串口无输出**，小固件/换命令数时又能碰巧跑起来。
+    **修复：`CMakeLists.txt` 去掉 `-fdata-sections`**（保留 `-ffunction-sections`，代码段不需初始化，
+    `--gc-sections` 仍能删无用代码）。注意 ADS 的 tricore-gcc11 11.3.1 会正常生成 `.bss.<sym>`，
+    所以 Windows GCC 构建看不出问题，**只有 Ubuntu `/opt/tricore-gcc` 会中招**——本工程 `build.sh` 就是走那条路。
+11. **“关中断跑 lwIP 定时器”在多网口下是致命的**（本项目最重要的一条）
+    原 `tc397_lwip_iperf` 把 `tcp_fasttmr/tcp_slowtmr/etharp_tmr` 放在关中断区里，理由是
+    “RX ISR 会调 lwIP 核”。但本工程的 GETH RX ISR **明确不碰 lwIP**（只清 DMA 状态位，
+    真正排空在主循环），所以关中断毫无必要，而且会死锁：`tcp_fasttmr()` 发的延迟 ACK
+    要经过 LAN8651 的 `low_level_output()`，而它必须等 QSPI4 中断才能完成一笔 SPI 传输——
+    中断被屏蔽 → 必然超时 → 丢帧 + 主循环被卡住（+UART RX FIFO 溢出丢字符）。
+    现象就是 §5.2 里的 `tx_error len=60` + 首秒掉速 + 串口成片失聪。
+    **写第二个（SPI/中断驱动的）netif 时，先确认 lwIP 定时器不是在关中断下跑的。**
+12. **SPI 超时不要用“循环次数”**：`LAN8651_SPI_TIMEOUT_LOOPS = 2000000` 在不同优化级别/主频下
+    含义差很多（本板上约 300 ms），一旦超时就是把主循环整个卡住。用 STM 换算成时间（本项目 1 ms）。
+13. **调试串口的 COM 号会变**：本机曾从 `COM169` 变成 `COM162`（CH343 重新枚举）。
+    脚本里传的端口不对会报 `could not open port`；先用
+    `python -c "import serial.tools.list_ports as lp;[print(p.device,p.description) for p in lp.comports()]"` 确认。
 
 ---
 
@@ -571,7 +728,10 @@ LINK   : UP   1000M full-duplex
 
 | 文件 | 用途 |
 | --- | --- |
-| `st_shell.py` | 本工程主力串口驱动：`python st_shell.py -p COM169 --boot 6 "@180:selftest all"` |
+| `st_shell.py` | 本工程主力串口驱动：`python st_shell.py -p COM162 --boot 6 "@180:selftest all"` |
+| `st_uart_probe.py` | 串口响应测量：CR 首字节延迟 ×10 + 300 字符粘贴回显完整性 |
+| `st_netload.ps1` | 一边跑 iperf 一边测串口延迟（复现/验证 §5.2 那个问题） |
+| `st_txerr.ps1` | 跑 iperf 同时抓串口日志，专门找 `tx_error` |
 | `bld.ps1` | 直接调 ninja 构建（绕过 build.ps1，方便看完整错误） |
 | `memsum2.ps1` | 从 `.map` 提取 "Memory usage" 表 |
 | `cmpdir.ps1` | 比较两个工程同名目录的文件差异（合并前确认库一致性） |
@@ -584,7 +744,7 @@ LINK   : UP   1000M full-duplex
 2. LAN8651 netif 名字是 `t11`（它是第二个加入 lwIP 的 netif，`num=1`）；纯属显示问题。
 3. `sd big` / `sd erase` 单次最大 96 块（48 KB）——为省内存从 320 块降下来的；
    要更大需要恢复 `s_bigBuf` 尺寸并确认 LMU 余量（当前 LMU 还空 500 KB，可以调）。
-4. 千兆 342 Mbps 受 PC 侧网卡中断裁决限制；要在板侧继续挖需先解决 PC 侧
+4. 千兆 386 Mbps 仍受 PC 侧网卡中断裁决限制；要在板侧继续挖需先解决 PC 侧
    （见 `../tc397_lwip_iperf/README.md` §7.7）。
 5. `sd bench`（8 KB 缓冲）比 `bench sd`（32 KB 缓冲）慢约 4.5 倍，两者都保留了，便于对照。
 
@@ -592,7 +752,8 @@ LINK   : UP   1000M full-duplex
 
 ## 12. 相关文档
 
-- `../handover/2026-09-21_tc397_selftest.md` —— 本次会话的交接说明
+- `../handover/2026-09-21_tc397_selftest.md` —— 第一轮（合并 8 个外设 + selftest/stat/bench）交接说明
+- `../handover/2026-09-21_tc397_selftest_round2.md` —— 第二轮（串口阻塞 / T1S 首秒掉速 / 孤儿段）交接说明
 - `../tc397_uart_lettershell/README.md`、`../tc397_adc/README.md`、`../tc397_can_x12/README.md`、
   `../tc397_flexray/README.md`、`../tc397_tlf35584/README.md`、`../tc397_sdmmc/README.md`、
   `../tc397_lan8651_t1s/README.md`、`../tc397_lwip_iperf/README.md` —— 各外设的详细文档

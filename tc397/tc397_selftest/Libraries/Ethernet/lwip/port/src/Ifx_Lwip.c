@@ -347,17 +347,37 @@ void Ifx_Lwip_pollTimerFlags(void)
 {
     Ifx_Lwip *lwip = &g_Lwip;
     uint16    timerFlags;
+    boolean   interruptState;
 
-    /* disable interrupts */
-    boolean interruptState = IfxCpu_disableInterrupts();
+    /* Snapshot/clear the flags in a short critical section, then run the lwIP
+     * timers WITH INTERRUPTS ENABLED.
+     *
+     * History: the original port ran the whole timer block with interrupts
+     * disabled because the GETH RX ISR used to call into the (non re-entrant)
+     * lwIP core.  In this port the RX ISR explicitly does NOT touch lwIP
+     * (see ISR_Geth_Rx: "no lwIP calls here"; packets are drained from the
+     * main loop), so nothing else can re-enter the stack and the critical
+     * section is not needed.
+     *
+     * It is not just unnecessary, it is harmful now that lwIP drives a second
+     * netif over SPI: tcp_fasttmr()/tcp_slowtmr() send delayed ACKs and
+     * retransmissions, and the LAN8651 TX path has to WAIT FOR THE QSPI4
+     * INTERRUPT to finish each transaction.  With interrupts masked that wait
+     * could never complete, so every delayed ACK burned the whole SPI timeout
+     * (~300 ms with the old loop-counter timeout) and was then dropped.  The
+     * observable symptoms were: iperf on 10BASE-T1S printing "tx_error len=60"
+     * (a lost 60-byte padded ACK -> TCP RTO -> the first 1-2 s at 1/3 rate) and
+     * a console that went deaf for hundreds of ms at a time (UART RX bytes are
+     * lost while interrupts are masked). */
+    interruptState = IfxCpu_disableInterrupts();
 
     timerFlags       = lwip->timerFlags;
     lwip->timerFlags = 0;
 
-    /* NOTE: interrupts stay disabled while running the lwIP timer functions:
-     * the RX ISR calls into the (non re-entrant) lwIP core, so tcp timers
-     * must not run concurrently. All handlers below are short (<<100us);
-     * the 32-entry RX ring absorbs line-rate bursts of ~390us. */
+    IfxCpu_restoreInterrupts(interruptState);
+
+    /* NOTE: all handlers below are short (<<100us); the 32-entry RX ring
+     * absorbs line-rate bursts of ~390us. */
 
 #if LWIP_DHCP
     if (timerFlags & IFX_LWIP_FLAG_DHCP_COARSE)
@@ -450,9 +470,8 @@ void Ifx_Lwip_pollTimerFlags(void)
             }
         }
     }
-
-    /* enable interrupts again */
-    IfxCpu_restoreInterrupts(interruptState);
+    /* (no IfxCpu_restoreInterrupts() here - interrupts are enabled again right
+     * after the flag snapshot, see the note at the top of this function.) */
 }
 
 
