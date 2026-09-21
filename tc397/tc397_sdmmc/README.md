@@ -5,12 +5,32 @@ CMake/Ninja** 下构建，目标 **TC397XX 292pin**。在 UART Letter-Shell 基�
 P14.0/P14.1, 921600-8N1，P13.0 LED）之上，新增 **SDMMC0 SD 卡 + FatFs 文件系统**
 完整测试能力。
 
-> **当前状态（2026-09-20 第三轮攻坚 — 写通路已解决 ✅）**：
-> **读通路 + 写通路全部 PASS**。`sd bench 8` 实测
-> **写 5527 KB/s、读 13837 KB/s（VERIFY-OK）**，且**复位后首次 `sd init` 即可用**
-> （无需手工 `sd recover`）。
+> **当前状态（2026-09-21 第四轮 — 剩余问题全部解决 ✅）**：
+> **读/写/格式化（`sd mkfs fat32` + `sd mkfs exfat`）全部 PASS**。本轮实测：
+> `sd bench 8` → 写 **4855 KB/s**、读 **11505 KB/s**（VERIFY-OK）；
+> exFAT 卷上 `sd bench 4` → 写 5178 KB/s、读 11505 KB/s（VERIFY-OK）；
+> `sd mkfs fat32` 3.69 s / `sd mkfs exfat` 2.36 s，格式化后空卷、容量 29814 MiB 正确；
+> `sd big r 320` 单次调用 20698 KiB/s（VERIFY-OK）。
 >
-> **根因 1（写通路完全不可用）**：**DMA 类型必须用 ADMA2，不能用 SDMA。**
+> **本轮两个新根因（都在胶水层，见 §11）**：
+> 1. **`sdmmc_recover_datapath()` 给 CMD12 传了 `NULL_PTR` 响应指针** →
+>    `IfxSdmmc_readResponse()` 无条件解引用 `response->resp01` → **向地址 0 写**
+>    → 数据访问 Trap，整个 MCU 静默。表现就是 `sd mkfs` / `sd erase` /
+>    `sd big w` 等「卡死无输出」。只有 CMD12 真的完成时才触发（卡还在忙时
+>    CMD12 在 `sendCommand()` 内就超时返回，不碰响应），所以读探测和 shell 的
+>    `sd recover`（传的是真缓冲区）一直正常。
+> 2. **每次模块（重）初始化后，第一个数据传输必须是读**：把写作为第一个数据
+>    传输会稳定失败（`IfxSdmmc_Status_dataError`），而且重试必然再失败
+>    ——因为每次重试都会 `sdmmc_recover_datapath()` 重新初始化主机，重新制造
+>    同一条件。修复：初始化成功后补一次丢弃式 1 块读（`sdmmc_prime_datapath()`）。
+>
+> 另外两个重要结论：**本 IP 不锁存 136 位 R2 响应**（CSD 读不到 → 容量改用
+> 只读 LBA 探测），以及 **iLLD 内部固定轮询超时约 15 ms**，因此单条写命令
+> 默认限 128 块（64 KB）、读 256 块（128 KB），更大的请求自动分块（不再
+> 返回 `RES_PARERR`）。详见 **§11**。
+>
+> **历史状态（2026-09-20 第三轮 — 写通路已解决）**：
+> **根因（写通路完全不可用）**：**DMA 类型必须用 ADMA2，不能用 SDMA。**
 > iLLD 的 `IfxSdmmc_Sd_initHostController()` 无条件置
 > `HOST_CTRL2.HOST_VER4_ENABLE=1`；在 SDHCI v4 寄存器映射下 `SDMASA` 被
 > 重新定义为 **32 位块计数寄存器**，SDMA 引擎再也拿不到系统地址。
@@ -18,24 +38,7 @@ P14.0/P14.1, 921600-8N1，P13.0 LED）之上，新增 **SDMMC0 SD 卡 + FatFs �
 > 目标**：数据阶段永不完成 → `NORMAL_INT_STAT.transferComplete` 永不置位 →
 > Auto CMD12 超时（`EISTR.CMD_TOUT_ERR` + `AUTO_CMD_ERR`）→ 卡停在 RCV/TRAN，
 > DAT 线全程无人驱动。这正是前两轮观察到的「主机从不驱动 DAT 线」现象。
->
-> **根因 2（复位后首次传输失败）**：改用 ADMA2 后，**复位后的第一次数据传输
-> 仍会失败一次**（`EISTR = DATA_CRC_ERR | DATA_END_BIT_ERR | AUTO_CMD_ERR`，
-> `AUTOCMD=0x0003`），之后所有传输正常。修复：读写路径失败时执行
-> **CMD12 中止 + `SW_RST_DAT`/`SW_RST_CMD` + 完整 `IfxSdmmc_Sd_initModule()`
-> 重初始化**，然后重试（最多 3 次）。这与 shell 的 `sd recover` 命令等价，
-> 实测可让首次传输成功。
->
-> **修复**：`config.dmaConfig.dmaType = IfxSdmmc_DmaType_adma2`，并在胶水层
-> 为每次传输构建 **ADMA2 描述符表**（`IfxSdmmc_Adma2Descriptor`，每 512B 块一条，
-> 末条置 `end=1`/`intEn=1`），读写都改走
-> `IfxSdmmc_Sd_multiBlockAdma2Transfer()`；失败时走完整恢复 + 重试。
->
-> **判定依据**：把官方 `iLLD_TC397_3V3_ADS_SDCard_SDMMC_Read_Write` 用本仓库的
-> CMake 基础设施编译后烧到**同一块板、同一张卡**，其 `f_write` 成功；而我们的
-> 固件失败。逐项比对 iLLD 源码（`IfxSdmmc_Sd.c`/`IfxSdmmc.c`/`IfxSdmmc.h`/
-> 寄存器定义/引脚映射/命令表/枚举）**全部等价**，唯一实质差异就是 DMA 引擎选择。
-> 详见 **§10**（含完整日志、对照实验、排除矩阵）。历史记录见 §6/§7/§8/§9。
+> 详见 **§10**。历史记录见 §6/§7/§8/§9。
 
 * 基线：`tc397_uart_lettershell`（Shell/UART/CMake/build.sh，命令兼容）
 * FatFs：`ref/fatfs`（`abbrev/fatfs` master，即 ChaN FatFs **R0.16**，2025），
@@ -74,16 +77,19 @@ P14.0/P14.1, 921600-8N1，P13.0 LED）之上，新增 **SDMMC0 SD 卡 + FatFs �
 Letter-Shell `sd` 命令
   → FatFs R0.16 API (f_mount/f_read/f_write/f_mkfs/f_getfree/...)
   → diskio.c (单物理盘 0 → SDMMC 后端, disk_timerproc 每 10ms 由 STM 中断驱动)
-  → mmc_sdmmc.c (iLLD IfxSdmmc_Sd, 4-bit + 高速 + SDMA 多块, 25MHz)
+  → mmc_sdmmc.c (iLLD IfxSdmmc_Sd, 4-bit + 高速 + ADMA2 多块, 50MHz)
   → SDMMC0 控制器 → TF 卡
 ```
 
 * **SD 初始化**：CMD0→CMD8→ACMD41→CMD2/3/7→切 4-bit（ACMD6）→切高速（CMD6）→
-  CMD16 固定 512B→时钟 25MHz。RCA=0x1388（本卡）。
-* **SDMA 多块**：读写一律 `read/writeMultiBlock`（CMD18/25 + Auto CMD12），
-  缓冲须 4 字节对齐（`s_ioBuf`、`s_mkfsWork` 均为 `uint32/DWORD` 数组）。
-* **容量**：CMD9 (SEND_CSD) 解析，128GB 卡=268435456+1024=**268436480 扇区
-  ×512B = 131072MiB = 128.0GiB**（SDXC，block addressing）。
+  CMD16 固定 512B→时钟 **50MHz**（见 §11.5；`PRESET_VAL_ENABLE=1` 下硬件
+  预置分频器给出 50MHz，`sd clk meas` 实测线速率 ≈47.3MHz 与之吻合）。
+* **ADMA2 多块**：读写一律 `read/writeMultiBlock`（CMD18/25 + Auto CMD12），
+  缓冲须 8 字节对齐（`s_ioBuf`、`s_bigBuf`、`s_mkfsWork` 均带 `IFX_ALIGN(8)`）。
+  描述符表按 64 条/页、8 页分页，跨页用 **`act = link` 链式描述符**（见 §11.3）。
+* **容量**：本 IP **不锁存 136 位 R2 响应**，CSD 读不到（见 §11.2），容量改用
+  **只读 LBA 探测**（二分搜索，`Sdmmc_ProbeCapacitySectors()`）；本 32GB 卡
+  实测 **61067264 扇区 × 512B = 29818 MiB（29.1 GiB）**，与 FAT32 BPB 自洽。
 * **文件系统**：SDXC 标准用 **exFAT**（`FF_FS_EXFAT=1` 需 `FF_USE_LFN>=1` +
   `ffunicode.c`）；本卡到货为 FAT32（非标准但可挂载，见测试结果）。
   `f_mkfs` 支持 `FM_EXFAT`/`FM_FAT32`（见 §6.4 未完成项）。
@@ -159,6 +165,21 @@ python3 -m serial.tools.miniterm /dev/ttyACM0 921600 --raw
 python3 serial_monitor.py --port /dev/ttyACM0 --baud 921600 --duration 10
 ```
 
+### 3.1 Windows 11 串口脚本（本轮新增 `sd_shell.py`）
+
+Windows 下串口是 `COM169`（CH343，1a86:55d3），DAS/DAP 是 `COM67`（058b:0043，
+只用于烧录）。`sd_shell.py` 保持端口常开（避免 DTR 复位吞掉命令），支持：
+
+```powershell
+python sd_shell.py -p COM169 --boot 3 -w 8 "sd init" "sd info"      # 顺序发多条命令
+python sd_shell.py -p COM169 "@240:sd mkfs fat32"                    # 给这条命令放大空闲等待
+python sd_shell.py -p COM169 --listen 10                             # 只监听
+```
+
+* `@<秒>:` 前缀给**该条命令**单独设置空闲超时 —— `sd mkfs` 中途没有输出，
+  必须这样放大，否则会被判为「命令结束」而截断日志。
+* 每次运行会把完整输出追加到 `sd_shell_log.txt`。
+
 ---
 
 ## 4 `sd` 命令集
@@ -185,7 +206,12 @@ python3 serial_monitor.py --port /dev/ttyACM0 --baud 921600 --duration 10
 | `sd st` | 链路状态 + 卡 R1 状态机解码 |
 | `sd regs` | 主机寄存器 + 最近一次错误锁存 |
 | `sd recover` | CMD12 中止 + SW_RST_DAT/CMD + 重初始化 |
-| `sd align` | 打印各缓冲区地址与 4 字节对齐情况、`sizeof(FATFS)`、`win` 偏移 |
+| `sd csd` | 发 CMD9 并 dump 原始 R2 响应 + 两种位序解码（**证明本 IP 不锁存 R2**） |
+| `sd cap [probe]` | 设备容量（扇区/MiB）+ 来源（CSD / 只读探测），`probe` 强制重新探测 |
+| `sd big <r\|w> <lba> [blk] [seed]` | 单次 `disk_read/write` 调用，1..320 块（自动分块） |
+| `sd lim [blocks]` | 单条 ADMA2 命令的块数上限（0 = 恢复默认：读 256 / 写 128） |
+| `sd dbg <on\|off>` | 打开数据通路跟踪（重试/恢复阶段打印到 UART），排查卡死用 |
+| `sd align` | 打印各缓冲区地址与对齐、`sizeof(FATFS)`、`win` 偏移 |
 | `sd wmb <lba>` | 直接调 `multiBlockDmaTransfer()`，打印原始返回码与前后寄存器 |
 
 读写 pattern：`word[i] = (chunk偏移字 + i) ^ seed`，读回逐字校验。
@@ -1133,23 +1159,192 @@ disk_read(lba=24576,n=1) -> 0         <- PASS
    结果 `f_mount` 报 `FR_NOT_READY`。SDMMC 驱动的时序循环需要优化，保持
    `--tradeoff=4`。
 
-### 10.8 未完成项与下一步建议
+### 10.8 未完成项与下一步建议（→ 已在第四轮全部解决，见 §11）
 
-1. **CSD 容量解析缺陷**（§8.5）：`sd info` 报 `1024 sectors`。
-   不影响挂载/读写（FatFs 用 BPB），但容量行不可信。建议修
-   `sdmmc_decode_csd()` 或 R2 响应读取。
-2. **ADMA2 描述符表上限 256 块（128 KB）**：超过会返回 `RES_PARERR`。
-   当前 FatFs 的 `disk_write` 单次调用不会超过这个值（实测 8 MB bench 通过），
-   但若要支持更大单次传输，需要改成**链式描述符**（`act = link`）。
-3. **`sd mkfs`**：写通路已通，理论上可用，但**会销毁卡上全部数据**，
-   本轮未执行（用户明确「无需格式化」）。
-4. **吞吐优化**：当前 25MHz + 4-bit high-speed。可尝试 50MHz（`sd clk 50000`）
-   或 ADMA2 链式描述符减少描述符开销。
-5. **`sd poke/peek/mpeek` 等危险诊断命令**是否保留在发布固件里，待用户确认。
+1. **CSD 容量解析缺陷**（§8.5）：**已解决**，但方式与预期不同 ——
+   本 IP 根本不锁存 136 位 R2 响应，容量改为只读 LBA 探测（§11.2）。
+2. **ADMA2 描述符表上限 256 块**：**已解决**，改成链式描述符（表容量 505 块），
+   并且胶水层对任意大小请求自动分块，不再返回 `RES_PARERR`（§11.3）。
+3. **`sd mkfs`**：**已验证可用**（FAT32 3.69 s / exFAT 2.36 s，§11.4）。
+4. **吞吐优化**：**已完成**。时钟实测已是 50MHz（§11.5）；链式描述符减少
+   命令开销，大块单次传输读 20.7 MB/s / 写 12.7 MB/s（§11.4）。
+5. **`sd poke/peek/mpeek` 等危险诊断命令**：保留在发布固件里（用户确认）。
+   注意 `sd peek/mpeek` 读未实现地址会 Trap 并挂死 MCU，需 `build.ps1 -Action reset`。
 
 ---
 
-## 11 许可
+## 11 第四轮：剩余问题收尾（2026-09-21，Windows + GCC/TASKING）
+
+本轮目标（用户指定）：修 CSD 容量、ADMA2 链式描述符、测 `sd mkfs`、试 50MHz、
+保留危险诊断命令，并写交接文档 + 提交。结果：**全部完成**。
+
+### 11.1 本轮实测汇总（GCC Debug，COM169）
+
+| 项目 | 结果 |
+| --- | --- |
+| `sd init` | PASS，容量 61067264 扇区 = 29818 MiB，FAT32 挂载 |
+| `sd info` | PASS，容量行可信（来源标注 `read probe`） |
+| `sd mkfs fat32` | **PASS**，`f_mkfs -> OK (0) in 3691 ms`，空卷，free 954057 簇 |
+| `sd mkfs exfat` | **PASS**，`f_mkfs -> OK (0) in 2364 ms`，空卷，free 954052 簇 |
+| `sd bench 8`（FAT32） | 写 **4855 KB/s**，读 **11505 KB/s**，VERIFY-OK |
+| `sd bench 4`（exFAT） | 写 **5178 KB/s**，读 **11505 KB/s**，VERIFY-OK |
+| `sd big w 2000000 320` | PASS，自动分 3 块（128+128+64），12690 KiB/s |
+| `sd big r 2000000 320` | PASS，自动分 2 块（256+64），20698 KiB/s，VERIFY-OK |
+| `sd clk meas` | 有效 SDCLK ≈ **47269 kHz**（寄存器解码 50000 kHz） |
+| 写命令单条块数实测 | 32/64/96/128/160/192/224/**256** 块全 PASS；**320 块超时** |
+
+### 11.2 根因 A：本 IP 不锁存 136 位 R2 响应 → CSD 读不到
+
+**现象**：`sd info` 报 `Capacity: 4 sectors, CSD v0`。
+
+**排查**（`sd csd` 命令，新增）：
+
+```
+phase 0: PRESET_VAL_ENABLE=1 HOST_VER4_ENABLE=1
+  before hw=00000900 00200000 53440000 00000B00 CMDREG=0x0D1A
+  CMD9  st=0 arg=0x00010000 CMDREG=0x0909 (index=9)      <- CMD9 确实执行成功
+  after  hw=00000900 00200000 53440000 00000B00           <- 寄存器完全没变
+phase 1: PRESET_VAL_ENABLE=1 HOST_VER4_ENABLE=0           <- 临时关 v4 也一样
+phase 2: PRESET_VAL_ENABLE=1 HOST_VER4_ENABLE=1
+```
+
+* CMD9（R2，136 位）**执行成功**（`CMDREG=0x0909`：index=9、
+  `RESP_TYPE_SELECT=01` = 136 位），但 `RESP01..RESP67` **一个字都没更新**，
+  始终是上一条 48 位 R1（CMD13）的残留值。
+* 48 位响应正常：CMD3(R6) 得到 RCA、CMD13(R1) 得到卡状态（`sd st` 可信）。
+* 强制 `HOST_VER4_ENABLE=0` 后再发 CMD9 也一样 → 与 v4 模式无关。
+* 结论：**这颗 SDMMC IP 不把 136 位 R2 响应写进 RESP 寄存器**，
+  CSD（含 C_SIZE）无法读取，因此**任何基于 CSD 的容量解析都不可能正确**。
+  （官方 example 的 `sdmmc_decode_csd()` 传的是结构体首地址、且同样依赖这些
+  寄存器，所以它的容量也是错的，只是没人注意。）
+
+**修复：只读 LBA 探测容量**（`Sdmmc_ProbeCapacitySectors()`，`sd cap` 命令）：
+
+* 块寻址卡（SDHC/SDXC）在 LBA ≥ 容量时 CMD17 被拒 → 指数搜索 + 二分搜索
+  找出第一个读不到的 LBA，即为扇区数。**纯读操作，不写卡**。
+* 实测：读 61000000 成功、61500000 失败 → 探测结果 **61067264 扇区**
+  （32 次 CMD17，约 1.4 s，结果缓存；与 FAT32 BPB 的 29797 MiB 空闲自洽）。
+* 失败探测会触发恢复（`sdmmc_recover_datapath()`），实测安全，shell 存活。
+* CSD 路径仍保留并优先尝试：一旦某颗芯片/某张卡能锁存 R2，仍用标准答案
+  （`sdmmc_csd_plausible()` 校验 CSD 版本与卡类型是否自洽）。
+
+### 11.3 根因 B：ADMA2 描述符表 256 块硬上限 → 链式描述符
+
+* 旧实现：单页描述符表，**>256 块直接 `RES_PARERR`**。
+* 新实现：表按 **64 条/页 × 8 页 = 512 条**（4 KB，8 字节对齐）分页，
+  跨页时把该页最后一格写成 **`act = IfxSdmmc_AdmaActionSymbol_link`** 并指向下一页
+  首条。表容量 = 512 条，可描述 **505 块**（每跳消耗 1 条链接描述符）。
+* 胶水层再加一层**分块**：超过当前上限的请求自动拆成多条 CMD25/CMD18，
+  因此**任何大小都不再被拒**（这是修 §10.8 第 2 项的关键）。
+* 实测链式正确性：320 块 = **325 条描述符 / 5 个链接**（`sd big` 打印）；
+  单次调用读 320 块 VERIFY-OK。
+
+### 11.4 根因 C：`sd mkfs` / `sd erase` / `sd big w` 卡死（两个独立 bug）
+
+**现象**：`sd mkfs fat32` 打印 `formatting...` 后**整个 MCU 静默**，
+后续命令全无响应，只能复位。`sd erase 63 8000`、`sd big w ... 320` 同样。
+
+**定位手段**：新增 `sd dbg on`（数据通路跟踪，无 libc 依赖，直接写 UART）：
+
+```
+>>> sd big w 2000000 320
+XFER-try:01408480 00000000        <- n=320(0x140), lba 低16位 0x8480, isRead=0
+XFER-st:0000000D 00000030         <- st=13(dataError), ADMA_ERR_STAT=0x30
+REC-enter:00000008 00000000       <- 进入恢复...然后没了
+```
+
+**Bug 1（致命，Trap）**：`sdmmc_recover_datapath()` 调 CMD12 时传 `NULL_PTR`：
+
+```c
+(void)IfxSdmmc_sendCommand(p, IfxSdmmc_Command_stopTransmission, rca << 16,
+                           IfxSdmmc_ResponseType_r1b, NULL_PTR);   /* ← 错 */
+```
+
+`IfxSdmmc_readResponse()` 对**所有非 CMD0/CMD1 的命令**都会无条件执行
+`response->resp01 = 0;` → **向地址 0 写** → 数据访问 Trap，MCU 静默。
+
+* 只有 CMD12 **真的完成**（`commandComplete` 置位）时才会走到 `readResponse()`；
+  卡还在忙数据线时 CMD12 在 `sendCommand()` 内部就超时返回，不碰响应。
+  这解释了为什么读探测（失败读之后的 CMD12 往往超时）和 shell 的 `sd recover`
+  （传的是真实 `&rsp`）一直正常，只有写失败后的恢复路径会炸。
+* **修复**：改用局部 `IfxSdmmc_Response rsp;` 传 `&rsp`。
+
+**Bug 2（写失败本身）**：每次模块（重）初始化后，**第一个数据传输必须是读**；
+把写作为第一个数据传参会稳定失败（`IfxSdmmc_Status_dataError`），而且重试必然
+再失败——因为每次重试都会 `sdmmc_recover_datapath()` → `IfxSdmmc_Sd_initModule()`
+重新初始化主机，重新制造同一条件。
+
+* 这也解释了历史现象：「复位后第一次数据传输会失败一次，之后正常」
+  「读会 prime 写」——因为 `sd clk meas` 里的预热读先把数据通路点亮了。
+* 修复前 `sd mkfs` 的第一笔写（VBR，1 块）就失败 → 恢复 → Trap；
+  所以 `sd mkfs` 必死。
+* **修复**：`sdmmc_init_module_once()` 初始化成功后补一次**丢弃式 1 块读**
+  （`sdmmc_prime_datapath()`，读 LBA 0，最多重试 2 次），
+  使 `disk_initialize` 与恢复路径都把数据通路「点亮」。
+
+**附带发现：iLLD 内部轮询超时太短（≈15 ms）**
+
+* `IfxSdmmc_Sd_multiBlockAdma2Transfer()` 用**固定** `IFXSDMMC_TIMEOUT_1E5`
+  轮询 `transferComplete`；实测对应约 15 ms 数据阶段。
+* 因此 **320 块写（>16 ms）超时**：`st=13 (dataError)`、
+  `ADMA_ERR_STAT=0x30`（`ADMA_ERR_STATES=0`、`ADMA_LEN_ERR=0`，即**无 ADMA 错误**）、
+  `EISTR=0` → 纯粹是超时，不是描述符/DMA 问题。新复位后 256 块（13.9 ms）仍 PASS。
+* 卡越用越慢（内部 GC）会让余量消失，所以**默认单条写限 128 块（64 KB，实测
+  8.0 ms）、单条读限 256 块（128 KB）**，留约 2 倍余量；更大的请求自动分块。
+  `sd lim <n>` 可覆盖（`sd lim 0` 恢复默认）。
+
+### 11.5 时钟：已经是 50MHz（不是 25MHz）
+
+* `sd info` 显示 `SDCLK=50000 kHz (CLKCTL=0x000F FREQ_SEL=0 PRESET_VAL_ENABLE=1)`：
+  `PRESET_VAL_ENABLE=1` 时控制器用**硬件预置分频器**，`PRESET_HS` 的
+  `FREQ_SEL_VAL=0` → `100MHz / (2*(0+1)) = 50MHz`（高速模式的预置上限）。
+* `sd clk meas` 用数据阶段间接测线速率：512B 块 = 1030 个 SDCLK（4-bit SDR），
+  实测 **47269 kHz**（块间间隔使其偏低），与 50MHz 解码一致 → **确认 50MHz 生效**。
+* 因此本轮无需再「升到 50MHz」；软件分频器（`sd clk 50000`）与硬件预置等价。
+* 注意：**不要在识别完卡之后清 `PRESET_VAL_ENABLE`**（会破坏写通路，见 §10 注释）。
+
+### 11.6 本轮新增/修改的诊断命令
+
+| 命令 | 用途 |
+| --- | --- |
+| `sd csd` | 分三阶段发 CMD9 并 dump 原始 R2 响应（证明本 IP 不锁存 R2） |
+| `sd cap [probe]` | 容量 + 来源 + 探测次数/耗时；`probe` 强制重新探测 |
+| `sd dbg <on\|off>` | 打开数据通路跟踪（`XFER-try`/`XFER-st`/`REC-*`/`PRIME`） |
+| `sd lim [blocks]` | 单条命令块数上限（默认读 256 / 写 128） |
+| `sd big <r\|w> <lba> [blk] [seed]` | 单次调用大块传输 + 描述符/链接/分块统计 |
+
+### 11.7 本轮踩到的坑（新会话必读）
+
+1. **`sd mkfs` / `sd erase` / `sd big w` 卡死不是卡的问题，是 CMD12 响应指针为 NULL 的 Trap**
+   （§11.4 Bug 1）。看到「打印一行后整机静默」优先怀疑 Trap。
+2. **`build.ps1 -Action download` 不会编译**：`Invoke-Download` 只在 hex 不存在时才 build。
+   改了代码必须先 `-Action build` 再 `-Action download`，否则烧的是旧固件（本轮踩过）。
+3. **`sd peek/mpeek` 读 SDMMC 模块范围外（≥0x5C）会 Trap 挂死**，需复位。
+   已知可用范围 0x00..0x5B。
+4. **串口脚本空闲判定**：`sd mkfs` 中途无输出，必须用 `@<秒>:` 前缀给该条命令
+   单独放大空闲等待（`sd_shell.py` 支持），否则会被误判为「命令结束」而丢日志。
+5. **`sd lim` 默认值不是表容量 505**：读 256 / 写 128 是实测出来的安全值，
+   不要想当然按 505 用。
+6. **不要用 `sd host v4 0/1` 做实验**：运行中切换 `HOST_VER4_ENABLE` 并重识别
+   会把卡/控制器留在 `reinitCard=6` 的坏状态（本轮踩过，需复位）。
+7. **`sd mkfs` 很慢是正常的**：f_mkfs 用工作缓冲区逐段填 FAT，`s_mkfsWork`
+   从 512B 放大到 8 KB 后 30 GiB FAT32 约 3.7 s。
+8. **`sd info` 里的容量来源要看清**：`read probe` 表示 CSD 不可用、容量是探测值。
+
+### 11.8 遗留 / 可选改进
+
+1. **单条命令的块数上限受 iLLD 固定超时限制**。若要真正单条写 505 块，
+   需要给 `IfxSdmmc_Sd_multiBlockAdma2Transfer()` 换一个更长的超时
+   （本工程选择不改 iLLD，而在胶水层分块）。
+2. **容量探测耗时约 1.4 s**（32 次 CMD17，含失败探测的恢复），已缓存，
+   只在每次 `disk_initialize` 后第一次取容量时付出。可用 FS BPB 作为
+   初值缩小二分区间来加速。
+3. **SDSC（字节寻址）卡的容量探测**未实现（本工程只有 SDHC/SDXC 卡）。
+4. **`sd poke/peek/mpeek` 保留**，但读未实现地址会 Trap（见 §11.7 坑 3）。
+
+---
+
+## 12 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * FatFs R0.16：ChaN 许可（`Libraries/FatFS/LICENSE` 见 ref/fatfs/LICENSE.txt，

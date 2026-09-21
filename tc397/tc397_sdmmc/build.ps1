@@ -93,6 +93,16 @@ if (-not (Test-Path $aurixMake)) {
     $aurixMake = if ($sysMake) { $sysMake.Source } else { $null }
 }
 
+# ninja.exe：优先使用 AURIX Studio 自带的。
+# PATH 里的 ninja 可能是被改过的版本（如 PyPI 的 ninja wheel），在本工程树上会报
+#   ninja: error: FindFirstFileExA(".../Configurations/Debug): ...
+# 且第二次构建必定失败（见 README §9.6 坑 1 / §11.7）。
+$aurixNinja = Join-Path $AurixStudioPath "winIDEA\ninja\ninja.exe"
+$ninjaArgs = @()
+if (Test-Path $aurixNinja) {
+    $ninjaArgs += "-DCMAKE_MAKE_PROGRAM=$aurixNinja"
+}
+
 # AURIXFlasher.exe：在 AurixStudioPath\tools 下搜索版本目录，取最新版
 $flasherSearchRoot = Join-Path $AurixStudioPath "tools"
 $flasherDir = Get-ChildItem $flasherSearchRoot -Filter "AurixFlasherSoftwareTool*" -ErrorAction SilentlyContinue |
@@ -150,7 +160,7 @@ function Invoke-Configure {
             "-DCMAKE_TOOLCHAIN_FILE=$toolchainFile",
             "-DAURIX_TASKING_BIN=$TaskingBin",
             "-DCMAKE_BUILD_TYPE=$BuildType"
-        )
+        ) + $ninjaArgs
     } else {
         if (-not (Test-Path (Join-Path $GccBin "tricore-elf-gcc.exe"))) {
             throw "tricore-elf-gcc.exe not found in: $GccBin`nSet -AurixStudioPath or -GccBin."
@@ -162,7 +172,7 @@ function Invoke-Configure {
             "-DCMAKE_TOOLCHAIN_FILE=$toolchainFile",
             "-DAURIX_TOOLCHAIN_BIN=$GccBin",
             "-DCMAKE_BUILD_TYPE=$BuildType"
-        )
+        ) + $ninjaArgs
     }
 
     Invoke-Step -FilePath "cmake" -ArgumentList $configureArgs

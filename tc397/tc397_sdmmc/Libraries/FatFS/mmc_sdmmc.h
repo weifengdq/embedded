@@ -28,8 +28,22 @@ void disk_timerproc(void);
 IfxSdmmc_Sd *Sdmmc_GetHandle(void);
 boolean Sdmmc_IsInited(void);
 
-/** \brief Card capacity in 512B sectors via CMD9/CSD. Returns 0 on success. */
+/** \brief Card capacity in 512B sectors. Uses CMD9/CSD when this IP delivers
+ *  it, otherwise the read probe. Returns 0 on success. `csdVer` is the CSD
+ *  version, or -1 when the value came from the probe. */
 sint32 Sdmmc_GetCapacitySectors(DWORD *sectors, int *csdVer);
+
+/** \brief Sector count by read-only LBA probing (binary search over CMD17).
+ *  Needed because this SDMMC IP does not latch 136-bit R2 responses, so the
+ *  CSD cannot be read (see `sd csd` / README §11.6). Returns 0 on success;
+ *  `outProbes` (optional) receives the number of CMD17 attempts used. */
+sint32 Sdmmc_ProbeCapacitySectors(DWORD *sectors, UINT *outProbes);
+
+/** \brief 0 = capacity came from CMD9/CSD, 1 = from the read probe, -1 = none. */
+int    Sdmmc_GetCapacitySource(void);
+
+/** \brief CMD17 attempts used by the last capacity probe. */
+UINT   Sdmmc_GetLastProbeCount(void);
 
 /** \brief Re-run card identification with the current host settings. 0 = ok. */
 sint32 Sdmmc_ReInitCard(void);
@@ -37,7 +51,22 @@ sint32 Sdmmc_ReInitCard(void);
 /** \brief Set HOST_CTRL2.HOST_VER4_ENABLE and re-identify the card. 0 = ok. */
 sint32 Sdmmc_SetHostVer4(boolean enable);
 
+/* ADMA2 transfer diagnostics (chained descriptor table) */
+UINT   Sdmmc_GetAdma2TableBlocks(void);            /**< max blocks per ADMA2 command */
+uint32 Sdmmc_GetAdma2DescrAddr(void);              /**< descriptor table address */
+void   Sdmmc_SetAdma2MaxBlocks(UINT blocks);       /**< 0 = restore per-direction defaults */
+UINT   Sdmmc_GetAdma2MaxBlocks(void);              /**< current max blocks per READ command */
+UINT   Sdmmc_GetAdma2MaxWriteBlocks(void);         /**< current max blocks per WRITE command */
+void   Sdmmc_GetLastTransferInfo(UINT *descr, UINT *links, UINT *chunks);
+
+/** \brief Current SD clock in Hz, derived from CLK_CTRL (+ CAP1 base clock). */
+uint32 Sdmmc_GetSdClockHz(void);
+
 /* DEBUG read-trace accessors */
+
+/** \brief Transfer trace switch (shell `sd dbg on`). Prints the retry /
+ *  recovery stages of the data path to the UART; off by default. */
+extern boolean g_SdDbgTrace;
 
 #ifdef __cplusplus
 }
