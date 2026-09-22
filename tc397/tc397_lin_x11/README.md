@@ -316,9 +316,24 @@ LIN1 单节点验证通过（`linbb 1` RHE+PID、`lindomf 1` TXD 显性跟随本
 > 下次在 Ubuntu 上构建本工程时请确认一次（`map` 里静态变量应落在 `.bss` 输出段）。
 > 若不想要这个改动，`git checkout HEAD~1 -- tc397_lin_x11/CMakeLists.txt` 即可还原。
 
+## 9 2026-09-22（续）AURIX Development Studio 构建修复（**未编译验证**）
+
+同批次的 9 个 tc397 工程都做了下面两项修复，本工程（不在用户给的清单里，但属同一家族、
+同一份模板与同一份 letter-shell）一并处理：
+
+* **`Shell/letter-shell/src/shell_cfg.h`**：给 `SHELL_CFG_USER` 加默认值 `"shell_cfg_user.h"`。
+  ADS 的 `.cproject` 里没有任何 `-D`，不兜底的话 `shell.c` 看不到用户配置
+  （`SHELL_TASK_WHILE` 回落成 1、`Shell` 结构体布局与 `shell_port.c` 不一致）
+  → 上电串口有打印、敲回车没反应。
+* **`.cproject`**：两个 TASKING 配置各加 `--language=+gcc`（插件里 `defaultValue=false`），
+  否则 letter-shell 的 `##__VA_ARGS__` 会让 cctc 报 `E250`，ADS 里 TASKING 编不过。
+
+> **注意**：本工程只有 `build.sh`（Ubuntu 用），Windows 上没有 `build.ps1`，
+> 所以本轮**未做编译与板端验证**；两项改动与其它 9 个已验证的工程完全一致。
+
 ---
 
-## 9 许可
+## 10 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * Letter-Shell：MIT

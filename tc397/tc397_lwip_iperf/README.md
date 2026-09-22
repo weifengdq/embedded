@@ -502,9 +502,66 @@ iperf -c 192.168.0.100 -p 5001 -w 64K -t 12 : 544 MBytes / 12 s = 380 Mbits/sec
 
 GCC（ADS tricore-gcc11 11.3.1）与 TASKING v6.3r1 均 **0 error**。
 
+## 9 2026-09-22（续）AURIX Development Studio 里的 GCC/TASKING 构建修复
+
+> 用户报告：在 ADS GUI 里编译下载后 **串口有打印但敲回车没反应**（GCC），TASKING 则根本编不过。
+> 本轮把 ADS 的托管构建（`.cproject`）与 CMake 构建逐项对齐，定位到两处**只影响 ADS**的缺陷。
+
+### 9.1 根因一：`.cproject` 里没有任何 `-D`，letter-shell 的用户配置被忽略
+
+* CMake 构建给所有源文件传 `-DSHELL_CFG_USER="shell_cfg_user.h"`，而 ADS 的 `.cproject`
+  **GCC 配置连 “Defined symbols (-D)” 选项都没有**（TASKING 配置也只有 `__CPU__=tc39xb`）。
+* 于是 `shell.c` 编译时 `shell_cfg_user.h` 根本没被包含，`SHELL_TASK_WHILE` 回落到
+  `shell_cfg.h` 的默认值 **1**（用户配置要求 0），`Shell`/`ShellCommand` 结构体布局也与
+  `shell_port.c`（它直接 include 该头）不一致：`Shell_Process()` 里的 `shellTask()` 变成
+  死循环、字段偏移错位 → **上电有打印、输入无响应**。
+* **修复**：`Shell/letter-shell/src/shell_cfg.h` 给 `SHELL_CFG_USER` 加默认值
+  `"shell_cfg_user.h"`。这样任何构建系统（ADS GUI / CMake / 其它）都不会漏掉用户配置，
+  也避开了在 4 个配置 × 9 个工程里各写一遍带引号 `-D`（Eclipse 命令行生成器对引号的
+  处理不可控：实测把引号丢掉后 `#include SHELL_CFG_USER` 会直接报错）。
+
+  **实测复现与验证**（GCC Debug，去掉 `-DSHELL_CFG_USER` 等价 ADS）：
+
+  | | 修复前 | 修复后 |
+  | --- | --- | --- |
+  | 冷启动日志 | 完整打印 | 完整打印 |
+  | 敲 `ver` / `mcu` / `help` | **无任何响应** | 全部正常响应 |
+
+### 9.2 根因二：TASKING 缺 `--language=+gcc`，`##__VA_ARGS__` 直接编译失败
+
+* letter-shell 的 `SHELL_EXPORT_CMD()` 用了 GNU 扩展 `, ##__VA_ARGS__`（`shell.h:149/187/260`）。
+* ADS 的 TASKING 默认参数只有 `--language=+volatile`（见 ADS 生成的 `subdir.mk`），
+  缺 `+gcc` 时 cctc 报 **`ctc E250: missing argument for "..." parameter`**，
+  `shell.c` / `shell_port.c` 编译失败 → **ADS 里 TASKING 根本编不过**。
+* **修复**：`.cproject` 的两个 TASKING 配置各加一个选项（插件里本就有，只是默认关闭）：
+
+  ```xml
+  <option id="com.infineon.aurix.buildsystem.managed.c.compiler.tasking.gcc.<唯一数字>"
+          name="Allow GNU C extensions (--language=+gcc)"
+          superClass="com.infineon.aurix.buildsystem.managed.c.compiler.tasking.gcc"
+          value="true" valueType="boolean"/>
+  ```
+
+  **实测**（用 ADS 同款默认参数调 cctc）：
+
+  | 参数 | 结果 |
+  | --- | --- |
+  | `--language=+volatile`（ADS 默认） | `ctc E250` 多条 → 失败 |
+  | `--language=+volatile,+gcc` | 通过 |
+
+### 9.3 一并说明
+
+* ADS GUI 第一次打开工程时会跑 “Project Booster” 同步库，它会自动给工程打补丁
+  （本工程被加了 `Shell/shell_port.c` 的 `#include "shell_cfg_user.h"`、`shell_ext.h` 的
+  `#include <stddef.h>`），并在 `tc397/.gitignore` 里加上 ADS 的构建目录 —— 都是 ADS 的正常行为。
+* ADS 的 GCC 默认参数含 `-fdata-sections`（插件里 `defaultValue="true"`）。已实测：
+  ADS 自带的 tricore-gcc11 会生成 `.bss.<sym>`（被 LSL 的 `*(.bss.*)` 收走、启动清零），
+  与 Ubuntu gcc13 生成裸 `.<sym>` 的情况不同，**在 ADS 下无副作用**（见 `tc397_sdmmc` §1.3）。
+* 验证：GCC 与 TASKING 全量重编 **0 error**；板端 `ifconfig`/`ping` 与 shell 命令正常。
+
 ---
 
-## 9 许可
+## 10 许可
 
 - iLLD/Libraries：Infineon Boost Software License 1.0
 - Letter-Shell：MIT；lwIP：BSD

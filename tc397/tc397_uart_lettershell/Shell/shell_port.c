@@ -1,4 +1,5 @@
 #include "shell_port.h"
+#include "shell_cfg_user.h"
 #include "shell.h"
 #include "IfxAsclin_Asc.h"
 #include "IfxCpu_Irq.h"

@@ -12,6 +12,20 @@
 #ifndef __SHELL_CFG_H__
 #define __SHELL_CFG_H__
 
+/* 本工程把 shell 配置放在 Shell/shell_cfg_user.h。
+ *
+ * NOTE: 这里必须给 SHELL_CFG_USER 一个默认值。
+ * AURIX Development Studio 的 .cproject 里没有任何 -D（GCC 配置连
+ * "Defined symbols (-D)" 选项都没有），如果不在这里兜底，shell.c 就看不到
+ * shell_cfg_user.h：SHELL_TASK_WHILE 会回落到下面的默认值 1
+ * （shellTask() 变成死循环）、Shell 结构体布局也会和 shell_port.c
+ * （它直接 include shell_cfg_user.h）不一致 —— 现象是
+ * "上电串口有打印、敲回车没反应"。
+ * CMake 构建通过 -DSHELL_CFG_USER="shell_cfg_user.h" 传入同样的值，两者等价。 */
+#ifndef SHELL_CFG_USER
+#define SHELL_CFG_USER          "shell_cfg_user.h"
+#endif
+
 #ifdef SHELL_CFG_USER
 #include SHELL_CFG_USER
 #endif
