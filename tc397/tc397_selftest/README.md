@@ -729,6 +729,8 @@ LINK   : UP   1000M full-duplex
 | 15 | `Libraries/LAN8651/lan8651.c/.h` | SPI 超时改成基于 STM 的 1 ms + 3 次重试 + 状态复位；新增 `SPI timeouts/busy/recovered`、`TX hdrb/fail` 计数器 | 原来 2,000,000 次循环 ≈ 300 ms 的超时会卡死主循环；计数器从 `t1stat` 可读 |
 | 16 | `Libraries/.../ethernetif_lan8651.c` | `tx_error` 只前 8 次打印（带累计值） | 在 TX 路径里刷串口会把问题放大 |
 | 17 | `Cpu0_Main.c` | `lwiperf_report()` 的回调签名改回 `u64_t bytes_transferred`（并用 `%llu` 打印） | 本仓库的 `lwiperf` 已把字节计数器改成 64 位，重写 `Cpu0_Main.c` 时写成了 32 位，导致后面实参整体读错 → `kbits/s` 恒 0。详见 §5.3 |
+| 18 | `Shell/letter-shell/src/shell_cfg.h` | 给 `SHELL_CFG_USER` 加默认值 `"shell_cfg_user.h"` | ADS 的 `.cproject` 里没有任何 `-D`，不兜底则 `shell.c` 看不到用户配置 → `SHELL_TASK_WHILE` 回落成 1（`shellTask()` 死循环）+ `Shell` 结构体布局错位 → 上电有打印、输入无响应。详见 §12 与第 9 节踩坑 16 |
+| 19 | `.cproject`（两个 TASKING 配置） | 各加 `--language=+gcc`（插件里默认 false） | ADS 的 TASKING 默认只有 `+volatile`，letter-shell 的 `##__VA_ARGS__` 会让 cctc 报 68 个 `E250`、Build Failed。详见 §12 |
 
 ---
 
@@ -797,6 +799,17 @@ LINK   : UP   1000M full-duplex
 15. **不要看一次 iperf 数字就下结论**：千兆侧在同一固件上会在 345~500 Mbps 之间波动
     （PC 侧网卡中断裁决/后台负载），SD 写也会偶尔从 11 MB/s 掉到 4 MB/s（卡的内部 GC）。
     记录时给区间和测量条件，不要只写一个最好值。
+16. **ADS 的托管构建（`.cproject`）和 CMake 构建是两套参数，必须逐项对齐**
+    ADS 的默认参数在插件里（GCC：`-fno-common -fstrict-volatile-bitfields -fdata-sections
+    -ffunction-sections -mtc162` + `-T ../Lcf_Gnuc_Tricore_Tc.lsl -nocrt0`；TASKING：
+    `--language=+volatile` 等），**与 CMake 有两处不同，都会真出问题**：
+    (a) `.cproject` 里**一个 `-D` 都没有**（GCC 配置连 “Defined symbols” 选项都没有）→
+        `shell.c` 看不到 `shell_cfg_user.h` → `SHELL_TASK_WHILE` 回落成 1、`Shell` 结构体布局
+        与 `shell_port.c` 不一致 → **上电串口有打印、敲回车没反应**（详见 §12.1）；
+    (b) TASKING 默认没有 `--language=+gcc` → letter-shell 的 `##__VA_ARGS__` 报 `E250`
+        → **ADS 里 TASKING 根本编不过**（详见 §12）。
+    要查 ADS 到底传了什么参数，去读 `plugins/*.jar` 里的 `plugin.xml`（jar 是压缩包，
+    `findstr` 搜不到），工具见 §10 的 `adsgrep.ps1` / `adsdump.ps1`。
 
 ---
 
@@ -813,6 +826,12 @@ LINK   : UP   1000M full-duplex
 | `bld.ps1` | 直接调 ninja 构建（绕过 build.ps1，方便看完整错误） |
 | `memsum2.ps1` | 从 `.map` 提取 "Memory usage" 表 |
 | `cmpdir.ps1` | 比较两个工程同名目录的文件差异（合并前确认库一致性） |
+| `bfam.ps1` | 批量编译家族工程：`.\bfam.ps1 -Compiler gcc|tasking [-Action rebuild] [-Projects ...]` |
+| `bflash.ps1` | 烧录 + 跑命令：`.\bflash.ps1 -Project tc397_selftest -Port COM167 -Cmds 'ver','stat'` |
+| `cap_boot.ps1` | **先开串口再复位**，抓完整冷启动日志（否则 banner 已经打完） |
+| `adsgrep.ps1` / `adsdump.ps1` | 在 ADS 插件 jar 的 `plugin.xml` 里搜字符串 / 导出断行（查 ADS 默认编译参数用，见第 9 节踩坑 16） |
+| `addgccoption.ps1` | 幂等给 `.cproject` 的 TASKING 配置插 `--language=+gcc`，并校验 XML |
+| `adscc2.ps1` | 用"ADS 同款 TASKING 参数 + `.cproject` 里的 include 列表"真编指定文件（`-NoGcc` 可复现 E250） |
 
 ---
 
@@ -828,11 +847,66 @@ LINK   : UP   1000M full-duplex
 
 ---
 
-## 12. 相关文档
+## 12. AURIX Development Studio 里的 TASKING 构建修复（2026-09-22）
+
+> 用户报告：8 个外设工程在 ADS 里用 TASKING 都好了，**只有本工程报 68 个 `ctc E250`、Build Failed**。
+
+### 12.1 根因：本工程漏了 `--language=+gcc`
+
+上一轮（`../handover/2026-09-22_tc397_ads_gui_build_fix.md`）给家族修了两处"只在 ADS 里发作"的问题，
+其中 **TASKING 缺 `--language=+gcc`** 那一项当时**漏掉了本工程**——本工程不在那一轮的清单里，
+只被顺带改了 `.settings` 和 `Shell/letter-shell/src/shell_cfg.h`，`.cproject` 一直没动。
+
+letter-shell 的 `SHELL_EXPORT_CMD()` 用了 GNU 扩展 `, ##__VA_ARGS__`（`shell.h` 149/187/260 行），
+而 ADS 的 TASKING 默认参数只有 `--language=+volatile`（见 ADS 生成的 `subdir.mk`），于是：
+
+```
+ctc E250: ["../Shell/letter-shell/src/shell.c" 1237/29] missing argument for "..." parameter
+ctc E250: ["../Shell/shell_port.c" 740/113] missing argument for "..." parameter
+... 还有 shell_adc.c / shell_adcdbg.c / shell_can.c / shell_flexray.c / shell_sd.c / shell_t1s.c / shell_tlf.c
+```
+
+（GCC 侧不受影响：`shell_cfg.h` 里已有 `SHELL_CFG_USER` 兜底，见 §9 踩坑 16。）
+
+### 12.2 修复
+
+`.cproject` 的两个 TASKING 配置（Debug / Release）各加一行——插件里本就有这个开关，只是默认 false：
+
+```xml
+<option id="com.infineon.aurix.buildsystem.managed.c.compiler.tasking.gcc.<唯一数字>"
+        name="Allow GNU C extensions (--language=+gcc)"
+        superClass="com.infineon.aurix.buildsystem.managed.c.compiler.tasking.gcc"
+        value="true" valueType="boolean"/>
+```
+
+### 12.3 验证
+
+用 **ADS 同款参数**（include 列表也从 `.cproject` 里取，写成 cctc 的 `-f` 选项文件，避免命令行过长）真编：
+
+| 参数 | 结果 |
+| --- | --- |
+| `--language=+volatile`（ADS 默认 = 修复前） | `Shell/shell_port.c` **FAIL**：`ctc E250`，行号 `740/113…` 与用户日志逐字一致 |
+| `--language=+volatile,+gcc`（修复后） | `shell_port.c`、`Cpu0_Main.c` 通过；再抽查 `App/selftest.c`、`shell_t1s.c`、`shell_can.c`、`shell_flexray.c`、`shell_sd.c`、`Ifx_Lwip.c`、`mmc_sdmmc.c`、`flexray_dual.c`、`lan8651.c`、`Ifx_Cfg_Ssw.c` → **10/10 通过** |
+
+后者同时证明：ADS 自动改写过的 include 列表（补了 `App/`、`Libraries/Ethernet/**`、`Libraries/FatFS`、
+`Libraries/FlexRay`，删掉了用不到的 iLLD 模块）**是充分的**。
+CMake 侧回归：GCC 与 TASKING 全量重编均 **0 error**。
+
+```powershell
+# 复现（ADS 默认参数）
+& C:\github\embedded\tc397\temp\adscc2.ps1 -Project tc397_selftest -Files 'Shell\shell_port.c' -NoGcc
+# 修复后
+& C:\github\embedded\tc397\temp\adscc2.ps1 -Project tc397_selftest -Files 'App\selftest.c','Cpu0_Main.c'
+```
+
+---
+
+## 13. 相关文档
 
 - `../handover/2026-09-21_tc397_selftest.md` —— 第一轮（合并 8 个外设 + selftest/stat/bench）交接说明
 - `../handover/2026-09-21_tc397_selftest_round2.md` —— 第二轮（串口阻塞 / T1S 首秒掉速 / 孤儿段）交接说明
 - `../handover/2026-09-22_tc397_selftest_round3.md` —— 第三轮（板端 IPERF 报告 kbits/s 恒为 0）交接说明
+- `../handover/2026-09-22_tc397_ads_gui_build_fix.md` —— ADS（GCC/TASKING）构建修复总说明
 - `../tc397_uart_lettershell/README.md`、`../tc397_adc/README.md`、`../tc397_can_x12/README.md`、
   `../tc397_flexray/README.md`、`../tc397_tlf35584/README.md`、`../tc397_sdmmc/README.md`、
   `../tc397_lan8651_t1s/README.md`、`../tc397_lwip_iperf/README.md` —— 各外设的详细文档
