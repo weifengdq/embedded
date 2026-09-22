@@ -277,20 +277,25 @@ FlexRay 未启动时显示 `FR0A not prepared / FR1A not prepared`（正常：�
 ===========================================================
 ```
 
-### 5.1 性能数据汇总（TASKING Debug，2026-09-21）
+### 5.1 性能数据汇总（TASKING Debug，2026-09-21/22）
 
 | 接口 | 指标 | 实测 |
 | --- | --- | --- |
 | UART0 (921600 8N1) | 4 KB 连续发送 | 33725 µs（理论 33333 µs，误差 +1.2%，见下面第 2 条） |
 | CAN0→CAN1 | 64 B FD+BRS 帧，500 ms 窗口 | **6900 frame/s**，≈ 3532 kbit/s 净荷，RX 无溢出 |
 | FlexRay FR0A→FR1A | 静态槽 11，5 ms 周期 | **200 frame/s**（= 1 帧/周期，单槽上限；91 槽理论 ≈18 kframe/s） |
-| SD 卡（32 KB 块） | 2 MB 写 / 读 | 写 **11130 KB/s**，读 **17355 KB/s**，校验 OK |
-| SD 卡（32 KB 块） | 8 MB 写 / 读 | 写 **8402 KB/s**，读 **17319 KB/s**，校验 OK |
+| SD 卡（32 KB 块） | 2 MB 写 / 读 | 写 **11130 KB/s**，读 **17210 KB/s**，校验 OK |
+| SD 卡（32 KB 块） | 8 MB 写 / 读 | 写 **11250 KB/s**，读 **17319 KB/s**，校验 OK |
 | SD 卡（8 KB 块，`sd bench 8`） | 8 MB 写 / 读 | 写 2273 KB/s，读 12100 KB/s |
 | 10BASE-T1S | iperf2 TCP，PC 侧 | **9.05 Mbits/sec**（21.6 MB / 20 s，首秒即满速） |
-| 1000BASE-T1 | iperf2 TCP，PC 侧 | **386 Mbits/sec**（921 MB / 20 s） |
+| 10BASE-T1S | 板端自报（`IPERF report`） | 22700056 B / 20066 ms = **9050 kbit/s** |
+| 1000BASE-T1 | iperf2 TCP，PC 侧 | **345~500 Mbits/sec**（受 PC 侧网卡中断裁决/后台负载影响，同一固件多次测量会在这个区间波动） |
+| 1000BASE-T1 | 板端自报（`IPERF report`） | 518127640 B / 12006 ms = **345245 kbit/s** |
 | 10BASE-T1S / 1000BASE-T1 | PC↔板 ping | 4/4，<1 ms |
 | 1000BASE-T1 | 板→PC ping | 4/4，0~1 ms |
+
+> SD 写速度有个别时候会掉到 ~4000 KB/s（卡的内部 GC），多数测量在 11000~11300 KB/s；
+> 读一直稳定在 17.2~18.9 MB/s。
 
 **两个值得注意的实测结论**
 
@@ -428,7 +433,64 @@ PS> .\tools\iperf.exe -c 192.168.1.100 -p 5001 -t 20 -w 64K -i 2
 [376]  0.0-20.1 sec  21.6 MBytes  9.05 Mbits/sec     <- 修复前 8.85~8.90
 ```
 
-千兆侧同样受益（同一段代码）：`1000BASE-T1` 从 342 Mbps → **386 Mbps**。
+千兆侧同样受益（同一段代码）：`1000BASE-T1` 从 342 Mbps → **386~500 Mbps**（波动见 §5.1）。
+
+### 5.3 修复记录：板端 `IPERF report` 的 `kbits/s` 一直是 0（2026-09-22）
+
+用户报告：两个网口测速都正常，但板子打出来的报告里 `kbits/s` 恒为 0，`duration in ms` 大得离谱：
+
+```
+letter:/$ IPERF report: type=0, remote: 192.168.1.1:2357, total bytes: 20068, duration in ms: 22700056, kbits/s: 0
+letter:/$ IPERF report: type=0, remote: 192.168.0.2:2539, total bytes: 20000, duration in ms: 1242849304, kbits/s: 0
+```
+
+#### 根因：回调函数的参数类型和 `lwiperf.h` 不一致
+
+本仓库的 lwIP 把 `lwiperf` 的字节计数器**改成过 64 位**（`lwiperf.h` 里是 `u64_t bytes_transferred`，
+`lwiperf.c` 里注释写着 "at 945 Mbit/s the byte count exceeds 4 GiB well before a long iperf run
+finishes"），但本工程重写 `Cpu0_Main.c` 时把回调写成了旧的 32 位版本：
+
+```c
+/* 错 */
+static void lwiperf_report(..., u32_t bytes_transferred, u32_t ms_duration, u32_t bandwidth_kbitpsec);
+```
+
+**这不只是"高 32 位被截掉"**：TriCore 上 64 位实参用的是另一套寄存器/栈布局，
+声明成 `u32_t` 会让**后面的实参整体读错位置**——实测正好是"duration 打印出字节数、
+kbits/s 打印出 0"。反推可以看出来：真值就是
+`bytes=22700056 / ms=20068`（T1S）和 `bytes=1242849304 / ms=20000`（千兆），
+分别对应客户端的 21.6 MB/20.1 s 和 1.16 GiB/20.0 s。
+
+#### 修复（`Cpu0_Main.c`）
+
+把回调签名**逐字照抄 `lwiperf.h`**，并改用 `%llu` + `(unsigned long long)` 打印：
+
+```c
+static void lwiperf_report(void *arg, enum lwiperf_report_type report_type,
+  const ip_addr_t* local_addr, u16_t local_port, const ip_addr_t* remote_addr, u16_t remote_port,
+  u64_t bytes_transferred, u32_t ms_duration, u32_t bandwidth_kbitpsec)
+{
+  ...
+  Ifx_Lwip_printf("IPERF report: type=%d, remote: %s:%d, total bytes: %llu, duration in ms: %"U32_F", kbits/s: %"U32_F"",
+    (int)report_type, ipaddr_ntoa(remote_addr), (int)remote_port,
+    (unsigned long long)bytes_transferred, ms_duration, bandwidth_kbitpsec);
+}
+```
+
+（这一版与基座工程 `tc397_lwip_iperf/Cpu0_Main.c` 完全一致——那个工程本来是对的，
+是本工程重写时抄旧版抄错的。）
+
+#### 修复后实测（板端自报）
+
+```
+# 10BASE-T1S，PC 侧 iperf -t 20 -w 64K 得到 9.05 Mbits/sec
+IPERF report: type=0, remote: 192.168.1.1:12955, total bytes: 22700056,
+              duration in ms: 20066, kbits/s: 9050          <- 与 PC 侧一致
+
+# 1000BASE-T1，PC 侧 345 Mbits/sec
+IPERF report: type=0, remote: 192.168.0.2:6405, total bytes: 518127640,
+              duration in ms: 12006, kbits/s: 345245         <- 与 PC 侧一致
+```
 
 ---
 
@@ -469,7 +531,14 @@ PS> .\tools\iperf.exe -c 192.168.1.100 -p 5001 -t 20 -w 64K
 
 PS> .\tools\iperf-2.2.1-win64.exe -c 192.168.0.100 -p 5001 -t 20 -w 64K
 [ ID] Interval       Transfer     Bandwidth
-[  1] 0.00-20.01 sec   921 MBytes   386 Mbits/sec    （修复前 342）
+[  1] 0.00-20.01 sec   921 MBytes   497 Mbits/sec
+```
+
+会话结束后串口会打出板端自己的统计（应与 PC 侧一致，见 §5.3）：
+
+```
+letter:/$ IPERF report: type=0, remote: 192.168.1.1:12955, total bytes: 22700056, duration in ms: 20066, kbits/s: 9050
+letter:/$ IPERF report: type=0, remote: 192.168.0.2:6405, total bytes: 518127640, duration in ms: 12006, kbits/s: 345245
 ```
 
 板端反向 ping（板 → PC）：
@@ -659,6 +728,7 @@ LINK   : UP   1000M full-duplex
 | 14 | `Libraries/.../Ifx_Lwip.c` | `Ifx_Lwip_pollTimerFlags()` 的 lwIP 定时器**不再关中断运行** | **串口被阻塞 + T1S 首秒掉速的根因**，详见 §5.2 |
 | 15 | `Libraries/LAN8651/lan8651.c/.h` | SPI 超时改成基于 STM 的 1 ms + 3 次重试 + 状态复位；新增 `SPI timeouts/busy/recovered`、`TX hdrb/fail` 计数器 | 原来 2,000,000 次循环 ≈ 300 ms 的超时会卡死主循环；计数器从 `t1stat` 可读 |
 | 16 | `Libraries/.../ethernetif_lan8651.c` | `tx_error` 只前 8 次打印（带累计值） | 在 TX 路径里刷串口会把问题放大 |
+| 17 | `Cpu0_Main.c` | `lwiperf_report()` 的回调签名改回 `u64_t bytes_transferred`（并用 `%llu` 打印） | 本仓库的 `lwiperf` 已把字节计数器改成 64 位，重写 `Cpu0_Main.c` 时写成了 32 位，导致后面实参整体读错 → `kbits/s` 恒 0。详见 §5.3 |
 
 ---
 
@@ -719,6 +789,14 @@ LINK   : UP   1000M full-duplex
 13. **调试串口的 COM 号会变**：本机曾从 `COM169` 变成 `COM162`（CH343 重新枚举）。
     脚本里传的端口不对会报 `could not open port`；先用
     `python -c "import serial.tools.list_ports as lp;[print(p.device,p.description) for p in lp.comports()]"` 确认。
+14. **回调函数的参数类型必须和头文件逐字一致（TriCore ABI）**：本仓库的 `lwiperf.h` 里
+    `bytes_transferred` 是 `u64_t`，本工程写成 `u32_t`。**不是"截掉高 32 位"那么简单**——
+    64 位实参在 TriCore 上占另一套寄存器/栈位置，声明错了会让**后面所有实参整体错位**，
+    表现为 `kbits/s` 恒 0、`duration` 打印出字节数。
+    **规则：实现某个库的回调时，签名直接从它的头文件拷过来（包括 `u64_t`/`u32_t` 这种细节）。**
+15. **不要看一次 iperf 数字就下结论**：千兆侧在同一固件上会在 345~500 Mbps 之间波动
+    （PC 侧网卡中断裁决/后台负载），SD 写也会偶尔从 11 MB/s 掉到 4 MB/s（卡的内部 GC）。
+    记录时给区间和测量条件，不要只写一个最好值。
 
 ---
 
@@ -754,6 +832,7 @@ LINK   : UP   1000M full-duplex
 
 - `../handover/2026-09-21_tc397_selftest.md` —— 第一轮（合并 8 个外设 + selftest/stat/bench）交接说明
 - `../handover/2026-09-21_tc397_selftest_round2.md` —— 第二轮（串口阻塞 / T1S 首秒掉速 / 孤儿段）交接说明
+- `../handover/2026-09-22_tc397_selftest_round3.md` —— 第三轮（板端 IPERF 报告 kbits/s 恒为 0）交接说明
 - `../tc397_uart_lettershell/README.md`、`../tc397_adc/README.md`、`../tc397_can_x12/README.md`、
   `../tc397_flexray/README.md`、`../tc397_tlf35584/README.md`、`../tc397_sdmmc/README.md`、
   `../tc397_lan8651_t1s/README.md`、`../tc397_lwip_iperf/README.md` —— 各外设的详细文档

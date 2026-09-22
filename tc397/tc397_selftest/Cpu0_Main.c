@@ -111,14 +111,23 @@ static void udp_echo_init(void)
 static void
 lwiperf_report(void *arg, enum lwiperf_report_type report_type,
   const ip_addr_t* local_addr, u16_t local_port, const ip_addr_t* remote_addr, u16_t remote_port,
-  u32_t bytes_transferred, u32_t ms_duration, u32_t bandwidth_kbitpsec)
+  u64_t bytes_transferred, u32_t ms_duration, u32_t bandwidth_kbitpsec)
 {
   LWIP_UNUSED_ARG(arg);
   LWIP_UNUSED_ARG(local_addr);
   LWIP_UNUSED_ARG(local_port);
 
-  Ifx_Lwip_printf("IPERF report: type=%d, remote: %s:%d, total bytes: %"U32_F", duration in ms: %"U32_F", kbits/s: %"U32_F"\n",
-    (int)report_type, ipaddr_ntoa(remote_addr), (int)remote_port, bytes_transferred, ms_duration, bandwidth_kbitpsec);
+  /* NOTE: the byte counter signature MUST match lwip/apps/lwiperf.h exactly.
+   * This lwIP copy was patched so that bytes_transferred is a u64_t (at
+   * 945 Mbit/s the 32-bit counter wrapped after ~36 s).  Declaring it as u32_t
+   * here does not just truncate the value: on TriCore the 64-bit argument is
+   * passed in a different register/stack layout, so every following argument
+   * is read from the wrong slot.  The observed symptoms were
+   *   "total bytes: 20068, duration in ms: 22700056, kbits/s: 0"
+   * i.e. the duration printed the byte count and kbit/s printed 0. */
+  Ifx_Lwip_printf("IPERF report: type=%d, remote: %s:%d, total bytes: %llu, duration in ms: %"U32_F", kbits/s: %"U32_F"",
+    (int)report_type, ipaddr_ntoa(remote_addr), (int)remote_port,
+    (unsigned long long)bytes_transferred, ms_duration, bandwidth_kbitpsec);
 }
 #endif /* LWIP_TCP */
 
