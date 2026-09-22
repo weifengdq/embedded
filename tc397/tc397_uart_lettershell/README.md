@@ -354,7 +354,19 @@ tricore-gcc11 11.3.1 复现不了，因为那版 gcc 生成 `.bss.<sym>`，被 L
 
 ---
 
-## 10 许可
+## 10 Ubuntu26 + GCC13 回归验证（2026-09-22）
+
+* 工具链：`/opt/tricore-gcc` 13.4.1（`tricore-elf-gcc 13.4.1 20260422`），TAS Server（DAS 8.3.0）
+  + `aurix_flasher`，串口 `/dev/ttyACM0` 921600。
+* 编译：`./build.sh build`（Debug，`build/gcc`）与
+  `./build.sh build --build-type Release --build-dir build/gcc-rel` 均 **0 error**。
+* 上板：`help` 列出 19 条命令；`version`（Build Sep 22 2026）/`mcu`
+ （ChipID `0xAF239793`，STM 100MHz）/`uptime` 正常。
+* 本次在 Ubuntu 侧无源码改动，Windows（`build.ps1`/TASKING/ADS-GCC）不受影响。
+
+---
+
+## 11 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * Letter-Shell：MIT

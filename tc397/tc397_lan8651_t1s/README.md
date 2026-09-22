@@ -467,7 +467,19 @@ GCC（ADS tricore-gcc11 11.3.1）与 TASKING v6.3r1 均 **0 error**。
 
 ---
 
-## 11 许可
+## 11 Ubuntu26 + GCC13 回归验证（2026-09-22）
+
+* 工具链：`/opt/tricore-gcc` 13.4.1，TAS + `aurix_flasher`，串口 `/dev/ttyACM0` 921600；
+  PC 侧 T1S 网口 `enx001ec0d1c337` 配 `192.168.1.1/24`（板 `192.168.1.100`）。
+* 编译：Debug（`build/gcc`）与 Release（`build/gcc-rel`）均 **0 error**。
+* 上板：`t1stat`（link=1，PLCA en id=1，`SPI timeouts=0 busy=0 recovered=0 | TX hdrb=0 fail=0`）；
+  板→PC 与 PC→板 ping 各 4/4（<1ms）；iperf2（`-w 32K -M 1024`）**7.29~8.18Mbps**
+  （基线 7.69~8.76Mbps，同量级，差值为正常方差）。
+* 本次在 Ubuntu 侧无源码改动，Windows（`build.ps1`/TASKING/ADS-GCC）不受影响。
+
+---
+
+## 12 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * Letter-Shell：MIT；`aurix_flasher`：MIT + Apache 2.0

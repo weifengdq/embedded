@@ -389,7 +389,16 @@ GCC（ADS tricore-gcc11 11.3.1）与 TASKING v6.3r1 均 **0 error**。
 
 ---
 
-## 12 许可
+## 12 Ubuntu26 + GCC13 回归验证（2026-09-22）
+
+* 工具链：`/opt/tricore-gcc` 13.4.1，TAS + `aurix_flasher`，串口 `/dev/ttyACM0` 921600。
+* 编译：Debug（`build/gcc`）与 Release（`build/gcc-rel`）均 **0 error**。
+* 上板：`fr test 5` 双节点 NORMAL_ACTIVE，双向 5 轮 **PASS（0 fails）**。
+* 本次在 Ubuntu 侧无源码改动，Windows（`build.ps1`/TASKING/ADS-GCC）不受影响。
+
+---
+
+## 13 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * Letter-Shell：MIT

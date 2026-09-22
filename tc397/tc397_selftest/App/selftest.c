@@ -309,6 +309,12 @@ static Selftest_Result t_adc(Shell *sh, char *detail, int n, boolean deep)
 
     snprintf(detail, n, "%d/48 ch ok, %d err, %d rail bad [%s]",
              sampled, failed, railsBad, railText);
+    if (Adc_QueueRepairFlags() != 0u)
+    {
+        size_t used = strlen(detail);
+        (void)snprintf(&detail[used], (size_t)((n > (int)used) ? (n - (int)used) : 0),
+                       " [init qrepair=0x%lX]", (unsigned long)Adc_QueueRepairFlags());
+    }
 
     if ((failed == 0) && (railsBad == 0) && (sampled > 20))
     {

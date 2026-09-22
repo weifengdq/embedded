@@ -1,6 +1,7 @@
 /* Debug: dump EVADC group queue + result register states (for AN3 NO-DATA analysis) */
 #include "shell.h"
 #include "Evadc/Std/IfxEvadc.h"
+#include "adc.h"
 #include <stdio.h>
 
 static void AdcDumpGroup(Shell *shell, Ifx_EVADC_G *g, const char *name)
@@ -28,6 +29,8 @@ static int cmd_adcdbg(int argc, char *argv[])
                (unsigned long)MODULE_EVADC.G[2].Q[0].QSR.U,
                (unsigned long)MODULE_EVADC.G[3].Q[0].QSR.U,
                (unsigned long)MODULE_EVADC.G[8].Q[0].QSR.U);
+    shellPrint(shell, "init queue repairs: 0x%08lX (bit per groupId, 0 = clean boot)\r\n",
+               (unsigned long)Adc_QueueRepairFlags());
     return 0;
 }
 

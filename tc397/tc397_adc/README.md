@@ -313,7 +313,21 @@ AN35 T1S_INH   pin=3.243V raw=2657 (G8CH3)
 
 ---
 
-## 10 许可
+## 10 Ubuntu26 + GCC13 回归验证（2026-09-22）
+
+* 工具链：`/opt/tricore-gcc` 13.4.1，TAS + `aurix_flasher`，串口 `/dev/ttyACM0` 921600。
+* 编译：Debug（`build/gcc`）与 Release（`build/gcc-rel`）均 **0 error**。
+* 上板：`adc` 48 路正常（VUC 3.306V / 3V3 3.274V / 1V25 1.245V / 0V9 0.920V /
+  VBAT 11.495V / IG 11.780V），无 NO-DATA。
+* 本轮新增 `Adc_Init` 尾部队列自检（见 `tc397_selftest` README §14 与
+  `../handover/2026-09-22_tc397_ubuntu26_gcc13_regression.md`）：本工程 `adc`/
+  `adcdbg` 已同步同一份实现（两工程 `App/adc.c`、`App/adc.h`、`Shell/shell_adcdbg.c`
+  保持一致），`adcdbg` 末行打印 `init queue repairs: 0x00000000`（本轮实测为干净启动）。
+* Windows（`build.ps1`/TASKING/ADS-GCC）不受影响（改动为工具链无关的 C 代码）。
+
+---
+
+## 11 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * Letter-Shell：MIT

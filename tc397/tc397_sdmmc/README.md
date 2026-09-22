@@ -1420,7 +1420,19 @@ FAT32 cluster=64 sectors、free≈29806 MiB；GCC 与 TASKING 均 0 error。
 
 ---
 
-## 14 许可
+## 14 Ubuntu26 + GCC13 回归验证（2026-09-22）
+
+* 工具链：`/opt/tricore-gcc` 13.4.1，TAS + `aurix_flasher`，串口 `/dev/ttyACM0` 921600。
+* 编译：Debug（`build/gcc`）与 Release（`build/gcc-rel`）均 **0 error**。
+* 上板：`sd init`/`sd info` 正常（RCA=0x0001，SDCLK 50MHz ADMA2 4-bit HS，
+  29.1GiB FAT32，free≈29806MiB；此前 Windows 下 wedged 的卡本次已恢复）；
+  `sd bench`（4MB）**写 4525KB/s、读 11441KB/s**（基线写 4.4~6.1MB/s、读最高 13.8MB/s，
+  符合；同卡在 selftest 下另测得写 11906/读 15515KB/s，属卡内 GC 方差）。
+* 本次在 Ubuntu 侧无源码改动，Windows（`build.ps1`/TASKING/ADS-GCC）不受影响。
+
+---
+
+## 15 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * FatFs R0.16：ChaN 许可（`Libraries/FatFS/LICENSE` 见 ref/fatfs/LICENSE.txt，

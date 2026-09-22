@@ -40,6 +40,10 @@ void Adc_Init(void);
 /* Sample one AN. Returns 1 on success (raw+volt valid), 0 if skipped/failed. */
 int Adc_ReadAn(uint8 an, uint16 *raw, float *voltPin);
 
+/* Init-time queue repair flags, bit per groupId (0 = clean boot). Set when
+ * Adc_Init's FILL self-check had to flush+reprogram a short queue. */
+uint32 Adc_QueueRepairFlags(void);
+
 /* Convert raw code to pin voltage */
 static inline float Adc_RawToVolt(uint16 raw)
 {

@@ -901,7 +901,68 @@ CMake 侧回归：GCC 与 TASKING 全量重编均 **0 error**。
 
 ---
 
-## 13. 相关文档
+## 13. Ubuntu26 + GCC13 回归：AN3 初始化竞态与队列自检（2026-09-22）
+
+> 本轮回到 Ubuntu26（`/opt/tricore-gcc` 13.4.1），9 工程 Debug + Release 全部 0 error、
+> 全部上板实测通过。唯一发现的真实缺陷是本工程的 ADC 偶发 FAIL（`selftest` 报
+> `32/48 ch ok, 1 err`），已修复。详情另见 `../handover/2026-09-22_tc397_ubuntu26_gcc13_regression.md`。
+
+### 13.1 现象
+
+烧录后首次 `selftest`：ADC 项 FAIL，`adc` 显示 `AN03 SPARE NO-DATA`，
+`adcdbg` 显示 G0 `QSR.FILL=6`（应为 7）、`VFR=0xF7`（RES3 从未有效）、
+`Q0R.REQCHNR` 在 0,1,2,4,5,6,7 间循环、**永远跳过 3**。
+DAP 直读寄存器（`aurix_flasher -read`）确认：`CHCTR3=0x00030000`（RESREG=3 正确）、
+`QMR=0x1`、`RCR3=0x0` 全部正常，`QBUR.V=0`——即 G0 队列里**少了 CH3 这一项入队请求**。
+
+### 13.2 定位过程（关键证据链）
+
+1. 独立工程 `tc397_adc` 的 `App/adc.c` 与本工程**逐字节一致**，iLLD EVADC 源码一致、
+   `.cproject` 排除项一致，且独立工程上板后 G0 八通道全有效 → 不是配置错误。
+2. 本工程暖复位 6 次全正常；重新烧录后的首次启动有时坏、有时好（3 次烧录中 2 坏 1 好，
+   坏时必为 CH3）→ **初始化时序竞态**：某次 `QINR` 写在内核未就绪时丢失，
+   而非确定性 bug。
+3. 运行时实验：在 `adcdbg` 旁临时加 `adcrepair`（`clearQueue` + 重加 AN0..AN7），
+   一次即救活（`FILL 6→7`，`RES3 ALIVE`）→ flush+重加是有效修复手段（实验命令已移除，
+   由下面的自检替代）。
+
+### 13.3 修复：`Adc_Init` 尾部队列自检（`App/adc.c`）
+
+健康的状态机是 gate-always + refill，必然总有一项在途，所以 `FILL == count 或 count-1`；
+低于此即丢项 → 对该组 `clearQueue` + 重加本组通道 + `startQueue`，并置位
+`s_adcQueueRepairs`（按 groupId 的 bitmask，可用 `Adc_QueueRepairFlags()` 读取）：
+
+* `adcdbg` 末行打印 `init queue repairs: 0x00000000`（修复后 3 次烧录启动全为 0，
+  干净启动无误报；修复前另有 6 次暖复位全健康）；
+* `selftest` 的 ADC 证据串在非零时追加 `[init qrepair=0xXX]`（修好仍判 PASS，
+  修的是初始化瞬态，功能无损；若某天看到非零，说明竞态又发作了一次，但已被自动修复）。
+
+### 13.4 同步与兼容
+
+* `tc397_adc` 的 `App/adc.c`、`App/adc.h`、`Shell/shell_adcdbg.c` 已同步**同一份实现**
+  （三文件与本工程一致，`diff` 无差异），独立 `adc` 工程同样获得自检保护。
+* 改动为纯工具链无关 C 代码，未碰 `CMakeLists.txt` GCC/Tasking 分支、未碰 LSL、
+  未碰 `build.ps1`；Windows 侧无需验证（此前 GCC/TASKING 全量 0 error 的结论不受影响）。
+* 另修：本工程 `build.sh` 丢了可执行位（`rw-rw-r--`），已 `chmod +x`
+  （git 记录为 mode 变更；其余 8 工程原本即 `rwxrwxr-x`）。
+
+### 13.5 本轮上板实测（Ubuntu GCC13 Debug，`/dev/ttyACM0`）
+
+* `selftest`：**9 PASS 0 FAIL 1 SKIP → OVERALL PASS**
+  （ADC 33/48 ch ok；CAN 12/12；FlexRay 双节点 6/6；TLF DEVSTAT 0xFA；
+  SD 32KB 写 4315~11906 / 读 15515~18856 KB/s；T1S PLCA；GETH 1000M link-up）。
+* `bench`：CAN/FlexRay/SD 正常（FlexRay 需先 `selftest` 初始化，属预期行为）。
+* 双网口 iperf2：T1S **7.85Mbps**（基线带内），千兆 **343Mbps**
+  （本工程参考值 359Mbps，带内；独立 `lwip_iperf` 工程同环境 535Mbps）；
+  板端 `IPERF report` 与 PC 侧一致（`kbits/s: 8177` vs 8.18M，u64 修复有效）。
+* Release（`build/gcc-rel`）同样 0 error，上板 `selftest` **OVERALL PASS**。
+
+---
+
+## 14. 相关文档
+
+- `../handover/2026-09-22_tc397_ubuntu26_gcc13_regression.md` —— 本轮（Ubuntu26 + GCC13.4.1
+  九工程回归 + AN3 初始化竞态修复 + MiniWiggler 掉线恢复）交接说明
 
 - `../handover/2026-09-21_tc397_selftest.md` —— 第一轮（合并 8 个外设 + selftest/stat/bench）交接说明
 - `../handover/2026-09-21_tc397_selftest_round2.md` —— 第二轮（串口阻塞 / T1S 首秒掉速 / 孤儿段）交接说明

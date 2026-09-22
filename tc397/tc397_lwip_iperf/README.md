@@ -561,7 +561,20 @@ GCC（ADS tricore-gcc11 11.3.1）与 TASKING v6.3r1 均 **0 error**。
 
 ---
 
-## 10 许可
+## 10 Ubuntu26 + GCC13 回归验证（2026-09-22）
+
+* 工具链：`/opt/tricore-gcc` 13.4.1，TAS + `aurix_flasher`，串口 `/dev/ttyACM0` 921600；
+  PC 侧千兆口 `enp6s0` 为 `192.168.0.1/24`（板 `192.168.0.100`，1000M Slave）。
+* 编译：Debug（`build/gcc`）与 Release（`build/gcc-rel`）均 **0 error**。
+* 上板：`link`（1000M Slave）/`ifconfig` 正常；双向 ping 4/4（avg 0.12~0.15ms）；
+  iperf2（`-w 256K`）**535Mbps ×2 次（20s/1.25GB），`rx_err=0`**
+  （基线 592Mbps；差约 10%，为本机后台负载下的正常方差，零误码）。
+  `-w 128K` 反而只跑 363Mbps，256K 为本机最优。
+* 本次在 Ubuntu 侧无源码改动，Windows（`build.ps1`/TASKING/ADS-GCC）不受影响。
+
+---
+
+## 11 许可
 
 - iLLD/Libraries：Infineon Boost Software License 1.0
 - Letter-Shell：MIT；lwIP：BSD

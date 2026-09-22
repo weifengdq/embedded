@@ -16,6 +16,7 @@
 #include "adc.h"
 #include "Evadc/Adc/IfxEvadc_Adc.h"
 #include "Evadc/Std/IfxEvadc.h"
+#include <stdio.h>
 
 /* ---- AN table (index = AN number) ---- */
 #define SKIP  0xFF, 0xFF, AdcKind_Skip
@@ -106,6 +107,8 @@ static IfxEvadc_GroupId Adc_GroupIdEnum(uint8 grpId)
     }
 }
 
+static void Adc_VerifyQueues(void);
+
 static void Adc_InitGroup(IfxEvadc_Adc_Group *grp, uint8 grpId, boolean last)
 {
     IfxEvadc_Adc_GroupConfig grpCfg;
@@ -171,6 +174,73 @@ void Adc_Init(void)
     Adc_InitChannelsForGroup(&s_grp2);
     Adc_InitChannelsForGroup(&s_grp3);
     Adc_InitChannelsForGroup(&s_grp8);
+
+    Adc_VerifyQueues();
+}
+
+/* Verify each group's queue0 fill level and repair a short queue.
+ *
+ * Background (2026-09-22, Ubuntu GCC13): on some boots after flash
+ * programming, one QINR write is lost at init time (observed in tc397_selftest:
+ * G0 FILL=6 instead of 7, Q0R.REQCHNR cycling 0,1,2,4,5,6,7 and never 3,
+ * RES3.VF never set -> AN3 NO-DATA -> selftest ADC FAIL). Warm resets re-run
+ * the same init and always come up healthy, so this is an init-time transient,
+ * not a config error (registers QMR/CHCTR/RCR read back identical).
+ * Rather than chasing the transient, verify the result:
+ * a healthy gate-always refill queue always has an entry in flight, so
+ * FILL == count or count-1. Anything lower means entries were lost -> flush
+ * and re-program that group's queue while the kernel is long ready. */
+static uint32 s_adcQueueRepairs = 0u;   /* bit per groupId needing repair */
+
+uint32 Adc_QueueRepairFlags(void)
+{
+    return s_adcQueueRepairs;
+}
+
+static void Adc_VerifyQueues(void)
+{
+    static const uint8 grpIds[] = { 0, 1, 2, 3, 8 };
+    uint8 gi;
+
+    for (gi = 0; gi < (uint8)(sizeof(grpIds) / sizeof(grpIds[0])); ++gi)
+    {
+        uint8 grpId = grpIds[gi];
+        IfxEvadc_Adc_Group *grp = Adc_GroupFor(grpId);
+        uint32 expect = 0u;
+        uint32 fill;
+        uint8 an;
+
+        if (grp == 0)
+        {
+            continue;
+        }
+        for (an = 0; an < 48; ++an)
+        {
+            if ((g_AdcAnTable[an].kind != AdcKind_Skip) &&
+                (g_AdcAnTable[an].group == grpId))
+            {
+                ++expect;
+            }
+        }
+        fill = (uint32)MODULE_EVADC.G[grpId].Q[0].QSR.B.FILL;
+        if ((fill + 1u) < expect)
+        {
+            /* Short queue: flush and re-program while the kernel is ready. */
+            IfxEvadc_clearQueue(&MODULE_EVADC.G[grpId], TRUE, IfxEvadc_RequestSource_queue0);
+            for (an = 0; an < 48; ++an)
+            {
+                const AdcAnInfo *info = &g_AdcAnTable[an];
+                if ((info->kind != AdcKind_Skip) && (info->group == grpId) &&
+                    (Adc_GroupFor(info->group) == grp))
+                {
+                    IfxEvadc_Adc_addToQueue(&s_ch[an], IfxEvadc_RequestSource_queue0,
+                                            IFXEVADC_QUEUE_REFILL);
+                }
+            }
+            IfxEvadc_Adc_startQueue(grp, IfxEvadc_RequestSource_queue0);
+            s_adcQueueRepairs |= ((uint32)1u << grpId);
+        }
+    }
 }
 
 int Adc_ReadAn(uint8 an, uint16 *raw, float *voltPin)
