@@ -664,7 +664,16 @@ int frd_startup(int verbose)
 int frd_is_ready(void)
 {
     for (int i = 0; i < FRD_NODE_COUNT; i++) {
-        uint8_t p = frd_poc(&s_nodes[i]);
+        uint8_t p;
+        /* NOTE: frd_poc() dereferences s_nodes[i].ctrl.eray, which is only
+         * valid after frd_prepare().  Calling this before the first
+         * frd_prepare() traps (data access to address 0) and leaves the whole
+         * MCU silent - first hit by `bench` in tc397_selftest.
+         * Report "not ready" instead of faulting. */
+        if (!s_nodes[i].prepared) {
+            return 0;
+        }
+        p = frd_poc(&s_nodes[i]);
         if ((p != 2U) && (p != 3U)) {
             return 0;
         }

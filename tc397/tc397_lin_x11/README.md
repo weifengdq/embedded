@@ -302,9 +302,23 @@ LIN1 单节点验证通过（`linbb 1` RHE+PID、`lindomf 1` TXD 显性跟随本
 另：`linstat` 计数器跨命令累积，复位（`reset`）重启才清零；`uptime`/tick 在
 应用复位后不清零（RAM 保持，基线行为）。
 
+## 8 2026-09-22 家族问题专项修复（串口）— 复核：**未编译验证**
+
+同一批次排查的 8 个 tc397 工程都做了"GCC 孤儿段"修复。本工程不在用户给出的清单里，
+但属于同一家族、用的是同一份 `CMakeLists.txt` 模板、同样带 letter-shell，所以一并处理：
+
+| 文件 | 改动 | 原因 |
+| --- | --- | --- |
+| `CMakeLists.txt`（GCC 分支） | **去掉 `-fdata-sections`**（保留 `-ffunction-sections`） | 家族通用孤儿段坑（`tc397_sdmmc` §1.3）：Ubuntu gcc13 把静态变量放到裸 `.<sym>` 段，LSL 的 copy/clear 表收不到 → 启动不初始化 → letter-shell 的 `shellList[]` 野指针 → 上电串口无输出 |
+
+> **注意**：本工程只有 `build.sh`（Ubuntu 用，依赖 `/opt/tricore-gcc`），Windows 上没有 `build.ps1`，
+> 所以**本轮没有做编译与板端验证**。改动本身只是去掉一个编译选项，风险极低；
+> 下次在 Ubuntu 上构建本工程时请确认一次（`map` 里静态变量应落在 `.bss` 输出段）。
+> 若不想要这个改动，`git checkout HEAD~1 -- tc397_lin_x11/CMakeLists.txt` 即可还原。
+
 ---
 
-## 8 许可
+## 9 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * Letter-Shell：MIT

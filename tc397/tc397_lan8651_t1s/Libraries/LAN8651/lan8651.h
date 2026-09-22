@@ -240,6 +240,16 @@ void lan8651_qspi_tx_isr(void);
 void lan8651_qspi_rx_isr(void);
 void lan8651_qspi_er_isr(void);
 
+/* SPI transaction statistics (see lan8651.c).  All should stay 0 on a healthy
+ * link; they are printed by the `t1stat` shell command.
+ *   timeouts  : a transaction never completed within LAN8651_SPI_TIMEOUT_US
+ *   busy      : the QSPI channel was still busy when a transfer was started
+ *   recovered : the iLLD state was forced back to idle and the transfer retried
+ *   hdrb      : the chip rejected our data header (footer HDRB)
+ *   fail      : frames that low_level_output could not send at all */
+void lan8651_spi_stats(uint32_t *timeouts, uint32_t *busy, uint32_t *recovered);
+void lan8651_tx_stats(uint32_t *hdrb, uint32_t *fail);
+
 /* ------------------------------------------------------------------
  *  Public API
  * ------------------------------------------------------------------ */

@@ -347,17 +347,32 @@ void Ifx_Lwip_pollTimerFlags(void)
 {
     Ifx_Lwip *lwip = &g_Lwip;
     uint16    timerFlags;
+    boolean   interruptState;
 
-    /* disable interrupts */
-    boolean interruptState = IfxCpu_disableInterrupts();
+    /* Snapshot/clear the flags in a short critical section, then run the lwIP
+     * timers WITH INTERRUPTS ENABLED.
+     *
+     * History: the original port ran the whole timer block with interrupts
+     * disabled because the GETH RX ISR used to call into the (non re-entrant)
+     * lwIP core.  In this port the RX ISR explicitly does NOT touch lwIP
+     * (see ISR_Geth_Rx: "no lwIP calls here"; packets are drained from the
+     * main loop), so nothing else can re-enter the stack and the critical
+     * section is not needed.
+     *
+     * It is not just unnecessary, it is harmful: tcp_fasttmr()/tcp_slowtmr()
+     * send delayed ACKs and retransmissions (low_level_output() does real work
+     * there), and while interrupts are masked the console goes deaf - UART RX
+     * bytes are lost.  Same root cause that made the tc397_selftest console
+     * stall once a second netif was driven over SPI. */
+    interruptState = IfxCpu_disableInterrupts();
 
     timerFlags       = lwip->timerFlags;
     lwip->timerFlags = 0;
 
-    /* NOTE: interrupts stay disabled while running the lwIP timer functions:
-     * the RX ISR calls into the (non re-entrant) lwIP core, so tcp timers
-     * must not run concurrently. All handlers below are short (<<100us);
-     * the 32-entry RX ring absorbs line-rate bursts of ~390us. */
+    IfxCpu_restoreInterrupts(interruptState);
+
+    /* NOTE: all handlers below are short (<<100us); the 32-entry RX ring
+     * absorbs line-rate bursts of ~390us. */
 
 #if LWIP_DHCP
     if (timerFlags & IFX_LWIP_FLAG_DHCP_COARSE)
@@ -553,10 +568,11 @@ void netif_state_changed(struct netif* netif, netif_nsc_reason_t reason, const n
  * The followings are executed: */
 void Ifx_Lwip_init(eth_addr_t ethAddr)
 {
-#ifdef __LWIP_DEBUG__
-    //Init uart for debugging
-    initUART();
-#endif
+    /* NOTE: no initUART() here.  The caller (core0_main) already initialised
+     * ASCLIN0 before printing the boot banner; re-running
+     * IfxAsclin_Asc_initModule() flushes the TX FIFO and cuts the last boot
+     * log line in half.  (Original iLLD code called initUART() under
+     * __LWIP_DEBUG__.) */
     ip_addr_t default_ipaddr, default_netmask, default_gw;
     IP4_ADDR(&default_gw, 0,0,0,0);
     IP4_ADDR(&default_ipaddr, 0,0,0,0);
@@ -594,10 +610,7 @@ void Ifx_Lwip_init(eth_addr_t ethAddr)
 
 void Ifx_Lwip_init_with_ip(eth_addr_t ethAddr, ip_addr_t ipAddr, ip_addr_t netMask, ip_addr_t gateway)
 {
-#ifdef __LWIP_DEBUG__
-    //Init uart for debugging
-    initUART();
-#endif
+    /* NOTE: no initUART() here - see Ifx_Lwip_init(). */
     LWIP_DEBUGF(IFX_LWIP_DEBUG, ("Ifx_Lwip_init_with_ip start!\n"));
 
     /** - initialise LWIP (lwip_init()) */

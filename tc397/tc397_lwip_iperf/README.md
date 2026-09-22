@@ -472,9 +472,39 @@ PC 无论用多大 socket 缓冲都填不满它，塌陷消失。**实测（Task
 3. **若仍要更高**：需要在 PC 侧解决，而不是继续调板子 —— 因为
    Tasking/GCC 同速、`busy` 只有 37%/60%，板子侧还有余量。
 
+## 8 2026-09-22 家族问题专项修复（串口 / lwIP）
+
+> 背景：`tc397_sdmmc` §1.3 与 `tc397_selftest` §5.2/§5.3 定位出的几个"家族通用"问题
+> （GCC 孤儿段、lwIP 定时器关中断、SPI 超时按循环计数、`frd_is_ready()` 空指针、
+> `Ifx_Lwip_init*()` 重复 `initUART()`）。本次对 8 个 tc397 工程做了一轮横向排查。
+
+### 8.1 改动
+
+| 文件 | 改动 | 原因 |
+| --- | --- | --- |
+| `CMakeLists.txt`（GCC 分支） | **去掉 `-fdata-sections`**（保留 `-ffunction-sections`） | 家族通用孤儿段坑：Ubuntu gcc13 把静态变量放裸 `.<sym>` 段 → 启动不初始化 → `shellList[]` 野指针 → `shellGetCurrent()` Trap → **上电串口无输出**（ADS tricore-gcc11 不受影响） |
+| `Libraries/Ethernet/lwip/port/src/Ifx_Lwip.c` | `Ifx_Lwip_pollTimerFlags()`：**只在取走并清 `timerFlags` 的那几行关中断**，`tcp_fasttmr()` / `tcp_slowtmr()` / `etharp_tmr()` / `dhcp_*_tmr()` 一律开着中断跑 | 原实现把**整个** lwIP 定时器处理放进关中断区，理由是"RX ISR 会调用 lwIP"。该理由在本工程已不成立：`ISR_Geth_Rx` 的注释和代码都明确不碰 lwIP（收包由主循环 `Ifx_Lwip_pollReceiveFlags()` 排空）。而关中断期间 `tcp_fasttmr()` 发出的延迟 ACK 要经 `low_level_output()` 做真实工作，同时 UART RX 字节会真的丢——这正是 `tc397_selftest` 里"串口失聪 + 首秒掉速"的根因 |
+| 同上 | `Ifx_Lwip_init()` / `Ifx_Lwip_init_with_ip()` 删掉重复的 `initUART()` | `core0_main` 早已初始化 ASCLIN0 并打印了 banner，再跑一次 `IfxAsclin_Asc_initModule()` 会冲掉 TX FIFO、截断启动日志 |
+
+注：本工程的 `lwiperf_report()` 用的是 `u64_t bytes_transferred` + `%llu`，与本仓库打过 64 位补丁的
+`lwiperf.h` 一致（`tc397_selftest` 曾因抄成 `u32_t` 导致实参整体错位、板端 `kbits/s` 恒 0）。
+
+### 8.2 验证（2026-09-22，TASKING Debug，COM168）
+
+```
+ifconfig : en0 192.168.0.100/24 link UP
+ping 192.168.0.2 4 : 4 sent, 4 received, 0% loss
+iperf -c 192.168.0.100 -p 5001 -w 64K -t 12 : 544 MBytes / 12 s = 380 Mbits/sec
+板端 IPERF report : total bytes: 570425368, duration in ms: 12003, kbits/s: 380188
+                    （与 PC 侧一致；也再次证明 64 位字节计数器路径正常）
+全程无 tx_error / ERR_IF
+```
+
+GCC（ADS tricore-gcc11 11.3.1）与 TASKING v6.3r1 均 **0 error**。
+
 ---
 
-## 8 许可
+## 9 许可
 
 - iLLD/Libraries：Infineon Boost Software License 1.0
 - Letter-Shell：MIT；lwIP：BSD

@@ -203,9 +203,40 @@ canpair done: ALL PASS (0 fail(s))
 * 编译/烧录/12 路回环全 PASS（首轮 can0 首包偶发超时 1 次，重跑全过；
   与 Ubuntu GCC 记录的“首次上电第一帧超时”同类现象，属 TCAN1043 使能后首帧瞬态）。
 
+## 9 2026-09-22 家族问题专项修复（串口 / lwIP）
+
+> 背景：`tc397_sdmmc` §1.3 与 `tc397_selftest` §5.2/§5.3 定位出的几个"家族通用"问题
+> （GCC 孤儿段、lwIP 定时器关中断、SPI 超时按循环计数、`frd_is_ready()` 空指针、
+> `Ifx_Lwip_init*()` 重复 `initUART()`）。本次对 8 个 tc397 工程做了一轮横向排查。
+
+### 9.1 改动
+
+| 文件 | 改动 | 原因 |
+| --- | --- | --- |
+| `CMakeLists.txt`（GCC 分支） | **去掉 `-fdata-sections`**（保留 `-ffunction-sections`） | TriCore-GCC 13.x（Ubuntu `/opt/tricore-gcc`）把每个静态变量放到**裸 `.<sym>` 段**，`Lcf_Gnuc_Tricore_Tc.lsl` 的 copy/clear 表只收 `.data`/`.bss` 系列 → 变量启动不初始化、保留上电随机值。实测后果是 `shellList[]` 野指针 → `shellGetCurrent()` 跳野指针 Trap → **上电串口无输出**。ADS 的 tricore-gcc11 11.3.1 生成 `.bss.<sym>`（被 `*(.bss.*)` 收走）所以 Windows 下复现不了，Ubuntu gcc13 会中招 |
+
+本工程无 lwIP / SPI 网口，也没有"未初始化即解引用"路径。
+
+### 9.2 一个既有告警的说明（不用处理）
+
+`App/can12.c` 的 `#pragma section ".bss.g_can" aw` 是**有意**的：`g_can` 是约 70 KB 的零初始化
+数组，要落进 LSL 里 `*(.bss.*)` 收集的 NOLOAD 段，避免 70 KB flash 副本。
+因此汇编器会报 `Warning: setting incorrect section type for .bss.g_can`——这是**既有告警**，
+段最终仍被 `.bss` 输出段（带启动清零表）收集，实测 `canstat` 12 通道计数全 0、`canpair` 全过，无需处理。
+
+### 9.3 验证（2026-09-22，TASKING Debug，COM168）
+
+```
+canstat : fMCAN=80.00 MHz nFAULT=0，12 通道 rx/tx/ovf/bo/rst 全 0，
+          NBTP=0x06030E03 DBTP=0x00800B22（与 §5 基线一致）
+canpair : 1 round，pairs 0-1..10-11 双向 ALL PASS (0 fail(s))
+```
+
+GCC（ADS tricore-gcc11 11.3.1）与 TASKING v6.3r1 均 **0 error**。
+
 ---
 
-## 9 许可
+## 10 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * Letter-Shell：MIT

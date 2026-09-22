@@ -359,10 +359,11 @@ void netif_state_changed(struct netif* netif, netif_nsc_reason_t reason, const n
  * The followings are executed: */
 void Ifx_Lwip_init(eth_addr_t ethAddr)
 {
-#ifdef __LWIP_DEBUG__
-    //Init uart for debugging
-    initUART();
-#endif
+    /* NOTE: no initUART() here.  The caller (core0_main) already initialised
+     * ASCLIN0 before printing the boot banner; re-running
+     * IfxAsclin_Asc_initModule() flushes the TX FIFO and cuts the last boot
+     * log line in half.  (Original iLLD code called initUART() under
+     * __LWIP_DEBUG__.) */
     ip_addr_t default_ipaddr, default_netmask, default_gw;
     IP4_ADDR(&default_gw, 0,0,0,0);
     IP4_ADDR(&default_ipaddr, 0,0,0,0);
@@ -400,10 +401,7 @@ void Ifx_Lwip_init(eth_addr_t ethAddr)
 
 void Ifx_Lwip_init_with_ip(eth_addr_t ethAddr, ip_addr_t ipAddr, ip_addr_t netMask, ip_addr_t gateway)
 {
-#ifdef __LWIP_DEBUG__
-    //Init uart for debugging
-    initUART();
-#endif
+    /* NOTE: no initUART() here - see Ifx_Lwip_init(). */
     LWIP_DEBUGF(IFX_LWIP_DEBUG, ("Ifx_Lwip_init_with_ip start!\n"));
 
     /** - initialise LWIP (lwip_init()) */

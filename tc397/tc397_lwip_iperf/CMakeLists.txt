@@ -203,7 +203,11 @@ else()
         -fmessage-length=0
         -fno-common
         -fstrict-volatile-bitfields
-        -fdata-sections
+        # NOTE: NO -fdata-sections! TriCore GCC puts each static into a bare
+        # .<sym> section (not .data.<sym>), which Lcf_Gnuc_Tricore_Tc.lsl does
+        # not collect into .data/.bss and not into copy/clear tables -> the
+        # variables would keep power-on garbage (shellList wild pointers hung
+        # the shell). Keep -ffunction-sections (code needs no init).
         -ffunction-sections
         -mcpu=${AURIX_CPU}
     )

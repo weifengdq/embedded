@@ -301,9 +301,38 @@ FR selftest: PASS (5 rounds, 0 fails)
 
 * 编译/烧录/双节点 5 轮双向全 PASS（10/10，rxErr 恒 0）。
 
+## 10 2026-09-22 家族问题专项修复（串口 / lwIP）
+
+> 背景：`tc397_sdmmc` §1.3 与 `tc397_selftest` §5.2/§5.3 定位出的几个"家族通用"问题
+> （GCC 孤儿段、lwIP 定时器关中断、SPI 超时按循环计数、`frd_is_ready()` 空指针、
+> `Ifx_Lwip_init*()` 重复 `initUART()`）。本次对 8 个 tc397 工程做了一轮横向排查。
+
+### 10.1 改动
+
+| 文件 | 改动 | 原因 |
+| --- | --- | --- |
+| `CMakeLists.txt`（GCC 分支） | **去掉 `-fdata-sections`**（保留 `-ffunction-sections`） | 家族通用孤儿段坑：Ubuntu gcc13 把静态变量放裸 `.<sym>` 段 → 启动不初始化 → `shellList[]` 野指针 → 上电串口无输出 |
+| `Libraries/FlexRay/flexray_dual.c` | `frd_is_ready()` 增加 `s_nodes[i].prepared` 判断 | 原实现直接 `frd_poc(&s_nodes[i])`，而 `frd_poc()` 会解引用 `n->ctrl.eray`；`frd_prepare()` 之前该指针是 NULL → 数据访问 Trap → **整机静默**。本工程的 `frd_poll()` 本来就有 `prepared` 保护所以没炸，`tc397_selftest` 的 `bench` 踩到了；这里按同一份修复对齐 |
+
+本工程无 lwIP / SPI 网口。
+
+### 10.2 验证（2026-09-22，TASKING Debug，COM168）
+
+```
+fr test 2
+FR0A(ERAY0) boot: rc=0@OK poc=2(NORMAL_ACTIVE) SUCC1=0x04004304 CCSV=0x00360302 EIR=0x00000016
+FR1A(ERAY1) boot: rc=0@OK poc=2(NORMAL_ACTIVE) SUCC1=0x04004304 CCSV=0x00410302 EIR=0x00000016
+FR selftest: both nodes NORMAL, 2 rounds each direction
+[0] FR0->FR1 slot11 OK   [0] FR1->FR0 slot12 OK
+[1] FR0->FR1 slot11 OK   [1] FR1->FR0 slot12 OK
+FR selftest: PASS (2 rounds, 0 fails)
+```
+
+GCC（ADS tricore-gcc11 11.3.1）与 TASKING v6.3r1 均 **0 error**。
+
 ---
 
-## 10 许可
+## 11 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * Letter-Shell：MIT

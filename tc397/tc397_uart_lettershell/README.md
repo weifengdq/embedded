@@ -267,9 +267,36 @@ Windows GCC 对照：`.\build.ps1 -Compiler gcc` 编译通过（301 obj），
 * 构建机注记：Python 自带 ninja 1.13.0（kitware 版）增量构建失败，
   WinGet 官方 1.13.2 正常；`rebuild` 可规避。
 
+## 8 2026-09-22 家族问题专项修复（串口 / lwIP）
+
+本工程是**最典型的潜在受害者**：letter-shell 的 `shellList[SHELL_MAX_NUMBER]` 等静态变量
+在 `-fdata-sections` 下会被 GCC 拆成独立段，而 Ubuntu `/opt/tricore-gcc`（13.x）生成的是
+**裸 `.<sym>` 段**（不是 `.bss.<sym>`），`Lcf_Gnuc_Tricore_Tc.lsl` 的 copy/clear 表只覆盖
+`.data` / `.bss` 系列 → 这些变量启动不初始化、保留上电随机值 →
+`shellList[i]` 野指针 → `shellGetCurrent()` 跳野指针 Trap → **上电串口无输出、必死**。
+
+本工程此前一直"靠运气工作"（`tc397_sdmmc` §1.3 已记录该家族通用坑）——Windows 下用 ADS 的
+tricore-gcc11 11.3.1 复现不了，因为那版 gcc 生成 `.bss.<sym>`，被 LSL 的 `*(.bss.*)` 收走。
+
+### 8.1 改动
+
+| 文件 | 改动 |
+| --- | --- |
+| `CMakeLists.txt`（GCC 分支） | **去掉 `-fdata-sections`**（保留 `-ffunction-sections`，代码段不需要初始化） |
+
+本工程无 lwIP、无 SPI 网口。
+
+### 8.2 验证（2026-09-22）
+
+* GCC（ADS tricore-gcc11 11.3.1）与 TASKING v6.3r1 均 **0 error**。
+* `build/gcc/tc397_uart_lettershell.map` 复核：`shell.c.obj` 的静态数据现在落在 `.bss` 输出段
+  （0x70000710 起，section 带 load address，即被启动清零/copy 表覆盖），不再出现裸段。
+* 板端（COM168, 921600）**冷启动日志完整**：banner + `ChipID` / `SCU_ID` / `STM Freq` / `DTS` 全部打印；
+  `ver`、`mcu` 正常返回。
+
 ---
 
-## 8 许可
+## 9 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * Letter-Shell：MIT

@@ -497,6 +497,14 @@ static int cmd_t1stat(int argc, char *argv[])
         (unsigned long)((buf & LAN8651_OA_BUFSTS_TXC_MASK) >> LAN8651_OA_BUFSTS_TXC_SHIFT),
         lan8651_irq_asserted(&g_lan8651) ? "ASSERTED" : "idle",
         (unsigned)IfxPort_getPinState(LAN8651_INT_PORT, LAN8651_INT_PIN));
+    {
+        uint32_t to = 0, busy = 0, rec = 0, hdrb = 0, fail = 0;
+        lan8651_spi_stats(&to, &busy, &rec);
+        lan8651_tx_stats(&hdrb, &fail);
+        shellPrint(shell, "SPI timeouts=%lu busy=%lu recovered=%lu | TX hdrb=%lu fail=%lu\r\n",
+            (unsigned long)to, (unsigned long)busy, (unsigned long)rec,
+            (unsigned long)hdrb, (unsigned long)fail);
+    }
     return 0;
 }
 

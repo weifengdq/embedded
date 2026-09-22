@@ -236,9 +236,27 @@ AN35 T1S_INH   pin=3.243V raw=2657 (G8CH3)
 * 编译/烧录/48 路采样全 PASS（电源轨读数与 Ubuntu GCC 基线一致：
   VUC 3.3V / 3V3 3.25V / 1V25 1.24V / 0V9 0.92V / VBAT 11.8V / IG 12.0V）。
 
+## 8 2026-09-22 家族问题专项复查（串口 / lwIP）
+
+> 背景：`tc397_sdmmc` §1.3 与 `tc397_selftest` §5.2/§5.3 定位出的几个"家族通用"问题——
+> GCC 孤儿段、lwIP 定时器关中断、SPI 超时按循环计数、`frd_is_ready()` 空指针、
+> `Ifx_Lwip_init*()` 重复 `initUART()`。本次对 8 个 tc397 工程做了一轮横向排查。
+
+**本工程结论：无需改动。**
+
+| 检查项 | 结论 |
+| --- | --- |
+| GCC `-fdata-sections` | 本工程移植时就已去掉（见上文 §7.3 的"去掉了 `-fdata-sections`"），本轮复核 GCC 分支确认无该选项 |
+| lwIP 定时器 / SPI 网口 | 本工程不含 Ethernet 库，不适用 |
+| "未初始化即解引用"类陷阱 | `App/adc.c` + `Shell/shell_adc.c` 无此类路径 |
+
+**验证**：ADS GCC 11.3.1 与 TASKING v6.3r1 均 **0 error**；板端（COM168, 921600）
+`adc` 命令 48 通道读数正常（3V3=3.291 V、1V25=1.246 V、0V9=0.911 V、VBAT=11.70 V），
+通道顺序与 §1.1 一致。
+
 ---
 
-## 8 许可
+## 9 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * Letter-Shell：MIT

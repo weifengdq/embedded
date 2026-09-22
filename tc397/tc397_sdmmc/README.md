@@ -1344,7 +1344,24 @@ REC-enter:00000008 00000000       <- 进入恢复...然后没了
 
 ---
 
-## 12 许可
+## 12 家族问题横向复查（2026-09-22）
+
+§1.3 的"GCC 孤儿段"根因在本工程已经修复。本轮把该修复横向推广到其余 tc397 工程时，
+回头复查了本工程，结论是**无需再改动**：
+
+| 检查项 | 结论 |
+| --- | --- |
+| GCC `-fdata-sections` | 已去掉（保留 `-ffunction-sections`），本轮复核确认 |
+| `disk_write_sdmmc()` 的 cache 写回 | 已有 `sdmmc_cache_clean(buff, count*512)`（§11 第 6 条），缓冲放 LMU(cache) 也不会丢数据 |
+| lwIP 定时器 / SPI 网口 | 本工程不含 Ethernet 库，不适用 |
+
+**验证**（COM168, 921600，TASKING Debug）：`sd init` / `sd info` 正常——CD P10.7=0 卡在位，
+RCA=0x0001，SDCLK=50 MHz，ADMA2 4-bit HS，容量 61067264 sectors（约 29.1 GiB），
+FAT32 cluster=64 sectors、free≈29806 MiB；GCC 与 TASKING 均 0 error。
+
+---
+
+## 13 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * FatFs R0.16：ChaN 许可（`Libraries/FatFS/LICENSE` 见 ref/fatfs/LICENSE.txt，

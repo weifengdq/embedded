@@ -429,9 +429,31 @@ SS1(P33.9)=1(high/normal) WDI(P14.3)=0 ERR(P33.8)=1 lock=locked baud=2000000 xfe
 
 * 编译/烧录/TLF 状态全 PASS（NORMAL，电压轨全 ready，SPI 零超时）。
 
+## 10 2026-09-22 家族问题专项修复（串口 / lwIP）
+
+> 背景：`tc397_sdmmc` §1.3 与 `tc397_selftest` §5.2/§5.3 定位出的几个"家族通用"问题
+> （GCC 孤儿段、lwIP 定时器关中断、SPI 超时按循环计数、`frd_is_ready()` 空指针、
+> `Ifx_Lwip_init*()` 重复 `initUART()`）。本次对 8 个 tc397 工程做了一轮横向排查。
+
+| 文件 | 改动 | 原因 |
+| --- | --- | --- |
+| `CMakeLists.txt`（GCC 分支） | **去掉 `-fdata-sections`**（保留 `-ffunction-sections`） | 家族通用孤儿段坑：Ubuntu `/opt/tricore-gcc`（13.x）把每个静态变量放到**裸 `.<sym>` 段**，`Lcf_Gnuc_Tricore_Tc.lsl` 的 copy/clear 表收不到 → 启动不初始化 → letter-shell 的 `shellList[]` 野指针 → `shellGetCurrent()` Trap → **上电串口无输出**。ADS tricore-gcc11 11.3.1 生成 `.bss.<sym>`（被 `*(.bss.*)` 收走）所以 Windows 下复现不了 |
+
+本工程无 lwIP / SPI 网口，也没有 `frd_is_ready()` 那类"未初始化即解引用"路径。
+
+**验证**（2026-09-22，TASKING Debug，COM168）：
+
+```
+tlf link : DEVSTAT=0xFA (NORMAL)  PROTSTAT=0xF1 (locked)  GTM=0x02 (normal mode (MPS=0))
+           link OK (MISO MSB=1, HW parity pass), baud=2000000
+tlf dump : 41 个寄存器读数与 §6 的 POR 基线一致
+```
+
+GCC（ADS tricore-gcc11 11.3.1）与 TASKING v6.3r1 均 **0 error**。
+
 ---
 
-## 10 许可
+## 11 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * Letter-Shell：MIT

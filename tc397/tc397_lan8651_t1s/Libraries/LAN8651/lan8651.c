@@ -8,8 +8,6 @@
 #include "_PinMap/IfxQspi_PinMap.h"
 #include "Ifx_Lwip.h"
 
-#define LAN8651_SPI_TIMEOUT_LOOPS  2000000U
-
 lan8651_t g_lan8651;
 
 static lan8651_t *s_active_dev = NULL_PTR;
@@ -78,28 +76,103 @@ static uint32_t lan8651_make_data_header(boolean start_valid, uint16_t start_off
     return header;
 }
 
+/* ---- SPI transaction timeout -------------------------------------------
+ * The wait for "transfer complete" MUST be time based.  The original code
+ * counted 2,000,000 loop iterations, which on this board is roughly 300 ms:
+ * a single stuck transaction blocked the whole main loop for a third of a
+ * second (console deaf, UART bytes lost).  A 68-byte frame at 20 MHz takes
+ * ~27 us, so 1 ms is a 35x margin.
+ * Statistics are exposed through lan8651_spi_stats(). */
+#define LAN8651_SPI_TIMEOUT_US   1000U
+#define LAN8651_SPI_RETRIES      3U
+
+uint32_t g_lan8651_spi_timeouts = 0U;   /* transaction never completed */
+uint32_t g_lan8651_spi_busy     = 0U;   /* channel still busy on entry */
+uint32_t g_lan8651_spi_recover  = 0U;   /* forced back to idle + retried  */
+uint32_t g_lan8651_tx_hdrb      = 0U;   /* chip rejected our data header   */
+uint32_t g_lan8651_tx_fail      = 0U;   /* low_level_output failures       */
+
+static uint32_t lan8651_now_us(void)
+{
+    uint32_t f = (uint32_t)IfxStm_getFrequency(&MODULE_STM0);
+    return (uint32_t)IfxStm_getLower(&MODULE_STM0) / ((f == 0U) ? 100U : (f / 1000000U));
+}
+
+/** \brief Deassert the chip select of the active channel (same as the iLLD
+ *  does when a transaction finishes). */
+static void lan8651_deactivate_slso(lan8651_t *dev)
+{
+    IfxPort_State action = (dev->spiChannel.slsoActiveState == Ifx_ActiveState_low)
+                           ? IfxPort_State_high : IfxPort_State_low;
+    IfxPort_setPinState(dev->spiChannel.slso.port, dev->spiChannel.slso.pinIndex, action);
+}
+
+/** \brief Wait for the current transaction to finish.
+ *  Returns TRUE when the channel is idle again. */
+static boolean lan8651_spi_wait(lan8651_t *dev, uint32_t t0)
+{
+    while (IfxQspi_SpiMaster_getStatus(&dev->spiChannel) == IfxQspi_Status_busy)
+    {
+        if ((lan8651_now_us() - t0) >= LAN8651_SPI_TIMEOUT_US)
+        {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
 static lan8651_status_t lan8651_spi_transfer(lan8651_t *dev, uint16_t len)
 {
-    IfxQspi_Status status;
-    uint32_t timeout = LAN8651_SPI_TIMEOUT_LOOPS;
+    uint32_t attempt;
 
-    status = IfxQspi_SpiMaster_exchange(&dev->spiChannel, dev->tx_buf, dev->rx_buf, len);
-    if (status != IfxQspi_Status_ok)
+    for (attempt = 0U; attempt < LAN8651_SPI_RETRIES; attempt++)
     {
-        return kLan8651Status_NotReady;
+        uint32_t      t0 = lan8651_now_us();
+        IfxQspi_Status status = IfxQspi_SpiMaster_exchange(&dev->spiChannel,
+                                                          dev->tx_buf, dev->rx_buf, len);
+
+        if (status != IfxQspi_Status_ok)
+        {
+            /* The previous transaction has not finished yet.  Give it a
+             * bounded chance to complete, then retry. */
+            g_lan8651_spi_busy++;
+            (void)lan8651_spi_wait(dev, t0);
+            continue;
+        }
+
+        if (lan8651_spi_wait(dev, t0))
+        {
+            return kLan8651Status_Ok;
+        }
+
+        /* The transaction never completed.  This must not happen once the
+         * QSPI4 interrupt can run (it used to be blocked because the lwIP
+         * timers ran with interrupts disabled - see Ifx_Lwip_pollTimerFlags).
+         * Put the iLLD state machine back to idle, release the chip select
+         * and retry, so that a single hiccup does not cost a TCP
+         * retransmission (>= 1 s of RTO). */
+        g_lan8651_spi_timeouts++;
+        g_lan8651_spi_recover++;
+        IfxQspi_clearAllEventFlags(dev->spi.qspi);
+        dev->spiChannel.flags.onTransfer = 0U;
+        dev->spi.sending                 = 0UL;
+        lan8651_deactivate_slso(dev);
     }
 
-    while ((IfxQspi_SpiMaster_getStatus(&dev->spiChannel) == IfxQspi_Status_busy) && (timeout > 0U))
-    {
-        timeout--;
-    }
+    return kLan8651Status_Timeout;
+}
 
-    if (timeout == 0U)
-    {
-        return kLan8651Status_Timeout;
-    }
+void lan8651_spi_stats(uint32_t *timeouts, uint32_t *busy, uint32_t *recovered)
+{
+    if (timeouts != NULL_PTR)  { *timeouts  = g_lan8651_spi_timeouts; }
+    if (busy != NULL_PTR)      { *busy      = g_lan8651_spi_busy; }
+    if (recovered != NULL_PTR) { *recovered = g_lan8651_spi_recover; }
+}
 
-    return kLan8651Status_Ok;
+void lan8651_tx_stats(uint32_t *hdrb, uint32_t *fail)
+{
+    if (hdrb != NULL_PTR) { *hdrb = g_lan8651_tx_hdrb; }
+    if (fail != NULL_PTR) { *fail = g_lan8651_tx_fail; }
 }
 
 static lan8651_status_t lan8651_ctrl_transaction(lan8651_t *dev, boolean write, uint32_t reg, uint32_t *value)
@@ -572,12 +645,15 @@ lan8651_status_t lan8651_transmit(lan8651_t *dev, const uint8_t *frame, uint16_t
 
         if (lan8651_spi_transfer(dev, LAN8651_TC6_DATA_BUF_SIZE) != kLan8651Status_Ok)
         {
+            /* No print here: this path runs inside the lwIP TX path and
+             * the counters are exposed via `t1stat` / lan8651_spi_stats(). */
             return kLan8651Status_TxError;
         }
 
         footer = lan8651_bswap32(*(uint32_t *)&dev->rx_buf[LAN8651_TC6_CHUNK_SIZE]);
         if ((footer & LAN8651_TC6_DATA_FTR_HDRB) != 0U)
         {
+            g_lan8651_tx_hdrb++;
             return kLan8651Status_TxError;
         }
     }

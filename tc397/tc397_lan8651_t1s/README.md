@@ -370,9 +370,46 @@ iperf2 TCP（PC→板，lwiperf server 5001，`iperf.exe -c 192.168.1.100 -p 500
   （8.64~8.66Mbps，瓶颈在 10M 线速，与 Ubuntu GCC 的 7.69~8.76Mbps 同量级）。
 * 两次 Debug + 一次 Release 共 55s 背景流量下无 wedged（PLCA 收益延续，样本有限仅供参考）。
 
+## 9 2026-09-22 家族问题专项修复（串口 / lwIP）
+
+> 背景：`tc397_sdmmc` §1.3 与 `tc397_selftest` §5.2/§5.3 定位出的几个"家族通用"问题
+> （GCC 孤儿段、lwIP 定时器关中断、SPI 超时按循环计数、`frd_is_ready()` 空指针、
+> `Ifx_Lwip_init*()` 重复 `initUART()`）。本次对 8 个 tc397 工程做了一轮横向排查。
+
+### 9.1 改动
+
+| 文件 | 改动 | 原因 |
+| --- | --- | --- |
+| `CMakeLists.txt`（GCC 分支） | **去掉 `-fdata-sections`**（保留 `-ffunction-sections`） | 家族通用孤儿段坑：Ubuntu gcc13 把静态变量放裸 `.<sym>` 段 → 启动不初始化 → `shellList[]` 野指针 → `shellGetCurrent()` Trap → **上电串口无输出** |
+| `Libraries/LAN8651/lan8651.c` | SPI 等待从"200 万次循环"改成 **STM 时间制 1 ms + 3 次重试 + 状态复位**；新增 5 个计数器与 `lan8651_spi_stats()` / `lan8651_tx_stats()` | 原 `LAN8651_SPI_TIMEOUT_LOOPS = 2000000` 在本板上约 **300 ms**，一次卡住就把主循环钉死 1/3 秒（这期间 ASCLIN 的硬件 RX FIFO 溢出 → **串口真的丢字节**）；超时即丢帧 → 对端 TCP RTO ≥ 1 s → 首秒掉速。68 B 帧 @20 MHz 只要 ~27 us，1 ms 已是 35 倍余量 |
+| `Libraries/LAN8651/lan8651.h` | 新增统计接口声明 | 同上 |
+| `Libraries/Ethernet/lwip/port/src/ethernetif_lan8651.c` | `low_level_output()` 失败时 `g_lan8651_tx_fail++`，且只打印前 8 次 | 原来每帧失败都往 UART 写一行，而这段跑在 lwIP TX 路径里，UART 阻塞会把情况变得更糟 |
+| `Shell/shell_port.c` | `t1stat` 增加一行 SPI/TX 计数器（`SPI timeouts=` / `busy=` / `recovered=`，以及 `TX hdrb=` / `fail=`） | 现场一眼判断"是 SPI 超时丢帧还是别的原因" |
+| `Libraries/Ethernet/lwip/port/src/Ifx_Lwip.c` | `Ifx_Lwip_init()` / `Ifx_Lwip_init_with_ip()` 里删掉重复的 `initUART()`（原本在 `__LWIP_DEBUG__` 下） | `core0_main` 早已初始化 ASCLIN0 并打印了 banner，再跑一次 `IfxAsclin_Asc_initModule()` 会冲掉 TX FIFO，把启动日志截断 |
+
+**本工程本来就没有的问题**：`Ifx_Lwip_pollTimerFlags()` 在本工程一直是"取走旗标后立刻开中断"的正确版本
+（对比 `tc397_lwip_iperf` 的原始实现：那边是整个定时器处理都在关中断区里），所以
+"lwIP 定时器关中断 → 延迟 ACK 超时 → 首秒掉速"的根因在本工程不存在；
+本工程的 SPI 超时计数器保留，用来在以后再出现掉速时第一时间区分原因。
+
+### 9.2 验证（2026-09-22，TASKING Debug，COM168，PLCA id=1 ncnt=8）
+
+```
+t1stat : SPI timeouts=0 busy=0 recovered=0 | TX hdrb=0 fail=0      <- 新增行，全 0
+ifconfig: t10 192.168.1.100/24 link UP
+ping 192.168.1.1 4   : 4 sent, 4 received, 0% loss（0~1 ms）
+iperf -c 192.168.1.100 -w 64K -t 15 : 8.66 Mbits/sec
+         分区间：0-2s 8.91 / 2-4s 8.68 / ... （**首段即满速，无"首秒掉速"**）
+板端 IPERF report   : total bytes: 16318488, duration in ms: 15071, kbits/s: 8656
+                      （与 PC 侧 8.66 Mbits/sec 完全对得上）
+iperf 负载下串口首字节延迟：1.0 / 2.0 / 2.2 ms（10 次，avg 1.8 ms），全程无 `tx_error`
+```
+
+GCC（ADS tricore-gcc11 11.3.1）与 TASKING v6.3r1 均 **0 error**。
+
 ---
 
-## 9 许可
+## 10 许可
 
 * iLLD/Libraries：Infineon Boost Software License 1.0
 * Letter-Shell：MIT；`aurix_flasher`：MIT + Apache 2.0
