@@ -3,4 +3,9 @@
 bak
 ref
 build
+temp
 handover
+debug.log
+sd_shell_log.txt
+build_log.txt
+
