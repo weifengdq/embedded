@@ -1,0 +1,334 @@
+# tc397_adc — TC397XX (292pin) ASCLIN0 Letter-Shell + EVADC AN0~AN47 监测
+
+本工程由 `tc397_uart_lettershell` 拷贝而来（基线 commit `ef45728`，仅改名无功能变化），
+新增 **EVADC 多通道后台扫描 + `adc` Shell 命令**，按 AN0~AN47 顺序打印每路电压。
+其余（UART0 921600、P13.0 LED、心跳、`mcu/temp/sysinfo` 等命令）与 uart 基线一致。
+
+* 工具链/下载：tricore-gcc 13.4.1（`/opt/tricore-gcc`）+ TAS/DAS 8.3.0 + `aurix_flasher`
+  （复用 `/home/z/lz/tc387/ref/aurix_flasher_linux-master/linux/aurix_flasher`，TC3xx 通用）
+* 串口：`/dev/ttyACM0`（1a86:55d3，921600-8N1，ASCLIN0 P14.0 TX / P14.1 RX），
+  DAP MiniWiggler `058b:0043` 仅用于 TAS 下载
+* 电源域：**VDDM / VREF 均接 TLF35584 输出的 VREF（5V），ANx 电源域 5V**，
+  故 ADC 满量程 5V，`Vpin = raw × 5.0 / 4096`（12bit）
+
+---
+
+## 1 原理说明
+
+### 1.1 EVADC 分组与 AN 通道映射（LFBGA292）
+
+依据 `Libraries/iLLD/.../_PinMap/TC39xB/IfxEvadc_PinMap_TC39xB_LFBGA292.h`，本板用到的
+AN 通道分属 5 个 EVADC 分组（每组内结果寄存器号 = 通道号，无冲突）：
+
+| 分组 | 通道 | AN | 说明 |
+| --- | --- | --- | --- |
+| G0 | CH0~CH7 | AN0~AN7 | 预留，打印引脚电平 |
+| G1 | CH0~CH7 | AN8~AN15 | 47K+3K 分压信号（见 §1.2） |
+| G2 | CH0 | AN16 | VUC（TLF35584 QUC，直连） |
+| G2 | CH4~CH7 | AN20~AN23 | 3V3 / 1V25 / 0V9 / HW_VERSION（直连，见 §1.3） |
+| G3 | CH6~CH7 | AN30~AN31 | 预留，打印引脚电平 |
+| G8 | CH2~CH3 | AN34~AN35 | SPARE / T1S_INH（直连） |
+| G8 | CH8~CH15 | AN40~AN47 | EXTADC0~7（47K+3K 分压） |
+
+以下 AN 在本工程中复用为 **P40.x GPIO，不采样**，`adc` 显示 `Reserved`：
+**AN17, 18, 19, 24, 25, 26, 27, 28, 29, 32, 33, 36, 37, 38, 39**。
+
+### 1.2 47K+3K 分压通道（外部电压 = 引脚电压 × 50/3）
+
+分压比 `3/(47+3) = 3/50`（外部 50V → 引脚 3V），固件同时打印 `pin` 与 `ext`：
+
+| AN | 信号 | 来源 |
+| --- | --- | --- |
+| AN8 | VPREREG | TLF35584 Buck 输出 |
+| AN9 | VS1 | TLF35584 Boost 输出 |
+| AN10 | VBAT | 外部输入电源 |
+| AN11 | ETH_INH | YT8011AN 的 INH |
+| AN12 | CAN0_INH | TCAN1043 的 INH |
+| AN13 | IG | 点火 |
+| AN14 | HSS0 | 高边开关电流检测 |
+| AN15 | HSS1 | 高边开关电流检测 |
+| AN40~AN47 | EXTADC0~7 | 外部 ADC 输入 0~7 |
+
+### 1.3 直连通道
+
+| AN | 信号 | 说明 |
+| --- | --- | --- |
+| AN16 | VUC | TLF35584 的 QUC，直连 |
+| AN20 | 3V3 | 额外的 3V3 电源 |
+| AN21 | 1V25 | MCU Core 电压 |
+| AN22 | 0V9 | YT8011AN 的 0.9V |
+| AN23 | HW_VERSION | VUC 经 10K+1K 分压（硬件版本 1.0），固件另打印 `vuc ~= pin×11` |
+| AN35 | T1S_INH | LAN8651 10BASE-T1S 芯片的 INH |
+
+### 1.4 预留通道
+
+AN0~AN7、AN30、AN31、AN34 为预留，ADC 功能直接支持，仅打印引脚电平（命名 `SPARE`）。
+
+### 1.5 固件实现（`App/adc.c` + `Shell/shell_adc.c`）
+
+* `Adc_Init()`（`Cpu0_Main.c` 在启动打印之后调用，见 §6）：
+  `IfxEvadc_Adc_initModule` 使能 EVADC → 配 5 个独立 master 分组
+  （queue0 使能、门控 `always`）→ 最后一组（G8）置 `startupCalibration=TRUE`
+  做上电校准 → 每通道结果寄存器 = 通道号 → 全部以 `REFILL` 加入 queue0 →
+  `startQueue`，之后各组 **Free-Running 后台循环扫描**，Shell 只读最新结果。
+* `Adc_ReadAn(an, &raw, &volt)`：轮询结果寄存器 VF 标志（3 轮 × 20 万次重试，
+  覆盖刚启动的转换空窗），`Vpin = raw×5.0/4096`。
+* `Shell/shell_adc.c` 的 `adc` 命令：`adc` 打印 AN0~AN47 全表，
+  `adc <n>` 打印单通道（0~47）。P40 复用行显示 Reserved。
+* `Shell/shell_adcdbg.c` 的 `adcdbg` 命令：转储 G0/G1 的 queue 状态
+  （QSR/Q0R/QMR0/CHCTR3/VFR）与 RES0~7 的 VF/RESULT，以及 G2/G3/G8 的 QSR，
+  用于定位采样异常（见 §6）。
+* `CMakeLists.txt`：`.cproject` 默认排除了 Evadc 目录（与 Dts 同理），故显式追加
+  `Evadc/Std/IfxEvadc.c` + `Evadc/Adc/IfxEvadc_Adc.c`；另按 sdmmc 项目的血泪教训
+  去掉了 `-fdata-sections`（tricore-gcc 会生成 `.sym` 裸段，Lcf 的 copy/clear 表
+  不覆盖 → 变量上电随机 → 野指针 trap，uart 基线同样潜伏此坑）。
+
+---
+
+## 2 目录结构（相对 uart 基线的新增/修改）
+
+```
+tc397_adc/
+├── App/adc.h / adc.c        # EVADC 驱动：AN 表 + 初始化 + 读取 + 换算
+├── Shell/shell_adc.c        # adc 命令（全表/单通道）
+├── Shell/shell_adcdbg.c     # adcdbg 寄存器级诊断命令
+├── Cpu0_Main.c              # + Adc_Init()（启动打印之后）+ 'adc' 提示行
+├── CMakeLists.txt           # + Evadc 两源文件；去掉 -fdata-sections
+└── build/gcc/tc397_adc.{elf,hex,map}
+```
+
+---
+
+## 3 构建与下载（Ubuntu 26.04）
+
+```bash
+export PATH=/opt/tricore-gcc/bin:$PATH
+
+cd tc397_adc
+./build.sh build                        # Debug（text ~92K，hex ~277K）
+./build.sh build --build-type Release
+./build.sh download                     # 需 TAS: systemctl status tas-server
+./build.sh reset                        # 经 flasher -read 触发复位并运行
+```
+
+TAS 未启动时先起服务（本 bench 一直运行，无需操作，仅备忘）：
+`systemctl status tas-server`（`ss -tlnp | grep 24817`），
+验证 `/home/z/lz/tc387/ref/aurix_flasher_linux-master/linux/aurix_flasher -id list`
+应识别 `TC39x ... TriBoard TC2XX V2.0`。
+
+---
+
+## 4 测试方法与步骤
+
+1. `./build.sh download` 烧录（自动复位运行），或 `./build.sh reset` 复位。
+2. 打开串口（注意：串口被其他程序占用时会无输出，先确认端口空闲）：
+   `python3 -m serial.tools.miniterm /dev/ttyACM0 921600 --raw`。
+3. 等启动日志出现 `ADC ready, try 'adc' (AN0..AN47)` + `letter:/$`。
+4. 执行 `adc`（全表）与 `adc <n>`（如 `adc 3`、`adc 16` 单通道）。
+5. 判据：48 行按 AN00~AN47 顺序；15 个 P40 复用行显示 Reserved；
+   其余 33 路有 `pin` 电压 + `raw`，分压路另有 `ext`，HW_VERSION 另有 `vuc~`；
+   同一电源多次复位读数稳定（±几 LSB）；VUC 与 HW_VERSION 反推的 vuc 应一致
+   （电阻容差内，见 §5）。
+6. 异常时用 `adcdbg` 转储 queue/RES 状态辅助定位。
+
+---
+
+## 5 测试结果（2026-09-15，Debug 版，3 次复位全过）
+
+完整日志：`../temp/adc_test.log`（trial 0~2，NO-DATA 计数均为 0）。代表值（trial 0）：
+
+```
+AN00 SPARE     pin=0.389V raw= 319 (G0CH0)     # 预留浮空（下同 ~0.4V）
+AN08 VPREREG   pin=0.349V ext= 5.819V raw= 286 (G1CH0)
+AN09 VS1       pin=0.680V ext=11.332V raw= 557 (G1CH1)
+AN10 VBAT      pin=0.702V ext=11.698V raw= 575 (G1CH2)
+AN11 ETH_INH   pin=0.198V ext= 3.296V raw= 162 (G1CH3)
+AN12 CAN0_INH  pin=0.011V ext= 0.183V raw=   9 (G1CH4)
+AN13 IG        pin=0.725V ext=12.085V raw= 594 (G1CH5)
+AN14 HSS0      pin=0.001V ext= 0.020V raw=   1 (G1CH6)   # 高边开关关断，无电流
+AN15 HSS1      pin=0.001V ext= 0.020V raw=   1 (G1CH7)
+AN16 VUC       pin=3.309V raw=2711 (G2CH0)
+AN17~19/24~29/32~33/36~39  Reserved (P40.x GPIO, not sampled)   # 15 行
+AN20 3V3       pin=3.315V raw=2716 (G2CH4)
+AN21 1V25      pin=1.244V raw=1019 (G2CH5)
+AN22 0V9       pin=0.917V raw= 751 (G2CH6)
+AN23 HW_VERSION pin=0.300V vuc~3.303V raw= 246 (G2CH7)  # 反推 vuc≈VUC 实测值
+AN30/31 SPARE  pin≈0.40V（浮空）；AN34 SPARE pin=0.375V
+AN35 T1S_INH   pin=3.303V raw=2706 (G8CH3)
+AN40~47 EXTADC0~7  pin≈0.000V（外部无输入）
+```
+
+交叉验证：VUC 直连 3.309V vs HW_VERSION（10K+1K）反推 3.303V，偏差 0.2%，
+与电阻容差自洽，证明 VREF=5V 假设与分压换算正确。
+`adcdbg` 显示 G0/G1 全 RES 的 VF=1 且读数持续更新（RES0 319→317），
+G2/G3/G8 的 QSR 非空，转换在各组正常进行。
+
+---
+
+## 6 注意事项 / 已知问题
+
+1. **串口被占用时无输出**：本次联调曾出现“已知好的 uart 基线也无输出”，
+   实为串口被另一进程占用；确认端口空闲后再测（`ls /dev/ttyACM*` + 关掉占用者）。
+2. **首刷后 AN03 偶发一次 NO-DATA**：首次烧录后的第 1 次启动曾出现 AN03
+   （G0CH3）连续 3 次 `NO-DATA`，复位后自愈，之后 3 次复位 48/48 全过。
+   `adcdbg` 证实硬件 RES3 的 VF/RESULT 正常，属读取侧偶发（转换空窗），
+   已在 `Adc_ReadAn` 加 3 轮重试；若复现，用 `adcdbg` 看 QSR/VFR 并记录。
+3. **G8 队列为 10 通道 refill（8 级 queue + QBUR 备份周转）**：当前全通道
+   VF=1、读数更新正常；`adcdbg` 中 G8 QSR=0x09（FILL 满 + 备份）属正常稳态。
+4. **浮空 SPARE 脚约 0.4V**：AN0~7/30/31/34 未接信号，悬空读数 ~0.37~0.40V，
+   属正常现象，不代表电源异常。
+5. **EXTADC0~7 读 0V**：外部无输入，属预期；接信号后应按 `ext=pin×50/3` 换算。
+6. `Adc_Init()` 放在启动打印之后：即使 EVADC 初始化异常挂起，启动日志仍可见，
+   便于二分定位（本次联调即用此法排除过 ADC 初始化嫌疑）。
+7. 本次仅验证 Debug 版；Release 未测（改动与优化等级无关，风险低）。
+8. 提交未推送（按任务要求暂不推送）；`temp/` 日志与 `handover/` 不进 git。
+
+---
+
+## 7 Windows 11 + TASKING 构建与实测（2026-09-18）
+
+### 7.1 测试背景
+
+* 目标：Ubuntu GCC 功能已验证，现验证同一套源码在 Windows 11 +
+  TASKING TriCore v6.3r1（`C:\z\app\TASKING\TriCore_v6.3r1`）下的命令行构建与功能。
+* 约束：增量改动不得影响 Ubuntu GCC（`build.sh` 原样保留；源码改动包在
+  `__TASKING__` 分支或工具链无关形式）。
+* 环境：AURIX-Studio-1.10.36（AURIXFlasher v3.0.18），COM165（921600），DAP MiniWiggler。
+
+### 7.2 构建命令
+
+```powershell
+.\build.ps1 -Compiler tasking -Action download     # Tasking Debug 编译并烧录
+```
+
+### 7.3 通用兼容改动（GCC 行为不变，详见 `tc397/temp/tasking_porting_log.md`）
+
+与 uart 基线同 6 项（`+gcc` 语言扩展、shell.h/shell.c 的 `__TASKING__` 分支、
+`SHELL_DSYNC()` 宏、LSL `shellCommand` 命名组、`static inline`）。
+
+### 7.4 本工程实测日志（Tasking Debug）
+
+编译（303 obj，0 error）：
+
+```
+[302/303] Linking C executable tc397_adc.elf
+Done.
+```
+
+`help` 列出 `adc`/`adcdbg` 特有命令；`adc` 采样（48 路）：
+
+```
+AN00 SPARE     pin=0.376V raw= 308 (G0CH0)
+...
+AN08 VPREREG   pin=0.352V ext= 5.859V raw= 288 (G1CH0)
+AN09 VS1       pin=0.685V ext=11.414V raw= 561 (G1CH1)
+AN10 VBAT      pin=0.708V ext=11.800V raw= 580 (G1CH2)
+AN13 IG        pin=0.720V ext=12.004V raw= 590 (G1CH5)
+AN16 VUC       pin=3.309V raw=2711 (G2CH0)
+AN20 3V3       pin=3.248V raw=2661 (G2CH4)
+AN21 1V25      pin=1.235V raw=1012 (G2CH5)
+AN22 0V9       pin=0.916V raw= 750 (G2CH6)
+AN35 T1S_INH   pin=3.243V raw=2657 (G8CH3)
+```
+
+### 7.5 测试结果
+
+* 编译/烧录/48 路采样全 PASS（电源轨读数与 Ubuntu GCC 基线一致：
+  VUC 3.3V / 3V3 3.25V / 1V25 1.24V / 0V9 0.92V / VBAT 11.8V / IG 12.0V）。
+
+## 8 2026-09-22 家族问题专项复查（串口 / lwIP）
+
+> 背景：`tc397_sdmmc` §1.3 与 `tc397_selftest` §5.2/§5.3 定位出的几个"家族通用"问题——
+> GCC 孤儿段、lwIP 定时器关中断、SPI 超时按循环计数、`frd_is_ready()` 空指针、
+> `Ifx_Lwip_init*()` 重复 `initUART()`。本次对 8 个 tc397 工程做了一轮横向排查。
+
+**本工程结论：无需改动。**
+
+| 检查项 | 结论 |
+| --- | --- |
+| GCC `-fdata-sections` | 本工程移植时就已去掉（见上文 §7.3 的"去掉了 `-fdata-sections`"），本轮复核 GCC 分支确认无该选项 |
+| lwIP 定时器 / SPI 网口 | 本工程不含 Ethernet 库，不适用 |
+| "未初始化即解引用"类陷阱 | `App/adc.c` + `Shell/shell_adc.c` 无此类路径 |
+
+**验证**：ADS GCC 11.3.1 与 TASKING v6.3r1 均 **0 error**；板端（COM168, 921600）
+`adc` 命令 48 通道读数正常（3V3=3.291 V、1V25=1.246 V、0V9=0.911 V、VBAT=11.70 V），
+通道顺序与 §1.1 一致。
+
+## 9 2026-09-22（续）AURIX Development Studio 里的 GCC/TASKING 构建修复
+
+> 用户报告：在 ADS GUI 里编译下载后 **串口有打印但敲回车没反应**（GCC），TASKING 则根本编不过。
+> 本轮把 ADS 的托管构建（`.cproject`）与 CMake 构建逐项对齐，定位到两处**只影响 ADS**的缺陷。
+
+### 9.1 根因一：`.cproject` 里没有任何 `-D`，letter-shell 的用户配置被忽略
+
+* CMake 构建给所有源文件传 `-DSHELL_CFG_USER="shell_cfg_user.h"`，而 ADS 的 `.cproject`
+  **GCC 配置连 “Defined symbols (-D)” 选项都没有**（TASKING 配置也只有 `__CPU__=tc39xb`）。
+* 于是 `shell.c` 编译时 `shell_cfg_user.h` 根本没被包含，`SHELL_TASK_WHILE` 回落到
+  `shell_cfg.h` 的默认值 **1**（用户配置要求 0），`Shell`/`ShellCommand` 结构体布局也与
+  `shell_port.c`（它直接 include 该头）不一致：`Shell_Process()` 里的 `shellTask()` 变成
+  死循环、字段偏移错位 → **上电有打印、输入无响应**。
+* **修复**：`Shell/letter-shell/src/shell_cfg.h` 给 `SHELL_CFG_USER` 加默认值
+  `"shell_cfg_user.h"`。这样任何构建系统（ADS GUI / CMake / 其它）都不会漏掉用户配置，
+  也避开了在 4 个配置 × 9 个工程里各写一遍带引号 `-D`（Eclipse 命令行生成器对引号的
+  处理不可控：实测把引号丢掉后 `#include SHELL_CFG_USER` 会直接报错）。
+
+  **实测复现与验证**（GCC Debug，去掉 `-DSHELL_CFG_USER` 等价 ADS）：
+
+  | | 修复前 | 修复后 |
+  | --- | --- | --- |
+  | 冷启动日志 | 完整打印 | 完整打印 |
+  | 敲 `ver` / `mcu` / `help` | **无任何响应** | 全部正常响应（`help` 列出 17 条命令） |
+
+### 9.2 根因二：TASKING 缺 `--language=+gcc`，`##__VA_ARGS__` 直接编译失败
+
+* letter-shell 的 `SHELL_EXPORT_CMD()` 用了 GNU 扩展 `, ##__VA_ARGS__`（`shell.h:149/187/260`）。
+* ADS 的 TASKING 默认参数只有 `--language=+volatile`（见 ADS 生成的 `subdir.mk`），
+  缺 `+gcc` 时 cctc 报 **`ctc E250: missing argument for "..." parameter`**，
+  `shell.c` / `shell_port.c` 编译失败 → **ADS 里 TASKING 根本编不过**。
+* **修复**：`.cproject` 的两个 TASKING 配置各加一个选项（插件里本就有，只是默认关闭）：
+
+  ```xml
+  <option id="com.infineon.aurix.buildsystem.managed.c.compiler.tasking.gcc.<唯一数字>"
+          name="Allow GNU C extensions (--language=+gcc)"
+          superClass="com.infineon.aurix.buildsystem.managed.c.compiler.tasking.gcc"
+          value="true" valueType="boolean"/>
+  ```
+
+  **实测**（用 ADS 同款默认参数调 cctc）：
+
+  | 参数 | 结果 |
+  | --- | --- |
+  | `--language=+volatile`（ADS 默认） | `ctc E250` 多条 → 失败 |
+  | `--language=+volatile,+gcc` | 通过 |
+
+### 9.3 一并说明
+
+* ADS GUI 第一次打开工程时会跑 “Project Booster” 同步库，它会自动给工程打补丁
+  （本工程被加了 `Shell/shell_port.c` 的 `#include "shell_cfg_user.h"`、`shell_ext.h` 的
+  `#include <stddef.h>`），并在 `tc397/.gitignore` 里加上 ADS 的构建目录 —— 都是 ADS 的正常行为。
+* ADS 的 GCC 默认参数含 `-fdata-sections`（插件里 `defaultValue="true"`）。已实测：
+  ADS 自带的 tricore-gcc11 会生成 `.bss.<sym>`（被 LSL 的 `*(.bss.*)` 收走、启动清零），
+  与 Ubuntu gcc13 生成裸 `.<sym>` 的情况不同，**在 ADS 下无副作用**（见 `tc397_sdmmc` §1.3）。
+* 验证：GCC 与 TASKING 全量重编 **0 error**；板端 `ver`/`mcu`/`help` 等命令正常。
+
+---
+
+## 10 Ubuntu26 + GCC13 回归验证（2026-09-22）
+
+* 工具链：`/opt/tricore-gcc` 13.4.1，TAS + `aurix_flasher`，串口 `/dev/ttyACM0` 921600。
+* 编译：Debug（`build/gcc`）与 Release（`build/gcc-rel`）均 **0 error**。
+* 上板：`adc` 48 路正常（VUC 3.306V / 3V3 3.274V / 1V25 1.245V / 0V9 0.920V /
+  VBAT 11.495V / IG 11.780V），无 NO-DATA。
+* 本轮新增 `Adc_Init` 尾部队列自检（见 `tc397_selftest` README §14 与
+  `../handover/2026-09-22_tc397_ubuntu26_gcc13_regression.md`）：本工程 `adc`/
+  `adcdbg` 已同步同一份实现（两工程 `App/adc.c`、`App/adc.h`、`Shell/shell_adcdbg.c`
+  保持一致），`adcdbg` 末行打印 `init queue repairs: 0x00000000`（本轮实测为干净启动）。
+* Windows（`build.ps1`/TASKING/ADS-GCC）不受影响（改动为工具链无关的 C 代码）。
+
+---
+
+## 11 许可
+
+* iLLD/Libraries：Infineon Boost Software License 1.0
+* Letter-Shell：MIT
+* 其余移植代码内部许可

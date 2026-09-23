@@ -1,0 +1,11 @@
+.metadata
+TriCore Debug (TASKING)
+TriCore Release (TASKING)
+winIDEAWorkspaces
+*.launch
+bak
+build
+build/
+*.elf
+*.hex
+*.map
