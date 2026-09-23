@@ -63,6 +63,7 @@ TC397 开发板, 汽车总线评估板:
 - tc397_tlf35584
 - tc397_uart_lettershell
 - tc397_selftest, 自测工程, 上面几个外设的集合体, 里面有 lwip 双网卡(1GT1+10T1S) 的适配, 可供参考.
+- 其它工程(_0 _lin _hss)不适合本板子, 不用关心.
 
 **板子适配的外壳**: [分体式铝合金壳体带耳113*40*120 本色喷砂阳极氧化 | 嘉立创FA](https://www.jlcfa.com/item/1152581151218.html), step文件搭配接插件模型可以用于自行设计外壳开孔.
 
@@ -1248,6 +1249,7 @@ letter:/$ bench
 Return: 0, 0x00000000
 
 
+# 自测工程中的 iperf 可能只到 350Mbits/s.
 letter:/$ ifconfig
 netif 0: t11 IP 192.168.1.100 NM 255.255.255.0 GW 192.168.1.1
   HWaddr 02:00:00:10:BA:5E MTU 1500 flags 0x1F
