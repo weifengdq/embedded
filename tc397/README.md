@@ -1,5 +1,28 @@
 # TC397
 
+- [TC397](#tc397)
+  - [板子简介](#板子简介)
+  - [Github链接](#github链接)
+  - [开发环境](#开发环境)
+    - [ADS](#ads)
+    - [TASKING/GCC11 命令行](#taskinggcc11-命令行)
+    - [Linux GCC13](#linux-gcc13)
+  - [外设简介](#外设简介)
+    - [40P连接器](#40p连接器)
+    - [拨码开关](#拨码开关)
+    - [调试口DAP](#调试口dap)
+    - [调试串口](#调试串口)
+    - [CANFD x12](#canfd-x12)
+    - [FlexRay](#flexray)
+    - [10BASE-T1S](#10base-t1s)
+    - [1000BASE-T1](#1000base-t1)
+    - [ADC](#adc)
+    - [SD](#sd)
+    - [TLF35584](#tlf35584)
+  - [自测工程](#自测工程)
+  - [结语](#结语)
+
+
 ## 板子简介
 
 ![13892b3a-f006-40e7-be27-4060eebedf68](README.assets/13892b3a-f006-40e7-be27-4060eebedf68.png)
