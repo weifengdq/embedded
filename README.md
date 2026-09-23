@@ -9,7 +9,7 @@ TC397 (YT8011AN_1000BASET1 + 12xCANFD + 10BASET1S + FlexRay + SD + TLF35584):
 
 ![PixPin_2026-09-23_10-37-41](README.assets/PixPin_2026-09-23_10-37-41.jpg)
 
-TC387 (RTL8211FI 千兆以太网 + 12xCAFD):
+TC387 (RTL8211FI 千兆以太网 + 12xCANFD):
 
 ![image-20260623112218257](README.assets/image-20260623112218257.png)
 
@@ -71,7 +71,7 @@ SlcanX (HPM5321 4路CANFD分析仪, 开放原理图方便自行开发) 标准版
 
 ![image-20260106142414293](README.assets/image-20260106142414293.png)
 
-GS_USB_X (N32H765, 8路CANFD分析仪, 开放原理图和HEX固件方便自行开发), 详见 [weifengdq/gs_usb_x](https://github.com/weifengdq/gs_usb_x):
+GS_USB_X (N32H765, 8路CANFD分析仪, 开放原理图和HEX固件方便自行开发), 详见 [weifengdq/gs_usb_x](https://github.com/weifengdq/gs_usb_x:
 
 ![image-20260401132717336](README.assets/image-20260401132717336.png)
 
