@@ -1,5 +1,9 @@
 # TC397
 
+![PixPin_2026-09-23_10-37-41_white_bg_2.35x](README.assets/PixPin_2026-09-23_10-37-41_white_bg_2.35x.jpg)
+
+## 目录
+
 - [TC397](#tc397)
   - [板子简介](#板子简介)
   - [Github链接](#github链接)
@@ -641,20 +645,20 @@ IPERF report: type=0, remote: 192.168.1.1:57032, total bytes: 11010072, duration
 
 RGMII 相关引脚:
 
-| 信号                | TC397 Pin                | 说明                                                |
-| ------------------- | ------------------------ | --------------------------------------------------- |
-| TXD3/TXD2/TXD1/TXD0 | P11.0/P11.1/P11.2/P11.3  | RGMII TX（ALT6）                                    |
-| TXCLK               | P11.4                    | MAC→PHY 125MHz（RGMII 输出，由 GREFCLK 分频产生）   |
-| GREFCLK             | P11.5                    | **外部 125MHz 有源晶振输入**（RGMII 必需，见 §5.4） |
-| TCTL                | P11.6                    | TXCTL                                               |
-| RXD3/RXD2/RXD1/RXD0 | P11.7/P11.8/P11.9/P11.10 | RGMII RX                                            |
-| RCTL                | P11.11                   | RXCTL                                               |
-| RXCLK               | P11.12                   | PHY→MAC 125MHz                                      |
-| MDC/MDIO            | P12.0/P12.1              | Clause-22 管理口，PHYAD=1                           |
-| nINT                | P10.8                    | 未用（预留）                                        |
-| nRST                | P20.1                    | 软件复位（低 50ms → 高，延时 50ms）                 |
+| 信号                | TC397 Pin                | 说明                                              |
+| ------------------- | ------------------------ | ------------------------------------------------- |
+| TXD3/TXD2/TXD1/TXD0 | P11.0/P11.1/P11.2/P11.3  | RGMII TX（ALT6）                                  |
+| TXCLK               | P11.4                    | MAC→PHY 125MHz（RGMII 输出，由 GREFCLK 分频产生） |
+| GREFCLK             | P11.5                    | **外部 125MHz 有源晶振输入**（RGMII 必需）        |
+| TCTL                | P11.6                    | TXCTL                                             |
+| RXD3/RXD2/RXD1/RXD0 | P11.7/P11.8/P11.9/P11.10 | RGMII RX                                          |
+| RCTL                | P11.11                   | RXCTL                                             |
+| RXCLK               | P11.12                   | PHY→MAC 125MHz                                    |
+| MDC/MDIO            | P12.0/P12.1              | Clause-22 管理口，PHYAD=1                         |
+| nINT                | P10.8                    | 未用（预留）                                      |
+| nRST                | P20.1                    | 软件复位（低 50ms → 高，延时 50ms）               |
 
-另外注意: **MCU 的 D8 P11.5 引脚接了 125MHz 有源晶振**.
+再次注意: **MCU 的 D8 P11.5 引脚接了 125MHz 有源晶振**.
 
 YT8011AN 的 Strapping 引脚(本工程可忽略，纯寄存器配置):
 
@@ -863,6 +867,18 @@ Return: 0, 0x00000000
 
 ### SD
 
+引脚:
+
+| 信号    | TC397 Pin | iLLD PinMap                           | 说明                      |
+| ------- | --------- | ------------------------------------- | ------------------------- |
+| SD CLK  | P15.1     | `IfxSdmmc0_CLK_P15_1_OUT` (alt7)      | 25MHz（见 §6.5 时钟注记） |
+| SD CMD  | P15.3     | `IfxSdmmc0_CMD_P15_3_INOUT` (RxSel_a) | 命令/响应                 |
+| SD DAT0 | P20.7     | `IfxSdmmc0_DAT0_P20_7_INOUT`          | 数据                      |
+| SD DAT1 | P20.8     | `IfxSdmmc0_DAT1_P20_8_INOUT`          | 数据（4-bit 用）          |
+| SD DAT2 | P20.10    | `IfxSdmmc0_DAT2_P20_10_INOUT`         | 数据（4-bit 用）          |
+| SD DAT3 | P20.11    | `IfxSdmmc0_DAT3_P20_11_INOUT`         | 数据（4-bit 用）          |
+| SD CD   | P10.7     | GPIO 输入上拉                         | 卡在位=低（机械开关对地） |
+
 32GB TF卡, 格式化后 FAT32后测试, **tc397_sdmmc** 工程:
 
 ```bash
@@ -986,6 +1002,28 @@ Return: 0, 0x00000000
 ```
 
 ### TLF35584
+
+TLF35584 相关引脚:
+
+| TLF35584 引脚 | TC397 引脚        | 方向（MCU 视角）                   | 说明                                                         |
+| ------------- | ----------------- | ---------------------------------- | ------------------------------------------------------------ |
+| SDI (MOSI)    | P15.6             | 输出（QSPI2 MTSR alt3）            | SPI 主→从                                                    |
+| SDO (MISO)    | P15.7             | 输入（QSPI2 MRST RxSel_b，下拉）   | SPI 从→主；读回首位恒 1                                      |
+| SCL           | P15.8             | 输出（QSPI2 SCLK alt3）            | 默认 2MHz（`tlf baud` 可改 100k–10M；SLEEP 态 TLF 侧上限 1.5M） |
+| SCS           | P14.2             | 输出（QSPI2 SLSO1 alt3，硬件片选） | 每帧自动拉低/释放                                            |
+| WDI           | P14.3             | 输出（GPIO，idle 低）              | 看门狗触发输入（TLF 内下拉 150–330uA）；`tlf wdi`            |
+| SS1           | P33.9             | 输入（GPIO 上拉）                  | 安全状态输出；**低 = 安全状态**；`tlf ss`                    |
+| ERR           | P33.8             | 输出（GPIO，idle 高）              | 台架位 bang 模拟；量产应路由 SMU FSP0（`IfxSmu_FSP0_P33_8_OUT`，idle 高）；`tlf err` |
+| ROT           | nPORST            | （专用复位脚，无 SW 动作）         | 本次台架 INIT 迁移均未引起 TC397 复位（§7.7；MPS=1 阻断 ROT，连续性待示波器复核） |
+| INT           | nESR1             | （专用中断脚，无 SW 动作）         | 推挽低脉冲；由 `IF` 读回（`INTMISS` 置位即证明 INT 曾跳变，§7.5） |
+| MPS           | →VCO（高/低切换） | 台架 strapping                     | 高=Test Mode 1（编程支持模式）；低=Normal（量产模式，需开机自初始化） |
+| SEC           | 悬空              | strapping                          | 使用 step-up 前级（`DEVCFG2.STU=1` 实测确认）                |
+| FRE           | 悬空              | strapping                          | Buck 高频 2.2MHz（`DEVCFG2.FRE=1` 实测确认）                 |
+| VCI           | 电阻分压约 0.8V   | 模拟输入                           | 外部芯核电源检测                                             |
+| EVC           | 外部 DC-DC 使能   | 输出使能                           | 外部后级芯核电源使能（`DEVCFG2.EVCEN=1` 实测确认）           |
+
+> 注意：P14.2/P14.3 是 TC397 的 HWCFG 引脚（复位采样），但不影响其复位后作
+> QSPI/GPIO 使用（本工程实测正常）。
 
 上面的工程都是TLF35584 MPS引脚处于 Test Mode 的情况, 下载完 **tc397_tlf35584** 后, 可以把下方拨码开关7拨到OFF, 让 TLF35584处于 Normal Mode, 重新上电, MCU 不会再反复复位.
 
