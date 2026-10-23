@@ -62,8 +62,8 @@
 | LAN867x Linux 驱动说明 | `/mnt/sda3/rk3506/ref/LAN867x-Linux-Driver-Install-Application-Note-00005992.pdf` |
 | Microchip LAN865x 驱动包 v1.1 | `/mnt/sda3/rk3506/ref/lan865x-linux-driver-1v1.zip` |
 | EVB-LAN8670-USB Linux 驱动 | `/mnt/sda3/rk3506/ref/EVB-LAN8670-USB_Linux_Driver_4v3.zip` |
-| TC397/MCU 侧 LAN8651 调试记录 | `/home/z/lz/embedded/tc397/handover/` |
-| LAN8651 DevKit 原理图 | `/home/z/lz/embedded/lan8651/LAN8651_DevKit_Sch.pdf` |
+| TC397/MCU 侧 LAN8651 调试记录 | `~/embedded/tc397/handover/` |
+| LAN8651 DevKit 原理图 | `~/embedded/lan8651/LAN8651_DevKit_Sch.pdf` |
 | 本仓库交接说明 | `handover/HANDOVER-LAN8651.md` |
 
 ---
