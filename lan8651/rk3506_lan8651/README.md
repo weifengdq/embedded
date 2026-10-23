@@ -64,7 +64,7 @@
 | EVB-LAN8670-USB Linux 驱动 | `/mnt/sda3/rk3506/ref/EVB-LAN8670-USB_Linux_Driver_4v3.zip` |
 | TC397/MCU 侧 LAN8651 调试记录 | `~/embedded/tc397/handover/` |
 | LAN8651 DevKit 原理图 | `~/embedded/lan8651/LAN8651_DevKit_Sch.pdf` |
-| 本仓库交接说明 | `handover/HANDOVER-LAN8651.md` |
+| 本仓库交接说明 | `logs/HANDOVER-LAN8651.md` |
 
 ---
 
@@ -631,7 +631,7 @@ PLCA status of t1s0:
 
 ```
 rk3506_1/
-├── README_LAN8651.md                 # 本文
+├── README.md                 # 本文
 ├── drivers/lan865x/                  # 适配 6.1 的 LAN865x/OA-TC6/PHY/PLCA 源码
 ├── patches/0004-rk3506-6.1-lan865x-plca-core.patch
 ├── patches/0005-dts-rk3506-lan8651-t1s.patch
@@ -640,7 +640,7 @@ rk3506_1/
 ├── scripts/17-apply-lan8651-network.sh
 ├── scripts/31-deploy-kernel-ssh.sh
 ├── logs/board-test-lan8651-2026-10-23.md
-└── handover/HANDOVER-LAN8651.md
+└── logs/HANDOVER-LAN8651.md
 ```
 
 ### 10.2 关键绝对路径
