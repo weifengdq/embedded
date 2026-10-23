@@ -1,0 +1,880 @@
+--- a/include/uapi/linux/ethtool.h
++++ b/include/uapi/linux/ethtool.h
+@@ -1737,6 +1737,10 @@
+ 	ETHTOOL_LINK_MODE_100baseFX_Half_BIT		 = 90,
+ 	ETHTOOL_LINK_MODE_100baseFX_Full_BIT		 = 91,
+ 	ETHTOOL_LINK_MODE_10baseT1L_Full_BIT		 = 92,
++	/* 10BASE-T1S (OPEN Alliance TC14) backport */
++	ETHTOOL_LINK_MODE_10baseT1S_Full_BIT		 = 93,
++	ETHTOOL_LINK_MODE_10baseT1S_Half_BIT		 = 94,
++	ETHTOOL_LINK_MODE_10baseT1S_P2MP_Half_BIT	 = 95,
+ 	/* must be last entry */
+ 	__ETHTOOL_LINK_MODE_MASK_NBITS
+ };
+--- a/include/uapi/linux/ethtool_netlink.h
++++ b/include/uapi/linux/ethtool_netlink.h
+@@ -51,6 +51,13 @@
+ 	ETHTOOL_MSG_MODULE_SET,
+ 	ETHTOOL_MSG_PSE_GET,
+ 	ETHTOOL_MSG_PSE_SET,
++	/* Placeholder kept so that the PLCA commands use the same numbers as
++	 * mainline Linux (RSS is not implemented in this kernel).
++	 */
++	ETHTOOL_MSG_RSS_GET,
++	ETHTOOL_MSG_PLCA_GET_CFG,
++	ETHTOOL_MSG_PLCA_SET_CFG,
++	ETHTOOL_MSG_PLCA_GET_STATUS,
+ 
+ 	/* add new constants above here */
+ 	__ETHTOOL_MSG_USER_CNT,
+@@ -97,6 +104,11 @@
+ 	ETHTOOL_MSG_MODULE_GET_REPLY,
+ 	ETHTOOL_MSG_MODULE_NTF,
+ 	ETHTOOL_MSG_PSE_GET_REPLY,
++	/* Placeholder, see ETHTOOL_MSG_RSS_GET above. */
++	ETHTOOL_MSG_RSS_GET_REPLY,
++	ETHTOOL_MSG_PLCA_GET_CFG_REPLY,
++	ETHTOOL_MSG_PLCA_GET_STATUS_REPLY,
++	ETHTOOL_MSG_PLCA_NTF,
+ 
+ 	/* add new constants above here */
+ 	__ETHTOOL_MSG_KERNEL_CNT,
+@@ -879,6 +891,38 @@
+ 	ETHTOOL_A_PSE_MAX = (__ETHTOOL_A_PSE_CNT - 1)
+ };
+ 
++/* Receiver Side Scaling (placeholder, not implemented) */
++enum {
++	ETHTOOL_A_RSS_UNSPEC,
++	ETHTOOL_A_RSS_HEADER,
++	ETHTOOL_A_RSS_CONTEXT,		/* u32 */
++	ETHTOOL_A_RSS_HFUNC,		/* u32 */
++	ETHTOOL_A_RSS_INDIR,		/* binary */
++	ETHTOOL_A_RSS_HKEY,		/* binary */
++	ETHTOOL_A_RSS_INPUT_XFRM,	/* u32 */
++
++	__ETHTOOL_A_RSS_CNT,
++	ETHTOOL_A_RSS_MAX = (__ETHTOOL_A_RSS_CNT - 1),
++};
++
++/* PLCA */
++enum {
++	ETHTOOL_A_PLCA_UNSPEC,
++	ETHTOOL_A_PLCA_HEADER,			/* nest - _A_HEADER_* */
++	ETHTOOL_A_PLCA_VERSION,			/* u16 */
++	ETHTOOL_A_PLCA_ENABLED,			/* u8  */
++	ETHTOOL_A_PLCA_STATUS,			/* u8  */
++	ETHTOOL_A_PLCA_NODE_CNT,		/* u32 */
++	ETHTOOL_A_PLCA_NODE_ID,			/* u32 */
++	ETHTOOL_A_PLCA_TO_TMR,			/* u32 */
++	ETHTOOL_A_PLCA_BURST_CNT,		/* u32 */
++	ETHTOOL_A_PLCA_BURST_TMR,		/* u32 */
++
++	/* add new constants above here */
++	__ETHTOOL_A_PLCA_CNT,
++	ETHTOOL_A_PLCA_MAX = (__ETHTOOL_A_PLCA_CNT - 1)
++};
++
+ /* generic netlink info */
+ #define ETHTOOL_GENL_NAME "ethtool"
+ #define ETHTOOL_GENL_VERSION 1
+--- a/include/uapi/linux/mdio.h
++++ b/include/uapi/linux/mdio.h
+@@ -23,6 +23,7 @@
+ #define MDIO_MMD_DTEXS		5	/* DTE Extender Sublayer */
+ #define MDIO_MMD_TC		6	/* Transmission Convergence */
+ #define MDIO_MMD_AN		7	/* Auto-Negotiation */
++#define MDIO_MMD_POWER_UNIT	13	/* PHY Power Unit */
+ #define MDIO_MMD_C22EXT		29	/* Clause 22 extension */
+ #define MDIO_MMD_VEND1		30	/* Vendor specific 1 */
+ #define MDIO_MMD_VEND2		31	/* Vendor specific 2 */
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -45,6 +45,7 @@
+ 
+ extern __ETHTOOL_DECLARE_LINK_MODE_MASK(phy_basic_features) __ro_after_init;
+ extern __ETHTOOL_DECLARE_LINK_MODE_MASK(phy_basic_t1_features) __ro_after_init;
++extern __ETHTOOL_DECLARE_LINK_MODE_MASK(phy_basic_t1s_p2mp_features) __ro_after_init;
+ extern __ETHTOOL_DECLARE_LINK_MODE_MASK(phy_gbit_features) __ro_after_init;
+ extern __ETHTOOL_DECLARE_LINK_MODE_MASK(phy_gbit_fibre_features) __ro_after_init;
+ extern __ETHTOOL_DECLARE_LINK_MODE_MASK(phy_gbit_all_ports_features) __ro_after_init;
+@@ -54,6 +55,7 @@
+ 
+ #define PHY_BASIC_FEATURES ((unsigned long *)&phy_basic_features)
+ #define PHY_BASIC_T1_FEATURES ((unsigned long *)&phy_basic_t1_features)
++#define PHY_BASIC_T1S_P2MP_FEATURES ((unsigned long *)&phy_basic_t1s_p2mp_features)
+ #define PHY_GBIT_FEATURES ((unsigned long *)&phy_gbit_features)
+ #define PHY_GBIT_FIBRE_FEATURES ((unsigned long *)&phy_gbit_fibre_features)
+ #define PHY_GBIT_ALL_PORTS_FEATURES ((unsigned long *)&phy_gbit_all_ports_features)
+@@ -62,6 +64,7 @@
+ #define PHY_10GBIT_FULL_FEATURES ((unsigned long *)&phy_10gbit_full_features)
+ 
+ extern const int phy_basic_ports_array[3];
++extern const int phy_basic_t1s_p2mp_features_array[2];
+ extern const int phy_fibre_port_array[1];
+ extern const int phy_all_ports_features_array[7];
+ extern const int phy_10_100_features_array[4];
+@@ -759,6 +762,55 @@
+ #define PHY_PAIR_ALL -1
+ 
+ /**
++ * struct phy_plca_cfg - Configuration of the PLCA (Physical Layer Collision
++ * Avoidance) Reconciliation Sublayer.
++ *
++ * @version: read-only PLCA register map version. -1 = not available. Ignored
++ *   when setting the configuration. Format is the same as reported by the PLCA
++ *   IDVER register (31.CA00). -1 = not available.
++ * @enabled: PLCA configured mode (enabled/disabled). -1 = not available / don't
++ *   set. 0 = disabled, anything else = enabled.
++ * @node_id: the PLCA local node identifier. -1 = not available / don't set.
++ *   Allowed values [0 .. 254]. 255 = node disabled.
++ * @node_cnt: the PLCA node count (maximum number of nodes having a TO). Only
++ *   meaningful for the coordinator (node_id = 0). -1 = not available / don't
++ *   set. Allowed values [1 .. 255].
++ * @to_tmr: The value of the PLCA to_timer in bit-times, which determines the
++ *   PLCA transmit opportunity window opening. See IEEE802.3 Clause 148 for
++ *   more details. The to_timer shall be set equal over all nodes.
++ *   -1 = not available / don't set. Allowed values [0 .. 255].
++ * @burst_cnt: controls how many additional frames a node is allowed to send in
++ *   single transmit opportunity (TO). The default value of 0 means that the
++ *   node is allowed exactly one frame per TO. A value of 1 allows two frames
++ *   per TO, and so on. -1 = not available / don't set.
++ *   Allowed values [0 .. 255].
++ * @burst_tmr: controls how many bit times to wait for the MAC to send a new
++ *   frame before interrupting the burst. This value should be set to a value
++ *   greater than the MAC inter-packet gap (which is typically 96 bits).
++ *   -1 = not available / don't set. Allowed values [0 .. 255].
++ */
++struct phy_plca_cfg {
++	int version;
++	int enabled;
++	int node_id;
++	int node_cnt;
++	int to_tmr;
++	int burst_cnt;
++	int burst_tmr;
++};
++
++/**
++ * struct phy_plca_status - Status of the PLCA (Physical Layer Collision
++ * Avoidance) Reconciliation Sublayer.
++ *
++ * @pst: The PLCA status as reported by the PST bit in the PLCA STATUS
++ *	register(31.CA03), indicating BEACON activity.
++ */
++struct phy_plca_status {
++	bool pst;
++};
++
++/**
+  * struct phy_driver - Driver structure for a particular PHY type
+  *
+  * @mdiodrv: Data common to all MDIO devices
+@@ -892,6 +944,16 @@
+ 	 */
+ 	void (*link_change_notify)(struct phy_device *dev);
+ 
++	/** @get_plca_cfg: Return the current PLCA configuration */
++	int (*get_plca_cfg)(struct phy_device *dev,
++			    struct phy_plca_cfg *plca_cfg);
++	/** @set_plca_cfg: Set the PLCA configuration */
++	int (*set_plca_cfg)(struct phy_device *dev,
++			    const struct phy_plca_cfg *plca_cfg);
++	/** @get_plca_status: Return the current PLCA status info */
++	int (*get_plca_status)(struct phy_device *dev,
++			       struct phy_plca_status *plca_st);
++
+ 	/**
+ 	 * @read_mmd: PHY specific driver override for reading a MMD
+ 	 * register.  This function is optional for PHY specific
+@@ -1544,6 +1606,14 @@
+ int phy_reset_after_clk_enable(struct phy_device *phydev);
+ 
+ #if IS_ENABLED(CONFIG_PHYLIB)
++int phy_ethtool_get_plca_cfg(struct phy_device *phydev,
++			     struct phy_plca_cfg *plca_cfg);
++int phy_ethtool_set_plca_cfg(struct phy_device *phydev,
++			     const struct phy_plca_cfg *plca_cfg,
++			     struct netlink_ext_ack *extack);
++int phy_ethtool_get_plca_status(struct phy_device *phydev,
++				struct phy_plca_status *plca_st);
++
+ int phy_start_cable_test(struct phy_device *phydev,
+ 			 struct netlink_ext_ack *extack);
+ int phy_start_cable_test_tdr(struct phy_device *phydev,
+@@ -1671,6 +1741,13 @@
+ int genphy_c45_pma_suspend(struct phy_device *phydev);
+ int genphy_c45_fast_retrain(struct phy_device *phydev, bool enable);
+ 
++int genphy_c45_plca_get_cfg(struct phy_device *phydev,
++			    struct phy_plca_cfg *plca_cfg);
++int genphy_c45_plca_set_cfg(struct phy_device *phydev,
++			    const struct phy_plca_cfg *plca_cfg);
++int genphy_c45_plca_get_status(struct phy_device *phydev,
++			       struct phy_plca_status *plca_st);
++
+ /* Generic C45 PHY driver */
+ extern struct phy_driver genphy_c45_driver;
+ 
+--- a/include/linux/ethtool.h
++++ b/include/linux/ethtool.h
+@@ -786,11 +786,18 @@
+ struct phy_device;
+ struct phy_tdr_config;
+ 
++struct phy_device;
++struct phy_plca_cfg;
++struct phy_plca_status;
++
+ /**
+  * struct ethtool_phy_ops - Optional PHY device options
+  * @get_sset_count: Get number of strings that @get_strings will write.
+  * @get_strings: Return a set of strings that describe the requested objects
+  * @get_stats: Return extended statistics about the PHY device.
++ * @get_plca_cfg: Return PLCA configuration.
++ * @set_plca_cfg: Set PLCA configuration.
++ * @get_plca_status: Get PLCA status.
+  * @start_cable_test: Start a cable test
+  * @start_cable_test_tdr: Start a Time Domain Reflectometry cable test
+  *
+@@ -802,6 +809,13 @@
+ 	int (*get_strings)(struct phy_device *dev, u8 *data);
+ 	int (*get_stats)(struct phy_device *dev,
+ 			 struct ethtool_stats *stats, u64 *data);
++	int (*get_plca_cfg)(struct phy_device *dev,
++			    struct phy_plca_cfg *plca_cfg);
++	int (*set_plca_cfg)(struct phy_device *dev,
++			    const struct phy_plca_cfg *plca_cfg,
++			    struct netlink_ext_ack *extack);
++	int (*get_plca_status)(struct phy_device *dev,
++			       struct phy_plca_status *plca_st);
+ 	int (*start_cable_test)(struct phy_device *phydev,
+ 				struct netlink_ext_ack *extack);
+ 	int (*start_cable_test_tdr)(struct phy_device *phydev,
+--- a/drivers/net/phy/phy-c45.c
++++ b/drivers/net/phy/phy-c45.c
+@@ -8,6 +8,8 @@
+ #include <linux/mii.h>
+ #include <linux/phy.h>
+ 
++#include "mdio-open-alliance.h"
++
+ /**
+  * genphy_c45_baset1_able - checks if the PMA has BASE-T1 extended abilities
+  * @phydev: target phy_device struct
+@@ -931,6 +933,179 @@
+ }
+ EXPORT_SYMBOL_GPL(genphy_c45_fast_retrain);
+ 
++/**
++ * genphy_c45_plca_get_cfg - get PLCA configuration from standard registers
++ * @phydev: target phy_device struct
++ * @plca_cfg: output structure to store the PLCA configuration
++ *
++ * Description: if the PHY complies to the Open Alliance TC14 10BASE-T1S PLCA
++ *   Management Registers specifications, this function can be used to retrieve
++ *   the current PLCA configuration from the standard registers in MMD 31.
++ */
++int genphy_c45_plca_get_cfg(struct phy_device *phydev,
++			    struct phy_plca_cfg *plca_cfg)
++{
++	int ret;
++
++	ret = phy_read_mmd(phydev, MDIO_MMD_VEND2, MDIO_OATC14_PLCA_IDVER);
++	if (ret < 0)
++		return ret;
++
++	if ((ret & MDIO_OATC14_PLCA_IDM) != OATC14_IDM)
++		return -ENODEV;
++
++	plca_cfg->version = ret & ~MDIO_OATC14_PLCA_IDM;
++
++	ret = phy_read_mmd(phydev, MDIO_MMD_VEND2, MDIO_OATC14_PLCA_CTRL0);
++	if (ret < 0)
++		return ret;
++
++	plca_cfg->enabled = !!(ret & MDIO_OATC14_PLCA_EN);
++
++	ret = phy_read_mmd(phydev, MDIO_MMD_VEND2, MDIO_OATC14_PLCA_CTRL1);
++	if (ret < 0)
++		return ret;
++
++	plca_cfg->node_cnt = (ret & MDIO_OATC14_PLCA_NCNT) >> 8;
++	plca_cfg->node_id = (ret & MDIO_OATC14_PLCA_ID);
++
++	ret = phy_read_mmd(phydev, MDIO_MMD_VEND2, MDIO_OATC14_PLCA_TOTMR);
++	if (ret < 0)
++		return ret;
++
++	plca_cfg->to_tmr = ret & MDIO_OATC14_PLCA_TOT;
++
++	ret = phy_read_mmd(phydev, MDIO_MMD_VEND2, MDIO_OATC14_PLCA_BURST);
++	if (ret < 0)
++		return ret;
++
++	plca_cfg->burst_cnt = (ret & MDIO_OATC14_PLCA_MAXBC) >> 8;
++	plca_cfg->burst_tmr = (ret & MDIO_OATC14_PLCA_BTMR);
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(genphy_c45_plca_get_cfg);
++
++/**
++ * genphy_c45_plca_set_cfg - set PLCA configuration using standard registers
++ * @phydev: target phy_device struct
++ * @plca_cfg: structure containing the PLCA configuration. Fields set to -1 are
++ * not to be changed.
++ *
++ * Description: if the PHY complies to the Open Alliance TC14 10BASE-T1S PLCA
++ *   Management Registers specifications, this function can be used to modify
++ *   the PLCA configuration using the standard registers in MMD 31.
++ */
++int genphy_c45_plca_set_cfg(struct phy_device *phydev,
++			    const struct phy_plca_cfg *plca_cfg)
++{
++	u16 val = 0;
++	int ret;
++
++	/* PLCA IDVER is read-only */
++	if (plca_cfg->version >= 0)
++		return -EINVAL;
++
++	/* first of all, disable PLCA if required */
++	if (plca_cfg->enabled == 0) {
++		ret = phy_clear_bits_mmd(phydev, MDIO_MMD_VEND2,
++					 MDIO_OATC14_PLCA_CTRL0,
++					 MDIO_OATC14_PLCA_EN);
++		if (ret < 0)
++			return ret;
++	}
++
++	/* check if we need to set the PLCA node count, node ID, or both */
++	if (plca_cfg->node_cnt >= 0 || plca_cfg->node_id >= 0) {
++		if (plca_cfg->node_cnt < 0 || plca_cfg->node_id < 0) {
++			ret = phy_read_mmd(phydev, MDIO_MMD_VEND2,
++					   MDIO_OATC14_PLCA_CTRL1);
++			if (ret < 0)
++				return ret;
++			val = ret;
++		}
++
++		if (plca_cfg->node_cnt >= 0)
++			val = (val & ~MDIO_OATC14_PLCA_NCNT) |
++			      (plca_cfg->node_cnt << 8);
++
++		if (plca_cfg->node_id >= 0)
++			val = (val & ~MDIO_OATC14_PLCA_ID) |
++			      (plca_cfg->node_id);
++
++		ret = phy_write_mmd(phydev, MDIO_MMD_VEND2,
++				    MDIO_OATC14_PLCA_CTRL1, val);
++		if (ret < 0)
++			return ret;
++	}
++
++	if (plca_cfg->to_tmr >= 0) {
++		ret = phy_write_mmd(phydev, MDIO_MMD_VEND2,
++				    MDIO_OATC14_PLCA_TOTMR, plca_cfg->to_tmr);
++		if (ret < 0)
++			return ret;
++	}
++
++	if (plca_cfg->burst_cnt >= 0 || plca_cfg->burst_tmr >= 0) {
++		if (plca_cfg->burst_cnt < 0 || plca_cfg->burst_tmr < 0) {
++			ret = phy_read_mmd(phydev, MDIO_MMD_VEND2,
++					   MDIO_OATC14_PLCA_BURST);
++			if (ret < 0)
++				return ret;
++			val = ret;
++		}
++
++		if (plca_cfg->burst_cnt >= 0)
++			val = (val & ~MDIO_OATC14_PLCA_MAXBC) |
++			      (plca_cfg->burst_cnt << 8);
++
++		if (plca_cfg->burst_tmr >= 0)
++			val = (val & ~MDIO_OATC14_PLCA_BTMR) |
++			      (plca_cfg->burst_tmr);
++
++		ret = phy_write_mmd(phydev, MDIO_MMD_VEND2,
++				    MDIO_OATC14_PLCA_BURST, val);
++		if (ret < 0)
++			return ret;
++	}
++
++	/* if we need to enable PLCA, do it at the end */
++	if (plca_cfg->enabled > 0) {
++		ret = phy_set_bits_mmd(phydev, MDIO_MMD_VEND2,
++				       MDIO_OATC14_PLCA_CTRL0,
++				       MDIO_OATC14_PLCA_EN);
++		if (ret < 0)
++			return ret;
++	}
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(genphy_c45_plca_set_cfg);
++
++/**
++ * genphy_c45_plca_get_status - get PLCA status from standard registers
++ * @phydev: target phy_device struct
++ * @plca_st: output structure to store the PLCA status
++ *
++ * Description: if the PHY complies to the Open Alliance TC14 10BASE-T1S PLCA
++ *   Management Registers specifications, this function can be used to retrieve
++ *   the current PLCA status information from the standard registers in MMD 31.
++ */
++int genphy_c45_plca_get_status(struct phy_device *phydev,
++			       struct phy_plca_status *plca_st)
++{
++	int ret;
++
++	ret = phy_read_mmd(phydev, MDIO_MMD_VEND2, MDIO_OATC14_PLCA_STATUS);
++	if (ret < 0)
++		return ret;
++
++	plca_st->pst = !!(ret & MDIO_OATC14_PLCA_PST);
++	return 0;
++}
++EXPORT_SYMBOL_GPL(genphy_c45_plca_get_status);
++
++
+ struct phy_driver genphy_c45_driver = {
+ 	.phy_id         = 0xffffffff,
+ 	.phy_id_mask    = 0xffffffff,
+--- a/drivers/net/phy/phy.c
++++ b/drivers/net/phy/phy.c
+@@ -555,6 +555,189 @@
+ EXPORT_SYMBOL(phy_ethtool_get_stats);
+ 
+ /**
++ * phy_ethtool_get_plca_cfg - Get PLCA RS configuration
++ * @phydev: the phy_device struct
++ * @plca_cfg: where to store the retrieved configuration
++ *
++ * Retrieve the PLCA configuration from the PHY. Return 0 on success or a
++ * negative value if an error occurred.
++ */
++int phy_ethtool_get_plca_cfg(struct phy_device *phydev,
++			     struct phy_plca_cfg *plca_cfg)
++{
++	int ret;
++
++	if (!phydev->drv) {
++		ret = -EIO;
++		goto out;
++	}
++
++	if (!phydev->drv->get_plca_cfg) {
++		ret = -EOPNOTSUPP;
++		goto out;
++	}
++
++	mutex_lock(&phydev->lock);
++	ret = phydev->drv->get_plca_cfg(phydev, plca_cfg);
++	mutex_unlock(&phydev->lock);
++out:
++	return ret;
++}
++
++/**
++ * plca_check_valid - Check PLCA configuration before enabling
++ * @phydev: the phy_device struct
++ * @plca_cfg: current PLCA configuration
++ * @extack: extack for reporting useful error messages
++ *
++ * Checks whether the PLCA and PHY configuration are consistent and it is safe
++ * to enable PLCA. Returns 0 on success or a negative value if the PLCA or PHY
++ * configuration is not consistent.
++ */
++static int plca_check_valid(struct phy_device *phydev,
++			    const struct phy_plca_cfg *plca_cfg,
++			    struct netlink_ext_ack *extack)
++{
++	int ret = 0;
++
++	if (!linkmode_test_bit(ETHTOOL_LINK_MODE_10baseT1S_P2MP_Half_BIT,
++			       phydev->advertising)) {
++		ret = -EOPNOTSUPP;
++		NL_SET_ERR_MSG(extack,
++			       "Point to Multi-Point mode is not enabled");
++	} else if (plca_cfg->node_id >= 255) {
++		NL_SET_ERR_MSG(extack, "PLCA node ID is not set");
++		ret = -EINVAL;
++	}
++
++	return ret;
++}
++
++/**
++ * phy_ethtool_set_plca_cfg - Set PLCA RS configuration
++ * @phydev: the phy_device struct
++ * @plca_cfg: new PLCA configuration to apply
++ * @extack: extack for reporting useful error messages
++ *
++ * Sets the PLCA configuration in the PHY. Return 0 on success or a
++ * negative value if an error occurred.
++ */
++int phy_ethtool_set_plca_cfg(struct phy_device *phydev,
++			     const struct phy_plca_cfg *plca_cfg,
++			     struct netlink_ext_ack *extack)
++{
++	struct phy_plca_cfg *curr_plca_cfg;
++	int ret;
++
++	if (!phydev->drv) {
++		ret = -EIO;
++		goto out;
++	}
++
++	if (!phydev->drv->set_plca_cfg || !phydev->drv->get_plca_cfg) {
++		ret = -EOPNOTSUPP;
++		goto out;
++	}
++
++	curr_plca_cfg = kmalloc(sizeof(*curr_plca_cfg), GFP_KERNEL);
++	if (!curr_plca_cfg) {
++		ret = -ENOMEM;
++		goto out;
++	}
++
++	mutex_lock(&phydev->lock);
++
++	ret = phydev->drv->get_plca_cfg(phydev, curr_plca_cfg);
++	if (ret)
++		goto out_drv;
++
++	if (curr_plca_cfg->enabled < 0 && plca_cfg->enabled >= 0) {
++		NL_SET_ERR_MSG(extack,
++			       "PHY does not support changing the PLCA 'enable' attribute");
++		ret = -EINVAL;
++		goto out_drv;
++	}
++	if (curr_plca_cfg->node_id < 0 && plca_cfg->node_id >= 0) {
++		NL_SET_ERR_MSG(extack,
++			       "PHY does not support changing the PLCA 'local node ID' attribute");
++		ret = -EINVAL;
++		goto out_drv;
++	}
++	if (curr_plca_cfg->node_cnt < 0 && plca_cfg->node_cnt >= 0) {
++		NL_SET_ERR_MSG(extack,
++			       "PHY does not support changing the PLCA 'node count' attribute");
++		ret = -EINVAL;
++		goto out_drv;
++	}
++	if (curr_plca_cfg->to_tmr < 0 && plca_cfg->to_tmr >= 0) {
++		NL_SET_ERR_MSG(extack,
++			       "PHY does not support changing the PLCA 'TO timer' attribute");
++		ret = -EINVAL;
++		goto out_drv;
++	}
++	if (curr_plca_cfg->burst_cnt < 0 && plca_cfg->burst_cnt >= 0) {
++		NL_SET_ERR_MSG(extack,
++			       "PHY does not support changing the PLCA 'burst count' attribute");
++		ret = -EINVAL;
++		goto out_drv;
++	}
++	if (curr_plca_cfg->burst_tmr < 0 && plca_cfg->burst_tmr >= 0) {
++		NL_SET_ERR_MSG(extack,
++			       "PHY does not support changing the PLCA 'burst timer' attribute");
++		ret = -EINVAL;
++		goto out_drv;
++	}
++
++	if (plca_cfg->enabled > 0) {
++		if (plca_cfg->node_id >= 0)
++			curr_plca_cfg->node_id = plca_cfg->node_id;
++
++		ret = plca_check_valid(phydev, curr_plca_cfg, extack);
++		if (ret)
++			goto out_drv;
++	}
++
++	ret = phydev->drv->set_plca_cfg(phydev, plca_cfg);
++
++out_drv:
++	kfree(curr_plca_cfg);
++	mutex_unlock(&phydev->lock);
++out:
++	return ret;
++}
++
++/**
++ * phy_ethtool_get_plca_status - Get PLCA RS status information
++ * @phydev: the phy_device struct
++ * @plca_st: where to store the retrieved status information
++ *
++ * Retrieve the PLCA status information from the PHY. Return 0 on success or a
++ * negative value if an error occurred.
++ */
++int phy_ethtool_get_plca_status(struct phy_device *phydev,
++				struct phy_plca_status *plca_st)
++{
++	int ret;
++
++	if (!phydev->drv) {
++		ret = -EIO;
++		goto out;
++	}
++
++	if (!phydev->drv->get_plca_status) {
++		ret = -EOPNOTSUPP;
++		goto out;
++	}
++
++	mutex_lock(&phydev->lock);
++	ret = phydev->drv->get_plca_status(phydev, plca_st);
++	mutex_unlock(&phydev->lock);
++out:
++	return ret;
++}
++
++
++/**
+  * phy_start_cable_test - Start a cable test
+  *
+  * @phydev: the phy_device struct
+--- a/drivers/net/phy/phy_device.c
++++ b/drivers/net/phy/phy_device.c
+@@ -45,6 +45,9 @@
+ __ETHTOOL_DECLARE_LINK_MODE_MASK(phy_basic_t1_features) __ro_after_init;
+ EXPORT_SYMBOL_GPL(phy_basic_t1_features);
+ 
++__ETHTOOL_DECLARE_LINK_MODE_MASK(phy_basic_t1s_p2mp_features) __ro_after_init;
++EXPORT_SYMBOL_GPL(phy_basic_t1s_p2mp_features);
++
+ __ETHTOOL_DECLARE_LINK_MODE_MASK(phy_gbit_features) __ro_after_init;
+ EXPORT_SYMBOL_GPL(phy_gbit_features);
+ 
+@@ -98,6 +101,12 @@
+ };
+ EXPORT_SYMBOL_GPL(phy_basic_t1_features_array);
+ 
++const int phy_basic_t1s_p2mp_features_array[2] = {
++	ETHTOOL_LINK_MODE_TP_BIT,
++	ETHTOOL_LINK_MODE_10baseT1S_P2MP_Half_BIT,
++};
++EXPORT_SYMBOL_GPL(phy_basic_t1s_p2mp_features_array);
++
+ const int phy_gbit_features_array[2] = {
+ 	ETHTOOL_LINK_MODE_1000baseT_Half_BIT,
+ 	ETHTOOL_LINK_MODE_1000baseT_Full_BIT,
+@@ -138,6 +147,11 @@
+ 			       ARRAY_SIZE(phy_basic_t1_features_array),
+ 			       phy_basic_t1_features);
+ 
++	/* 10 half, P2MP, TP */
++	linkmode_set_bit_array(phy_basic_t1s_p2mp_features_array,
++			       ARRAY_SIZE(phy_basic_t1s_p2mp_features_array),
++			       phy_basic_t1s_p2mp_features);
++
+ 	/* 10/100 half/full + 1000 half/full */
+ 	linkmode_set_bit_array(phy_basic_ports_array,
+ 			       ARRAY_SIZE(phy_basic_ports_array),
+@@ -3294,6 +3308,9 @@
+ 	.get_sset_count		= phy_ethtool_get_sset_count,
+ 	.get_strings		= phy_ethtool_get_strings,
+ 	.get_stats		= phy_ethtool_get_stats,
++	.get_plca_cfg		= phy_ethtool_get_plca_cfg,
++	.set_plca_cfg		= phy_ethtool_set_plca_cfg,
++	.get_plca_status	= phy_ethtool_get_plca_status,
+ 	.start_cable_test	= phy_start_cable_test,
+ 	.start_cable_test_tdr	= phy_start_cable_test_tdr,
+ };
+--- a/drivers/net/phy/phy-core.c
++++ b/drivers/net/phy/phy-core.c
+@@ -13,7 +13,7 @@
+  */
+ const char *phy_speed_to_str(int speed)
+ {
+-	BUILD_BUG_ON_MSG(__ETHTOOL_LINK_MODE_MASK_NBITS != 93,
++	BUILD_BUG_ON_MSG(__ETHTOOL_LINK_MODE_MASK_NBITS != 96,
+ 		"Enum ethtool_link_mode_bit_indices and phylib are out of sync. "
+ 		"If a speed or mode has been added please update phy_speed_to_str "
+ 		"and the PHY settings array.\n");
+@@ -251,6 +251,9 @@
+ 	PHY_SETTING(     10, FULL,     10baseT_Full		),
+ 	PHY_SETTING(     10, HALF,     10baseT_Half		),
+ 	PHY_SETTING(     10, FULL,     10baseT1L_Full		),
++	PHY_SETTING(     10, FULL,     10baseT1S_Full		),
++	PHY_SETTING(     10, HALF,     10baseT1S_Half		),
++	PHY_SETTING(     10, HALF,     10baseT1S_P2MP_Half	),
+ };
+ #undef PHY_SETTING
+ 
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -238,6 +238,12 @@
+ 	help
+ 	  Supports the KSZ9021, VSC8201, KS8001 PHYs.
+ 
++config MICROCHIP_T1S_PHY
++	tristate "Microchip 10BASE-T1S Ethernet PHYs"
++	help
++	  Currently supports the LAN8670/1/2 Rev.B1 and LAN8650/1 Rev.B0/B1
++	  Internal PHYs.
++
+ config MICROCHIP_PHY
+ 	tristate "Microchip PHYs"
+ 	help
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -73,6 +73,7 @@
+ obj-$(CONFIG_MICREL_KS8995MA)	+= spi_ks8995.o
+ obj-$(CONFIG_MICREL_PHY)	+= micrel.o
+ obj-$(CONFIG_MICROCHIP_PHY)	+= microchip.o
++obj-$(CONFIG_MICROCHIP_T1S_PHY)	+= microchip_t1s.o
+ obj-$(CONFIG_MICROCHIP_T1_PHY)	+= microchip_t1.o
+ obj-$(CONFIG_MICROSEMI_PHY)	+= mscc/
+ obj-$(CONFIG_MOTORCOMM_PHY)	+= motorcomm.o
+--- a/drivers/net/ethernet/Kconfig
++++ b/drivers/net/ethernet/Kconfig
+@@ -126,6 +126,14 @@
+ source "drivers/net/ethernet/mediatek/Kconfig"
+ source "drivers/net/ethernet/mellanox/Kconfig"
+ source "drivers/net/ethernet/micrel/Kconfig"
++config OA_TC6
++	tristate "OPEN Alliance TC6 10BASE-T1x MAC-PHY support"
++	depends on SPI
++	select PHYLIB
++	help
++	  This library implements the OPEN Alliance TC6 10BASE-T1x MAC-PHY
++	  Serial Interface protocol for supporting 10BASE-T1x MAC-PHYs.
++
+ source "drivers/net/ethernet/microchip/Kconfig"
+ source "drivers/net/ethernet/mscc/Kconfig"
+ source "drivers/net/ethernet/microsoft/Kconfig"
+--- a/drivers/net/ethernet/Makefile
++++ b/drivers/net/ethernet/Makefile
+@@ -104,3 +104,4 @@
+ obj-$(CONFIG_NET_VENDOR_XIRCOM) += xircom/
+ obj-$(CONFIG_NET_VENDOR_SYNOPSYS) += synopsys/
+ obj-$(CONFIG_NET_VENDOR_PENSANDO) += pensando/
++obj-$(CONFIG_OA_TC6) += oa_tc6.o
+--- a/drivers/net/ethernet/microchip/Kconfig
++++ b/drivers/net/ethernet/microchip/Kconfig
+@@ -58,4 +58,6 @@
+ source "drivers/net/ethernet/microchip/lan966x/Kconfig"
+ source "drivers/net/ethernet/microchip/sparx5/Kconfig"
+ 
++source "drivers/net/ethernet/microchip/lan865x/Kconfig"
++
+ endif # NET_VENDOR_MICROCHIP
+--- a/drivers/net/ethernet/microchip/Makefile
++++ b/drivers/net/ethernet/microchip/Makefile
+@@ -11,3 +11,4 @@
+ 
+ obj-$(CONFIG_LAN966X_SWITCH) += lan966x/
+ obj-$(CONFIG_SPARX5_SWITCH) += sparx5/
++obj-$(CONFIG_LAN865X) += lan865x/
+--- a/net/ethtool/netlink.c
++++ b/net/ethtool/netlink.c
+@@ -287,6 +287,8 @@
+ 	[ETHTOOL_MSG_PHC_VCLOCKS_GET]	= &ethnl_phc_vclocks_request_ops,
+ 	[ETHTOOL_MSG_MODULE_GET]	= &ethnl_module_request_ops,
+ 	[ETHTOOL_MSG_PSE_GET]		= &ethnl_pse_request_ops,
++	[ETHTOOL_MSG_PLCA_GET_CFG]	= &ethnl_plca_cfg_request_ops,
++	[ETHTOOL_MSG_PLCA_GET_STATUS]	= &ethnl_plca_status_request_ops,
+ };
+ 
+ static struct ethnl_dump_ctx *ethnl_dump_context(struct netlink_callback *cb)
+@@ -1040,6 +1042,31 @@
+ 		.policy = ethnl_pse_set_policy,
+ 		.maxattr = ARRAY_SIZE(ethnl_pse_set_policy) - 1,
+ 	},
++	{
++		.cmd	= ETHTOOL_MSG_PLCA_GET_CFG,
++		.doit	= ethnl_default_doit,
++		.start	= ethnl_default_start,
++		.dumpit	= ethnl_default_dumpit,
++		.done	= ethnl_default_done,
++		.policy = ethnl_plca_get_cfg_policy,
++		.maxattr = ARRAY_SIZE(ethnl_plca_get_cfg_policy) - 1,
++	},
++	{
++		.cmd	= ETHTOOL_MSG_PLCA_SET_CFG,
++		.flags	= GENL_UNS_ADMIN_PERM,
++		.doit	= ethnl_set_plca,
++		.policy = ethnl_plca_set_cfg_policy,
++		.maxattr = ARRAY_SIZE(ethnl_plca_set_cfg_policy) - 1,
++	},
++	{
++		.cmd	= ETHTOOL_MSG_PLCA_GET_STATUS,
++		.doit	= ethnl_default_doit,
++		.start	= ethnl_default_start,
++		.dumpit	= ethnl_default_dumpit,
++		.done	= ethnl_default_done,
++		.policy = ethnl_plca_get_status_policy,
++		.maxattr = ARRAY_SIZE(ethnl_plca_get_status_policy) - 1,
++	},
+ };
+ 
+ static const struct genl_multicast_group ethtool_nl_mcgrps[] = {
+--- a/net/ethtool/netlink.h
++++ b/net/ethtool/netlink.h
+@@ -346,6 +346,8 @@
+ extern const struct ethnl_request_ops ethnl_phc_vclocks_request_ops;
+ extern const struct ethnl_request_ops ethnl_module_request_ops;
+ extern const struct ethnl_request_ops ethnl_pse_request_ops;
++extern const struct ethnl_request_ops ethnl_plca_cfg_request_ops;
++extern const struct ethnl_request_ops ethnl_plca_status_request_ops;
+ 
+ extern const struct nla_policy ethnl_header_policy[ETHTOOL_A_HEADER_FLAGS + 1];
+ extern const struct nla_policy ethnl_header_policy_stats[ETHTOOL_A_HEADER_FLAGS + 1];
+@@ -386,6 +388,9 @@
+ extern const struct nla_policy ethnl_module_set_policy[ETHTOOL_A_MODULE_POWER_MODE_POLICY + 1];
+ extern const struct nla_policy ethnl_pse_get_policy[ETHTOOL_A_PSE_HEADER + 1];
+ extern const struct nla_policy ethnl_pse_set_policy[ETHTOOL_A_PSE_MAX + 1];
++extern const struct nla_policy ethnl_plca_get_cfg_policy[ETHTOOL_A_PLCA_HEADER + 1];
++extern const struct nla_policy ethnl_plca_set_cfg_policy[ETHTOOL_A_PLCA_BURST_TMR + 1];
++extern const struct nla_policy ethnl_plca_get_status_policy[ETHTOOL_A_PLCA_HEADER + 1];
+ 
+ int ethnl_set_linkinfo(struct sk_buff *skb, struct genl_info *info);
+ int ethnl_set_linkmodes(struct sk_buff *skb, struct genl_info *info);
+@@ -406,6 +411,7 @@
+ int ethnl_set_fec(struct sk_buff *skb, struct genl_info *info);
+ int ethnl_set_module(struct sk_buff *skb, struct genl_info *info);
+ int ethnl_set_pse(struct sk_buff *skb, struct genl_info *info);
++int ethnl_set_plca(struct sk_buff *skb, struct genl_info *info);
+ 
+ extern const char stats_std_names[__ETHTOOL_STATS_CNT][ETH_GSTRING_LEN];
+ extern const char stats_eth_phy_names[__ETHTOOL_A_STATS_ETH_PHY_CNT][ETH_GSTRING_LEN];
+--- a/net/ethtool/Makefile
++++ b/net/ethtool/Makefile
+@@ -8,4 +8,4 @@
+ 		   linkstate.o debug.o wol.o features.o privflags.o rings.o \
+ 		   channels.o coalesce.o pause.o eee.o tsinfo.o cabletest.o \
+ 		   tunnels.o fec.o eeprom.o stats.o phc_vclocks.o module.o \
+-		   pse-pd.o
++		   pse-pd.o plca.o
+--- a/net/ethtool/common.c
++++ b/net/ethtool/common.c
+@@ -202,6 +202,9 @@
+ 	__DEFINE_LINK_MODE_NAME(100, FX, Half),
+ 	__DEFINE_LINK_MODE_NAME(100, FX, Full),
+ 	__DEFINE_LINK_MODE_NAME(10, T1L, Full),
++	__DEFINE_LINK_MODE_NAME(10, T1S, Full),
++	__DEFINE_LINK_MODE_NAME(10, T1S, Half),
++	__DEFINE_LINK_MODE_NAME(10, T1S_P2MP, Half),
+ };
+ static_assert(ARRAY_SIZE(link_mode_names) == __ETHTOOL_LINK_MODE_MASK_NBITS);
+ 
+@@ -238,6 +241,8 @@
+ #define __LINK_MODE_LANES_X		1
+ #define __LINK_MODE_LANES_FX		1
+ #define __LINK_MODE_LANES_T1L		1
++#define __LINK_MODE_LANES_T1S		1
++#define __LINK_MODE_LANES_T1S_P2MP	1
+ 
+ #define __DEFINE_LINK_MODE_PARAMS(_speed, _type, _duplex)	\
+ 	[ETHTOOL_LINK_MODE(_speed, _type, _duplex)] = {		\
+@@ -352,6 +357,9 @@
+ 	__DEFINE_LINK_MODE_PARAMS(100, FX, Half),
+ 	__DEFINE_LINK_MODE_PARAMS(100, FX, Full),
+ 	__DEFINE_LINK_MODE_PARAMS(10, T1L, Full),
++	__DEFINE_LINK_MODE_PARAMS(10, T1S, Full),
++	__DEFINE_LINK_MODE_PARAMS(10, T1S, Half),
++	__DEFINE_LINK_MODE_PARAMS(10, T1S_P2MP, Half),
+ };
+ static_assert(ARRAY_SIZE(link_mode_params) == __ETHTOOL_LINK_MODE_MASK_NBITS);
+ 

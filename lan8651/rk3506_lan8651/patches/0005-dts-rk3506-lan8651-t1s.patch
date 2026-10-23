@@ -1,0 +1,62 @@
+--- a/arch/arm/boot/dts/HZ-RK3506G2_MiniEVM_TF.dts
++++ b/arch/arm/boot/dts/HZ-RK3506G2_MiniEVM_TF.dts
+@@ -562,4 +562,57 @@
+ 			rockchip,pins = <1 RK_PA1 RK_FUNC_GPIO &pcfg_pull_none>;
+ 		};
+ 	};
+-};
+\ No newline at end of file
++};
++
++/*
++ * 10BASE-T1S: Microchip LAN8651 MAC-PHY on the Raspberry-Pi compatible
++ * header J7 (SPI0 + two GPIOs).
++ *
++ * IMPORTANT: on this board J7 does NOT use the dedicated SPI0 pins
++ * (GPIO0_C0..C3).  The vendor schematic routes the J7 SPI0 nets through
++ * the RK3506 RM_IO matrix:
++ *
++ *   J7-17 VCC_3V3   J7-20 GND
++ *   J7-18 GPIO0_A2  -> LAN8651 RESET_N   (active low, direct GPIO)
++ *   J7-19 SPI0_MOSI -> LAN8651 SDI       (GPIO0_B1 / RM_IO9)
++ *   J7-21 SPI0_MISO <- LAN8651 SDO       (GPIO0_B2 / RM_IO10)
++ *   J7-22 GPIO0_A6  -> LAN8651 IRQ_N     (active low, level, direct GPIO)
++ *   J7-23 SPI0_CLK  -> LAN8651 SCLK      (GPIO0_B0 / RM_IO8)
++ *   J7-24 SPI0_CSN0 -> LAN8651 CS_N      (GPIO0_B3 / RM_IO11)
++ *
++ * Using spi0_clk_pins/spi0_csn0_pins (GPIO0_C0..C3) here is WRONG: those
++ * pins are not wired to J7, which caused the "SPI reads all zero" symptom.
++ */
++&spi0 {
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&rm_io8_spi0_clk &rm_io9_spi0_mosi
++		     &rm_io10_spi0_miso &rm_io11_spi0_csn0>;
++	num-cs = <1>;
++
++	lan865x: ethernet@0 {
++		compatible = "microchip,lan8651", "microchip,lan8650";
++		reg = <0>;
++		spi-max-frequency = <15000000>;
++		interrupt-parent = <&gpio0>;
++		interrupts = <6 IRQ_TYPE_LEVEL_LOW>;
++		reset-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
++		local-mac-address = [02 00 00 10 86 51];
++		status = "okay";
++	};
++};
++
++/*
++ * J7 SPI0 pins are shared through the RM_IO matrix with:
++ *   RM_IO8  (GPIO0_B0) = UART3_TX  (Beidou/GPS)
++ *   RM_IO9  (GPIO0_B1) = UART2_TX  (RS485_1)
++ *   RM_IO10 (GPIO0_B2) = UART2_RX  (RS485_1)
++ * Disable UART2/UART3 so the LAN8651 SPI0 signals can own these pins.
++ */
++&uart2 {
++	status = "disabled";
++};
++
++&uart3 {
++	status = "disabled";
++};
