@@ -1,0 +1,136 @@
+root@rk3506:~# uname -a
+Linux rk3506 6.1.118 #5 SMP PREEMPT Fri Oct 23 11:39:50 CST 2026 armv7l GNU/Linux
+root@rk3506:~# ifconfig t1s0
+t1s0      Link encap:Ethernet  HWaddr 02:00:00:10:86:51
+          inet addr:192.168.1.100  Bcast:0.0.0.0  Mask:255.255.255.0
+          inet6 addr: fe80::ff:fe10:8651/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:77814 errors:0 dropped:4 overruns:0 frame:0
+          TX packets:46616 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:116895740 (111.4 MiB)  TX bytes:3283735 (3.1 MiB)
+          Interrupt:60
+
+root@rk3506:~# ethtool --set-plca-cfg t1s0 enable on \
+>     node-id 0 node-cnt 8 to-tmr 32 burst-cnt 0 burst-tmr 128
+root@rk3506:~# ethtool --get-plca-cfg t1s0
+PLCA settings for t1s0:
+        Enabled: Yes
+        local node ID: 0 (coordinator)
+        Node count: 8
+        TO timer: 32 BT
+        Burst count: 0 (disabled)
+        Burst timer: 128 BT
+root@rk3506:~# ping 192.168.1.1 -c 3
+PING 192.168.1.1 (192.168.1.1): 56 data bytes
+64 bytes from 192.168.1.1: seq=0 ttl=64 time=1.332 ms
+64 bytes from 192.168.1.1: seq=1 ttl=64 time=1.704 ms
+64 bytes from 192.168.1.1: seq=2 ttl=64 time=1.423 ms
+
+--- 192.168.1.1 ping statistics ---
+3 packets transmitted, 3 packets received, 0% packet loss
+round-trip min/avg/max = 1.332/1.486/1.704 ms
+root@rk3506:~# iperf3 -s -p 5201
+-----------------------------------------------------------
+Server listening on 5201 (test #1)
+-----------------------------------------------------------
+Accepted connection from 192.168.1.1, port 59264
+[  5] local 192.168.1.100 port 5201 connected to 192.168.1.1 port 59276
+[ ID] Interval           Transfer     Bitrate
+[  5]   0.00-1.00   sec  1.06 MBytes  8.85 Mbits/sec                  (omitted)
+[  5]   1.00-2.00   sec  1.06 MBytes  8.88 Mbits/sec                  (omitted)
+[  5]   2.00-3.00   sec  1.04 MBytes  8.72 Mbits/sec                  (omitted)
+[  5]   0.00-1.00   sec  1.09 MBytes  9.10 Mbits/sec
+[  5]   1.00-2.00   sec  1.06 MBytes  8.85 Mbits/sec
+[  5]   2.00-3.00   sec  1.07 MBytes  8.98 Mbits/sec
+[  5]   3.00-4.00   sec  1.06 MBytes  8.92 Mbits/sec
+[  5]   4.00-5.00   sec  1.06 MBytes  8.93 Mbits/sec
+[  5]   5.00-6.00   sec  1.06 MBytes  8.86 Mbits/sec
+[  5]   6.00-7.00   sec  1.06 MBytes  8.90 Mbits/sec
+[  5]   7.00-8.00   sec  1.07 MBytes  8.98 Mbits/sec
+[  5]   8.00-9.00   sec  1.06 MBytes  8.92 Mbits/sec
+[  5]   9.00-10.00  sec  1.06 MBytes  8.87 Mbits/sec
+[  5]  10.00-11.00  sec  1.06 MBytes  8.92 Mbits/sec
+[  5]  11.00-12.00  sec  1.06 MBytes  8.93 Mbits/sec
+[  5]  12.00-13.00  sec  1.06 MBytes  8.92 Mbits/sec
+[  5]  13.00-14.00  sec  1.07 MBytes  8.99 Mbits/sec
+[  5]  14.00-15.00  sec  1.07 MBytes  8.98 Mbits/sec
+[  5]  15.00-16.00  sec  1.05 MBytes  8.83 Mbits/sec
+[  5]  16.00-17.00  sec  1.08 MBytes  9.02 Mbits/sec
+[  5]  17.00-18.00  sec  1.05 MBytes  8.81 Mbits/sec
+[  5]  18.00-19.00  sec  1.07 MBytes  8.97 Mbits/sec
+[  5]  19.00-20.00  sec  1.07 MBytes  8.99 Mbits/sec
+[  5]  20.00-20.02  sec  21.2 KBytes  8.90 Mbits/sec
+- - - - - - - - - - - - - - - - - - - - - - - - -
+[ ID] Interval           Transfer     Bitrate
+[  5]   0.00-20.02  sec  21.3 MBytes  8.93 Mbits/sec                  receiver
+-----------------------------------------------------------
+Server listening on 5201 (test #2)
+-----------------------------------------------------------
+
+---
+# Ubuntu 26 PC
+---
+➜  ~ uname -a
+Linux z-u26 7.0.0-38-generic #38-Ubuntu SMP PREEMPT_DYNAMIC Fri Sep  4 09:10:14 UTC 2026 x86_64 GNU/Linux
+➜  ~ ifconfig enx001ec0d1c337
+enx001ec0d1c337: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.1.1  netmask 255.255.255.0  broadcast 0.0.0.0
+        ether 00:1e:c0:d1:c3:37  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+➜  ~ sudo ethtool --set-plca-cfg enx001ec0d1c337 enable on \
+    node-id 1 node-cnt 8 to-tmr 32 burst-cnt 0 burst-tmr 128
+➜  ~ ethtool --get-plca-cfg enx001ec0d1c337
+PLCA settings for enx001ec0d1c337:
+        Enabled: Yes
+        local node ID: 1 (follower)
+        Node count: 8 (ignored)
+        TO timer: 32 BT
+        Burst count: 0 (disabled)
+        Burst timer: 128 BT
+➜  ~ ping 192.168.1.100 -c 3
+PING 192.168.1.100 (192.168.1.100) 56(84) bytes of data.
+64 bytes from 192.168.1.100: icmp_seq=1 ttl=64 time=1.05 ms
+64 bytes from 192.168.1.100: icmp_seq=2 ttl=64 time=1.69 ms
+64 bytes from 192.168.1.100: icmp_seq=3 ttl=64 time=1.34 ms
+
+--- 192.168.1.100 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2003ms
+rtt min/avg/max/mdev = 1.049/1.359/1.687/0.260 ms
+➜  ~ iperf3 -c 192.168.1.100 -p 5201 -t 20 -O 3
+Connecting to host 192.168.1.100, port 5201
+[  5] local 192.168.1.1 port 59276 connected to 192.168.1.100 port 5201
+[ ID] Interval           Transfer     Bitrate         Retr  Cwnd
+[  5]   0.00-1.00   sec  1.12 MBytes  9.44 Mbits/sec    2   42.4 KBytes       (omitted)
+[  5]   1.00-2.00   sec  1.25 MBytes  10.5 Mbits/sec    6   46.7 KBytes       (omitted)
+[  5]   2.00-3.00   sec  1.00 MBytes  8.39 Mbits/sec   21   32.5 KBytes       (omitted)
+[  5]   0.00-1.00   sec  1.00 MBytes  8.38 Mbits/sec    6   41.0 KBytes
+[  5]   1.00-2.00   sec  1.00 MBytes  8.39 Mbits/sec    5   43.8 KBytes
+[  5]   2.00-3.00   sec  1.12 MBytes  9.44 Mbits/sec   10   46.7 KBytes
+[  5]   3.00-4.00   sec  1.12 MBytes  9.44 Mbits/sec   13   42.4 KBytes
+[  5]   4.00-5.00   sec  1.12 MBytes  9.44 Mbits/sec   12   42.4 KBytes
+[  5]   5.00-6.00   sec  1.00 MBytes  8.39 Mbits/sec    6   45.2 KBytes
+[  5]   6.00-7.00   sec  1.00 MBytes  8.39 Mbits/sec   12   39.6 KBytes
+[  5]   7.00-8.00   sec  1.12 MBytes  9.44 Mbits/sec   10   42.4 KBytes
+[  5]   8.00-9.00   sec  1.00 MBytes  8.39 Mbits/sec   14   41.0 KBytes
+[  5]   9.00-10.00  sec  1.12 MBytes  9.43 Mbits/sec    2   43.8 KBytes
+[  5]  10.00-11.00  sec  1.00 MBytes  8.40 Mbits/sec   10   42.4 KBytes
+[  5]  11.00-12.00  sec  1.12 MBytes  9.43 Mbits/sec   11   42.4 KBytes
+[  5]  12.00-13.00  sec  1.00 MBytes  8.39 Mbits/sec   10   42.4 KBytes
+[  5]  13.00-14.00  sec  1.12 MBytes  9.44 Mbits/sec   10   46.7 KBytes
+[  5]  14.00-15.00  sec  1.00 MBytes  8.39 Mbits/sec   11   48.1 KBytes
+[  5]  15.00-16.00  sec  1.12 MBytes  9.44 Mbits/sec   18   26.9 KBytes
+[  5]  16.00-17.00  sec  1.12 MBytes  9.44 Mbits/sec    3   48.1 KBytes
+[  5]  17.00-18.00  sec  1.00 MBytes  8.39 Mbits/sec   19   25.5 KBytes
+[  5]  18.00-19.00  sec  1.00 MBytes  8.39 Mbits/sec   10   41.0 KBytes
+[  5]  19.00-20.00  sec  1.12 MBytes  9.44 Mbits/sec   10   43.8 KBytes
+- - - - - - - - - - - - - - - - - - - - - - - - -
+[ ID] Interval           Transfer     Bitrate         Retr
+[  5]   0.00-20.00  sec  21.2 MBytes  8.91 Mbits/sec  202            sender
+[  5]   0.00-20.02  sec  21.3 MBytes  8.93 Mbits/sec                  receiver
+
+iperf Done.
