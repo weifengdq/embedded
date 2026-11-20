@@ -1,7 +1,7 @@
 # embedded
 weifengdq's embedded
 
-所有板子都可到闲鱼搜索用户 weifengdq , 在主页中找到购买链接, 或直接点击以下链接: 【闲鱼】https://m.tb.cn/h.8uZw3MA?tk=ZcajTlg8jsF 
+所有板子都可到闲鱼搜索用户 weifengdq , 在主页中找到购买链接, 或直接点击以下链接: 【闲鱼】https://m.tb.cn/h.jlQ3oWZ?tk=ezdg6Uovrqf 
 
 QQ 群(`嵌入式_机器人_自动驾驶交流群`): 1040239879, 所有板子资料在群公告网盘链接中免费下载, 欢迎进群潜水, 无需发言或购买板子.
 
