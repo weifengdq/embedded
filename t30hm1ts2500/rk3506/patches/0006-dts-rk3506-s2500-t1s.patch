@@ -1,0 +1,30 @@
+--- a/arch/arm/boot/dts/HZ-RK3506G2_MiniEVM_TF.dts	2026-11-19 20:07:07.309359840 +0800
++++ b/arch/arm/boot/dts/HZ-RK3506G2_MiniEVM_TF.dts	2026-11-19 20:07:07.309396649 +0800
+@@ -590,14 +590,23 @@
+ 		     &rm_io10_spi0_miso &rm_io11_spi0_csn0>;
+ 	num-cs = <1>;
+ 
+-	lan865x: ethernet@0 {
+-		compatible = "microchip,lan8651", "microchip,lan8650";
++	/*
++	 * onsemi T30HM1TS2500 (S2500) 10BASE-T1S MAC-PHY.  The module is
++	 * pin compatible with the LAN8651 on J7 but uses the standard
++	 * OPEN Alliance MAC register map; the Linux driver is out of tree
++	 * (drivers/s2500 in this release).
++	 * No local-mac-address: the driver prefers the chip factory MAC
++	 * (MMS12 0x1002/0x1003) so that every module stays unique.
++	 */
++	s2500: ethernet@0 {
++		compatible = "onsemi,t30hm1ts2500";
+ 		reg = <0>;
+-		spi-max-frequency = <15000000>;
++		/* S2500 规格上限 25 MHz; 实测 15 MHz 已够跑满 10BASE-T1S,
++		 * 25 MHz 留余量。可被模块参数 spi_hz 覆盖。 */
++		spi-max-frequency = <25000000>;
+ 		interrupt-parent = <&gpio0>;
+ 		interrupts = <6 IRQ_TYPE_LEVEL_LOW>;
+ 		reset-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+-		local-mac-address = [02 00 00 10 86 51];
+ 		status = "okay";
+ 	};
+ };
