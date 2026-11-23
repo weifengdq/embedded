@@ -551,7 +551,7 @@ RTT 构成：主机 lwIP/socket 往返 + 千兆链路 ~几十 µs + 板端收包
 - 本仓库第 12 章（YT8011AN/RGMII）、第 13 章（lwIP/iperf）、第 23 章（基准）—— 底层链路与性能基线。
 - 例程与组件：`components/app_someip/`、`samples/app/someip_rpc|event|tp/`、`host/someip/`。
 - 实测日志（板端串口）：`logs/20261030-172454-someip_rpc.log`、`logs/20261030-172737-someip_event.log`、`logs/20261030-173049-someip_tp.log`。
-- 实测日志（上位机侧）：`logs/20261030-174453-host-someip-core.log`（SD+RPC+事件）、`logs/20261030-174718-host-someip-event.log`（事件 6 s 统计）、`logs/20261030-174852-host-someip-vsomeip.log`（vsomeip 启动）。
+- 实测日志（上位机侧）：`logs/20261030-174453-host-someip-core.log`（SD+RPC+事件）、`logs/20261030-174718-host-someip-event.log`（事件 6 s 统计）、`logs/20261102-121620-host-r5-someip-all.log`（vsomeip 启动）。
 
 ## 35.13 待确认项与风险
 

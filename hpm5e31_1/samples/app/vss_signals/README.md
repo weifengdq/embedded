@@ -18,7 +18,7 @@ bash scripts/hwrun.sh app/vss_signals --secs 10 --send "vstat" \
 
 串口：`vss on|off`、`rate <ms>`、`vstat`。上电自动 `vss on`（100 ms）+ 网关模式。
 
-## 实测（logs/20261030-175900-vss_signals.log）
+## 实测（logs/20261030-175924-vss_signals.log）
 
 ```
 === VSS 解码：vcan0 (3.0 s)，共 90 帧 ===

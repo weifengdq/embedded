@@ -198,7 +198,7 @@ app_can_send(&s_can0, &f, 1000U);
 
 ### 39.7.2 vss_signals（VSS 信号经网关到 vcan0）
 
-日志 `logs/20261030-175900-vss_signals.log`（Bench B：CAN0 发 → CAN1 网关 → vcan0，3 s 采样）：
+日志 `logs/20261030-175924-vss_signals.log`（Bench B：CAN0 发 → CAN1 网关 → vcan0，3 s 采样）：
 
 ```text
 === VSS 解码：vcan0 (3.0 s)，共 90 帧 ===
@@ -355,7 +355,7 @@ APID/CTID \`MAIN/CAN/ADC/NET\`、Type \`log\`、Payload \`2 seq=1628 ctx=MAIN le
 - can-utils（`ref2/can-utils`）：`candump`/`canplayer`/`cansend` 格式与回放
 - 仓库内：`samples/app/can_logger/README.md`、`samples/app/vss_signals/README.md`、
   `host/canlog/README.md`、`host/vss/vss_decode.py`
-- 实测日志：`logs/20261030-175332-can_logger.log`、`logs/20261030-175900-vss_signals.log`
+- 实测日志：`logs/20261030-175332-can_logger.log`、`logs/20261030-175924-vss_signals.log`
 - 第 28 章（cannelloni 网关）、第 13 章（lwIP）、第 08 章（MCAN）
 
 ## 39.12 待确认项与风险
