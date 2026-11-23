@@ -1,0 +1,28 @@
+oller: SCL PD02 / SDA PD03；I2C3 target addr=0x50 SCL PD07 / SD/ 'i2c xfer 32' / 'i2c async 16' / 'i2c ber 200' / 'i2c det'
+i2c init 400k
+i2c: re-init -> 400k
+  I2C2(master) SETUP=0x009023d5 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006005 ADDR=0x00000050
+  I2C3(target) SETUP=0x0c9023d1 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006001 ADDR=0x00000050
+
+letter:/$ 
+letter:/$ i2c ber 300
+ber: 300 次 x (24B 写 + 24B 读) @ 400k
+  total=14400 B fail_wr=0 fail_rd=0 err_bytes=0, 454.97 ms, 有效=31649 B/s
+  err-pos hist: 0:0 1:0 2:0 3:0 4:0 5:0 6:0 7:0 >7:0
+  => PASS (0 误码)
+
+letter:/$ 
+letter:/$ i2c init 1m
+i2c: re-init -> 1m
+  I2C2(master) SETUP=0x00802155 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006005 ADDR=0x00000050
+  I2C3(target) SETUP=0x0c802151 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006001 ADDR=0x00000050
+
+letter:/$ 
+letter:/$ i2c ber 300
+ber: 300 次 x (24B 写 + 24B 读) @ 1m
+  total=14400 B fail_wr=0 fail_rd=0 err_bytes=0, 249.04 ms, 有效=57820 B/s
+  err-pos hist: 0:0 1:0 2:0 3:0 4:0 5:0 6:0 7:0 >7:0
+  => PASS (0 误码)
+
+letter:/$ 
+letter:/$ 

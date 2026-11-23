@@ -1,0 +1,17 @@
+it] Eth_Init done: ctrl=1 base=0xf1400000
+[init] EthTrcv_Init 36 B, ethertype=0x88B5
+eth rx 8
+RX secs=8 frames=180899 bytes=lu mbit=0.0 avg_len=772700459 dur=1079495109us
+
+letter:/$ 
+letter:/$ eth stat
+[stat] det=0 rx_isr=0
+[stat] tx: frames=0 bytes=0 err=0 drop_busy=0 underflow=0
+[stat] rx: frames=180905 octets=95880962 crc=0 overflow=0 err=0 drop=0
+[stat] rx buckets: 64=0 65-127=0 128-255=0 256-511=0 512-1023=180905 1024-1518=0
+[stat] Eth sw 1.0.0 module=88
+
+letter:/$ 
+letter:/$ ===== HOST SIDE =====
+HOST iface=enp6s0 mac=c0:a2:b6:a6:a9:2c ethertype=0x88B5 mode=flood
+HOST flood len=512 n=1091107 secs=12.00 fps=90926 mbit=385.5

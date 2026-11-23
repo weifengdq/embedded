@@ -1,0 +1,76 @@
+c 80000000 Hz
+board_init_spi_clock(SPI2) = 80000000 Hz
+SPI2  pin levels
+boot
+
+[auto] HW SPI  : read STATUS0 -> ret -3, value 0x00000000
+       tx: 00 00 08 00 00 00 00 00 00 00 00 00
+       rx: ff ff ff ff ff ff ff ff ff ff ff ff
+[auto] SPI2 controller gives no echo -> fall back to bit-banged SPI
+[auto] bit-bang: read STATUS0 -> ret 0, value 0x00000000
+       rx: 00 00 00 00 00 00 08 00 00 00 00 00
+
+[bring-up] hardware reset (nRST low 2 ms) + TC6 + AN1760 + MAC
+           result: ok (0), nINT=0
+           PLCA disabled (CSMA/CD) for the probe, node_cnt=8
+
+=== LAN8651 bring-up state ===
+transport      : GPIO bit-bang SPI (PA20/21/22/23), half delay 10 nops, SCLK ~1612937 Hz
+nRST PA19 = 1, nINT PA24 = 0
+control xfers = 75, echo errors = 0, spi errors = 0
+
+-- TC6 standard registers --
+  STDCAP      = 0x00000000  (bit8 direct PHY access = 0)
+  STATUS0     = 0x000005e5  (RESETC=1 HEADER_ERROR=1 LOSS_OF_FRAME=0)
+  CONFIG0     = 0x00009006  (SYNC=1 ZARFE=1)
+  BUFFER_STS  = 0x00003000  (tx_credits=16 rx_chunks=0)
+  INT_MASK0   = 0x00000780
+
+-- internal PHY --
+  PHY ID      = 0x0007c1b3 (expect 0x0007c1b3) MATCH
+  PHY STS1    = 0x0000 (bit11 PLCA change, bit13 link change)
+  PLCA        : en=0 node_id=0 node_cnt=8 to_tmr=32 burst_cnt=0 burst_tmr=128 status=0x0000 (PST=0)
+
+-- transfer statistics --
+  data xfers=0 tx_frames=0 tx_bytes=0 rx_frames=0 rx_bytes=0 rx_dropped=0
+  ext_status=0 hdr_bad=0 cfg_sync_lost=0 last_STATUS0=0x00000040
+
+letter:/$ 
+letter:/$ regs
+  0x0000 OA_ID       = 0x00000011
+  0x0001 OA_PHYID    = 0x0007c1b4
+  0x0002 OA_STDCAP   = 0x000005e5
+  0x0003 OA_RESET    = 0x00000000
+  0x0004 OA_CONFIG0  = 0x00009006
+  0x0005 0x05        = 0x00000000
+  0x0006 0x06        = 0x00000000
+  0x0007 0x07        = 0x00000000
+  0x0008 OA_STATUS0  = 0x00000000
+  0x0009 0x09        = 0x00000000
+  0x000a 0x0A        = 0x00000000
+  0x000b OA_BUFSTS   = 0x00003000
+  0x000c INT_MASK0   = 0x00000780
+  0x000d 0x0D        = 0x3ffe0003
+  0x000e 0x0E        = 0x00000000
+  0x000f 0x0F        = 0x00000000
+  OA_ID     MAJVER=1 MINVER=1
+  OA_PHYID  OUI=0x0c001f MODEL=27 REVISION=4
+  STDCAP    DPRAC=1 IPRAC=0 TXFCSVC=1 AIDC=1 FTSC=1 CTC=1
+  C22 reg2/3 (PHY ID) = 0x0007 0xc1b3 -> 0x0007c1b3
+  C22 reg0 (BMCR)     = 0x0000
+
+letter:/$ 
+letter:/$ rdtest
+  rd 0x0002 #0 = 0x000005e5
+  rd 0x0002 #1 = 0x000005e5
+  rd 0x0002 #2 = 0x000005e5
+  rd 0x0008 #0 = 0x00000000
+  rd 0x0008 #1 = 0x00000000
+  rd 0x0008 #2 = 0x00000000
+  rd 0x0000 #0 = 0x00000011
+  rd 0x0000 #1 = 0x00000011
+  block 0x00..0x0F: 0x00000011 0x0007c1b4 0x000005e5 0x00000000 ...
+                   0x00000000 0x00000000 0x00000000 0x00003000 (0x08..0x0B)
+
+letter:/$ 
+letter:/$ 

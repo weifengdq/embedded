@@ -1,0 +1,53 @@
+)
+---- MII(clause22) registers ----
+  0x00 BMCR  = 0x0140
+ <reg> [val] | poll [secs] | restore
+mmd 1 0x834 0xc001
+MMD1 0x0834 = 0xC001
+
+letter:/$ 
+letter:/$ wr 0 0x8140
+mii[0x00] <- 0x8140
+
+letter:/$ 
+letter:/$ rd 0 1
+mii[0x00] = 0x0140
+
+letter:/$ 
+letter:/$ rd 17 1
+mii[0x11] = 0x2000
+
+letter:/$ 
+letter:/$ mmd 1 0x834
+MMD1 0x0834 = 0xC001
+
+letter:/$ 
+letter:/$ wr 0 0x8140
+mii[0x00] <- 0x8140
+
+letter:/$ 
+letter:/$ rd 17 1
+mii[0x11] = 0x2000
+
+letter:/$ 
+letter:/$ mmd 1 0x834 0x8001
+MMD1 0x0834 = 0x8001
+
+letter:/$ 
+letter:/$ wr 0 0x8140
+mii[0x00] <- 0x8140
+
+letter:/$ 
+letter:/$ rd 17 1
+mii[0x11] = 0x8400
+
+letter:/$ 
+letter:/$ rd 0 1
+mii[0x00] = 0x0140
+
+letter:/$ 
+letter:/$ mmd 1 0x834
+MMD1 0x0834 = 0x8001
+
+letter:/$ 
+letter:/$ 

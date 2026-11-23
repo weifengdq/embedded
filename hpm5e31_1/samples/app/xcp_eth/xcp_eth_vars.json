@@ -1,0 +1,380 @@
+{
+  "generated_by": "samples/app/xcp_eth/gen_a2l_eth.py (基于 tools/gen_a2l.py)",
+  "project": {
+    "name": "HPM5E31_XCP_ETH",
+    "comment": "hpm5e31_1 XCP on UDP（XCPonEth）标定测量工程",
+    "version": "1.0",
+    "project_no": "PRJ2"
+  },
+  "module": {
+    "name": "xcp_eth",
+    "comment": "XCP on Ethernet(UDP 5555) 从站 + DAQ 测量（板 192.168.2.100，主机 192.168.2.1）"
+  },
+  "memory_segments": [
+    {
+      "name": "RAM",
+      "comment": "AXI SRAM .data/.bss",
+      "prg_type": "DATA",
+      "memory_type": "RAM",
+      "attribute": "INTERN",
+      "address_type": 0,
+      "start": "0x01200000",
+      "size": "0x40000"
+    },
+    {
+      "name": "FLASH",
+      "comment": "XIP NOR（只读）",
+      "prg_type": "DATA",
+      "memory_type": "FLASH",
+      "attribute": "EXTERN",
+      "address_type": 0,
+      "start": "0x80000000",
+      "size": "0x100000"
+    }
+  ],
+  "xcp": {
+    "version": 256,
+    "max_cto": 255,
+    "max_dto": 256,
+    "port": 5555,
+    "address": "192.168.2.100",
+    "max_bus_load": 100,
+    "max_bit_rate": 1000,
+    "timestamp": {
+      "ticks": 1,
+      "size": "SIZE_DWORD",
+      "unit": "UNIT_1US"
+    },
+    "optional_cmds": [
+      "GET_COMM_MODE_INFO",
+      "GET_ID",
+      "SET_REQUEST",
+      "GET_SEED",
+      "UNLOCK",
+      "SET_MTA",
+      "UPLOAD",
+      "SHORT_UPLOAD",
+      "DOWNLOAD",
+      "MODIFY_BITS",
+      "SET_CAL_PAGE",
+      "GET_CAL_PAGE",
+      "GET_PAG_PROCESSOR_INFO",
+      "GET_SEGMENT_INFO",
+      "GET_PAGE_INFO",
+      "SET_DAQ_PTR",
+      "WRITE_DAQ",
+      "SET_DAQ_LIST_MODE",
+      "GET_DAQ_LIST_MODE",
+      "START_STOP_DAQ_LIST",
+      "START_STOP_SYNCH",
+      "GET_DAQ_CLOCK",
+      "GET_DAQ_PROCESSOR_INFO",
+      "GET_DAQ_RESOLUTION_INFO",
+      "GET_DAQ_EVENT_INFO",
+      "FREE_DAQ",
+      "ALLOC_DAQ",
+      "ALLOC_ODT",
+      "ALLOC_ODT_ENTRY"
+    ]
+  },
+  "daq": {
+    "config": "DYNAMIC",
+    "max_daq": 4,
+    "min_daq": 0,
+    "max_odt_entry_size": 255,
+    "prescaler_supported": true
+  },
+  "events": [
+    {
+      "name": "EVT_1ms",
+      "comment": "GPTMR 1 kHz 事件",
+      "number": 0,
+      "direction": "DAQ",
+      "max_daq_list": 4,
+      "cycle": 1,
+      "unit": "1MS",
+      "priority": 0
+    },
+    {
+      "name": "EVT_100us",
+      "comment": "GPTMR 10 kHz 事件（带宽压力测试）",
+      "number": 1,
+      "direction": "DAQ",
+      "max_daq_list": 4,
+      "cycle": 100,
+      "unit": "1US",
+      "priority": 1
+    },
+    {
+      "name": "EVT_10ms",
+      "comment": "GPTMR 100 Hz 事件",
+      "number": 2,
+      "direction": "DAQ",
+      "max_daq_list": 4,
+      "cycle": 10,
+      "unit": "1MS",
+      "priority": 2
+    }
+  ],
+  "measurements": [
+    {
+      "name": "g_adc_raw",
+      "symbol": "g_adc_raw",
+      "type": "UWORD",
+      "conv": "cm_ident",
+      "unit": "LSB",
+      "min": 0,
+      "max": 65535,
+      "format": "%6.0",
+      "comment": "ADC0.IN1 原始值（PF26）",
+      "event": 0
+    },
+    {
+      "name": "g_tick_cnt",
+      "symbol": "g_tick_cnt",
+      "type": "ULONG",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 4294967295,
+      "format": "%10.0",
+      "comment": "EVT0 1 kHz 事件计数（丢帧判定）",
+      "event": 0
+    },
+    {
+      "name": "g_tick_10k",
+      "symbol": "g_tick_10k",
+      "type": "ULONG",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 4294967295,
+      "format": "%10.0",
+      "comment": "EVT1 10 kHz 事件计数（压力测试丢帧判定）",
+      "event": 1
+    },
+    {
+      "name": "g_tick_100",
+      "symbol": "g_tick_100",
+      "type": "ULONG",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 4294967295,
+      "format": "%8.0",
+      "comment": "EVT2 100 Hz 事件计数",
+      "event": 2
+    },
+    {
+      "name": "g_pid_mid",
+      "symbol": "g_pid_mid",
+      "type": "SLONG",
+      "conv": "cm_ident",
+      "min": -1500000,
+      "max": 1500000,
+      "format": "%8.0",
+      "comment": "PID 积分项（定点 1/1000）",
+      "event": 0
+    },
+    {
+      "name": "g_cpu_load_pm",
+      "symbol": "g_cpu_load_pm",
+      "type": "UWORD",
+      "conv": "cm_permille",
+      "unit": "%",
+      "min": 0,
+      "max": 1000,
+      "format": "%6.1",
+      "comment": "主循环负载（千分比）",
+      "event": 0
+    },
+    {
+      "name": "g_u8_cnt",
+      "symbol": "g_u8_cnt",
+      "type": "UBYTE",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 255,
+      "format": "%3.0",
+      "comment": "EVT0 计数低 8 位",
+      "event": 0
+    },
+    {
+      "name": "g_stat_tx_datagrams",
+      "symbol": "g_stat_tx_datagrams",
+      "type": "ULONG",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 4294967295,
+      "format": "%10.0",
+      "comment": "板端统计镜像（1 Hz，传输层/DAQ 计数）",
+      "event": 0
+    },
+    {
+      "name": "g_stat_tx_msgs",
+      "symbol": "g_stat_tx_msgs",
+      "type": "ULONG",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 4294967295,
+      "format": "%10.0",
+      "comment": "板端统计镜像（1 Hz，传输层/DAQ 计数）",
+      "event": 0
+    },
+    {
+      "name": "g_stat_tx_drop",
+      "symbol": "g_stat_tx_drop",
+      "type": "ULONG",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 4294967295,
+      "format": "%10.0",
+      "comment": "板端统计镜像（1 Hz，传输层/DAQ 计数）",
+      "event": 0
+    },
+    {
+      "name": "g_stat_tx_err",
+      "symbol": "g_stat_tx_err",
+      "type": "ULONG",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 4294967295,
+      "format": "%10.0",
+      "comment": "板端统计镜像（1 Hz，传输层/DAQ 计数）",
+      "event": 0
+    },
+    {
+      "name": "g_stat_rx_datagrams",
+      "symbol": "g_stat_rx_datagrams",
+      "type": "ULONG",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 4294967295,
+      "format": "%10.0",
+      "comment": "板端统计镜像（1 Hz，传输层/DAQ 计数）",
+      "event": 0
+    },
+    {
+      "name": "g_stat_rx_ctr_gap",
+      "symbol": "g_stat_rx_ctr_gap",
+      "type": "ULONG",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 4294967295,
+      "format": "%10.0",
+      "comment": "板端统计镜像（1 Hz，传输层/DAQ 计数）",
+      "event": 0
+    },
+    {
+      "name": "g_stat_daq_frames",
+      "symbol": "g_stat_daq_frames",
+      "type": "ULONG",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 4294967295,
+      "format": "%10.0",
+      "comment": "板端统计镜像（1 Hz，传输层/DAQ 计数）",
+      "event": 0
+    },
+    {
+      "name": "g_stat_daq_dropped",
+      "symbol": "g_stat_daq_dropped",
+      "type": "ULONG",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 4294967295,
+      "format": "%10.0",
+      "comment": "板端统计镜像（1 Hz，传输层/DAQ 计数）",
+      "event": 0
+    },
+    {
+      "name": "g_stat_daq_overload",
+      "symbol": "g_stat_daq_overload",
+      "type": "ULONG",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 4294967295,
+      "format": "%10.0",
+      "comment": "板端统计镜像（1 Hz，传输层/DAQ 计数）",
+      "event": 0
+    },
+    {
+      "name": "g_stat_cto_rx",
+      "symbol": "g_stat_cto_rx",
+      "type": "ULONG",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 4294967295,
+      "format": "%10.0",
+      "comment": "板端统计镜像（1 Hz，传输层/DAQ 计数）",
+      "event": 0
+    }
+  ],
+  "characteristics": [
+    {
+      "name": "g_kp",
+      "symbol": "g_kp",
+      "type": "FLOAT32_IEEE",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 10,
+      "format": "%6.3",
+      "comment": "PID 比例增益",
+      "unit": "-"
+    },
+    {
+      "name": "g_ki",
+      "symbol": "g_ki",
+      "type": "FLOAT32_IEEE",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 20,
+      "format": "%6.3",
+      "comment": "PID 积分增益",
+      "unit": "1/s"
+    },
+    {
+      "name": "g_ctrl_max_pm",
+      "symbol": "g_ctrl_max_pm",
+      "type": "UWORD",
+      "conv": "cm_permille",
+      "min": 0,
+      "max": 4000,
+      "format": "%5.0",
+      "comment": "控制量限幅（千分比）",
+      "unit": "-"
+    },
+    {
+      "name": "g_settle_ms",
+      "symbol": "g_settle_ms",
+      "type": "UWORD",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 60000,
+      "format": "%5.0",
+      "comment": "观察窗口（演示标定量）",
+      "unit": "ms"
+    },
+    {
+      "name": "g_pwm_duty_pm",
+      "symbol": "g_pwm_duty_pm",
+      "type": "UWORD",
+      "conv": "cm_permille",
+      "min": 0,
+      "max": 1000,
+      "format": "%5.0",
+      "comment": "占空比标定量（写读回演示）",
+      "unit": "‰"
+    },
+    {
+      "name": "g_sw_flag",
+      "symbol": "g_sw_flag",
+      "type": "ULONG",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 4294967295,
+      "format": "%10.0",
+      "comment": "位操作（MODIFY_BITS）演示",
+      "unit": "-"
+    }
+  ],
+  "axes": [],
+  "enumerations": {}
+}

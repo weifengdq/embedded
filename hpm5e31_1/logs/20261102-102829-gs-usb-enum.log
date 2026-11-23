@@ -1,0 +1,211 @@
+
+==================================================================
+gs_usb 测试: enum（20261102-102829）
+==================================================================
+主机: Linux 7.0.0-38-generic x86_64  脚本: test_enum.sh
+日志: logs/20261102-102829-gs-usb-enum.log
+工件: /tmp/gs_usb_artifacts
+内核 7.0.x —— 与开发约定 §1 一致
+  [PASS] 权限 OK（sudo -n）
+dmesg 基线时间戳: 1793586509（之后用 --since 只扫描新增行）
+  [PASS] 依赖命令齐全: dmesg ip ethtool cansend candump cangen canplayer
+
+---- 1. USB 层
+> lsusb
+Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+Bus 001 Device 002: ID 0b05:19af ASUSTek Computer, Inc. AURA LED Controller
+Bus 001 Device 003: ID 058f:6254 Alcor Micro Corp. USB Hub
+Bus 001 Device 011: ID 1a86:55d3 QinHeng Electronics USB Single Serial
+Bus 001 Device 013: ID 184f:0051 K2L GmbH 10BASE-T1S
+Bus 001 Device 038: ID 1366:0105 SEGGER J-Link
+Bus 001 Device 048: ID 1209:2323 Generic bytewerk.org candleLight
+Bus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub
+  [PASS] USB 设备 1209:2323 存在
+> lsusb -d 1209:2323 -v
+Couldn't open device, some information will be missing
+
+Bus 001 Device 048: ID 1209:2323 Generic bytewerk.org candleLight
+Negotiated speed: High Speed (480Mbps)
+Device Descriptor:
+  bLength                18
+  bDescriptorType         1
+  bcdUSB               2.00
+  bDeviceClass            0 [unknown]
+  bDeviceSubClass         0 [unknown]
+  bDeviceProtocol         0 
+  bMaxPacketSize0        64
+  idVendor           0x1209 Generic
+  idProduct          0x2323 bytewerk.org candleLight
+  bcdDevice            1.00
+  iManufacturer           1 HPMicro
+  iProduct                2 HPM5E31 gs_usb CANFD
+  iSerial                 3 HPM5E31-GSUSB-0001
+  bNumConfigurations      1
+  Configuration Descriptor:
+    bLength                 9
+    bDescriptorType         2
+    wTotalLength       0x0020
+    bNumInterfaces          1
+    bConfigurationValue     1
+    iConfiguration          0 
+    bmAttributes         0x80
+      (Bus Powered)
+    MaxPower              500mA
+    Interface Descriptor:
+      bLength                 9
+      bDescriptorType         4
+      bInterfaceNumber        0
+      bAlternateSetting       0
+      bNumEndpoints           2
+      bInterfaceClass       255 Vendor Specific Class
+      bInterfaceSubClass      0 [unknown]
+      bInterfaceProtocol      0 
+      iInterface              0 
+      Endpoint Descriptor:
+        bLength                 7
+        bDescriptorType         5
+        bEndpointAddress     0x81  EP 1 IN
+        bmAttributes            2
+          Transfer Type            Bulk
+          Synch Type               None
+          Usage Type               Data
+        wMaxPacketSize     0x0200  1x 512 bytes
+        bInterval               0
+      Endpoint Descriptor:
+        bLength                 7
+        bDescriptorType         5
+        bEndpointAddress     0x02  EP 2 OUT
+        bmAttributes            2
+          Transfer Type            Bulk
+          Synch Type               None
+          Usage Type               Data
+        wMaxPacketSize     0x0200  1x 512 bytes
+        bInterval               0
+
+---- 2. dmesg 枚举日志
+[348817.514081] gs_usb 1-8:1.0: Configuring for 4 interfaces
+[348817.515276] usbcore: registered new interface driver gs_usb
+[348901.090179] gs_usb 1-8:1.0: Configuring for 4 interfaces
+[349033.158084] usb 1-8: Product: HPM5E31 gs_usb CANFD
+[349033.158093] usb 1-8: SerialNumber: HPM5E31-GSUSB-0001
+[349033.160737] gs_usb 1-8:1.0: Configuring for 4 interfaces
+[349206.583823] usb 1-8: Product: HPM5E31 gs_usb CANFD
+[349206.583825] usb 1-8: SerialNumber: HPM5E31-GSUSB-0001
+[349206.585389] gs_usb 1-8:1.0: Configuring for 4 interfaces
+  [PASS] dmesg 有 7 条 gs_usb 日志
+
+---- 3. 4 个 netdev
+> ip -br link show type can
+can0             DOWN           <NOARP,ECHO> 
+can1             DOWN           <NOARP,ECHO> 
+can2             DOWN           <NOARP,ECHO> 
+can3             DOWN           <NOARP,ECHO> 
+  [PASS] 找到 4 个 CAN 接口: 0 1 2 3
+
+---- 4. 驱动绑定
+can0: driver=gs_usb ifindex=22 usb=1-8:1.0
+  [PASS] can0 绑定 gs_usb
+can1: driver=gs_usb ifindex=23 usb=1-8:1.0
+  [PASS] can1 绑定 gs_usb
+can2: driver=gs_usb ifindex=24 usb=1-8:1.0
+  [PASS] can2 绑定 gs_usb
+can3: driver=gs_usb ifindex=25 usb=1-8:1.0
+  [PASS] can3 绑定 gs_usb
+ethtool -i can0: driver: gs_usb version: 7.0.0-38-generic firmware-version:  expansion-rom-version:  bus-info: 1-8:1.0 supports-statistics: no supports-test: no supports-eeprom-access: no supports-register-dump: no supports-priv-flags: no 
+ethtool -i can1: driver: gs_usb version: 7.0.0-38-generic firmware-version:  expansion-rom-version:  bus-info: 1-8:1.0 supports-statistics: no supports-test: no supports-eeprom-access: no supports-register-dump: no supports-priv-flags: no 
+ethtool -i can2: driver: gs_usb version: 7.0.0-38-generic firmware-version:  expansion-rom-version:  bus-info: 1-8:1.0 supports-statistics: no supports-test: no supports-eeprom-access: no supports-register-dump: no supports-priv-flags: no 
+ethtool -i can3: driver: gs_usb version: 7.0.0-38-generic firmware-version:  expansion-rom-version:  bus-info: 1-8:1.0 supports-statistics: no supports-test: no supports-eeprom-access: no supports-register-dump: no supports-priv-flags: no 
+
+---- 5. 时间戳能力（ethtool -T，供测试项 5 对照）
+--- can0 ---
+Time stamping parameters for can0:
+Capabilities:
+	hardware-transmit
+	software-transmit
+	hardware-receive
+	software-receive
+	software-system-clock
+	hardware-raw-clock
+PTP Hardware Clock: none
+Hardware Transmit Timestamp Modes:
+	on
+Hardware Receive Filter Modes:
+	all
+--- can1 ---
+Time stamping parameters for can1:
+Capabilities:
+	hardware-transmit
+	software-transmit
+	hardware-receive
+	software-receive
+	software-system-clock
+	hardware-raw-clock
+PTP Hardware Clock: none
+Hardware Transmit Timestamp Modes:
+	on
+Hardware Receive Filter Modes:
+	all
+--- can2 ---
+Time stamping parameters for can2:
+Capabilities:
+	hardware-transmit
+	software-transmit
+	hardware-receive
+	software-receive
+	software-system-clock
+	hardware-raw-clock
+PTP Hardware Clock: none
+Hardware Transmit Timestamp Modes:
+	on
+Hardware Receive Filter Modes:
+	all
+--- can3 ---
+Time stamping parameters for can3:
+Capabilities:
+	hardware-transmit
+	software-transmit
+	hardware-receive
+	software-receive
+	software-system-clock
+	hardware-raw-clock
+PTP Hardware Clock: none
+Hardware Transmit Timestamp Modes:
+	on
+Hardware Receive Filter Modes:
+	all
+
+---- 6. 初始状态（GET_STATE 通过 ip -details 体现）
+22: can0: <NOARP,ECHO> mtu 16 qdisc pfifo_fast state DOWN mode DEFAULT group default qlen 10
+    link/can  promiscuity 0 allmulti 0 minmtu 16 maxmtu 16 
+    can state STOPPED (berr-counter tx 0 rx 0) restart-ms 0 
+	  bitrate 500000 sample-point 0.875
+	  tq 12 prop-seg 69 phase-seg1 70 phase-seg2 20 sjw 10 brp 1
+	  gs_usb: tseg1 1..256 tseg2 1..128 sjw 1..128 brp 1..512 brp_inc 1
+	  gs_usb: dtseg1 1..32 dtseg2 1..16 dsjw 1..16 dbrp 1..256 dbrp_inc 1
+	  clock 80000000 numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535 tso_max_size 65536 tso_max_segs 65535 gro_max_size 65536 gso_ipv4_max_size 65536 gro_ipv4_max_size 65536 parentbus usb parentdev 1-8:1.0 
+23: can1: <NOARP,ECHO> mtu 16 qdisc noop state DOWN mode DEFAULT group default qlen 10
+    link/can  promiscuity 0 allmulti 0 minmtu 16 maxmtu 16 
+    can state STOPPED (berr-counter tx 0 rx 0) restart-ms 0 
+	  gs_usb: tseg1 1..256 tseg2 1..128 sjw 1..128 brp 1..512 brp_inc 1
+	  gs_usb: dtseg1 1..32 dtseg2 1..16 dsjw 1..16 dbrp 1..256 dbrp_inc 1
+	  clock 80000000 numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535 tso_max_size 65536 tso_max_segs 65535 gro_max_size 65536 gso_ipv4_max_size 65536 gro_ipv4_max_size 65536 parentbus usb parentdev 1-8:1.0 
+24: can2: <NOARP,ECHO> mtu 16 qdisc noop state DOWN mode DEFAULT group default qlen 10
+    link/can  promiscuity 0 allmulti 0 minmtu 16 maxmtu 16 
+    can state STOPPED (berr-counter tx 0 rx 0) restart-ms 0 
+	  gs_usb: tseg1 1..256 tseg2 1..128 sjw 1..128 brp 1..512 brp_inc 1
+	  gs_usb: dtseg1 1..32 dtseg2 1..16 dsjw 1..16 dbrp 1..256 dbrp_inc 1
+	  clock 80000000 numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535 tso_max_size 65536 tso_max_segs 65535 gro_max_size 65536 gso_ipv4_max_size 65536 gro_ipv4_max_size 65536 parentbus usb parentdev 1-8:1.0 
+25: can3: <NOARP,ECHO> mtu 16 qdisc noop state DOWN mode DEFAULT group default qlen 10
+    link/can  promiscuity 0 allmulti 0 minmtu 16 maxmtu 16 
+    can state STOPPED (berr-counter tx 0 rx 0) restart-ms 0 
+	  gs_usb: tseg1 1..256 tseg2 1..128 sjw 1..128 brp 1..512 brp_inc 1
+	  gs_usb: dtseg1 1..32 dtseg2 1..16 dsjw 1..16 dbrp 1..256 dbrp_inc 1
+	  clock 80000000 numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535 tso_max_size 65536 tso_max_segs 65535 gro_max_size 65536 gso_ipv4_max_size 65536 gro_ipv4_max_size 65536 parentbus usb parentdev 1-8:1.0 
+  [PASS] 测试后设备仍在线（sysfs: 1-8）
+  dmesg 安全检查: 无 oops/WARN（新增 10 行）
+
+==================================================================
+汇总: enum
+==================================================================
+PASS=10  FAIL=0  内核异常=0
+结论: PASS

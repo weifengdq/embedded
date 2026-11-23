@@ -1,0 +1,42 @@
+
+digraph pwmv2 {
+  rankdir=LR;
+  graph [fontname="Noto Sans CJK SC", fontsize=11, nodesep=0.28, ranksep=0.45, bgcolor="white"];
+  node  [fontname="Noto Sans CJK SC", fontsize=10, shape=box, style="rounded,filled",
+         fillcolor="#F6F8FA", color="#57606A", penwidth=0.9];
+  edge  [fontname="Noto Sans CJK SC", fontsize=9, color="#57606A", arrowsize=0.7];
+
+  trgm_in  [label="TRGM 触发输入 0~7\n(同步故障/强制/启动)", fillcolor="#FFF8E1"];
+  shadow   [label="影子寄存器\nSHADOW_VAL[0..27]", fillcolor="#E8F0FE"];
+  calc     [label="通用计算单元 0~15\nD·pD + S + T·pT", fillcolor="#E8F0FE"];
+  dac      [label="DAC 输入 0~3", fillcolor="#E8F0FE"];
+
+  subgraph cluster_sm {
+    label="PWM 生成子模块 0~3（每个含 1 个 32 位计数器：24 位整数 + 8 位小数）";
+    fontname="Noto Sans CJK SC"; fontsize=10; color="#D0D7DE"; style="rounded";
+
+    cnt0 [label="计数器 0\ncmp 0,1,2,3"];
+    cnt1 [label="计数器 1\ncmp 4,5,6,7"];
+    cnt2 [label="计数器 2\ncmp 8,9,10,11"];
+    cnt3 [label="计数器 3\ncmp 12,13,14,15"];
+    cmp_far [label="比较值 16~23\n(CMP_CFG 自由映射)", fillcolor="#FFF8E1"];
+  }
+
+  gen [label="PWM 生成\nX=f(a,b)  Y=f(c,d)", fillcolor="#E6F4EA"];
+  dead [label="死区\nPWM_DEAD[n]\n最小 0x200", fillcolor="#E6F4EA"];
+  hr  [label="HRPWM\n100 ps 延迟链\n(需 TRGM 校准)", fillcolor="#FCE8E6"];
+  force [label="强制输出\nFORCE_MODE/TIME", fillcolor="#E6F4EA"];
+  fault [label="故障保护\n同步(触发输入0~3)/异步(16 pad)", fillcolor="#FCE8E6"];
+  inv [label="取反", fillcolor="#E6F4EA"];
+  out [label="P0~P7\n(IOC 复用到引脚)", shape=box3d, fillcolor="#D2E3FC"];
+  trgo [label="TRGM 触发输出 0~7\n(选任一 CMP 事件)", fillcolor="#FFF8E1"];
+
+  shadow -> cnt0; shadow -> cnt1; shadow -> cnt2; shadow -> cnt3;
+  calc -> cnt0; calc -> cnt1; calc -> cnt2; calc -> cnt3;
+  dac -> calc;
+  cnt0 -> gen; cnt1 -> gen; cnt2 -> gen; cnt3 -> gen;
+  cmp_far -> gen;
+  gen -> dead -> hr -> force -> fault -> inv -> out;
+  trgm_in -> fault; trgm_in -> force;
+  cnt0 -> trgo; cnt1 -> trgo; cnt2 -> trgo; cnt3 -> trgo;
+}

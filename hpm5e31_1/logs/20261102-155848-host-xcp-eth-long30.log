@@ -1,0 +1,59 @@
+XCPonEth 客户端：192.168.2.100:5555（plan=rate，EVT0 1 kHz，4 ODT/事件，ODT0 带 4 B 时间戳）
+A2L 地址（来自 samples/app/xcp_eth/xcp_eth.a2l）：
+  g_kp             0x012001D8  FLOAT32_IEEE 4 B
+  g_pwm_duty_pm    0x012001DC  UWORD    2 B
+  g_sw_flag        0x012001E0  ULONG    4 B
+  g_tick_cnt       0x0120A958  ULONG    4 B
+  g_u8_cnt         0x0120A95C  UBYTE    1 B
+  g_adc_raw        0x0120A920  UWORD    2 B
+  g_cpu_load_pm    0x0120A922  UWORD    2 B
+  g_tick_100       0x0120A950  ULONG    4 B
+  g_pid_mid        0x0120A924  SLONG    4 B
+
+[1] CONNECT / GET_STATUS / GET_ID
+    CONNECT: resource=0x05 comm=0x80 MAX_CTO=255 MAX_DTO=256 proto=0x14 trans=0x01
+    GET_STATUS: session=0x0000 protection=0x00 state=5
+    GET_ID: HPM5E31-XCP-ETH 1.0 (UDP 5555, DAQ)
+    GET_DAQ_CLOCK: 38495212 us（板端时基）
+
+[2] 在线标定（RAM 单页）
+  SHORT_UPLOAD/DOWNLOAD 回读 g_kp      PASS       写后同周期生效（1.200 -> 1.300，恢复 1.200）
+  MODIFY_BITS bit8..11 = 0xA         PASS       0x12345678 -> 0x12345A78（期望 0x12345A78，恢复 0x12345678）
+  DOWNLOAD/SHORT_UPLOAD g_pwm_duty_pm PASS       500 -> 300 -> 300（恢复 500）
+
+[3] 命令往返延迟（200 次 SHORT_UPLOAD 4 B）
+    min/p50/mean/p99/max = 72.7 / 84.7 / 2604.8 / 362.4 / 501142.6 us，383.9 cmd/s，超时重发 1 次
+
+[4] DAQ 配置：1 列表 / 4 ODT / 时间戳 on / event=0
+    first PID = 0（PID = 绝对 ODT 号）
+
+[5] 采集 30.0 s ...
+
+[6] 统计
+  采样时长(s)                        30.000
+  收到事件数（ODT0）                    29790
+  事件率(Hz)                        993.0
+  板端 tick 速率(Hz)                 1000.0
+  DAQ 消息总数                       119160
+  消息率(msg/s)                     3972
+  UDP 数据报数                       29790
+  数据报率(pkt/s)                    993
+  单包平均消息数                        4.00
+  UDP 载荷吞吐                       51.4 KB/s = 0.42 Mbit/s
+  CTR 丢包（传输层）                    840
+  tick 丢帧（测量侧）                   210
+  丢包率                            0.8735 %
+  帧错误（LEN/截断）                    0
+  EV 事件包                         0
+  DAQ 时钟增量(us)                   32231246（主机墙钟 30000 ms）
+  时间戳间隔 mean/min/max(us)         1007.0 / 851 / 2000
+  时间戳间隔 sd(us)                   83.79
+  到达间隔 sd(ms)                    0.436
+  到达间隔 max-min(ms)               3.876
+  各 ODT 消息数: {'ODT0': 29790, 'ODT1': 29790, 'ODT2': 29790, 'ODT3': 29790}
+  板端统计: tx_msgs=625368 tx_datagrams=96886 tx_drop=0 tx_err=0 daq_frames=624552 daq_dropped=0 daq_overload=0 cto_rx=816
+  客户端统计: {'datagrams_rx': 30053, 'msgs_rx': 119426, 'bytes_rx': 1581165, 'ctr_gap': 842, 'ctr_dup': 0, 'framing_err': 0, 'ev': 0, 'timeouts': 2}
+  CSV: out/xcp_eth_long30.csv
+
+DAQ PASS (event=993.0 Hz, msgs=119160, loss=0.8735%/链路, 板端drop=0, cal=PASS)
+  说明：丢包率 0.87% 来自 UDP 链路（板端 tx_drop=0、daq_dropped=0 均为 0），可用 ping 复核链路丢包；XCPonEth 无重传机制，DAQ 丢帧属预期。

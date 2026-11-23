@@ -1,0 +1,23 @@
+(RX), dmamux=2/3
+  tx_req=0x11 rx_req=0x10, dma_support=yes
+  0
+udma_info
+uart_dma @ hpm5e31_1: UART4 loopback + HDMA
+  src_clk=80000000 Hz, baud=921600, dma=HDMA ch2(TX)/ch3(RX), dmamux=2/3
+  tx_req=0x11 rx_req=0x10, dma_support=yes
+
+letter:/$ 
+letter:/$ udma_test 1024 921600
+udma_test n=1024 baud=921600 rc=0 errors=0 time=11266 us throughput=90 KB/s
+
+letter:/$ 
+letter:/$ udma_bench
+     baud    bytes    time_us       KB/s      err
+   115200     2048     178176         11        0
+   460800     2048      45058         45        0
+   921600     2048      22530         90        0
+  2000000     2048      10242        199        0
+  3000000     2048       6658        307        0
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,43 @@
+uf=16
+
+ _         _   _                  _          _ _ 
+| |    ___| |_| |_ ___ _ __   ___| 
+letter:/$ 
+=== mcal_eth_lwip: AUTOSAR MCAL Eth + lwIP 2.1.2 (baremetal NO_SYS=1) ===
+[init] Eth MCAL v1.0.0 (module 88)
+[init] Eth controller 0 ACTIVE
+[lwip-eth] backend=mcal-eth ctrl=0 max_frame=1518 tx_buf=8 rx_buf=16
+[lwip-eth] netif=e0 idx=1 MAC=02:00:00:00:01:00
+[lwip-eth] IP=192.168.2.100
+[lwip-eth] MASK=255.255.255.0
+[lwip-eth] GW=192.168.2.1  link=UP
+[lwip-eth] phy: link=UP known=1 speed=1000 Mbps duplex=full role=SLAVE
+[mcal-eth] PHY BMCR=0140 BMSR=000D GBSR=3000 PHYSR=8400
+[mcal-eth] ETH counter: rx_pkts=0 tx_pkts=1 drop_ovr=0 crc=0 undersize=0 oversize=0
+[mcal-eth] ETH txerr: es=0 underflow=0 defer=0 latecoll=0 | disc_otbd=0
+[lwip-eth] link=UP after 1006 ms
+[init] app_lwip_eth_init rc=0 (0=link up, 1=link down)
+[ping] seq=0 192.168.2.1: rtt=453 us
+[ping] seq=1 192.168.2.1: rtt=284 us
+[ping] seq=2 192.168.2.1: rtt=334 us
+[ping] seq=3 192.168.2.1: timeout
+[ping] seq=4 192.168.2.1: rtt=327 us
+[ping] 4/5 received, rtt min/avg/max = 284/349/453 us, jitter(avg |d|) = 75 us
+[selftest] ping gw: 4/5 rtt min/avg/max=284/349/453 us jitter=75 us
+[run] commands: eth | eth ping <ip> [n] [ms] | eth iserver [tcp|udp] | eth iclient <ip>
+eth iserver tcp
+[iperf] TCP server started on port 5001
+
+letter:/$ 
+letter:/$ [lwip-eth] sw : rx_frames=24 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=8 tx_err=0 tx_drop_len=0
+[lwip-eth] tx recycle: retry_ok=0 retry_fail=0
+[lwip-eth] loop: gap_max=3276 us tx_max=36 us rx_drain_max=65 us
+[lwip-eth] link poll: n=15 last=99 us max=107 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=1/32
+[lwip-eth] hw : rx_frames=24 rx_bytes=13812 rx_empty=10388422 rx_err=0 | tx_frames=8 tx_bytes=496 tx_busy=0 tx_err=0
+[lwip-eth] sw : rx_frames=36 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=8 tx_err=0 tx_drop_len=0
+[lwip-eth] tx recycle: retry_ok=0 retry_fail=0
+[lwip-eth] loop: gap_max=5372 us tx_max=36 us rx_drain_max=65 us
+[lwip-eth] link poll: n=25 last=101 us max=107 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=1/32
+[lwip-eth] hw : rx_frames=36 rx_bytes=22740 rx_empty=19665599 rx_err=0 | tx_frames=8 tx_bytes=496 tx_busy=0 tx_err=0

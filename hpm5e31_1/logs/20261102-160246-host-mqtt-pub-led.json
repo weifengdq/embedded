@@ -1,0 +1,15 @@
+{
+ "cmd": "led",
+ "arg": "on",
+ "broker": "192.168.2.1:1883",
+ "pub_topic": "hpm5e31/cmd/led",
+ "payload": "on",
+ "ack": {
+  "dev": "hpm5e31",
+  "cmd": "led",
+  "ok": 1,
+  "led": 1
+ },
+ "ack_rtt_ms": 1.103,
+ "verdict": "PASS"
+}

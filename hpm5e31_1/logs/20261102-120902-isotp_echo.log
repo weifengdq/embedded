@@ -1,0 +1,78 @@
+ready (ISO 15765-2:2016, CAN0=DUT 0x700/0x708, CAN1=tester)
+
+[isotp_echo] CAN0(DUT) 0x700->0x708 | CAN1(tester) 0x708->0x700
+  mode=classic 500k ext=11bit BS=0 STmin=0x00(=0 us) pad=0xCC N_Bs=1000 ms N_Cr=1000 ms
+
+[isotp_echo] run: classic 500k 11bit BS=0 STmin=0x00 pad=0xCC
+  len    frames  rtt_us    KB/s      tx_us     cf_us    crc
+  1      1       525       3.7       228       0        OK
+  7      1       469       29.2      226       0        OK
+  8      2       1432      10.9      701       0        OK
+  12     2       1414      16.6      699       0        OK
+  64     10      5142      24.3      2556      232      OK
+  256    37      17729     28.2      8814      231      OK
+  1024   147     69034     29.0      34357     232      OK
+  4095   586     273510    29.2      136099    231      OK
+[isotp_echo] PASS sizes=8/8 bytes=10934 rtt_avg=46156 us rtt_max=273510 us txmsg=8 rxmsg=8 seq_err=0 ovflw=0 timeout=0 ff_ext=0
+run
+
+[isotp_echo] run: classic 500k 11bit BS=0 STmin=0x00 pad=0xCC
+  len    frames  rtt_us    KB/s      tx_us     cf_us    crc
+  1      1       468       4.2       228       0        OK
+  7      1       463       29.5      226       0        OK
+  8      2       1411      11.1      700       0        OK
+  12     2       1411      16.6      698       0        OK
+  64     10      5143      24.3      2556      232      OK
+  256    37      17729     28.2      8814      231      OK
+  1024   147     69035     29.0      34357     232      OK
+  4095   586     273514    29.2      136100    231      OK
+[isotp_echo] PASS sizes=8/8 bytes=10934 rtt_avg=46146 us rtt_max=273514 us txmsg=16 rxmsg=16 seq_err=0 ovflw=0 timeout=0 ff_ext=0
+
+letter:/$ 
+letter:/$ thr 200
+
+[isotp_echo] thr 4095B x200 ok=200 total=54857041 us => 29.2 KB/s payload(双向) 3.6 msg/s
+  last msg: cf_cnt=584 cf_avg=231 us cf_min=224 us cf_max=246 us tx_us=136099
+  stats: seq_err=0 ovflw=0 timeout=0 link=0 ff_ext=0
+
+letter:/$ 
+letter:/$ stat
+
+[isotp_echo] DUT stats: txmsg=200 rxmsg=200 txf=117200 rxf=117400 fc_tx=200 fc_rx=200 wait=0 seq=0 ovflw=0 timeout=0 link=0
+  last_tx=136099 us max_tx=136099 us last_rx=137079 us max_rx=137084 us max_len=4095/4095
+  cf gap: cnt=584 avg=231 us min=224 us max=246 us | ff_ext=0
+  port0 tx=117400 rx=117400 err=0 | port1 tx=117400 rx=117400 err=0 | echo_busy=0
+
+letter:/$ 
+letter:/$ fd
+
+[isotp_echo] run: CANFD 1M/2M 11bit BS=0 STmin=0x00 pad=0xCC
+  len    frames  rtt_us    KB/s      tx_us     cf_us    crc
+  1      1       167       11.7      80        0        OK
+  7      1       176       77.7      80        0        OK
+  8      1       207       75.5      98        0        OK
+  12     1       240       97.7      114       0        OK
+  64     2       987       126.6     486       0        OK
+  256    5       2915      171.5     1437      316      OK
+  1024   17      10761     185.9     5344      320      OK
+  4095   66      42197     189.5     21014     320      OK
+  6000   96      61585     190.3     30665     320      OK
+[isotp_echo] PASS sizes=9/9 bytes=22934 rtt_avg=13248 us rtt_max=61585 us txmsg=9 rxmsg=9 seq_err=0 ovflw=0 timeout=0 ff_ext=1
+
+letter:/$ 
+letter:/$ thr 50
+
+[isotp_echo] thr 4095B x50 ok=50 total=2148324 us => 186.1 KB/s payload(双向) 23.3 msg/s
+  last msg: cf_cnt=64 cf_avg=320 us cf_min=312 us cf_max=338 us tx_us=21016
+  stats: seq_err=0 ovflw=0 timeout=0 link=0 ff_ext=0
+
+letter:/$ 
+letter:/$ stat
+
+[isotp_echo] DUT stats: txmsg=50 rxmsg=50 txf=3300 rxf=3350 fc_tx=50 fc_rx=50 wait=0 seq=0 ovflw=0 timeout=0 link=0
+  last_tx=21016 us max_tx=21016 us last_rx=20759 us max_rx=20765 us max_len=4095/4095
+  cf gap: cnt=64 avg=320 us min=312 us max=338 us | ff_ext=0
+  port0 tx=3350 rx=3350 err=0 | port1 tx=3350 rx=3350 err=0 | echo_busy=0
+
+letter:/$ 
+letter:/$ 

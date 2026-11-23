@@ -1,0 +1,57 @@
+[mqtt] STAT st=CONNECTED up=10s sub=OK conn=1 ok=1 pub_tx=1029 pub_rx=1018 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=11 can_tx=11 can_rx=10 adc=34785 temp=36000mC loop_max=2402us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=15s sub=OK conn=1 ok=1 pub_tx=1139 pub_rx=1123 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=16 can_tx=16 can_rx=15 adc=34798 temp=36000mC loop_max=2494us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=20s sub=OK conn=1 ok=1 pub_tx=1221 pub_rx=1200 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=21 can_tx=21 can_rx=20 adc=34668 temp=36000mC loop_max=2494us evt=1 => PASS
+[mqtt] BENCH n=1000 qos=1 sent=1000 fail=2885 elapsed=114ms rate=8771 msg/s => PASS
+[mqtt] STAT st=CONNECTED up=25s sub=OK conn=1 ok=1 pub_tx=3227 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=26 can_tx=26 can_rx=25 adc=34839 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=30s sub=OK conn=1 ok=1 pub_tx=3232 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=31 can_tx=31 can_rx=30 adc=34853 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=35s sub=OK conn=1 ok=1 pub_tx=3237 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=36 can_tx=36 can_rx=35 adc=34799 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=40s sub=OK conn=1 ok=1 pub_tx=3242 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=41 can_tx=41 can_rx=40 adc=34789 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=45s sub=OK conn=1 ok=1 pub_tx=3247 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=46 can_tx=46 can_rx=45 adc=34844 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=50s sub=OK conn=1 ok=1 pub_tx=3252 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=51 can_tx=51 can_rx=50 adc=34756 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=55s sub=OK conn=1 ok=1 pub_tx=3257 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=56 can_tx=56 can_rx=55 adc=34763 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=60s sub=OK conn=1 ok=1 pub_tx=3262 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=61 can_tx=61 can_rx=60 adc=34784 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=65s sub=OK conn=1 ok=1 pub_tx=3267 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=66 can_tx=66 can_rx=65 adc=34838 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=70s sub=OK conn=1 ok=1 pub_tx=3272 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=71 can_tx=71 can_rx=70 adc=34736 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=75s sub=OK conn=1 ok=1 pub_tx=3277 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=76 can_tx=76 can_rx=75 adc=34901 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=80s sub=OK conn=1 ok=1 pub_tx=3282 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=81 can_tx=81 can_rx=80 adc=34790 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=85s sub=OK conn=1 ok=1 pub_tx=3287 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=86 can_tx=86 can_rx=85 adc=34658 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=90s sub=OK conn=1 ok=1 pub_tx=3292 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=91 can_tx=91 can_rx=90 adc=34727 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=95s sub=OK conn=1 ok=1 pub_tx=3297 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=96 can_tx=96 can_rx=95 adc=34692 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=100s sub=OK conn=1 ok=1 pub_tx=3302 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=101 can_tx=101 can_rx=100 adc=34752 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=105s sub=OK conn=1 ok=1 pub_tx=3307 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=106 can_tx=106 can_rx=105 adc=34801 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=110s sub=OK conn=1 ok=1 pub_tx=3312 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=111 can_tx=111 can_rx=110 adc=34850 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=115s sub=OK conn=1 ok=1 pub_tx=3317 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=116 can_tx=116 can_rx=115 adc=34897 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=120s sub=OK conn=1 ok=1 pub_tx=3322 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=121 can_tx=121 can_rx=120 adc=34787 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=125s sub=OK conn=1 ok=1 pub_tx=3327 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=126 can_tx=126 can_rx=125 adc=34759 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=130s sub=OK conn=1 ok=1 pub_tx=3332 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=131 can_tx=131 can_rx=130 adc=34871 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=135s sub=OK conn=1 ok=1 pub_tx=3337 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=136 can_tx=136 can_rx=135 adc=34949 temp=36000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=140s sub=OK conn=1 ok=1 pub_tx=3342 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=141 can_tx=141 can_rx=140 adc=34835 temp=37000mC loop_max=114843us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=145s sub=OK conn=1 ok=1 pub_tx=3347 pub_rx=2201 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=146 can_tx=146 can_rx=145 adc=34744 temp=37000mC loop_max=114843us evt=1 => PASS

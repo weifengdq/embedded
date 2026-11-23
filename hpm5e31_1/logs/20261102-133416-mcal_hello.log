@@ -1,0 +1,27 @@
+CP R21-11 subset)
+AR release: 4.4.0, SW: 1.0.0
+module ids: Melp'
+mcal
+MCAL: HPM5E31 MCAL 1.0.0 (AUTOSAR CP R21-11 subset)
+AR release: 4.4.0, SW: 1.0.0
+module ids: Mcu=101 Port=124 Dio=120 Gpt=100 Pwm=121 Icu=122
+            Adc=123 Spi=83 I2c=113 Can=80 Wdg=102 Mem=91 Crc=201 Det=15
+dev error detect: ON
+sizeof: uint8=1 uint16=2 uint32=4 uint64=8 float32=4 Std_ReturnType=1
+
+letter:/$ 
+letter:/$ det
+DET: count=0
+DET: no error recorded
+DET: after inject count=1
+
+letter:/$ 
+letter:/$ detbench
+DETBENCH: 1000 iters, core clock=480000000 Hz
+DETBENCH: loop baseline      = 9719 cyc total (9.71 cyc/iter)
+DETBENCH: Det_ReportError    = 62090 cyc total (62.09 cyc/iter)
+DETBENCH: Det_GetLastError   = 73114 cyc total (73.11 cyc/iter)
+DETBENCH: at 480 MHz -> ReportError 0.129 us/call, GetLastError 0.152 us/call
+
+letter:/$ 
+letter:/$ 

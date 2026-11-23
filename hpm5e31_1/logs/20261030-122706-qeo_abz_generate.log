@@ -1,0 +1,28 @@
+ phase=0 (软件写, 即 QEO 的位置源)  pos=0  angle=0
+  Q�
+commands: qgen <pos_per_s> <lines> | qhalt | qshow
+qgen 2000 1000
+QEI0 phase=0 (软件写, 即 QEO 的位置源)  pos=0  angle=0
+  QEO0 ABZ.RESOLUTION=0x000003e8 (线数回读)  mode 已设为 qeo_abz_output_abz
+  lines=1000 step=2000/s running=1  ABZ 引脚: A=PF07 B=PF06 Z=PF05
+  说明: QEO 的 ABZ 是输出引脚, 无法回读; 观测请用示波器 PF07/06/05,
+        或飞线 PF07->PC07 / PF06->PC06 / PF05->PC05 后用 QEI0 解码验证
+
+letter:/$ 
+letter:/$ qshow
+QEI0 phase=1 (软件写, 即 QEO 的位置源)  pos=0  angle=0
+  QEO0 ABZ.RESOLUTION=0x000003e8 (线数回读)  mode 已设为 qeo_abz_output_abz
+  lines=1000 step=2000/s running=1  ABZ 引脚: A=PF07 B=PF06 Z=PF05
+  说明: QEO 的 ABZ 是输出引脚, 无法回读; 观测请用示波器 PF07/06/05,
+        或飞线 PF07->PC07 / PF06->PC06 / PF05->PC05 后用 QEI0 解码验证
+
+letter:/$ 
+letter:/$ qhalt
+QEI0 phase=2 (软件写, 即 QEO 的位置源)  pos=0  angle=0
+  QEO0 ABZ.RESOLUTION=0x000003e8 (线数回读)  mode 已设为 qeo_abz_output_abz
+  lines=1000 step=2000/s running=0  ABZ 引脚: A=PF07 B=PF06 Z=PF05
+  说明: QEO 的 ABZ 是输出引脚, 无法回读; 观测请用示波器 PF07/06/05,
+        或飞线 PF07->PC07 / PF06->PC06 / PF05->PC05 后用 QEI0 解码验证
+
+letter:/$ 
+letter:/$ 

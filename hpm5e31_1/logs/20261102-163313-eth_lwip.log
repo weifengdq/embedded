@@ -1,0 +1,60 @@
+general inactivity (A_DoIP_General_Inactivity) (peer=192.168.2.1x_frame=1518 tx_buf=8 rx_buf=16
+[lwip-eth] netif=e0 idx=1 MAC=02:00:00:00:01:00
+[lwip-eth] IP=192.168.2.100
+[lwip-eth] MASK=255.255.255.0
+[lwip-eth] GW=192.168.2.1  link=UP
+[lwip-eth] phy: link=UP known=1 speed=1000 Mbps duplex=full role=SLAVE
+[mcal-eth] PHY BMCR=0140 BMSR=000D GBSR=3000 PHYSR=8400
+[mcal-eth] ETH counter: rx_pkts=0 tx_pkts=1 drop_ovr=0 crc=0 undersize=0 oversize=0
+[lwip-eth] link=UP after 1005 ms
+[init] app_lwip_eth_init rc=0 (0=link up, 1=link down)
+[ping] seq=0 192.168.2.1: timeout
+[ping] seq=1 192.168.2.1: timeout
+[ping] seq=2 192.168.2.1: rtt=201 us
+[ping] seq=3 192.168.2.1: timeout
+[ping] seq=4 192.168.2.1: rtt=350 us
+[ping] 2/5 received, rtt min/avg/max = 201/275/350 us, jitter(avg |d|) = 149 us
+[selftest] ping gw: 2/5 rtt min/avg/max=201/275/350 us jitter=149 us
+[run] commands: eth | eth ping <ip> [n] [ms] | eth iserver [tcp|udp] | eth iclient <ip>
+eth
+[lwip-eth] netif=e0 idx=1 MAC=02:00:00:00:01:00
+[lwip-eth] IP=192.168.2.100
+[lwip-eth] MASK=255.255.255.0
+[lwip-eth] GW=192.168.2.1  link=UP
+[lwip-eth] phy: link=UP known=1 speed=1000 Mbps duplex=full role=SLAVE
+[mcal-eth] PHY BMCR=0140 BMSR=000D GBSR=3000 PHYSR=8400
+[mcal-eth] ETH counter: rx_pkts=7 tx_pkts=7 drop_ovr=0 crc=0 undersize=0 oversize=0
+[lwip-eth] sw : rx_frames=7 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=7 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=3315 us tx_max=36 us rx_drain_max=89 us
+[lwip-eth] link poll: n=6 last=101 us max=105 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=1/32
+[lwip-eth] hw : rx_frames=7 rx_bytes=3184 rx_empty=2166622 rx_err=0 | tx_frames=7 tx_bytes=454 tx_busy=0 tx_err=0
+
+letter:/$ 
+letter:/$ eth iclient 192.168.2.1 udp
+Ideal frame delay: 11 us
+Send 90 frame(s) once per 1000 us
+[iperf] UDP client -> 192.168.2.1 started
+
+letter:/$ 
+letter:/$ eth
+[lwip-eth] netif=e0 idx=1 MAC=02:00:00:00:01:00
+[lwip-eth] IP=192.168.2.100
+[lwip-eth] MASK=255.255.255.0
+[lwip-eth] GW=192.168.2.1  link=UP
+[lwip-eth] phy: link=UP known=1 speed=1000 Mbps duplex=full role=SLAVE
+[mcal-eth] PHY BMCR=0140 BMSR=000D GBSR=3000 PHYSR=8400
+[mcal-eth] ETH counter: rx_pkts=10 tx_pkts=20 drop_ovr=0 crc=0 undersize=0 oversize=0
+[lwip-eth] sw : rx_frames=10 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=20 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=9515 us tx_max=36 us rx_drain_max=89 us
+[lwip-eth] link poll: n=6 last=101 us max=105 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=1/32
+[lwip-eth] hw : rx_frames=10 rx_bytes=3406 rx_empty=2166656 rx_err=0 | tx_frames=20 tx_bytes=20110 tx_busy=2 tx_err=0
+
+letter:/$ 
+letter:/$ [lwip-eth] sw : rx_frames=25 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=79852 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=9600 us tx_max=36 us rx_drain_max=89 us
+[lwip-eth] link poll: n=16 last=101 us max=105 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=1/32
+[lwip-eth] hw : rx_frames=25 rx_bytes=13878 rx_empty=7911696 rx_err=0 | tx_frames=79852 tx_bytes=120724624 tx_busy=9981 tx_err=0
+[iperf] type=7 remote=192.168.2.1:5001 bytes=120789144 ms=10501 => 92021 kbit/s (92.02 Mbit/s)

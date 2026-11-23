@@ -1,0 +1,10 @@
+=== cannelloni TCP mode offline (vcan0 -> vcan1) 2026-11-02T10:35:20+08:00 ===
+命令: cannelloni -I vcan0 -C s -l 25000 -L 127.0.0.1 ; cannelloni -I vcan1 -C c -R 127.0.0.1 -r 25000
+--- 抓包 ---
+  vcan1  300   [8]  01 00 00 00 A5 5A C3 3C
+  vcan1  300   [8]  02 00 00 00 A5 5A C3 3C
+  vcan1  300   [8]  03 00 00 00 A5 5A C3 3C
+  vcan1  300   [8]  04 00 00 00 A5 5A C3 3C
+  vcan1  300   [8]  05 00 00 00 A5 5A C3 3C
+--- 结论 ---
+收到 5/5 帧 -> TCP_MODE: PASS

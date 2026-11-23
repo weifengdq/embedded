@@ -1,0 +1,26 @@
+UTOSAR Can driver error-passive/bus-off/recovery ===
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+[start] CAN0/CAN1 STARTED st=0
+--- error-passive / bus-off / recovery test ---
+  baselimed=61 busoff_cb=0 det=1
+type 'can run' to rerun
+can run
+--- error-passive / bus-off / recovery test ---
+  baseline ok        mode=1 errstate=0 TEC=97 REC=0 busoff_cb=0
+  [mode] ctrl=1 -> 2
+  CAN1 -> STOPPED (no ACK on bus)
+  t=   953us  -> ERROR_PASSIVE  TEC=129 REC=0
+  t= 20955us  TEC 平台 129（20 ms 内不再增长）
+  after acks lost    mode=1 errstate=1 TEC=129 REC=0 busoff_cb=0
+  summary: error-passive @ 953us, TEC=129；平台 TEC=129
+  note: ISO 11898-1 规定 error-passive 节点遇 ACK 错误不再增加 TEC；
+        所以对端不 ACK 只能到 TEC=128（error passive），到不了 bus-off(TEC>255)。
+  [mode] ctrl=1 -> 1
+  Can_SetControllerMode(CAN0, STARTED) while error-passive = 1 (expect 1/DET)
+  peer back: ping-pong(10) rc=0 in 6025us
+  after peer back    mode=1 errstate=0 TEC=118 REC=0 busoff_cb=0
+rx_total=122 tx_confirmed=122 busoff_cb=0 det=2
+
+letter:/$ 
+letter:/$ 

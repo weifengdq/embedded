@@ -1,0 +1,14 @@
+cnt] [to] [bc] [bt] | trans <bb|hw> | levels
+a <on|off> [id] [    ___| |_| |_ ___ _ __   ___| 
+letter:/$ 
+=== hpm5e31_1 LAN8651 PLCA 跟随者（Slave，node 1） ===
+[init] SPI2 controller echo OK
+[init] SPI2: SCLK 2000000 Hz, MAC 02:00:00:5e:31:01
+[init] PLCA FOLLOWER (node 1): node_id=1 node_cnt=8 to_tmr=cnt] [to] [bc] [bt] | trans <bb|hw> | levels
+status
+[status] PLCA en=1 node_id=1 node_cnt=8 to_tmr=32 burst_cnt=0 burst_tmr=128 status=0x0000 (PST=0)
+[status] PHY STS1=0x0000 (bit11 PLCA change, bit13 link change)
+[status] TC6 ctrl=90 err=0 | data=0 | tx_frames=0 tx_bytes=0 | rx_frames=0 rx_bytes=0 dropped=0 replies=0
+
+letter:/$ 
+letter:/$ 

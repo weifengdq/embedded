@@ -1,0 +1,8 @@
+lk=80000000 Hz
+  baud=921600, FIFO=32 bytes, RX trigger=not_em128 ring_level=0 ring_drop=0 fifo_overrun=0
+uart_ring_ber 512 3000000
+ber: 512 KB @ 3000000 baud (实际 3000000): verified=524288 err=0 drop=0 overrun=0 isr=524288
+  1750 ms, 299 KB/s, BER 0 错误
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,27 @@
+{
+  "_comment": "第 34 章 U-35-1 vsomeip 互操作状态时间线。来源：/tmp/vsomeip_dbg.out（2026-11-02 12:35:23 起的 vsomeip 3.7.6 日志，板端 someip_rpc 已运行）",
+  "t0": "2026-11-02 12:35:23.690561",
+  "events": [
+    {
+      "t_ms": 0,
+      "label": "routing manager 就绪",
+      "kind": "info"
+    },
+    {
+      "t_ms": 6,
+      "label": "REGISTERED + IGMP Join successful",
+      "kind": "info"
+    },
+    {
+      "t_ms": 842,
+      "label": "收到板端首条 SD 组播\n(KPI NET4 from 192.168.2.100)",
+      "kind": "recv"
+    },
+    {
+      "t_ms": 28047,
+      "label": "20 s 等待超时，服务仍 GONE\n(从未 AVAILABLE)",
+      "kind": "fail"
+    }
+  ],
+  "service_state": "GONE (0 ~ 28 s)"
+}

@@ -1,0 +1,14 @@
+DG watchdog ===
+shell: resetcause | wdgarm [ms] | wdgfeed [timeout_ms] [period_ms]
+resetcause
+PPOR RESET_FLAG at boot = 0x00000010
+  no watchdog reset bit set (power-on / pin / software reset)
+  current PPOR RESET_FLAG = 0x00000000
+
+letter:/$ 
+letter:/$ wdgarm 500
+EWDG0 armed: request 500 ms, actual 499990 us (ticks=16384)
+NOT feeding: SoC should reset in ~500 ms ...
+
+letter:/$ 
+letter:/$ 

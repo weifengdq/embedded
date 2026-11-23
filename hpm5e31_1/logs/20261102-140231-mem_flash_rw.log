@@ -1,0 +1,26 @@
+sw=1.0.0 instances=1
+Mem: instance0 base=0x80000000 size=1024 | memrw | memdet  (BSP 已占用 'mem' 做 hexdump)
+--- mem rw @0x800f0000 (4096 B) ---
+erase : OK, 1.909 ms, result=0
+blank : blank OK (result=0)
+write : OK, 15.281 ms, 261.8 KB/s, result=0
+read  : OK, 0.101 ms, 39801.0 KB/s, result=0
+cmp   : MATCH (first mismatch idx=4096)
+blank : non-blank detected=YES (result=3)
+sum   : 0x0007f800 (pattern seed 0x5A)
+MEMRW: PASS
+--- mem det: error paths ---
+det   : before=0
+read NULL ptr        : r=1 det=1
+  last: mod=91 inst=0 api=0x05 err=0x02
+erase outside window : r=1 det=2 (REFUSED, app safe)
+write unaligned addr : r=1 det=3
+read zero length     : r=1 det=4
+get result bad inst  : det=5
+read while pending   : r=1 det=6
+suspend              : r=2 (expect 2 = E_MEM_SERVICE_NOT_AVAIL)
+resume               : r=2 (expect 2)
+read after DeInit    : r=1 det=7
+re-init              : ok, jobResult=0
+propagate ECC error  : result=4 (expect 4 = MEM_ECC_UNCORRECTED)
+det   : after=7 (delta=7)

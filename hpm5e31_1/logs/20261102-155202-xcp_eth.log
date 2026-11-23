@@ -1,0 +1,15 @@
+xcp_eth：XCP on UDP（XCPonEth）从站 + DAQ 测量
+[cfg ] cD
+XCP-ETH INIT PASS ip=192.168.2.100 port=5555
+xcp stat
+state    : lwip=1 xcp=1 connected=0 last_err=0x00
+core     : cto_rx=0 res_tx=0 err_tx=0 ignored=0 mem_denied=0
+daq      : frames=0 samples=0 dropped=0 overload=0
+events   : evt0=0 evt1=0 evt2=0（tick: 1k=661 10k=6614 100=66）
+udp rx   : datagrams=0 msgs=0 bytes=0 framing_err=0 ctr_gap=0 ctr_dup=0
+udp tx   : datagrams=0 msgs=0 bytes=0 drop=0 err=0 max_msgs/pkt=0 max_pkt=0B
+udp peer : none 0.0.0.0:0（tx_ctr=0 rx_ctr=0）
+meas     : adc=38293 pid_mid=225476 cpu_load=0‰ u8=152 tick=664 tick10k=6646 tick100=66
+
+letter:/$ 
+letter:/$ 

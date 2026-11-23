@@ -1,0 +1,25 @@
+ready (ISO 15765-2:2016, CAN0=DUT 0x700/0x708, CAN1=tester)
+
+[isotp_echo] CAN0(DUT) 0x700->0x708 | CAN1(tester) 0x708->0x700
+  mode=classic 500k ext=11bit BS=0 STmin=0x00(=0 us) pad=0xCC N_Bs=1000 ms N_Cr=1000 ms
+
+[isotp_echo] run: classic 500k 11bit BS=0 STmin=0x00 pad=0xCC
+  len    frames  rtt_us    KB/s      tx_us     crc
+  1      1       527       3.7       227       OK
+  7      1       461       29.7      226       OK
+  8      2       1430      10.9      701       OK
+  12     2       1408      16.6      699       OK
+  64     10      5145      24.3      2556      OK
+  256    37      17728     28.2      8813      OK
+  1024   147     69033     29.0      34358     OK
+  4095   586     273507    29.2      136099    OK
+[isotp_echo] PASS sizes=8/8 bytes=10934 rtt_avg=46154 us rtt_max=273507 us txmsg=8 rxmsg=8 seq_err=0 ovflw=0 timeout=0
+run
+
+[isotp_echo] run: classic 500k 11bit BS=0 STmin=0x00 pad=0xCC
+  len    frames  rtt_us    KB/s      tx_us     crc
+  1      1       464       4.2       228       OK
+  7      1       462       29.6      226       OK
+  8      2       1410      11.1      701       OK
+  12     2       1409      16.6      698       OK
+  64  

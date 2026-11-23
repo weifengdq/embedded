@@ -1,0 +1,15 @@
+ter-shell demo ===
+type 'help' to list commands, 'ver' for version
+sh_time
+0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+sh_time: dispatch=22574 cyc, busy1000=9511 cyc, printf64=377361 cyc, printf2=16724 cyc
+
+letter:/$ 
+letter:/$ sh_time
+0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+sh_time: dispatch=3215 cyc, busy1000=9414 cyc, printf64=376264 cyc, printf2=16719 cyc
+
+letter:/$ 
+letter:/$ 

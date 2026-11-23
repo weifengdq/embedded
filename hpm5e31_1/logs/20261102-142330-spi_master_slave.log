@@ -1,0 +1,60 @@
+fg=1MHz SCLK=1000000 Hz level=2 status=IDLE
+  SPI1 master: SCL/ 'spi det'
+spi bench
+bench: 双向传输 1 MHz / 10 MHz 对比
+  1MHz   1MHz  n=64    w=1  PASS err=0    t=534.477 us 双向=239 KB/s
+  1MHz   1MHz  n=256   w=1  PASS err=0    t=2064.681 us 双向=247 KB/s
+  1MHz   1MHz  n=1024  w=1  PASS err=0    t=8208.629 us 双向=249 KB/s
+spi: re-init -> cfg=10MHz SCLK=10000000 Hz status=IDLE
+  10MHz  10MHz n=64    w=1  PASS err=0    t=63.727 us 双向=2008 KB/s
+  10MHz  10MHz n=256   w=1  PASS err=0    t=217.250 us 双向=2356 KB/s
+  10MHz  10MHz n=1024  w=1  PASS err=0    t=831.602 us 双向=2462 KB/s
+spi: re-init -> cfg=1MHz SCLK=1000000 Hz status=IDLE
+
+letter:/$ 
+letter:/$ spi init 10m
+spi: re-init -> cfg=10MHz SCLK=10000000 Hz status=IDLE
+
+letter:/$ 
+letter:/$ spi ber 1 1024
+ber: 1 MB @ 10MHz chunk=1024 xfers=1024 fail=0 err_bytes=0, 1201.66 ms
+     单向吞吐=872 KB/s (0.85 MB/s)，双向=1744 KB/s，误码=0/16777216 bit => PASS (0 误码)
+
+letter:/$ 
+letter:/$ spi init 1m
+spi: re-init -> cfg=1MHz SCLK=1000000 Hz status=IDLE
+
+letter:/$ 
+letter:/$ spi ber 1 1024
+ber: 1 MB @ 1MHz chunk=1024 xfers=1024 fail=0 err_bytes=0, 8755.53 ms
+     单向吞吐=119 KB/s (0.11 MB/s)，双向=238 KB/s，误码=0/16777216 bit => PASS (0 误码)
+
+letter:/$ 
+letter:/$ spi det
+spi_master_slave @ hpm5e31_1 | MCAL Spi 1.0.0 moduleID=83
+  cfg=1MHz SCLK=1000000 Hz level=2 status=IDLE
+  SPI1 master: SCLK PC10 CS PC11 MISO PC12 MOSI PC13 (mode0, DMA ch2/3)
+  SPI3 slave : SCLK PA26 CS PA27 MISO PA28 MOSI PA29 (DMA ch4/5)
+  jobs=8 seqs=5 eb buf=4096 B, jobEnd=2055 seqEnd=2055
+  usage: spi info|init 1m|10m|xfer [n]|width 8|16|32 [n]|bench|ber [MB] [chunk]|ib|det
+det: count0=0, inject 10 invalid calls...
+det: after inject count=10 (期望 +10)
+det: GetVersionInfo vendor=FFFF module=83 sw=1.0.0
+det: status=IDLE
+
+letter:/$ 
+letter:/$ spi ib
+  ib     1MHz  n=64    w=1  PASS err=0    t=535.204 us 双向=239 KB/s
+  IB: rc=0 det=10 masterTx[0..3]=10 11 12 13 masterRx[0..3]=FF FE FD FC
+  IB: slaveTx[0..3]=FF FE FD FC slaveRx[0..3]=10 11 12 13 jobR6=0 jobR7=0 seqR3=0
+
+letter:/$ 
+letter:/$ spi width 16 64
+  width  1MHz  n=64    w=2  PASS err=0    t=1058.208 us 双向=241 KB/s
+
+letter:/$ 
+letter:/$ spi width 32 32
+  width  1MHz  n=32    w=4  PASS err=0    t=1051.316 us 双向=243 KB/s
+
+letter:/$ 
+letter:/$ 

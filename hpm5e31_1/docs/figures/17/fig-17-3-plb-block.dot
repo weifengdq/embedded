@@ -1,0 +1,30 @@
+
+digraph plb {
+  rankdir=LR;
+  graph [fontname="Noto Sans CJK SC", fontsize=11, nodesep=0.28, ranksep=0.5, bgcolor="white"];
+  node  [fontname="Noto Sans CJK SC", fontsize=10, shape=box, style="rounded,filled",
+         fillcolor="#F6F8FA", color="#57606A", penwidth=0.9];
+  edge  [fontname="Noto Sans CJK SC", fontsize=9, color="#57606A", arrowsize=0.7];
+
+  trgm_in [label="TRGM\nPLB_IN_00..31", fillcolor="#FFF8E1"];
+  subgraph cluster_a {
+    label="TYPE A ×16：LUT4 + 边沿检测/计数器";
+    fontname="Noto Sans CJK SC"; fontsize=10; color="#D0D7DE"; style="rounded";
+    lut4 [label="4 输入查找表\nLOOKUP_TABLE[16]", fillcolor="#E6F4EA"];
+    ff   [label="触发器 / 边沿检测\nSW_INJECT 可软件置位", fillcolor="#E6F4EA"];
+    cnta [label="计数器模式", fillcolor="#E6F4EA"];
+  }
+  subgraph cluster_b {
+    label="TYPE B ×8：LUT4 + 比较器";
+    fontname="Noto Sans CJK SC"; fontsize=10; color="#D0D7DE"; style="rounded";
+    lutb [label="LUT[16] + CMP\nMODE 选择输出源", fillcolor="#E6F4EA"];
+  }
+  trgm_out [label="TRGM\nPLB_OUT00..", fillcolor="#FFF8E1"];
+  tim [label="定时器/PWM 输入\n(可作 LUT 输入)", fillcolor="#FFF8E1"];
+
+  trgm_in -> lut4;
+  tim -> lut4;
+  lut4 -> ff -> cnta;
+  cnta -> trgm_out;
+  trgm_in -> lutb -> trgm_out;
+}

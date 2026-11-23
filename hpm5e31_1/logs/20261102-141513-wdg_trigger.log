@@ -1,0 +1,11 @@
+ger (board hpm5e31_1) ===
+Wdg v1.0.0: EWDG0 armed, mode=SLOW, SLOW=1000 ms
+[t1] feed 3 s every 100 ms: feeds=30 RESULT=SURVIVED
+[wdg] Wdg v1.0.0 moduleID=102 state=1 mode=SLOW
+[wdg] EWDG0 src=32768 Hz slow=1000 ms fast=100 ms max=60000 ms window=1000
+[t2] SetTriggerCondition(300ms) + feed 2 s: feeds=20 RESULT=SURVIVED
+[t3] FAST mode (100 ms) + feed 1 s: feeds=20 RESULT=SURVIVED
+[wdg] Wdg v1.0.0 moduleID=102 state=1 mode=SLOW
+[wdg] EWDG0 src=32768 Hz slow=1000 ms fast=100 ms max=60000 ms window=1000
+[det] before=0 after=2 delta=2
+[wdg_trigger] auto test done. cmds: wdg info|feed|mode|trig|err|bad

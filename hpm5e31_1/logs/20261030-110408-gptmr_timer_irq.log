@@ -1,0 +1,15 @@
+ <hz> | gclr | ginfo
+ginfo
+gptmr0: base=0xf0000000 clk=100000000 Hz
+  CH0 rx reload=100000, CH3 free-run
+  CMP count per channel = 2, reload/cmp 位宽见第 15 章表 15-2
+
+letter:/$ 
+letter:/$ gstat
+[gptmr irq] f_clk=100000000 Hz rate=1000 Hz cnt=683
+  period : mean=1000.000 us  min=999.520 us  max=1000.530 us  (expect 1000.000 us)
+  jitter : peak-peak=1.010 us  stddev=0.194 us  (=19.4 ticks)
+  error  : +0.23 ppm
+
+letter:/$ 
+letter:/$ 

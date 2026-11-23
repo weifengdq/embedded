@@ -1,0 +1,50 @@
+ 50%; OUT3 = 1 kHz 50% 相移 90 度
+commands: dgen dstat ddirect dplb dpin dsw dquad dfilt dmon
+dall
+
+########## dall 开始 ##########
+OUT2 = 1 kHz 50%; OUT3 = 1 kHz 50% 相移 90 度
+--- TRGM 配置回读 ---
+TRGOCFG: PLB_IN_00=0x00000000(源0x00) PLB_IN_01=0x00000000 PLB_IN_02=0x00000000 PLB_IN_03=0x00000000
+TRGOCFG: CAPT_2=0x00000000(源0x00) CAPT_3=0x00000000(源0x00) P15=0x00000000 GCR=0x00000000
+--- GPTMR0 通道 ---
+CH0 CR=0x00000000 CNT=0 RLD=4294967295 CMP0=4294967280 CMP1=4294967280
+CH1 CR=0x00000000 CNT=0 RLD=4294967295 CMP0=4294967280 CMP1=4294967280
+CH2 CR=0x00000508 CNT=28604 RLD=99999 CMP0=49999 CMP1=4294967295
+CH3 CR=0x00000508 CNT=32418 RLD=99999 CMP0=49999 CMP1=4294967295
+CH3 CAP: CAPPOS=0 CAPNEG=0 CAPPRD=0 CAPDTY=0
+CH2 CAP: CAPPOS=0 CAPNEG=0 CAPPRD=0 CAPDTY=0
+SR=0x00005500 IRQEN=0x00002000
+--- PLB ---
+TYPE_A0: LUT0=0xaaaa LUT1=0x0000 SW_INJECT=0x00000000
+TYPE_B0: MODE=0x00000000 LUT0=0x00000000 LUT1=0x00000000 CMP0=0 CMP1=0 CNT=0
+--- 20 ms 内电平翻转次数(期望 1 kHz 方波 -> 约 40) ---
+IN[0x10]GPTMR0_OUT2=0 IN[0x11]GPTMR0_OUT3=0 IN[0x44]PLB_OUT00=0 IN[0x37]TRGM0_P15=0
+OUT[0x38]CAPT_2=0 OUT[0x39]CAPT_3=0 OUT[0x0F]P15=0 OUT[0x0E]P14=0
+cap_n=0 cap_pos=0  PF15.FUNC_CTL=0x00010011
+[ddirect 直连] 300 ms 内捕获 0 次, 最后一次 CAPPOS=0
+       IN[src]=0 OUT[cap]=0
+[dplb 经 PLB] 300 ms 内捕获 0 次, 最后一次 CAPPOS=0
+       IN[src]=0 IN[PLB_OUT00]=0 OUT[cap]=0
+[dpin PF15 回环] 300 ms 内捕获 0 次, 最后一次 CAPPOS=0
+       pad=PF15: IN[PLB_OUT00]=0 OUT[P15]=0 IN[TRGM_P15]=0
+[dpin PD15 回环] 300 ms 内捕获 0 次, 最后一次 CAPPOS=0
+       pad=PD15: IN[PLB_OUT00]=0 OUT[P15]=0 IN[TRGM_P15]=0
+[dsw] 软件注入 10 个脉冲(宽 100 us): 捕获 0 次, 末次 CAPPOS=0
+      IN[PLB_OUT00]=0
+[dquad] 200 ms: TYPE_B 计数 0 -> 0, 差 0; 期望 4 x 1000 x 200 ms = 800
+        IN[OUT2]=0 IN[OUT3]=0 IN[PLB_OUT00]=0 IN[PLB_OUT01]=0
+[dfilt] len=0 mode=4 源=100000 Hz: 捕获 0 次(期望约 20000), CAPPOS=33403
+        IN[TRGM_P15]=0 OUT[P15]=0
+[dfilt] len=16 mode=4 源=100000 Hz: 捕获 0 次(期望约 20000), CAPPOS=0
+        IN[TRGM_P15]=0 OUT[P15]=0
+[dfilt] len=64 mode=4 源=100000 Hz: 捕获 0 次(期望约 20000), CAPPOS=0
+        IN[TRGM_P15]=0 OUT[P15]=0
+[dfilt] len=128 mode=4 源=100000 Hz: 捕获 0 次(期望约 20000), CAPPOS=0
+        IN[TRGM_P15]=0 OUT[P15]=0
+[dfilt] len=256 mode=4 源=100000 Hz: 捕获 0 次(期望约 20000), CAPPOS=0
+        IN[TRGM_P15]=0 OUT[P15]=0
+[dfilt] len=511 mode=4 源=100000 Hz: 捕获 0 次(期望约 20000), CAPPOS=0
+        IN[TRGM_P15]=0 OUT[P15]=0
+[dfilt] len=64 mode=5 源=100000 Hz: 捕获 0 次(期望约 20000), CAPPOS=0
+        IN[TRGM_P15]=0 OUT[P15]=0

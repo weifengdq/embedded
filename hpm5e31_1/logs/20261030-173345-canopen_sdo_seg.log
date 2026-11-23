@@ -1,0 +1,17 @@
+_seg ready (shell: run [iters] | stat | sdo)
+
+=== CANopen se01 1024 B 图案校验        PASS  rc=0 abort=0x00000000
+  upload 0x2002 4096 B 图案校验        PASS  rc=0 abort=0x00000000
+  download 0x2001 1024 B 回读一致      PASS  rc=0 回读一致
+  download 0x2002 4096 B 回读一致      PASS  rc=0 abort=0x00000000
+  分段 upload 吞吐 > 1000 B/s          PASS  1KB=14026 B/s 4KB=14044 B/s
+
+  对象       大小   方向     轮数  最佳耗时     吞吐        结果
+  ---------- ------ -------- ---- ------------ ------------ -------
+  0x2001      1024 B upload    5       73.0 ms      14027 B/s  OK
+  0x2002      4096 B upload    5      291.6 ms      14045 B/s  OK
+  0x2001      1024 B download  5       72.9 ms      14048 B/s  OK
+  0x2002      4096 B download  5      289.2 ms      14161 B/s  OK
+  段数估算: 1024 B = 147 段 x 7 B；4096 B = 586 段 x 7 B（每段 1 请求 + 1 响应）
+  expedited read 0x1017 x200               PASS  200/200 次, 0.49 ms/次, 2036 次/s
+=== RESULT: 6 PASS / 0 FAIL ===

@@ -1,0 +1,18 @@
+[dlt] 18:17:00 daemon: 620390 dlt-daemon -t /tmp/dlt/dltpipes -p 3490 -c /dev/null
+UNCONN 18432  0                  *:3490             *:*    users:(("dlt-daemon",pid=620390,fd=5))     
+--- dlt-receive 文本行数
+4
+--- 前 3 条
+2026/11/02 18:17:00.193592 3774122063 000 ECU1 DA1- DC1- control response N 1 [service(3842), ok, 02 00 00 00 00]
+2026/11/02 18:17:00.193644 3493462007 000 ECU1 DA1- DC1- control response N 1 [service(3842), ok, 01 00 00 00 00]
+2026/11/02 18:17:00.193653 3493462008 044 ECU1 DLTD INTM log info V 1 [Client connection #9 closed. Total Clients : 0]
+--- APID 直方图
+0
+--- dlt-convert（官方工具）解析 .dlt：
+0 2026/11/02 18:17:00.193592 3774122063 000 ECU1 DA1- DC1- control response N 1 [service(3842), ok, 02 00 00 00 00]
+1 2026/11/02 18:17:00.193644 3493462007 000 ECU1 DA1- DC1- control response N 1 [service(3842), ok, 01 00 00 00 00]
+2 2026/11/02 18:17:00.193653 3493462008 044 ECU1 DLTD INTM log info V 1 [Client connection #9 closed. Total Clients : 0]
+3 2026/11/02 18:17:00.193658 3774122063 045 ECU1 DLTD INTM log info V 1 [New client connection #9 established, Total Clients : 1]
+--- dlt-convert 行数
+4
+[dlt] done 18:17:20 out=logs/20261102-181700-host-dlt-daemon.log

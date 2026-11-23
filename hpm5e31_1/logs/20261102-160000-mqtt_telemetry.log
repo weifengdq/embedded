@@ -1,0 +1,12 @@
+x -> CAN1 rx)
+[adc] ADC0 IN1 oneshot, clk 50000000 Hz
+[tsns]tatus published (retained)
+mstat
+[mqtt] STAT st=CONNECTED up=3s sub=OK conn=1 ok=1 pub_tx=4 pub_rx=0 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=4 can_tx=4 can_rx=3 adc=34871 temp=36000mC loop_max=1195us evt=1 => PASS
+
+letter:/$ 
+letter:/$ [mqtt] STAT st=CONNECTED up=5s sub=OK conn=1 ok=1 pub_tx=6 pub_rx=0 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=6 can_tx=6 can_rx=5 adc=34807 temp=37000mC loop_max=2400us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=10s sub=OK conn=1 ok=1 pub_tx=11 pub_rx=0 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=11 can_tx=11 can_rx=10 adc=34866 temp=37000mC loop_max=2400us evt=1 => PASS

@@ -1,0 +1,12 @@
+oller: SCL PD02 / SDA PD03；I2C3 target addr=0x50 SCL PD07 / SD
+i2c init 400k
+i2c: re-init -> 400k
+
+letter:/$ 
+letter:/$ i2c xfer 32
+  400k  wr   n=32   PASS err=0   t=995.74 us 线速率=289.2 kbps(有效 257.0 kbps)
+  [rd-diff] i=0 rx=00 tx=80
+  400k  rd   n=32   FAIL err=1   t=986.95 us 线速率=291.8 kbps(有效 259.3 kbps)
+
+letter:/$ 
+letter:/$ 

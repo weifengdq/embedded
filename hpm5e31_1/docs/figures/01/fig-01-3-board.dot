@@ -1,0 +1,39 @@
+digraph G {
+  graph [rankdir=LR, fontname="Noto Sans CJK SC", fontsize=12, nodesep=0.3, ranksep=0.5, bgcolor="white", pad=0.2];
+  node  [shape=box, style="rounded,filled", fontname="Noto Sans CJK SC", fontsize=11, fillcolor="#f7fafc", color="#4a5568"];
+  edge  [color="#4a5568", fontsize=9];
+
+  mcu [label="HPM5E31IPB1\n480 MHz / 1 MB Flash\n544 KB SRAM", fillcolor="#bee3f8", color="#2b6cb0", width=2.2];
+  dbg [label="J-Link\nJTAG", fillcolor="#fed7d7"];
+  con [label="CH343 USB-UART\n/dev/ttyACM0 921600", fillcolor="#fed7d7"];
+  can0 [label="TCAN1044AV\nCAN0 PD00/PD01", fillcolor="#c6f6d5"];
+  can1 [label="TCAN1044AV\nCAN1 PD05/PD04", fillcolor="#c6f6d5"];
+  can2 [label="TCAN1044AV\nCAN2 PC08/PA09", fillcolor="#c6f6d5"];
+  can3 [label="TCAN1044AV\nCAN3 PC15/PC14", fillcolor="#c6f6d5"];
+  t1s  [label="LAN8651\n10BASE-T1S\nSPI2 PA20~PA23", fillcolor="#fefcbf"];
+  yt   [label="YT8011AN\n千兆 RGMII\nPF02~PF13", fillcolor="#fefcbf"];
+  usbhost [label="主机 USB\nUSB0 DP/DM", fillcolor="#e9d8fd"];
+  host [label="远程 Ubuntu 主机\n(SSH / USB)", fillcolor="#e2e8f0"];
+  host2[label="USB-10BASE-T1S\nenx001ec0d1c337", fillcolor="#e2e8f0"];
+  host3[label="千兆车载以太网转换盒\n(1000M Master)", fillcolor="#e2e8f0"];
+  led [label="USR LED PA02\nUSR BTN PA03", shape=ellipse, fillcolor="#fefcbf"];
+  leds[label="CAN 状态灯 ×8\nPF26/PF18/PF20/PF16\nPF22/PF21/PF23/PF19", shape=ellipse, fillcolor="#fefcbf"];
+
+  subgraph cluster_bus {
+    label="CAN 总线（终端电阻两两相连）"; fontname="Noto Sans CJK SC"; color="#2f855a"; style="rounded,dashed";
+    bus01 [label="CAN_H/CAN_L #1\nCAN0 ↔ CAN1", shape=box, fillcolor="#c6f6d5"];
+    bus23 [label="CAN_H/CAN_L #2\nCAN2 ↔ CAN3", shape=box, fillcolor="#c6f6d5"];
+  }
+  mcu -> dbg [label="JTAG", dir=both];
+  mcu -> con [label="UART0 PA00/PA01", dir=both];
+  mcu -> can0; mcu -> can1; mcu -> can2; mcu -> can3;
+  can0 -> bus01; can1 -> bus01; can2 -> bus23; can3 -> bus23;
+  mcu -> t1s [label="SPI2 + RST/INT", dir=both];
+  mcu -> yt [label="RGMII + MDIO", dir=both];
+  mcu -> usbhost [label="USB0", dir=both];
+  mcu -> led [style=dashed, arrowhead=none];
+  mcu -> leds [style=dashed, arrowhead=none];
+  con -> host; usbhost -> host;
+  t1s -> host2 [label="10BASE-T1S", dir=both]; host2 -> host;
+  yt -> host3 [label="1000BASE-T", dir=both]; host3 -> host;
+}

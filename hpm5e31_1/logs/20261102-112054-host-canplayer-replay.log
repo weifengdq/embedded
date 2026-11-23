@@ -1,0 +1,148 @@
+[hwrun] board lock acquired (can_logger) pid=711241
+J-Link Commander will now exit on Error
+Connecting to J-Link ...O.K.
+Downloading file [build/can_logger-debug/output/demo.elf]...
+Programming flash [000%]000%]000%]000%]005%]005%]005%]005%]010%]010%]015%]015%]015%]015%]020%]020%]025%]025%]025%]025%]030%]030%]035%]035%]035%]035%]040%]040%]045%]045%]045%]045%]050%]050%]050%]050%]055%]055%]060%]060%]060%]060%]065%]065%]070%]070%]070%]070%]075%]075%]080%]080%]080%]080%]085%]085%]090%]090%]090%]090%]095%]095%]100%] Done.
+Verifying flash   [000%]000%]100%] Done.
+J-Link: Flash download: Bank 0 @ 0x80000000: 1 range affected (126976 bytes)
+J-Link: Flash download: Total: 2.361s (Prepare: 0.547s, Compare: 0.113s, Erase: 0.087s, Program: 1.437s, Verify: 0.049s, Restore: 0.126s)
+J-Link: Flash download: Program & Verify speed: 83 KB/s
+O.K.
+y | stat | gw on
+
+gw on
+Enet phy init passed !
+IPv4 Address: 192.168.2.100
+IPv4 Netmask: 255.255.255.0
+IPv4 Gateway: 192.168.2.1
+[lwip] cfg ip=192.168.2.100 mask=255.255.255.0 gw=192.168.2.1
+
+[lwip] aton+set: ip=6402A8C0 mask=00FFFFFF gw=0102A8C0
+
+[lwip] netif now: ip=6402A8C0 mask=00FFFFFF gw=0102A8C0 hwlen=6 mac=00:00:00:00:D0:0E
+
+[lwip] netif=en idx=1 MAC=00:00:00:00:D0:0E
+
+[lwip] IP=192.168.2.100 link=DOWN
+
+[lwip] MASK=255.255.255.0
+
+[lwip] GW=192.168.2.1
+
+[lwip] PHY link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D
+
+[lwip] link UP after 11 ms
+
+[lwip] netif=en idx=1 MAC=00:00:00:00:D0:0E
+
+[lwip] IP=192.168.2.100 link=UP
+
+[lwip] MASK=255.255.255.0
+
+[lwip] GW=192.168.2.1
+
+[lwip] PHY link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D
+
+[lwip] ready: IP=192.168.2.100 port 任意 UDP 可直接收
+
+[gw] ch1: CAN1 <-> UDP 4000 (local 192.168.2.100)
+
+[gw] cannelloni v2 gateway ready, 1 channel(s), peer=configured
+
+[gw] CAN1 <-> UDP4000 rc=0
+
+[gw] forwarding ON, CAN0 记录中（ring 已清空，等待主机 canplayer 回放）
+
+
+letter:/$ 
+letter:/$ [auto] 1.5 s 采集完成: stat: log=RUN count=0 dropped=0 gen_on=0 gen_seq=67 uptime=1506 ms
+
+[hwrun] post (持锁运行上位机测试): timeout 80 bash host/canlog/replay_check.sh /tmp/replay.dump
+[replay] 文件 /tmp/replay.dump（30 帧）
+[replay] canplayer 回放中（-g 1 ms 间隔，避免网关突发丢帧）
+[replay] canplayer rc=0
+[replay] 板端校验：log dump 40;verify
+log dump 40
+# candump: 30 frames (start=0) epoch_base=1793000000
+
+(1793000011.591225) can0 300#00000000A55AC33C
+
+(1793000011.591462) can0 300#01000000A55AC33C
+
+(1793000011.594312) can0 300#02000000A55AC33C
+
+(1793000011.596456) can0 300#03000000A55AC33C
+
+(1793000011.598596) can0 300#04000000A55AC33C
+
+(1793000011.600754) can0 300#05000000A55AC33C
+
+(1793000011.602820) can0 300#06000000A55AC33C
+
+(1793000011.603058) can0 300#07000000A55AC33C
+
+(1793000011.605966) can0 300#08000000A55AC33C
+
+(1793000011.608095) can0 300#09000000A55AC33C
+
+(1793000011.610243) can0 300#0A000000A55AC33C
+
+(1793000011.612380) can0 300#0B000000A55AC33C
+
+(1793000011.614529) can0 300#0C000000A55AC33C
+
+(1793000011.616662) can0 300#0D000000A55AC33C
+
+(1793000011.618799) can0 300#0E000000A55AC33C
+
+(1793000011.619794) can0 300#0F000000A55AC33C
+
+(1793000011.622017) can0 300#10000000A55AC33C
+
+(1793000011.624156) can0 300#11000000A55AC33C
+
+(1793000011.626300) can0 300#12000000A55AC33C
+
+(1793000011.628439) can0 300#13000000A55AC33C
+
+(1793000011.630621) can0 300#14000000A55AC33C
+
+(1793000011.632940) can0 300#15000000A55AC33C
+
+(1793000011.633868) can0 300#16000000A55AC33C
+
+(1793000011.636352) can0 300#17000000A55AC33C
+
+(1793000011.638498) can0 300#18000000A55AC33C
+
+(1793000011.640524) can0 300#19000000A55AC33C
+
+(1793000011.642704) can0 300#1A000000A55AC33C
+
+(1793000011.644699) can0 300#1B000000A55AC33C
+
+(1793000011.645697) can0 300#1C000000A55AC33C
+
+(1793000011.647853) can0 300#1D000000A55AC33C
+
+# end candump
+
+
+letter:/$ 
+letter:/$ verify
+verify: 0x300 frames=30 bad_order=0 first_bad_idx=-1 result=PASS
+
+
+letter:/$ 
+letter:/$ stat
+stat: log=RUN count=30 dropped=0 gen_on=0 gen_seq=67 uptime=13609 ms
+
+
+letter:/$ 
+letter:/$ [replay] 板端日志 /tmp/replay_board.log rc=0
+verify: 0x300 frames=30 bad_order=0 first_bad_idx=-1 result=PASS
+
+[replay] RESULT: PASS
+[hwrun] post rc=0
+---- LOG: logs/20261102-112029-can_logger.log (rc=0) ----
+RC=True

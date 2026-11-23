@@ -1,0 +1,15 @@
+ (UART4 loopback + RX irq + FIFO + ring) ===
+uart_irq_ring @ hpm5e31_1
+  UART4 TX=PC16 RX=PC17, internal MCR loopback, src_clk=80000000 Hz
+  baud=921600, FIFO=32 bytes, RX trigger=not_em128 ring_level=0 ring_drop=0 fifo_overrun=0
+uart_ring_trig 0
+trig=0 (0=not_empty,2=gt_half,3=gt_3q) baud=921600 n=128: isr=128 rx=128 err=0 1.40 ms
+  => 每 1 字节一次中断
+
+letter:/$ 
+letter:/$ uart_ring_trig 2
+trig=2 (0=not_empty,2=gt_half,3=gt_3q) baud=921600 n=128: isr=8 rx=128 err=0 1.41 ms
+  => 每 16 字节一次中断
+
+letter:/$ 
+letter:/$ uart_ring_trig 3

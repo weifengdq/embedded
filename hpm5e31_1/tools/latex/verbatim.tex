@@ -1,0 +1,9 @@
+% =============================================================================
+% tools/latex/verbatim.tex —— 代码块换行规则（由 tools/build_pdf.sh 追加到导言区）
+% 解决：pandoc 生成的 Highlighting/Verbatim 环境默认不换行，长命令行（如
+% SHELL_EXPORT_CMD(...)）与长路径会溢出页面右边界被裁切。fvextra 提供
+% breaklines/breakanywhere 选项，在任意字符处允许换行。
+% =============================================================================
+\usepackage{fvextra}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\},breaklines=true,breakanywhere=true}
+\setlength{\emergencystretch}{3em}

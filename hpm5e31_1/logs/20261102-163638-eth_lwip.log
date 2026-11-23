@@ -1,0 +1,35 @@
+rx pbuf pool: in_use=0 peak=1/32
+[lwip-eth] hw : rx_frames=21 518 tx_buf=8 rx_buf=16
+[lwip-eth] netif=e0 idx=1 MAC=02:00:00:00:01:00
+[lwip-eth] IP=192.168.2.100
+[lwip-eth] MASK=255.255.255.0
+[lwip-eth] GW=192.168.2.1  link=UP
+[lwip-eth] phy: link=UP known=1 speed=1000 Mbps duplex=full role=SLAVE
+[mcal-eth] PHY BMCR=0140 BMSR=000D GBSR=3000 PHYSR=8400
+[mcal-eth] ETH counter: rx_pkts=0 tx_pkts=1 drop_ovr=0 crc=0 undersize=0 oversize=0
+[lwip-eth] link=UP after 1005 ms
+[init] app_lwip_eth_init rc=0 (0=link up, 1=link down)
+[ping] seq=0 192.168.2.1: timeout
+[ping] seq=1 192.168.2.1: timeout
+[ping] seq=2 192.168.2.1: rtt=308 us
+[ping] seq=3 192.168.2.1: timeout
+[ping] seq=4 192.168.2.1: rtt=330 us
+[ping] 2/5 received, rtt min/avg/max = 308/319/330 us, jitter(avg |d|) = 22 us
+[selftest] ping gw: 2/5 rtt min/avg/max=308/319/330 us jitter=22 us
+[run] commands: eth | eth ping <ip> [n] [ms] | eth iserver [tcp|udp] | eth iclient <ip>
+eth iserver udp
+[iperf] UDP server started on port 5001
+
+letter:/$ 
+letter:/$ ------------------------------------------------------------
+Client connecting to 192.168.2.100, UDP port 5001
+Sending 1470 byte datagrams, IPG target: 0.00 us (kalman adjust)
+UDP buffer size:  208 KByte (default)
+------------------------------------------------------------
+[  1] local 192.168.2.1 port 45424 connected with 192.168.2.100 port 5001
+[ ID] Interval       Transfer     Bandwidth
+[  1] 0.0000-5.0000 sec   563 MBytes   944 Mbits/sec
+[  1] 5.0000-10.0000 sec   562 MBytes   944 Mbits/sec
+[  1] 0.0000-10.0000 sec  1125 MBytes   944 Mbits/sec
+[  1] Sent 802485 datagrams
+[  3] WARNING: did not receive ack of last datagram after 10 tries.

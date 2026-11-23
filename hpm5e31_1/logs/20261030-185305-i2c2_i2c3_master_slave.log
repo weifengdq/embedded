@@ -1,0 +1,11 @@
+I2C3 slave: SCL=PD07 SDA=PD06 addr=0x50
+  clk: i2c2=80000000 H0 / i2c_ms_bench
+i2c_ms_write 16
+100k   wr   n=16  PASS errors=0  time=1683.13 us bw=76 kbps
+
+letter:/$ 
+letter:/$ i2c_ms_read 16
+100k   rd   n=16  PASS errors=0  time=1676.48 us bw=76 kbps
+
+letter:/$ 
+letter:/$ 

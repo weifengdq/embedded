@@ -1,0 +1,43 @@
+ck() -> E_OK
+PLL0: status=LOCKED MFI=40 MFN=0 MFD=240000000 DIck / mmeasure / mset 0|1 / mver / merr / help
+mclock
+PLL0: status=LOCKED MFI=40 MFN=0 MFD=240000000 DIV0=5(/x.5) DIV1=7
+node      Mcu_GetClockNodeHz   SDK clock_get_frequency
+cpu0       480000000 Hz         480000000 Hz
+ahb0       200000000 Hz         200000000 Hz
+xpi0       100000000 Hz         100000000 Hz
+mchtmr0     24000000 Hz          24000000 Hz   (固定 24 MHz)
+core(ext)  480000000 Hz
+
+letter:/$ 
+letter:/$ mmeasure
+MEAS: window=10000 us samples=479996300 479997800 479997800 479997800 479997800
+MEAS: core avg=479997500 Hz min=479996300 max=479997800 cfg=480000000 Hz err=-5 ppm
+MEAS: spread=1500 Hz
+
+letter:/$ 
+letter:/$ mset 1
+usage: mcu set <0|1>
+
+letter:/$ 
+letter:/$ mmeasure
+MEAS: window=10000 us samples=479995300 479997800 479997800 479997800 479997800
+MEAS: core avg=479997300 Hz min=479995300 max=479997800 cfg=480000000 Hz err=-5 ppm
+MEAS: spread=2500 Hz
+
+letter:/$ 
+letter:/$ mset 0
+usage: mcu set <0|1>
+
+letter:/$ 
+letter:/$ mmeasure
+MEAS: window=10000 us samples=479997200 479998300 479997800 479997800 479997800
+MEAS: core avg=479997780 Hz min=479997200 max=479998300 cfg=480000000 Hz err=-4 ppm
+MEAS: spread=1100 Hz
+
+letter:/$ 
+letter:/$ merr
+DET: before=0 after=3 delta=3
+
+letter:/$ 
+letter:/$ 

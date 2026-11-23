@@ -1,0 +1,17 @@
+build/
+out/
+.cache/
+*.o
+*.obj
+*.elf
+*.bin
+*.hex
+*.map
+*.asm
+docs/build/
+__pycache__/
+*.pyc
+tools/build_pdf.log
+logs/.last_*
+.vscode/
+debug.log

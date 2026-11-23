@@ -1,0 +1,23 @@
+ state=ACTIVATED)
+[doip] routing activation sa=0x0E00 at=0x00 buf: tx=8 x 1536 B, rx=16 x 1536 B, ethertype=0x88B5
+eth sleep 1200
+SLEEP done 1200ms
+
+letter:/$ 
+letter:/$ eth tx 64 2000
+TX len=64 n=2000 ok=2000 fps=242924 mbit=159.4 dur=8233us
+
+letter:/$ 
+letter:/$ eth tx 512 2000
+TX len=512 n=2000 ok=2000 fps=61332 mbit=260.1 dur=32609us
+
+letter:/$ 
+letter:/$ eth stat
+[stat] det=0 rx_isr=0
+[stat] tx: frames=4000 bytes=1208000 err=0 drop_busy=0 underflow=0
+[stat] rx: frames=0 octets=0 crc=0 overflow=0 err=0 drop=0
+[stat] rx buckets: 64=0 65-127=0 128-255=0 256-511=0 512-1023=0 1024-1518=0
+[stat] Eth sw 1.0.0 module=88
+
+letter:/$ 
+letter:/$ 

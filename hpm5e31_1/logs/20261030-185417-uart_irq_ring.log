@@ -1,0 +1,7 @@
+lk=80000000 Hz
+  baud=921600, FIFO=32 bytes, RX trigger=not_em128 ring_level=0 ring_drop=0 fifo_overrun=0
+uart_ring_burst 64 16
+burst n=64 pass=16: isr+64 rx+64 drop+0 verified=64 errors=0, 0.71 ms, 89 KB/s
+
+letter:/$ 
+letter:/$ 

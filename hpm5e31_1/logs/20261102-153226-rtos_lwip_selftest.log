@@ -1,0 +1,50 @@
+T: 63.03 cyc/次 (0.131 us)
+[selftest] sys_sem signal+wait: 192.13 cyc/对
+[selftest] ping-pong: 20000 rounds, 156148551 cyc total, 7807.4 cyc/round (16.265 us/round)
+[selftest] sys_mbox trypost+tryfetch: 3917.09 cyc/对
+[selftest] sys_now()=873 ms, sys_jiffies()=873 tick, portTICK_PERIOD_MS=1
+[selftest] cpu: idle=69.6% window=2873 ticks | malloc_fail=0 stack_ovf=0
+[lwip-port] sem new=1 wait=100000(timeout 0) signal=100000 | mbox new=2 post=100000(fail 0) fetch=3(empty 0)
+[lwip-port] mutex new=2 lock=3 | protect enter=100005 max=1234 cyc avg=25.02 cyc | thread new=1
+[lwip-port] 5 tasks (stack high-water mark, unit=word, larger=safer):
+  stat         prio=2 state=0 stack_hwm=1368
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=948
+  pong         prio=5 state=2 stack_hwm=964
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[selftest] cpu: idle=99.6% window=2007 ticks | malloc_fail=0 stack_ovf=0
+[lwip-port] sem new=1 wait=100000(timeout 0) signal=100000 | mbox new=2 post=100000(fail 0) fetch=5(empty 0)
+[lwip-port] mutex new=2 lock=5 | protect enter=100009 max=1234 cyc avg=25.03 cyc | thread new=1
+[lwip-port] 5 tasks (stack high-water mark, unit=word, larger=safer):
+  stat         prio=2 state=0 stack_hwm=1364
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+  pong         prio=5 state=2 stack_hwm=964
+[selftest] cpu: idle=99.6% window=2007 ticks | malloc_fail=0 stack_ovf=0
+[lwip-port] sem new=1 wait=100000(timeout 0) signal=100000 | mbox new=2 post=100000(fail 0) fetch=7(empty 0)
+[lwip-port] mutex new=2 lock=7 | protect enter=100013 max=1234 cyc avg=25.03 cyc | thread new=1
+[lwip-port] 5 tasks (stack high-water mark, unit=word, larger=safer):
+  stat         prio=2 state=0 stack_hwm=1364
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=948
+  pong         prio=5 state=2 stack_hwm=964
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[selftest] cpu: idle=99.6% window=2007 ticks | malloc_fail=0 stack_ovf=0
+[lwip-port] sem new=1 wait=100000(timeout 0) signal=100000 | mbox new=2 post=100000(fail 0) fetch=9(empty 0)
+[lwip-port] mutex new=2 lock=9 | protect enter=100017 max=1234 cyc avg=25.04 cyc | thread new=1
+[lwip-port] 5 tasks (stack high-water mark, unit=word, larger=safer):
+  stat         prio=2 state=0 stack_hwm=1364
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+  pong         prio=5 state=2 stack_hwm=964
+[selftest] cpu: idle=99.6% window=2007 ticks | malloc_fail=0 stack_ovf=0
+[lwip-port] sem new=1 wait=100000(timeout 0) signal=100000 | mbox new=2 post=100000(fail 0) fetch=11(empty 0)
+[lwip-port] mutex new=2 lock=11 | protect enter=100021 max=1234 cyc avg=25.05 cyc | thread new=1
+[lwip-port] 5 tasks (stack high-water mark, unit=word, larger=safer):
+  stat         prio=2 state=0 stack_hwm=1364
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=948
+  pong         prio=5 state=2 stack_hwm=964
+  Tmr Svc      prio=7 state=2 stack_hwm=968

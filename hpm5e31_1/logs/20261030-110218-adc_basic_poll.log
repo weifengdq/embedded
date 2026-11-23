@@ -1,0 +1,31 @@
+l: ADC16 oneshot polling ===
+channel: ADC0.IN1 (PF26)
+ADC16 ADC0 single-ended oneshot
+  input clk : 200000000 Hz (ahb bus clock)
+  clk div   : 4 -> conv clk 50000000 Hz (max 50000000)
+adcsr
+ADC16 ADC0 single-ended oneshot
+  input clk : 200000000 Hz (ahb bus clock)
+  clk div   : 4 -> conv clk 50000000 Hz (max 50000000)
+  res       : 16 bit, sample_cycle = 20
+  fs(theory): 1219512 Hz (conv 21 cycles + sample 20 cycles)
+  VREFH     : 3300 mV (assumed, to be confirmed)
+
+letter:/$ 
+letter:/$ adc
+ADC0.IN01 raw=0x876c (34668) -> 1745699 uV
+
+letter:/$ 
+letter:/$ adcstat 5000
+adcstat: n=5000 mean=35545.30 sd=53.35 min=35406 max=36824 pp=1418
+         mean=1789875 uV  pp=71403 uV  ENOB~8.63 bit
+         poll rate=605.5 kHz (1.65 us/sample, cpu 480000000 Hz)
+
+letter:/$ 
+letter:/$ adcstat 20000
+adcstat: n=20000 mean=35545.18 sd=48.63 min=35391 max=37208 pp=1817
+         mean=1789869 uV  pp=91494 uV  ENOB~8.72 bit
+         poll rate=607.9 kHz (1.65 us/sample, cpu 480000000 Hz)
+
+letter:/$ 
+letter:/$ 

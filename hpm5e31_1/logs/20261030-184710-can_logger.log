@@ -1,0 +1,18 @@
+y | stat
+log clear
+log: cleared
+
+letter:/$ 
+letter:/$ replay 30 300
+replay: sent=30 ok=30 fail=0 gap=300 us
+verify: 0x300 frames=30 bad_order=0 first_bad_idx=-1 result=PASS
+
+letter:/$ 
+letter:/$ log dump 30
+# candump: 30 frames (start=0) epoch_base=1793000000
+(1793000000.722952) can0 300#00000000A55AC33C
+(1793000000.723251) can0 300#01000000A55AC33C
+(1793000000.723553) can0 300#02000000A55AC33C
+(1793000000.723853) can0 300#03000000A55AC33C
+(1793000000.724157) can0 300#04000000A55AC33C
+(17930

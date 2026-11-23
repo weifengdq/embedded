@@ -1,0 +1,32 @@
+ter-shell demo ===
+type 'help' to list commands, 'ver' for version
+help
+
+Command List:
+hello                 CMD   --------  demo app command
+led                   CMD   --------  control USR LED: led [0|1|toggle]
+setVar                CMD   --------  set var
+help                  CMD   --------  show command info
+users                 CMD   --------  list all user
+cmds                  CMD   --------  list all cmd
+vars                  CMD   --------  list all var
+keys                  CMD   --------  list all key
+clear                 CMD   --------  clear console
+ver                   CMD   --------  show version info
+uptime                CMD   --------  show uptime
+reboot                CMD   --------  software reset
+clk                   CMD   --------  print main clock tree
+pin                   CMD   --------  gpio read/write: pin <A..F><n> [0|1]
+reg                   CMD   --------  read/write 32-bit register: reg <add...
+mem                   CMD   --------  hexdump memory: mem <addr> [len]
+
+letter:/$ 
+letter:/$ ver
+board       : hpm5e31_1
+soc         : HPM5E31 (RV32-IMAFDCBP @ 480000000 Hz)
+sdk         : HPM SDK v1.13.0
+build       : Oct 30 2026 11:02:11
+letter-shell: 3.2.4
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,69 @@
+| 
+letter:/$ 
+=== mcal_eth_lwip: AUTOSAR MCAL Eth + lwIP 2.1.2 (baremetal NO_SYS=1) ===
+[init] Eth MCAL v1.0.0 (module 88)trl=0 max_frame=1518 tx_buf=8 rx_buf=16
+[lwip-eth] netif=e0 idx=1 MAC=02:00:00:00:01:00
+[lwip-eth] IP=192.168.2.100
+[lwip-eth] MASK=255.255.255.0
+[lwip-eth] GW=192.168.2.1  link=UP
+[lwip-eth] phy: link=UP known=1 speed=1000 Mbps duplex=full role=SLAVE
+[mcal-eth] PHY BMCR=0140 BMSR=000D GBSR=3000 PHYSR=8400
+[mcal-eth] ETH counter: rx_pkts=0 tx_pkts=1 drop_ovr=0 crc=0 undersize=0 oversize=0
+[lwip-eth] link=UP after 1005 ms
+[init] app_lwip_eth_init rc=0 (0=link up, 1=link down)
+[ping] seq=0 192.168.2.1: rtt=515 us
+[ping] seq=1 192.168.2.1: rtt=389 us
+[ping] seq=2 192.168.2.1: rtt=254 us
+[ping] seq=3 192.168.2.1: rtt=329 us
+[ping] seq=4 192.168.2.1: rtt=308 us
+[ping] 5/5 received, rtt min/avg/max = 254/359/515 us, jitter(avg |d|) = 89 us
+[selftest] ping gw: 5/5 rtt min/avg/max=254/359/515 us jitter=89 us
+[run] commands: eth | eth ping <ip> [n] [ms] | eth iserver [tcp|udp] | eth iclient <ip>
+eth ping 192.168.2.1 20 100
+[ping] seq=0 192.168.2.1: rtt=224 us
+[ping] seq=1 192.168.2.1: rtt=345 us
+[ping] seq=2 192.168.2.1: rtt=387 us
+[ping] seq=3 192.168.2.1: rtt=388 us
+[ping] seq=4 192.168.2.1: rtt=391 us
+[ping] seq=5 192.168.2.1: rtt=384 us
+[ping] seq=6 192.168.2.1: rtt=387 us
+[ping] seq=7 192.168.2.1: rtt=201 us
+[ping] seq=8 192.168.2.1: rtt=97 us
+[ping] seq=9 192.168.2.1: rtt=138 us
+[ping] seq=10 192.168.2.1: rtt=141 us
+[ping] seq=11 192.168.2.1: timeout
+[ping] seq=12 192.168.2.1: rtt=311 us
+[ping] seq=13 192.168.2.1: rtt=383 us
+[ping] seq=14 192.168.2.1: rtt=313 us
+[ping] seq=15 192.168.2.1: rtt=330 us
+[ping] seq=16 192.168.2.1: rtt=344 us
+[ping] seq=17 192.168.2.1: rtt=318 us
+[ping] seq=18 192.168.2.1: rtt=327 us
+[ping] seq=19 192.168.2.1: rtt=323 us
+[ping] 19/20 received, rtt min/avg/max = 97/301/391 us, jitter(avg |d|) = 49 us
+
+letter:/$ 
+letter:/$ eth iserver tcp
+[iperf] TCP server started on port 5001
+
+letter:/$ 
+letter:/$ [lwip-eth] sw : rx_frames=42 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=28 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=3274 us tx_max=37 us rx_drain_max=65 us
+[lwip-eth] link poll: n=13 last=100 us max=107 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=1/32
+[lwip-eth] hw : rx_frames=42 rx_bytes=13800 rx_empty=10467827 rx_err=0 | tx_frames=28 tx_bytes=1976 tx_busy=0 tx_err=0
+[lwip-eth] sw : rx_frames=56 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=28 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=4845 us tx_max=37 us rx_drain_max=65 us
+[lwip-eth] link poll: n=23 last=100 us max=107 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=1/32
+[lwip-eth] hw : rx_frames=56 rx_bytes=24212 rx_empty=19765601 rx_err=0 | tx_frames=28 tx_bytes=1976 tx_busy=0 tx_err=0
+[lwip-eth] sw : rx_frames=70 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=28 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=4845 us tx_max=37 us rx_drain_max=65 us
+[lwip-eth] link poll: n=33 last=100 us max=107 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=1/32
+[lwip-eth] hw : rx_frames=70 rx_bytes=34632 rx_empty=29065344 rx_err=0 | tx_frames=28 tx_bytes=1976 tx_busy=0 tx_err=0
+[lwip-eth] sw : rx_frames=82 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=28 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=4845 us tx_max=37 us rx_drain_max=65 us
+[lwip-eth] link poll: n=43 last=100 us max=107 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=1/32
+[lwip-eth] hw : rx_frames=82 rx_bytes=43560 rx_empty=38366775 rx_err=0 | tx_frames=28 tx_bytes=1976 tx_busy=0 tx_err=0

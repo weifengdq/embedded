@@ -1,0 +1,12 @@
+{
+ "mode": "kill",
+ "broker": "192.168.2.1:1883",
+ "lwt_ms": 1.6,
+ "lwt_payload": {
+  "dev": "hpm5e31",
+  "online": false,
+  "reason": "lwt"
+ },
+ "reconnect_ms": -301.5,
+ "verdict": "PASS"
+}

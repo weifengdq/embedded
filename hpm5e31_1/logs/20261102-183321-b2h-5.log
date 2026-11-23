@@ -1,0 +1,40 @@
+
+[lwip-eth] backend=mcal-eth ctrl=0 max_frame=1518 tx_buf=8 rx_buf=16
+[lwip-eth] netif=e0 idx=1 MAC=02:00:00:00:01:00
+[lwip-eth] IP=192.168.2.100
+[lwip-eth] MASK=255.255.255.0
+[lwip-eth] GW=192.168.2.1  link=UP
+[lwip-eth] phy: link=UP known=1 speed=1000 Mbps duplex=full role=SLAVE
+[mcal-eth] PHY BMCR=0140 BMSR=000D GBSR=3000 PHYSR=8400
+[mcal-eth] ETH counter: rx_pkts=0 tx_pkts=1 drop_ovr=0 crc=0 undersize=0 oversize=0
+[mcal-eth] ETH txerr: es=0 underflow=0 defer=0 latecoll=0 | disc_otbd=0
+[lwip-eth] link=UP after 1006 ms
+[init] app_lwip_eth_init rc=0 (0=link up, 1=link down)
+[ping] seq=0 192.168.2.1: rtt=434 us
+[ping] seq=1 192.168.2.1: rtt=212 us
+[ping] seq=2 192.168.2.1: rtt=336 us
+[ping] seq=3 192.168.2.1: rtt=343 us
+[ping] seq=4 192.168.2.1: rtt=186 us
+[ping] 5/5 received, rtt min/avg/max = 186/302/434 us, jitter(avg |d|) = 127 us
+[selftest] ping gw: 5/5 rtt min/avg/max=186/302/434 us jitter=127 us
+[run] commands: eth | eth ping <ip> [n] [ms] | eth iserver [tcp|udp] | eth iclient <ip>
+sleep 5000
+[sys] sleep 5000 ms
+
+letter:/$ 
+letter:/$ eth iclient 192.168.2.1 tcp
+[iperf] TCP client -> 192.168.2.1 started
+
+letter:/$ 
+letter:/$ sleep 14000
+[sys] sleep 14000 ms
+[iperf] type=1 remote=192.168.2.1:5001 bytes=326558224 ms=10000 => 261240 kbit/s (261.24 Mbit/s)
+
+letter:/$ [lwip-eth] sw : rx_frames=90516 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=223910 tx_err=0 tx_drop_len=0
+[lwip-eth] tx recycle: retry_ok=7954 retry_fail=0
+[lwip-eth] loop: gap_max=3301 us tx_max=36 us rx_drain_max=1809 us
+[lwip-eth] link poll: n=23 last=100 us max=117 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=1/32
+[lwip-eth] hw : rx_frames=90516 rx_bytes=5450182 rx_empty=11653237 rx_err=0 | tx_frames=223910 tx_bytes=338982312 tx_busy=7954 tx_err=0
+
+letter:/$ 

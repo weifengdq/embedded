@@ -1,0 +1,49 @@
+c 80000000 Hz
+board_init_spi_clock(SPI2) = 80000000 Hz
+SPI2          nRST / nINT pin levels
+hwchk
+
+-- SPI2 controller registers --
+  TRANSFMT  = 0x00000700
+  TRANSCTRL = 0x8000b00b
+  CTRL      = 0x00000000
+  STATUS    = 0x00404000
+  TIMING    = 0x00000013
+  IOC PA20/21/22/23 FUNC_CTL = 0x10005 0x0 0x5 0x5
+  HW SPI read STATUS0 = 0x00000000
+  tx: 00 00 08 00 00 00 00 00 00 00 00 00
+  rx: 00 00 00 00 00 00 08 00 00 00 00 00
+
+letter:/$ 
+letter:/$ hwtx
+== hwtx: hardware SPI write, bit-bang read-back ==
+  hw write CONFIG0<=0x00001234: ret=0, echo= 00 00 00 00 20 00 04 01 00 00 12 34
+  bit-bang read CONFIG0: ret=0 value=0x00009224 -> SPI2 TX DOES NOT REACH THE CHIP
+  CONFIG0 restored to 0x00009224
+
+letter:/$ 
+letter:/$ regs
+  0x0000 OA_ID       = 0x00000011
+  0x0001 OA_PHYID    = 0xffffffee
+  0x0002 OA_STDCAP   = 0x0007c1b4
+  0x0003 OA_RESET    = 0xfff83e4b
+  0x0004 OA_CONFIG0  = 0x000005e5
+  0x0005 0x05        = 0xfffffa1a
+  0x0006 0x06        = 0x00000000
+  0x0007 0x07        = 0xffffffff
+  0x0008 OA_STATUS0  = 0x00009224
+  0x0009 0x09        = 0xffff6ddb
+  0x000a 0x0A        = 0x00000000
+  0x000b OA_BUFSTS   = 0xffffffff
+  0x000c INT_MASK0   = 0x00000000
+  0x000d 0x0D        = 0xffffffff
+  0x000e 0x0E        = 0x00000000
+  0x000f 0x0F        = 0xffffffff
+  OA_ID     MAJVER=1 MINVER=1
+  OA_PHYID  OUI=0x0bffff MODEL=62 REVISION=14
+  STDCAP    DPRAC=1 IPRAC=0 TXFCSVC=0 AIDC=1 FTSC=0 CTC=1
+  C22 reg2/3 (PHY ID) = 0x0007 0xc1b3 -> 0x0007c1b3
+  C22 reg0 (BMCR)     = 0x0000
+
+letter:/$ 
+letter:/$ 

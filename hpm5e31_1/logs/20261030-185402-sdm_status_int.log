@@ -1,0 +1,5 @@
+t (board hpm5e31_1, ext 1.0.0) ===
+SDM0 clk=200000000 Hz  ch0: Sinc3 OSR=256 -> 理论数据率 = 200000000 / 256 = 781250 SPS
+  IRQ: enabled=1  isr_entries=0  last_status=0x00000000
+  s 待确认 17-A)
+commands: sstat | sirq | sclr

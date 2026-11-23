@@ -1,0 +1,70 @@
+oller: SCL PD02 / SDA PD03；I2C3 target addr=0x50 SCL PD07 / SD 200' / 'i2c det'
+i2c init 400k
+i2c: re-init -> 400k
+  I2C2(master) SETUP=0x009023d5 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006005 ADDR=0x00000050
+  I2C3(target) SETUP=0x009023d1 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006001 ADDR=0x00000050
+
+letter:/$ 
+letter:/$ i2c patch s sudat 12
+i2c: I2C3 SETUP 0x009023d1 -> 0x0c9023d1 (sudat=12)
+
+letter:/$ 
+letter:/$ i2c rdloop 24 50
+rdloop: n=24 x cnt=50 @ 400k -> fail=0 err_bytes=0
+  cycles min=359766 max=361977 (us: 0.74 .. 0.75)
+  err-pos hist: 0:0 1:0 2:0 3:0 4:0 5:0 6:0 7:0 >7:0
+  slave ISR: addr_hit=0
+
+letter:/$ 
+letter:/$ i2c init 400k
+i2c: re-init -> 400k
+  I2C2(master) SETUP=0x009023d5 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006005 ADDR=0x00000050
+  I2C3(target) SETUP=0x009023d1 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006001 ADDR=0x00000050
+
+letter:/$ 
+letter:/$ i2c patch s sudat 4
+i2c: I2C3 SETUP 0x009023d1 -> 0x049023d1 (sudat=4)
+
+letter:/$ 
+letter:/$ i2c rdloop 24 50
+rdloop: n=24 x cnt=50 @ 400k -> fail=0 err_bytes=0
+  cycles min=359724 max=360548 (us: 0.74 .. 0.75)
+  err-pos hist: 0:0 1:0 2:0 3:0 4:0 5:0 6:0 7:0 >7:0
+  slave ISR: addr_hit=0
+
+letter:/$ 
+letter:/$ i2c init 400k
+i2c: re-init -> 400k
+  I2C2(master) SETUP=0x009023d5 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006005 ADDR=0x00000050
+  I2C3(target) SETUP=0x009023d1 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006001 ADDR=0x00000050
+
+letter:/$ 
+letter:/$ i2c patch s sudat 8
+i2c: I2C3 SETUP 0x009023d1 -> 0x089023d1 (sudat=8)
+
+letter:/$ 
+letter:/$ i2c rdloop 24 50
+rdloop: n=24 x cnt=50 @ 400k -> fail=0 err_bytes=0
+  cycles min=359730 max=360576 (us: 0.74 .. 0.75)
+  err-pos hist: 0:0 1:0 2:0 3:0 4:0 5:0 6:0 7:0 >7:0
+  slave ISR: addr_hit=0
+
+letter:/$ 
+letter:/$ i2c init 400k
+i2c: re-init -> 400k
+  I2C2(master) SETUP=0x009023d5 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006005 ADDR=0x00000050
+  I2C3(target) SETUP=0x009023d1 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006001 ADDR=0x00000050
+
+letter:/$ 
+letter:/$ i2c patch s sudat 16
+i2c: I2C3 SETUP 0x009023d1 -> 0x109023d1 (sudat=16)
+
+letter:/$ 
+letter:/$ i2c rdloop 24 50
+rdloop: n=24 x cnt=50 @ 400k -> fail=0 err_bytes=0
+  cycles min=359781 max=360653 (us: 0.74 .. 0.75)
+  err-pos hist: 0:0 1:0 2:0 3:0 4:0 5:0 6:0 7:0 >7:0
+  slave ISR: addr_hit=0
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,34 @@
+robe id=0x00000123 ext=0 expect=FIFO0  actual=FIFO0  PASS
+  pr PASS
+type 'test' to rerun, 'info' for details
+info
+sample: mcan_filter, MCAN0 internal loopback, GFC rejects non-matching frames
+scenarios: classic/range/dual-id/FIFO0+FIFO1/std+ext range
+
+letter:/$ 
+letter:/$ test
+
+=== mcan_filter: filter routing (internal loopback, GFC=reject) ===
+[scenario] classic std exact 0x123/mask 0x7FF
+  probe id=0x00000123 ext=0 expect=FIFO0  actual=FIFO0  PASS
+  probe id=0x00000124 ext=0 expect=reject actual=reject PASS
+[scenario] range std [0x200,0x20F]
+  probe id=0x00000200 ext=0 expect=FIFO0  actual=FIFO0  PASS
+  probe id=0x0000020F ext=0 expect=FIFO0  actual=FIFO0  PASS
+  probe id=0x00000210 ext=0 expect=reject actual=reject PASS
+[scenario] dual-id std 0x300/0x301
+  probe id=0x00000300 ext=0 expect=FIFO0  actual=FIFO0  PASS
+  probe id=0x00000301 ext=0 expect=FIFO0  actual=FIFO0  PASS
+  probe id=0x00000302 ext=0 expect=reject actual=reject PASS
+[scenario] std 0x400->FIFO0, 0x401->FIFO1
+  probe id=0x00000400 ext=0 expect=FIFO0  actual=FIFO0  PASS
+  probe id=0x00000401 ext=0 expect=FIFO1  actual=FIFO1  PASS
+  probe id=0x00000402 ext=0 expect=reject actual=reject PASS
+[scenario] std any->FIFO0, ext [0x1ABCDE00,0x1ABCDEFF]->FIFO1
+  probe id=0x00000010 ext=0 expect=FIFO0  actual=FIFO0  PASS
+  probe id=0x1ABCDE12 ext=1 expect=FIFO1  actual=FIFO1  PASS
+  probe id=0x1ABCDD00 ext=1 expect=reject actual=reject PASS
+SUMMARY: pass=14 fail=0 ALL PASS
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,25 @@
+0, 1 channel (IN1)
+  trigger   : PWM0 TRGO_0 -> TRGM -> ADC0_Sdma [ms] | adcstop
+adcinfo
+ADC16 ADC0 sequence + PWM trigger + DMA
+  conv clk  : 50000000 Hz, sample_cycle=20, 1 channel (IN1)
+  trigger   : PWM0 TRGO_0 -> TRGM -> ADC0_STRGI @ 20000 Hz
+  dma buffer: 1024 words @0x01230000 (non-cacheable)
+  pwm state : running, irq_cnt=13390
+
+letter:/$ 
+letter:/$ adcdma 1000
+adcdma: 1000 ms, irq=20000 -> 20000.0 SPS (expected 20000)
+  interval: mean=50.00 us min=49.50 max=50.50 us (jitter pp=1.00 us)
+  buffer[0..255]: mean=36676.6 sd=34.1 min=36578 max=36755
+  raw[0..3]: 0x02108f39 0x06108f21 0x0a108f10 0x0e108efe
+
+letter:/$ 
+letter:/$ adcdma 2000
+adcdma: 2000 ms, irq=40001 -> 20000.5 SPS (expected 20000)
+  interval: mean=50.00 us min=45.54 max=50.00 us (jitter pp=4.46 us)
+  buffer[0..255]: mean=36660.8 sd=35.5 min=36552 max=36753
+  raw[0..3]: 0x82108f25 0x86108f4b 0x8a108f1c 0x8e108f36
+
+letter:/$ 
+letter:/$ 

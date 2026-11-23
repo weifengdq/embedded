@@ -1,0 +1,20 @@
+ validity bits set by HW
+  OTP shadow21(TSNS cal): 0x03a008c3 hell: temp | tempstat [n] | tempsr
+tempsr
+TSNS @0xf0090000
+  scale      : 1/256 C per LSB (TSNS_TEMP_SCALE=256)
+  continuous : enabled, validity bits set by HW
+  OTP shadow21(TSNS cal): 0x03a008c3  base=0x8c3  en=1
+  max raw=0x0000221a  min raw=0x0000221a
+
+letter:/$ 
+letter:/$ temp
+TSNS raw=0x0000221a (8730) -> 34.10 C, age=17327830
+
+letter:/$ 
+letter:/$ tempstat 20
+tempstat: n=20 (2.0 s) min=34.00 C max=35.00 C avg=34.85 C pp=1.00 C
+
+letter:/$ t= 2778 ms  temp= 35.59 C  raw=0x2396
+
+letter:/$ 

@@ -1,0 +1,16 @@
+ (hpm5e31_1) ===
+board=hpm5e31_1 cpu=480 MHz opt=-O3 BENCH_FPU=1
+commands: comp | compinfo
+BENCH_COMPUTE kernel=mac_f32     unit=MFLOPS xip_mops=119.18    ilm_mops=119.07    xip_cyc_op=4.027 ilm_cyc_op=4.031 speedup=0.999
+BENCH_COMPUTE kernel=div_f32     unit=MOPS  xip_mops=19.95     ilm_mops=19.94     xip_cyc_op=24.063 ilm_cyc_op=24.070 speedup=1.000
+BENCH_COMPUTE kernel=sqrt_f32    unit=MOPS  xip_mops=18.41     ilm_mops=18.41     xip_cyc_op=26.070 ilm_cyc_op=26.078 speedup=1.000
+BENCH_COMPUTE kernel=sin_f32     unit=MOPS  xip_mops=3.39      ilm_mops=3.35      xip_cyc_op=141.457 ilm_cyc_op=143.207 speedup=0.988
+BENCH_COMPUTE kernel=cvt_f2i     unit=MOPS  xip_mops=94.96     ilm_mops=94.81     xip_cyc_op=5.055 ilm_cyc_op=5.063 speedup=0.998
+BENCH_COMPUTE kernel=mac_i32     unit=MOPS  xip_mops=158.55    ilm_mops=158.35    xip_cyc_op=3.027 ilm_cyc_op=3.031 speedup=0.999
+BENCH_COMPUTE kernel=div_i32     unit=MOPS  xip_mops=25.69     ilm_mops=25.68     xip_cyc_op=18.684 ilm_cyc_op=18.691 speedup=1.000
+BENCH_COMPUTE kernel=div_u64     unit=MOPS  xip_mops=8.55      ilm_mops=8.11      xip_cyc_op=56.160 ilm_cyc_op=59.153 speedup=0.949
+BENCH_COMPUTE kernel=q15_gain    unit=MOPS  xip_mops=79.23     ilm_mops=79.12     xip_cyc_op=6.059 ilm_cyc_op=6.066 speedup=0.999
+BENCH_COMPUTE kernel=ctz32       unit=MOPS  xip_mops=31.86     ilm_mops=29.87     xip_cyc_op=15.066 ilm_cyc_op=16.070 speedup=0.938
+BENCH_COMPUTE kernel=clz32       unit=MOPS  xip_mops=31.86     ilm_mops=28.12     xip_cyc_op=15.066 ilm_cyc_op=17.070 speedup=0.883
+BENCH_COMPUTE kernel=popcount    unit=MOPS  xip_mops=26.57     ilm_mops=25.18     xip_cyc_op=18.063 ilm_cyc_op=19.066 speedup=0.947
+COMPUTE_SWEEP_DONE

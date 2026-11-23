@@ -1,0 +1,11 @@
+round,dir,board_mbit,host_mbit,ping
+1,h2b,252,252,ping gw: 5/5
+1,b2h,4.45,3.26,-
+2,h2b,251,251,ping gw: 5/5
+2,b2h,169.38,169,-
+3,h2b,NA,NA,ping gw: 4/5
+3,b2h,8.19,4.25,-
+4,h2b,251,251,ping gw: 5/5
+4,b2h,179.35,179,-
+5,h2b,NA,NA,ping gw: 5/5
+5,b2h,261.24,261,-

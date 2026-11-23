@@ -1,0 +1,16 @@
+ CAN0=ECU SA=0x00, CAN1=TESTER SA=0xF9, 250 kbit/s
+
+=== j1939_ecu auto test (CAN0=ECU SA=0x00, CAN1=TESTER SA=0xF9) ===
+[PASS] addr claim: SA=0x00 NAME=0009180100000000 seen_at=251146 us (250 ms wait + tx)
+[PASS] periodic EEC1(10ms): n=150 gap min/avg/max = 8504/10000/11496 us
+[PASS] periodic CCVS1(100ms): n=15
+[PASS] periodic ET1(1s): n=1
+[PASS] periodic DM1(1s): n=1 lamp=0x00
+[PASS] request/response: 4/4 answered, latency min/avg/max = 953/970/987 us
+[PASS] DM1 fault: lamp=0x11 MIL=1 RSL=0 AWL=1 PL=0 SPN=100 FMI=4 OC=1
+[PASS] DM2 history via RTS/CTS: frames=1 dtc=2 (SPN 100/190)
+[PASS] DM11 clear: lamp=0x00 dtc=0 (expect 0x00/0)
+
+=== RESULT: PASS (9 PASS / 0 FAIL) ===
+bus0: tx=582 rx=9 err=0 | bus1: tx=9 rx=582 err=0
+type 'run|stat|fault add <spn> <fmi>|fault clear|dm1|req <pgn>|mon <ms>|info'

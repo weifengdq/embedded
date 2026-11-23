@@ -1,0 +1,53 @@
+dy (ISO 14229-1, CAN0 ECU 0x7E0/0x7E8, CAN1 tester)
+
+[uds_ecu] CAN0=ECU 0x7E0/0x7E8  CAN1=tester（经典 500 kbit/s）
+  P2=50 ms P2*=5000 ms S3=5000 ms DIDs=6 routines=2
+  27 算法：key=ROL8(seed ^ 0x3A5C9E17/if-odd-add 0x5A5A5A5A)^(level*0x01020304)，ROL7
+
+[uds_ecu] run: 0x7E0/0x7E8 服务序列，板内 tester（经典 500k，ISO-TP BS=0 STmin=0）
+  步骤                 请求                       响应
+  10 03 扩展会话     10 03                        -> 50 03 00 32 01 F4  PASS rtt=565 us
+  22 4x DID              22 F1 90 F1 95 F1 87 F1 8C   -> 62 F1 90 48 50 4D 35 45 33 31 ... (62 B) PASS rtt=3085 us
+  2E F190 未解锁      2E F1 90 48 50 4D 35 45 33 31 4E 45 57 56 49 4E 30 30 30 32  -> 7F 2E 33  PASS rtt=1175 us
+  27 01 取种子        27 01                        -> seed=D2E3FB68 key=2B589DBE rtt=479 us
+  27 02 发密钥        27 02 2B 58 9D BE            -> 67 02  PASS rtt=473 us
+  2E F190 已解锁      2E F1 90 48 50 4D 35 45 33 31 4E 45 57 56 49 4E 30 30 30 32  -> 6E F1 90  PASS rtt=1171 us
+  22 F190 回读         22 F190                      -> 62 F1 90 HPM5E31NEWVIN0002 rtt=1166 us PASS
+  31 01 0203 自检      31 01 02 03                  -> 71 01 02 03 00 01  PASS rtt=498 us
+  19 02 读 DTC          19 02 FF                     -> 59 02 09 C1 00 87 5F C1 01 87 ... (15 B) PASS rtt=1190 us
+  14 FFFFFF 清码       14 FF FF FF                  -> 54  PASS rtt=473 us
+  19 02 清码后        19 02 FF                     -> 59 02 09 (0 个 DTC) rtt=468 us PASS
+  3E 00 会话保持     3E 00                        -> 7E 00  PASS rtt=468 us
+  10 01 默认会话     10 01                        -> 50 01 00 32 01 F4  PASS rtt=480 us
+[uds_ecu] PASS steps=13/13 pass=13 fail=0 (服务端 req=13 pos=12 nrc=1)
+
+[uds_ecu] pend: 31 01 0301（150 ms 慢例程，应先回 7F 31 78）
+  10 03 前置           10 03                        -> 50 03 00 32 01 F4  PASS rtt=478 us
+  31 01 0301 慢例程   31 01 03 01                  -> 71 01 03 01 00 01  PASS rtt=150710 us (含 0x78)
+[uds_ecu] PASS pending=1 个（测试仪看到 7F 31 78，P2* 续期生效）
+
+[uds_ecu] s3: 10 03 后静默 5.5 s，验证 S3=5 s 超时回默认会话
+[uds_ecu] PASS s3: 超时后 2E 返回 NRC 0x7F（1 次 S3 超时/5 s 静默）
+
+[uds_ecu] sec: 每次错误 key 前重新取种子；3 次后锁 10 s
+  第 1 次错误 key -> NRC 0x35（期望 0x35）= PASS
+  第 2 次错误 key -> NRC 0x35（期望 0x35）= PASS
+  第 3 次错误 key -> NRC 0x36（期望 0x36）= PASS
+[uds_ecu] PASS 锁定期内取种子 -> NRC 0x37（期望 0x37）
+
+[uds_ecu] DTC memory: count=3 cleared=0
+  DTC 0xC10087 status=0x5F occ=1 aging=0 snap=3
+  DTC 0xC10187 status=0x58 occ=1 aging=0 snap=0
+  DTC 0xC0DE01 status=0x54 occ=1 aging=0 snap=0
+
+[uds_ecu] session=default(01) sec=0 dtc_setting=1 comm_mode=0
+  req=7 pos=3 nrc=4 pending=0 s3_timeout=0 dl_active=0
+  iso-tp: txmsg=25 rxmsg=24 txf=37 rxf=34 timeout=0 seq=0
+stat
+
+[uds_ecu] session=default(01) sec=0 dtc_setting=1 comm_mode=0
+  req=7 pos=3 nrc=4 pending=0 s3_timeout=0 dl_active=0
+  iso-tp: txmsg=25 rxmsg=24 txf=37 rxf=34 timeout=0 seq=0
+
+letter:/$ 
+letter:/$ 

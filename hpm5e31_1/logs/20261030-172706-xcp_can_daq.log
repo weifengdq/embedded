@@ -1,0 +1,89 @@
+t] GPTMR events ...
+[init] 事件通道就绪（EVT0=1 kHz, EV_CLOCK = 104314 us
+-- 4) DAQ 采集 600 ms --
+     list0 事件数=600 实测事件率=999.0 Hz（配置 1000 Hz）
+     list0 ODT 帧数=1800（每事件 3 帧）总帧率=3096 frame/s
+     时间戳抖动：n=600 mean=1000 us min=1000 us max=1000 us sd=0 us
+     事件丢失：lost_events=0（按 g_tick_cnt 连续计数判定）
+  [PASS] DAQ 收到事件采样
+  [PASS] list0 事件率在 900~1100 Hz
+  [PASS] list0 无丢帧
+  [PASS] 时间戳平均间隔 ≈ 1000 us
+  [PASS] 时间戳最大间隔 < 3 ms
+     slave: cto_rx=54 daq_frames=1860 dropped=0 overload=0
+  [PASS] 从站 DAQ 队列无丢弃
+  [PASS] 从站 CAN 发送无 TX FIFO 满
+  [PASS] 停止 DAQ 后命令通道仍正常
+=== 自证结论：PASS（FAIL=0）===
+XCP SELFTEST PASS fail=0
+selftest 1000
+
+=== XCP 板内自证（CAN1 主机 <-> CAN0 从站，0x555/0x556）===
+-- 1) CONNECT / GET_STATUS / GET_ID --
+     CONNECT: resource=0x05 commBasic=0x80 MAX_CTO=8 MAX_DTO=8 proto=1.4 trans=0.1
+  [PASS] CONNECT 报告 DAQ 资源
+  [PASS] MAX_CTO/MAX_DTO = 8
+     GET_STATUS: session=0x0000 protection=0x00 state=3
+  [PASS] GET_STATUS
+     GET_ID/UPLOAD: len=32 id="HPM5E31-XCP-CAN 1.0 (DAQ demo)"
+  [PASS] GET_ID + UPLOAD 取标识串
+  [PASS] GET_COMM_MODE_INFO
+-- 2) 内存读写：SHORT_UPLOAD / DOWNLOAD / MODIFY_BITS --
+     g_sw_flag @0x01200220 = 0xCAFEBAB0
+  [PASS] SHORT_UPLOAD 读回 0x12345678
+     DOWNLOAD 后 g_sw_flag=0xCAFEB0B0（写后立即生效）
+  [PASS] DOWNLOAD 写入生效
+  [PASS] DOWNLOAD 后 SHORT_UPLOAD 回读一致
+     MODIFY_BITS: 0xCAFEB0B0 -> 0xCAFEBAB0（bit8..11 置 0xA）
+  [PASS] MODIFY_BITS 结果 = 0xCAFEBAB0
+  [PASS] SET_MTA + UPLOAD 与变量一致
+     [ERR] cmd=0xF0 err=0x23
+  [PASS] 越界地址 DOWNLOAD 被拒绝
+     GET_SEED: len=4 seed=11 22 33 44
+  [PASS] GET_SEED 返回 4 字节种子
+     [ERR] cmd=0xF7 err=0x25
+     错误 UNLOCK 被拒：ERR=0x25
+  [PASS] 错误 key 返回 ERR_ACCESS_LOCKED
+  [PASS] 正确 key UNLOCK 通过
+-- 3) DAQ 配置（动态列表）--
+  [PASS] FREE_DAQ
+  [PASS] ALLOC_DAQ(2)
+  [PASS] ALLOC_ODT/ODT_ENTRY list0 = 3 ODT x 2 entry
+  [PASS] ALLOC_ODT/ODT_ENTRY list1 = 1 ODT x 2 entry
+  [PASS] WRITE_DAQ list0 5 个条目
+  [PASS] WRITE_DAQ list1 2 个条目
+  [PASS] SET_DAQ_LIST_MODE list0（EVT0 1 kHz + 时间戳）
+  [PASS] SET_DAQ_LIST_MODE list1（EVT1 100 Hz）
+     first PID: list0=0 list1=3（PID = 绝对 ODT 号）
+     GET_DAQ_CLOCK = 761868 us
+-- 4) DAQ 采集 1000 ms --
+     list0 事件数=1000 实测事件率=999.0 Hz（配置 1000 Hz）
+     list0 ODT 帧数=3003（每事件 3 帧）总帧率=3097 frame/s
+     时间戳抖动：n=1001 mean=1000 us min=1000 us max=1000 us sd=0 us
+     事件丢失：lost_events=0（按 g_tick_cnt 连续计数判定）
+  [PASS] DAQ 收到事件采样
+  [PASS] list0 事件率在 900~1100 Hz
+  [PASS] list0 无丢帧
+  [PASS] 时间戳平均间隔 ≈ 1000 us
+  [PASS] 时间戳最大间隔 < 3 ms
+     slave: cto_rx=110 daq_frames=4963 dropped=0 overload=0
+  [PASS] 从站 DAQ 队列无丢弃
+  [PASS] 从站 CAN 发送无 TX FIFO 满
+  [PASS] 停止 DAQ 后命令通道仍正常
+=== 自证结论：PASS（FAIL=0）===
+XCP SELFTEST PASS fail=0
+
+letter:/$ 
+letter:/$ stat
+xcp    : connected=0 cto_rx=112 res_tx=108 err_tx=4 ignored=0 last_err=0x25
+daq    : frames=4963 samples=1761 dropped=0 overload=0 mem_denied=2
+can    : busoff=0 rx_overflow=0 tx_fifo_full=0
+master(CAN1): tx=112 rx=5075 timeouts=0 err_resp=4
+
+letter:/$ 
+letter:/$ evstat
+evstat: events=1769 cycles/event=1886 => 3.93 us/event（xcp_event 打包开销，不含 CAN 发送）
+        daq_events[0]=1710 daq_events[1]=170 daq_frames=4963 dropped=0 overload=0
+
+letter:/$ 
+letter:/$ 

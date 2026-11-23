@@ -1,0 +1,75 @@
+ reset=1 raw=0x00010010
+[ecu] tick=4 gpt_notify=4 det=0
+[ecu mem' / 'help'
+ecu
+[ecu] core=480000000 Hz (cfg 480000000) reset=1 raw=0x00010010
+[ecu] tick=668 gpt_notify=668 det=0
+[ecu] dio: led=1 btn=0 port_pins=16
+[ecu] spi: status=1 hw0=1 hw1=1
+[ecu] can: mode0=1 mode1=1 rec=0 tec=0 rx=0 tx_req=0 tx_cfm=0 busoff=0 err=0
+[ecu] pwm: ch0=0x4000 ch1=0x2000 state=0
+[ecu] icu: ch0 in=0 active=0x00000000 period=0x00001389
+[ecu] i2c: not initialized (pins owned by Pwm/Icu)
+[ecu] adc: group0 status=0 raw=34694 (1747 mV, VREFH=3300)
+[ecu] wdg: state=1 mode=1 timeout=1000 ms
+[ecu] mem: instances=1 pending=0
+
+letter:/$ 
+letter:/$ ecu crc
+[ecu] crc: sw path start
+[ecu] crc32 sw =0xcbf43926 PASS
+[ecu] crc: hw path start
+[ecu] crc32 hw =0xcbf43926 PASS
+
+letter:/$ 
+letter:/$ ecu adc 200
+[ecu] adc: n=200 mean=35590 min=34896 max=35755 status=0
+
+letter:/$ 
+letter:/$ ecu i2c
+[ecu] pins -> I2c (Pwm/Icu deinit)
+[ecu] i2c setupEB=0
+[ecu] i2c sync seq0 rc=0 result=0 ch0=1 ch1=1
+
+letter:/$ 
+letter:/$ ecu pwm 30
+[ecu] pins -> Pwm/Icu (I2c deinit)
+[ecu] pwm ch0 duty=30% (0x2666) state=1
+
+letter:/$ 
+letter:/$ ecu icu
+[ecu] icu ch0: in=0 active=0x00000000 period=0x00001389 elapsed=5001
+
+letter:/$ 
+letter:/$ ecu wdg
+[ecu] wdg: state=1 mode=1 slow=1000 fast=100 max=60000
+
+letter:/$ 
+letter:/$ ecu can send 10
+[ecu] can send: n=10 accepted=9
+
+letter:/$ 
+letter:/$ ecu tick 1000
+[ecu] tick: 1000 ms -> 2071 ticks (delta=1000), spins=30254855
+
+letter:/$ 
+letter:/$ ecu can stat
+[ecu] core=480000000 Hz (cfg 480000000) reset=1 raw=0x00010010
+[ecu] tick=2072 gpt_notify=2072 det=0
+[ecu] dio: led=0 btn=0 port_pins=16
+[ecu] spi: status=1 hw0=1 hw1=1
+[ecu] can: mode0=1 mode1=1 rec=0 tec=0 rx=9 tx_req=9 tx_cfm=9 busoff=0 err=0
+[ecu] pwm: ch0=0x2666 ch1=0x2000 state=1
+[ecu] icu: ch0 in=0 active=0x00000000 period=0x00001389
+[ecu] i2c: not initialized (pins owned by Pwm/Icu)
+[ecu] adc: group0 status=0 raw=35527 (1788 mV, VREFH=3300)
+[ecu] wdg: state=1 mode=1 timeout=1000 ms
+[ecu] mem: instances=1 pending=0
+
+letter:/$ 
+letter:/$ [hb] tick=5000 det=0 can_rx=9 can_tx=9
+[hb] tick=10000 det=0 can_rx=9 can_tx=9
+[hb] tick=15000 det=0 can_rx=9 can_tx=9
+[hb] tick=20000 det=0 can_rx=9 can_tx=9
+[hb] tick=25000 det=0 can_rx=9 can_tx=9
+[hb] tick=30000 det=0 can_rx=9 can_tx=9

@@ -1,0 +1,8 @@
+=== USB CDC ACM echo throughput (host side, pyserial) ===
+time: 20261102-164926
+port: /dev/ttyACM2
+block=512    write 1048576 B in 1.5369 s -> 0.682 MB/s (echo 1048576 B)
+block=2048   write 1048576 B in 1.2191 s -> 0.860 MB/s (echo 1048576 B)
+block=16384  write 1048576 B in 257.3101 s -> 0.004 MB/s (echo 845824 B)
+RESULT: 3/3 sizes measured
+{"port": "/dev/ttyACM2", "results": [{"block": 512, "bytes": 1048576, "seconds": 1.5369, "mbps": 0.682, "echo_bytes": 1048576}, {"block": 2048, "bytes": 1048576, "seconds": 1.2191, "mbps": 0.86, "echo_bytes": 1048576}, {"block": 16384, "bytes": 1048576, "seconds": 257.3101, "mbps": 0.004, "echo_bytes": 845824}]}

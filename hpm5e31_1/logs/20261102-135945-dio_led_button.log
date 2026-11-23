@@ -1,0 +1,21 @@
+n|off|flip / dbtn / dscan / dleds FF / dport 5 / dgroup / dmasked 0 0xFF / derr / dver
+dleds A5
+LEDS: pattern=0xA5 DO(GPIOF)=0x04380000
+LEDS: DI readback: ch4(PF26)=1 ch5(PF18)=0 ch6(PF20)=1 ch7(PF16)=0 ch8(PF22)=0 ch9(PF21)=1 ch10(PF23)=0 ch11(PF19)=1
+
+letter:/$ 
+letter:/$ dgroup
+GROUP Usr  (GPIOA[3:2]) = 0x0 (bit0=PA02 LED bit1=PA03 BTN)
+GROUP CanLeds(GPIOF[23:16]) = 0x3A (位号=引脚号-16，不是 LED 序号：PF26/PF19 不在组内)
+
+letter:/$ 
+letter:/$ dscan
+SCAN: 8 颗 CAN 灯走 1
+SCAN: done
+
+letter:/$ 
+letter:/$ derr
+DET: before=0 after=6 delta=6
+
+letter:/$ 
+letter:/$ 

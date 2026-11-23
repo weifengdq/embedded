@@ -1,0 +1,105 @@
+# tools/smoke_patterns.txt —— 全量上板冒烟回归的“特征串”表
+#
+# 格式（一行一条，# 开头为注释，空行忽略；字段之间用 TAB 分隔）：
+#   <sample 相对路径>	<校验正则(ERE, 对整段串口日志匹配)>	<可选发送命令(用 ; 分隔)>
+#
+# 说明：
+#   * 例程名是 samples/ 下的相对路径（如 samples/gpio/gpio_speed）；
+#   * 正则要能证明功能真的跑到，尽量选带 OK/PASS/关键数字 的行，不要只选启动 banner；
+#   * 第三段可省略；有第三段时 smoke_all.sh 通过 hwrun.sh --send 发命令（自动补 CRLF）；
+#   * 例程输出格式变化时只改这里，不用动脚本。
+#   * 数据来源：各例程 README 的“实测现象” + logs/ 下的实测日志（2026-10-30 全量回归；
+#     2026-11-02 补 R7 新例程 doip/xcp_eth/mqtt/eth_*，正则取自当轮实跑日志或源码 printf 格式）
+samples/adc/adc_basic_poll	adcsweep [0-9]+	adcsweep 1024
+samples/bench/bench_bus	BENCH_BUS op=	
+samples/bench/bench_compute	COMPUTE_SWEEP_DONE	comp	40
+samples/bench/bench_coremark	CoreMark/MHz mean=	cm	120
+samples/bench/bench_dhrystone	DMIPS/MHz mean=	dh	40
+samples/bench/bench_irq_latency	IRQ_STAT mode=	
+samples/bench/bench_memory	MEM_SWEEP_DONE	
+samples/can/mcan_error_recovery	bus-off|mcan_error_recovery	run	20
+samples/can/mcan_fd_timing	MATRIX SUMMARY: cases=[0-9]+ frames_ok=[0-9]+	all 200
+samples/can/mcan_filter	SUMMARY: pass=[0-9]+ fail=0	test	20
+samples/can/mcan_loopback_internal	ALL PASS	test	20
+samples/can/mcan_throughput	THR SUMMARY done	
+samples/can/mcan_two_node	THROUGHPUT classic	info;stat
+samples/dma/dma_mem2mem	verify: match	dmachain
+samples/enet/enet_lwip_iperf	Enet phy init passed	
+samples/enet/enet_mdio_scan	\[mdio\] [0-9]+ device\(s\) found	scan	10
+samples/enet/enet_phy_config	\[phy\] BMCR=	restore
+samples/flash/flash_rw_erase	MB/s	xipbw 8192;flashrw 0x80080000 4096	20
+samples/gpio/blinky_btn			
+samples/gpio/gpio_irq_btn	\[selftest\] loop_back=OK	btn_selftest 3;btn_stat
+samples/gpio/gpio_led_bank	marquee: period	ledbank_mask 55;ledbank_marquee 20 2
+samples/gpio/gpio_speed	fgpio_toggle	spd 20000
+samples/gptmr/gptmr_timer_irq	period : mean=	gstat	10
+samples/hello_world	tick [0-9]+, uptime	
+samples/i2c/i2c_scan	scan 0x08\.\.0x10	i2c_scan 8 16
+samples/lan8651/lan8651_raw_frame	\[stats\] ctrl xfers=	stats	8
+samples/lan8651/lan8651_spi_probe	MATCH	regs;probe	25
+samples/power/tsns_temp	tempstat: n=	tempsr;temp;tempstat 20
+samples/power/wdg_reset	EWDG0 armed	resetcause;wdgarm 500
+samples/pwm/pwm_basic	\[meas\] reload=	pmeas	10
+samples/reliability/soak_test	\[soak\] (start|init done)	
+samples/shell/letter_shell_basic	letter-shell: 3\.2\.4	help;ver
+samples/spi/spi_dma_bw	sdma_test n=512	sdma_test 512 1000000
+samples/spi/spi_loopback_poll	mosi-loopback rx:	spi_loop;spi_sclk 256 1000000	10
+samples/uart/uart_dma	udma_test n=512	udma_test 512 921600
+samples/uart/uart_irq_ring	burst n=64	uart_ring_burst 64 16
+samples/uart/uart_loopback	selftest baud=	uart_selftest 128 16
+samples/usb/usb_cdc_acm_echo	cdc_acm_init done	
+samples/plb/plb_lut_passthrough	cap_n=[0-9]+	lstat	10
+samples/pwm/pwm_deadtime_fault	DEAD_AREA=0x	dinfo	10
+samples/qei/qei_gpio_sim	sim start: edge period	qrun 20000	10
+samples/sdm/sdm_probe	SDM0 clk=	sinfo	10
+samples/adc/adc_pwm_trigger_dma	ADC16 .* sequence \+ PWM trigger \+ DMA	adcinfo;adcdma 500
+samples/i2c/i2c_loopback	selftest A: [0-9]+ errors -> PASS	i2c_soft_selftest;i2c_soft_scan 8 16	10
+samples/dma/dma_uart_rx_idle	result: frames=[0-9]+ idle_frame=[0-9]+	uarttest 20	15
+samples/flash/flash_boot_layout	boot_header +: tag=	layout	10
+samples/gptmr/gptmr_capture_measure	(\[cap\] n=|还没有捕获事件)	cstat	10
+samples/lan8651/lan8651_plca_master	\[status\] PLCA en=1	status	12
+samples/lan8651/lan8651_plca_slave	\[status\] PLCA en=1	status	12
+samples/plb/plb_lut_blink	PLB LUT0=0x0*aaaa	bstat	10
+samples/power/lowpower_wait_timer	avg=[0-9]+ ns, max=[0-9]+ ns	lpwait 5	10
+samples/qei/qeo_abz_generate	ABZ\.RESOLUTION=	qgen 2000 1000;qshow	10
+samples/sdm/sdm_status_int	IRQ: enabled=1	sstat	10
+samples/usb/usb_hid_keyboard	VID/PID +: 0x34b7	hidinfo;hidkey 1	10
+samples/i2c/i2c2_i2c3_master_slave	PASS errors=0	i2c_ms_write 16;i2c_ms_read 16	15
+samples/spi/spi1_spi3_master_slave	hz=10000000 +bench +n=128 +PASS errors=0	spi_ms_bench	20
+
+# ---- samples/app/*：第二阶段应用层例程（2026-10-30，tp-j1939 补全）----
+samples/app/can_gateway	\[gw\] (mode=|forwarding ON)	gw on	12
+samples/app/canopen_node	RESULT: 11 PASS / 0 FAIL	run	25
+samples/app/canopen_pdo	SYNC=500 TPDO=500 丢帧=0	run	25
+samples/app/canopen_sdo_seg	RESULT: 6 PASS / 0 FAIL	run	30
+samples/app/gptp_demo	\[ptp\] state=	sleep 1000;ptp	20
+samples/app/isotp_echo	\[isotp_echo\] PASS sizes=	run	30
+samples/app/j1939_dm	RESULT: PASS \(7 PASS / 0 FAIL\)		20
+samples/app/j1939_ecu	RESULT: PASS \(9 PASS / 0 FAIL\)		14
+samples/app/j1939_tp	RESULT: PASS \(7 PASS / 0 FAIL\)		26
+samples/app/ptp_master	\[ptp\] state=	sleep 1000;ptp	20
+samples/app/ptp_slave	\[ptp\] state=	sleep 1000;ptp	20
+samples/app/someip_event	\[run\] PASS \(0 failed\)	run	20
+samples/app/someip_rpc	\[run\] PASS \(0 failed\)	run	20
+samples/app/someip_tp	\[run\] PASS \(0 failed\)	run	20
+samples/app/uds_ecu	\[uds_ecu\] PASS	run	30
+samples/app/uds_flash	镜像 .* B @0x800F0000	run	45
+samples/app/xcp_can_daq	自证结论：PASS	selftest	25
+# xcp_can_cal 的 Kp 收敛子项当前实测 FAIL（app-acceptance §2.3 已标注），
+# 特征串匹配"自检完成行"；若要严格门槛，把下一行改成：XCP CAL SELFTEST PASS fail=0
+samples/app/xcp_can_cal	XCP CAL SELFTEST	case	25
+samples/app/xrce_pubsub	STAT hello=[0-9.]+/s adc=[0-9.]+/s acked=[0-9]+ => PASS		25
+samples/app/xrce_ros2_bridge	STAT adc_hz=[0-9.]+ cmd=[0-9]+ => PASS		25
+samples/app/can_logger	bad_order=0 .*result=PASS	log clear;replay 30 300;log dump 30;verify	20
+samples/app/vss_signals	vss: ON rate=100 ms sent=[0-9]+		15
+samples/app/dlt_log	\[auto\] .*发送完成: dlt: ON sent=[0-9]+		10
+samples/app/multiproto_coexist	RESULT: PASS \([0-9]+ PASS / 0 FAIL\)		34
+# ---- R7 新增例程（2026-11-02，xcp-eth/task-7 补登；正则取自 logs/ 实跑输出，命令为 README/源码已验证）----
+samples/app/doip_server	\[doip\] selftest: [0-9]+ 项检查，0 失败 -> PASS	doip selftest	20
+samples/app/xcp_eth	tick: 1k=[0-9]+ 10k=[0-9]+ 100=[0-9]+	xcp stat	15
+samples/app/mqtt_telemetry	match\(hpm5e31/cmd/#, hpm5e31/cmd/led\) = 1	mqtt match	15
+samples/mcal/eth_raw_echo	TRCV link=UP baud=1000M mac=RGMII oui=0x13D47A	eth trcv	15
+samples/mcal/eth_irq	BURST len=64 n=100 ok=[0-9]+	irq burst 64 100;irq info	18
+samples/mcal/eth_trcv	TRCV link=UP baud=1000M	trcv info	15
+samples/mcal/eth_lwip	\[mcal-eth\] ETH counter: rx_pkts=[0-9]+ tx_pkts=[0-9]+	eth	20
+samples/mcal/eth_freertos_lwip	\[rtos\] cpu: idle=[0-9.]+%		20

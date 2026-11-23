@@ -1,0 +1,25 @@
+
+  HDMA @0xf00c8000: width<=4 B, burst<=128 T
+  test buffer: 1nfo | dmasweep [bytes] | dmawidth [bytes] | dmachain
+dmahb
+HDMA AHB_SRAM(0xf0200000) -> AHB_SRAM(0xf0202000), 8192 B:
+  burst=    8 B      98.7 MB/s  ( 82.96 us, 98.75 MB/s per copy)
+  burst=   16 B     227.0 MB/s  ( 36.08 us, 227.03 MB/s per copy)
+  burst=   32 B     273.1 MB/s  ( 30.00 us, 273.07 MB/s per copy)
+  burst=   64 B     305.3 MB/s  ( 26.83 us, 305.29 MB/s per copy)
+  burst=  128 B     316.6 MB/s  ( 25.88 us, 316.60 MB/s per copy)
+  burst=  256 B     321.8 MB/s  ( 25.46 us, 321.78 MB/s per copy)
+  burst=  512 B     327.7 MB/s  ( 25.00 us, 327.68 MB/s per copy)
+  dma_start_memcpy failed: 2
+  dma_start_memcpy failed: 2
+  dma_start_memcpy failed: 2
+  dma_start_memcpy failed: 2
+verify: 0
+
+letter:/$ 
+letter:/$ dmachain
+chained 3x4096 B done in 25.33 us (485.1 MB/s)
+verify: match
+
+letter:/$ 
+letter:/$ 

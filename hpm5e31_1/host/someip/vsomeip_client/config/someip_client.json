@@ -1,0 +1,34 @@
+{
+    "_comment": [
+        "vsomeip 客户端配置：单进程同时充当 routing manager（routing = someip_client）。",
+        "unicast 必须是主机接板那张网卡的 IP（enp6s0 = 192.168.2.1）。",
+        "services 里的 unreliable 端口 = 板端 SOME/IP 服务实例端口 30501。",
+        "service-discovery 组播必须与板端一致：224.244.224.245:30490。"
+    ],
+    "unicast": "192.168.2.1",
+    "logging": {
+        "level": "info",
+        "console": "true",
+        "file": { "enable": "false" }
+    },
+    "applications": [
+        { "name": "someip_client", "id": "0x1200" }
+    ],
+    "services": [
+        { "service": "0x1234", "instance": "0x0001", "unreliable": "30501" }
+    ],
+    "routing": "someip_client",
+    "service-discovery": {
+        "enable": "true",
+        "multicast": "224.244.224.245",
+        "port": "30490",
+        "protocol": "udp",
+        "initial_delay_min": "10",
+        "initial_delay_max": "100",
+        "repetitions_base_delay": "200",
+        "repetitions_max": "2",
+        "ttl": "3",
+        "cyclic_offer_delay": "2000",
+        "request_response_delay": "1000"
+    }
+}

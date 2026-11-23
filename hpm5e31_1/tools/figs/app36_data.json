@@ -1,0 +1,43 @@
+{
+  "_comment": "第 35 章实测数据（logs/20261030-172701-xrce_pubsub.log + host/xrce/test_ros2_bridge.sh 输出）",
+  "adc_publish_hz_board": 100.0,
+  "ros2_hz_windows": [
+    100.248,
+    99.775,
+    99.846
+  ],
+  "ros2_sub_rate_hz": 99.89,
+  "ros2_sub_samples": 991,
+  "ros2_sub_window_s": 9.91,
+  "arrival_jitter_ms": 0.49,
+  "lost_frames": 1,
+  "lost_pct": 0.1,
+  "rtt_ms": {
+    "min": 2.29,
+    "median": 2.7,
+    "max": 3.44
+  },
+  "one_way_bound_ms": 1.72,
+  "cmd_sent": 6,
+  "cmd_ack": 5,
+  "board_loop_hz": 904,
+  "board_poll_us": 999,
+  "board_uptime_ms": 22074,
+  "flashed_kb": 136,
+  "heap_used_kb": 26.5,
+  "bridge_hz_windows": [
+    100.069,
+    99.927,
+    100.059
+  ],
+  "bridge_sub_rate_hz": 100.01,
+  "bridge_sub_samples": 994,
+  "bridge_jitter_ms": 0.29,
+  "bridge_lost": 0,
+  "bridge_rtt_ms": {
+    "min": 2.51,
+    "median": 3.4,
+    "max": 3.48
+  },
+  "bridge_one_way_bound_ms": 1.74
+}

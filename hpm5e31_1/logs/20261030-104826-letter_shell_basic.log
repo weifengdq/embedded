@@ -1,0 +1,39 @@
+ter-shell demo ===
+type 'help' to list commands, 'ver' for version
+ver
+board       : hpm5e31_1
+soc         : HPM5E31 (RV32-IMAFDCBP @ 480000000 Hz)
+sdk         : HPM SDK v1.13.0
+build       : Oct 30 2026 10:48:26
+letter-shell: 3.2.4
+
+letter:/$ 
+letter:/$ clk
+cpu0   : 480000000 Hz
+ahb0   : 200000000 Hz
+axif   : 200000000 Hz
+axis   : 200000000 Hz
+axic   : 200000000 Hz
+xpi0   : 100000000 Hz
+mchtmr : 24000000 Hz
+
+letter:/$ 
+letter:/$ led 1
+USR LED(PA02) = 1
+
+letter:/$ 
+letter:/$ pin A2
+A2 = 0
+
+letter:/$ 
+letter:/$ mem 0x80000000 32
+80000000: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+80000010: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+
+letter:/$ 
+letter:/$ help ver
+command help of ver
+show version info
+
+letter:/$ 
+letter:/$ 

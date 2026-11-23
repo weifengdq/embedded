@@ -1,0 +1,360 @@
+{
+ "partial": {},
+ "notes": {},
+ "state_machine": {
+  "Mcu": "上电为 UNINIT。`Mcu_Init()` 成功后进入 INIT；`Mcu_InitClock()` 只启动 PLL 锁定流程、不等待，`Mcu_GetPllStatus()` 轮询；`Mcu_DistributePllClock()` 把 PLL 切到系统时钟。未初始化调用任意 API 报 `MCU_E_UNINIT`（源文件 9 处检查）。`Mcu_PerformReset()` 不返回。`Mcu_GetRamState`/`Mcu_InitRamSection` 由 `MCU_GET_RAM_STATE_API`/`MCU_INIT_RAM_SECTION_API` 关闭（默认 STD_OFF）。",
+  "Port": "UNINIT → INIT（`Port_Init()`）。运行期改引脚方向/复用受 `PortPinDirectionChangeable`/`PortPinModeChangeable` 约束，配置为不可改时报 `PORT_E_DIRECTION_UNCHANGEABLE`/`PORT_E_MODE_UNCHANGEABLE`（各 1 处检查）；未初始化报 `PORT_E_UNINIT`（4 处）。",
+  "Dio": "SWS 的 Dio 没有 Init/DeInit，也没有模块状态；任何时刻可调用，只做参数校验。非法通道/端口/组/空指针分别报 `DIO_E_PARAM_INVALID_CHANNEL_ID`、`DIO_E_PARAM_INVALID_PORT_ID`、`DIO_E_PARAM_INVALID_GROUP`、`DIO_E_PARAM_POINTER`（源码各 3 处）。",
+  "Gpt": "UNINIT → INIT（`Gpt_Init()`）；重复初始化报 `GPT_E_ALREADY_INITIALIZED`；定时器运行中再次 Start 报 `GPT_E_BUSY`（3 处）；未初始化报 `GPT_E_UNINIT`（12 处）。唤醒类 API（`Gpt_EnableWakeup`/`Gpt_DisableWakeup`/`Gpt_CheckWakeup`）本子集未实现，头文件里标注为可选。",
+  "Spi": "UNINIT → INIT（`Spi_Init()`）；异步 Sequence 处理中再提交报 `SPI_E_SEQ_IN_PROCESS` 或 `SPI_E_SEQ_PENDING`；未初始化报 `SPI_E_UNINIT`（11 处）；Job/Sequence/IB 三层模型与 SWS 一致。",
+  "Can": "UNINIT → INIT（`Can_Init()`）→ STOPPED；`Can_SetControllerMode()` 在 STOPPED/STARTED/SLEEP 间迁移，非法迁移报 `CAN_E_TRANSITION`（10 处）；未初始化报 `CAN_E_UNINIT`（16 处）；BusOff 由 `Can_MainFunction_Write`/中断推进恢复。",
+  "Crc": "SWS 的 CRC 库没有 Init/DeInit、没有状态机，8 个 `Crc_CalculateCRC*` 是纯函数，任何时刻可调用；`Crc_GetVersionInfo()` 受 `CRC_VERSION_INFO_API` 控制。SWS 明确无开发错误（§7.8），因此本模块不开 DET。",
+  "Mem": "UNINIT → INIT（`Mem_Init()`）；作业模型一次只允许一个作业，作业未完成再提交报 `MEM_E_JOB_PENDING`；地址/长度/实例非法分别报 `MEM_E_PARAM_ADDRESS`、`MEM_E_PARAM_LENGTH`、`MEM_E_PARAM_INSTANCE_ID`；未初始化报 `MEM_E_UNINIT`；`Mem_MainFunction()` 推进作业，结果由 `Mem_GetJobResult()` 读。",
+  "Pwm": "UNINIT → INIT（`Pwm_Init()`）；`Pwm_SetDutyCycle`/`Pwm_SetPeriodAndDuty` 在通道运行中改占空比/周期，SWS 要求对同通道的修改在下个周期生效；未初始化报 `PWM_E_UNINIT`；低功耗状态机（`Pwm_SetPowerState` 等）由 `PWM_POWER_STATE_API=STD_OFF` 关闭，本子集不实现（无 EcuM）。",
+  "Icu": "UNINIT → INIT（`Icu_Init()`）；激活条件（上升/下降/双边沿）由 `Icu_SetActivationCondition` 在运行期设置，SWS 允许在 INIT 后、启动测量前设置；未初始化报 `ICU_E_UNINIT`。时间戳/边沿计数族由 `ICU_TIMESTAMP_API`、`ICU_EDGE_DETECT_API` 控制。",
+  "Wdg": "UNINIT → INIT（`Wdg_Init()`）；`Wdg_SetMode()` 在 WDGIF_MODE_OFF/SLOW/FAST 间切换（`WdgDisableAllowed=STD_OFF` 时不接受 OFF）；`Wdg_SetTriggerCondition(timeout)` 设置下个触发窗口，超时则由硬件复位；未初始化报 `WDG_E_UNINIT`。",
+  "I2c": "UNINIT → INIT（`I2C_Init()`）；作业模型与 SWS 一致：`I2C_SetupEB` 配置外部缓冲 → `I2C_AsyncTransmit` 提交序列（异步，需周期调 `I2C_MainFunction_Handling`）或 `I2C_SyncTransmit` 同步等待；结果用 `I2C_GetSequenceResult`/`I2C_GetChannelStatus` 读；未初始化报 `I2C_E_UNINIT`，序列运行中再提交报 `I2C_E_BUSY`/`I2C_E_SEQ_PENDING`。轮询等待有 `I2C_TIMEOUT_POLLS` 上限，不会死等。",
+  "Adc": "UNINIT → INIT（`Adc_Init()`）；组转换由 `Adc_StartGroupConversion` 启动，单次/连续模式在 PBcfg 配；结果缓冲区由 `Adc_SetupResultBuffer` 绑定，`Adc_ReadGroup` 读结果，`Adc_GetGroupStatus` 查状态；未初始化报 `ADC_E_UNINIT`，缓冲区未设置/组号非法报对应 `ADC_E_*`。低功耗状态机（`Adc_SetPowerState` 等 4 个 API）未实现（无 EcuM）。"
+ },
+ "config_notes": {
+  "Mcu": "SWS 有 10 个配置容器（McuGeneralConfiguration/McuClockSettingConfig/McuModeSettingConf 等）。本实现：`Mcu_Cfg.h` 给 `MCU_DEV_ERROR_DETECT`、`MCU_INIT_CLOCK_API`、`MCU_NO_PLL`、`MCU_PERFORM_RESET_API`、`MCU_GET_RAM_STATE_API`、`MCU_INIT_RAM_SECTION_API`、`MCU_VERSION_INFO_API`、`MCU_MAX_CLOCK_NODES`；`Mcu_PBcfg.c` 给 `const Mcu_ConfigType Mcu_Config`（时钟节点表、模式表）。",
+  "Port": "SWS 5 个容器。本实现：`Port_Cfg.h` 给 `PORT_SET_PIN_DIRECTION_API`、`PORT_SET_PIN_MODE_API`、`PORT_VERSION_INFO_API`、`PORT_PIN_COUNT_CFG`；`Port_PBcfg.c` 给 `Port_Config`（引脚表：端口/引脚/复用/方向/初始电平/可改性）。",
+  "Dio": "SWS 7 个容器。本实现：`Dio_Cfg.h` 给 `DIO_FLIP_CHANNEL_API`、`DIO_MASKED_WRITE_PORT_API`、`DIO_CHANNEL_COUNT_CFG`、`DIO_CHANNEL_GROUP_COUNT_CFG`、`DIO_MAX_PORTS`；`Dio_PBcfg.c` 给 `Dio_Config`（端口/通道/通道组映射）。",
+  "Gpt": "SWS 7 个容器。本实现：`Gpt_Cfg.h` 给 `GPT_NUM_CHANNELS`、`GPT_DEINIT_API`、`GPT_TIME_ELAPSED_API`、`GPT_TIME_REMAINING_API`、`GPT_VERSION_INFO_API`、`GPT_SET_MODE_API`、`GPT_NOTIFICATION_SUPPORTED`；`Gpt_PBcfg.c` 给 `Gpt_Config`（通道表、定时器基地址、通知回调）。",
+  "Spi": "SWS 10 个容器。本实现：`Spi_Cfg.h` 给 `SPI_LEVEL_DELIVERED`、`SPI_ASYNC_MODE_SUPPORT`、`SPI_CANCEL_API`、`SPI_HW_STATUS_API`、`SPI_INTERRUPT_SUPPORT`、`SPI_DMA_SUPPORT`；`Spi_PBcfg.c` 给 `Spi_Config`/`Spi_Config_10M`（两个波特率配置集，对应 post-build 多配置）。",
+  "Can": "SWS 18 个容器。本实现：`Can_Cfg.h` 给 `CAN_CONTROLLER_COUNT`、`CAN_MAX_HTH`、`CAN_MAX_HRH`、`CAN_MAX_FILTER_ELEMS`、`CAN_MAX_BAUDRATE_CONFIGS`、`CAN_FD_SUPPORT`、`CAN_EXTENDED_ID_SUPPORT`、`CAN_TX_BUF_PER_CONTROLLER`；`Can_PBcfg.c` 给 `Can_Config`（控制器/波特率/HTH/HRH/过滤器表）。",
+  "Crc": "SWS 的 CRC 库没有配置容器（纯函数库）。本实现为“可选硬件加速”增加了工程扩展配置：`Crc_Cfg.h` 给 `CRC_USE_HW_ACCEL`、`CRC_HW_MIN_LENGTH`、`CRC_USE_TABLE`；`Crc_PBcfg.c` 给 `Crc_Config`。这是 SWS 之外的扩展，已在偏差清单登记。",
+  "Mem": "SWS 2 个容器。本实现：`Mem_Cfg.h` 给 `MEM_MAX_INSTANCES`、`MEM_ERASED_VALUE`、`MEM_UNITS_PER_MAIN_FUNCTION`、`MEM_ALLOW_ONE_JOB`；`Mem_PBcfg.c` 给 `Mem_Config`（实例几何、擦写窗口、读块大小、ECC 标志）。",
+  "Pwm": "SWS 6 个容器。本实现：`Pwm_Cfg.h` 给 `PWM_NUM_CHANNELS`、`PWM_DEINIT_API`、`PWM_VERSION_INFO_API`、`PWM_NOTIFICATION_SUPPORTED`、`PWM_POWER_STATE_API`（默认 STD_OFF）、`PWM_IRQ_PRIORITY`、`PWM_MAX_PERIOD_TICKS`；`Pwm_PBcfg.c` 给 `Pwm_Config`（通道表：实例/通道/极性/周期/初始占空比/空闲电平/通知回调）。",
+  "Icu": "SWS 5 个容器。本实现：`Icu_Cfg.h` 给 `ICU_NUM_CHANNELS`、`ICU_DEINIT_API`、`ICU_VERSION_INFO_API`、`ICU_SIGNAL_MEASUREMENT_API`、`ICU_TIMESTAMP_API`、`ICU_EDGE_DETECT_API`、`ICU_NOTIFICATION_SUPPORTED`；`Icu_PBcfg.c` 给 `Icu_Config`（通道表：捕获源/边沿/测量模式/通知回调）。",
+  "Wdg": "SWS 3 个容器。本实现：`Wdg_Cfg.h` 给 `WDG_DISABLE_ALLOWED`（默认 STD_OFF，安全件不允许关狗）、`WDG_TRIGGER_CONDITION_API`、`WDG_VERSION_INFO_API`、`WDG_SRC_CLK_HZ`；`Wdg_PBcfg.c` 给 `Wdg_Config`（EWDG 实例、超时窗口、初始模式）。",
+  "I2c": "SWS 6 个容器。本实现：`I2c_Cfg.h` 给 `I2C_DEV_ERROR_DETECT`、`I2C_VERSION_INFO_API`、`I2C_CHANNEL_COUNT`、`I2C_JOB_COUNT`、`I2C_SEQUENCE_COUNT`、`I2C_MAX_JOB_PER_SEQUENCE`、`I2C_MAX_DATA_LENGTH`、`I2C_TIMEOUT_POLLS`；`I2c_PBcfg.c` 给 `I2c_Config`（控制器/从地址/速率/回调/超时）。",
+  "Adc": "SWS 7 个容器。本实现：`Adc_Cfg.h` 给 `ADC_DEV_ERROR_DETECT`、`ADC_DEINIT_API`、`ADC_ENABLE_START_STOP_GROUP_API`、`ADC_READ_GROUP_API`、`ADC_HW_TRIGGER_API`、`ADC_GRP_NOTIF_CAPABILITY`、`ADC_VERSION_INFO_API`、`ADC_RESULT_ALIGNMENT_RIGHT`；`Adc_PBcfg.c` 给 `Adc_Config`（组表：通道/采样时间/触发源/结果缓冲/回调）。"
+ },
+ "deviations": [
+  {
+   "item": "AUTOSAR 版本宏写 4.4.0",
+   "sws": "各 SWS 文件头 R25-11",
+   "now": "所有模块头 `<MOD>_AR_RELEASE_{MAJOR,MINOR,REVISION}_VERSION = 4.4.0`（公共头 `Mcal_Version.h` 约定）",
+   "impact": "版本追溯字段与 SWS 文件头不对应；集成商用版本号判断能力会误判",
+   "plan": "在公共版本头统一声明 R25-11 对应的 AR 版本号，或提供映射表（需 Lead 决策，成员不要单独改）"
+  },
+  {
+   "item": "无 link-time 配置变体",
+   "sws": "SWS 支持 pre-compile/link-time/post-build 三种配置阶段",
+   "now": "只实现 pre-compile 开关 + post-build 指针（见第 42 章）",
+   "impact": "同一份二进制无法通过链接切换配置集",
+   "plan": "增加 link-time 变体：配置实例在链接期由不同 .o 提供"
+  },
+  {
+   "item": "无多分区/多核支持",
+   "sws": "SWS 支持 partition 映射与多核",
+   "now": "`InstanceId` 固定 0，无分区/核间保护概念",
+   "impact": "不能直接运行在多核 OS 的不同 partition 上",
+   "plan": "引入 OS 后按 partition 扩展 InstanceId 语义与核间互斥"
+  },
+  {
+   "item": "Dem 只有桩实现",
+   "sws": "Mcu/Wdg 等模块的 production error 需上报 Dem",
+   "now": "`mcal/common/Dem.c` 仅 20 行，`Dem_ReportErrorStatus` 只计数",
+   "impact": "生产错误无法进入 DTC/事件管理",
+   "plan": "接入完整 Dem（DTC 存储、去抖、事件优先级）"
+  },
+  {
+   "item": "无 `*_Cbk.h` 回调头文件",
+   "sws": "Can/Icu 等模块规定回调原型与回调头",
+   "now": "回调类型与通知函数指针在 `<Mod>.h`/`*_PBcfg.h` 声明",
+   "impact": "与 CanIf/Os 集成时需手写原型，易与实际签名不一致",
+   "plan": "按 SWS 补 `<Mod>_Cbk.h` 并在 PBcfg 中引用"
+  },
+  {
+   "item": "配置参数只覆盖 SWS 容器的常用子集",
+   "sws": "SWS §10 每模块 5~18 个配置容器",
+   "now": "`*_Cfg.h`/`*_PBcfg.c` 手写，覆盖本板需要的字段（逐模块见 §2 配置参数对应）",
+   "impact": "换 ECU 配置要改 C 代码，不能由配置工具生成",
+   "plan": "编写配置生成器或 EB tresos 插件，从 .arxml 生成 `*_PBcfg.c`"
+  },
+  {
+   "item": "无 ASIL 安全论证与安全手册",
+   "sws": "ISO 26262-5 对 MCAL 的安全机制与假设要求",
+   "now": "无安全手册、无 FMEDA/DFA、无安全案例",
+   "impact": "不能作为安全相关开发项（ASIL 任何等级）",
+   "plan": "商业认证流程或按 ISO 26262 自建安全案例（见第 9 节第 4~5 项）"
+  },
+  {
+   "item": "`E_MEM_SERVICE_NOT_AVAIL` 取 0x02",
+   "sws": "SWS_Mem 引用了该符号但未给数值",
+   "now": "按 Vector/EB Mem 驱动惯例取 `0x02`（`Mem.h` 注释说明）",
+   "impact": "与其它厂商实现的数值可能不同，跨平台代码应只用符号名",
+   "plan": "集成时通过该宏名而非字面值比较返回值"
+  },
+  {
+   "item": "Crc 增加 SWS 之外的扩展 API 与配置类型",
+   "sws": "SWS_CRCLibrary 无 Init、无配置容器、无开发错误",
+   "now": "扩展 `Crc_Init`、`Crc_ConfigType`、`Crc_CalculateByAlgo`、`Crc_GetHwStats` 等（用于硬件加速与 bench 对拍）",
+   "impact": "只按 SWS 编程的应用不会调用它们，无兼容问题；但头文件与 SWS 不同构，工具链检查会报扩展",
+   "plan": "扩展 API 在头文件用注释段与 SWS API 分开，README/章节声明"
+  },
+  {
+   "item": "Gpt 唤醒类 API 未实现",
+   "sws": "SWS 8.3 `Gpt_EnableWakeup`/`Gpt_DisableWakeup`/`Gpt_CheckWakeup`",
+   "now": "头文件标注“可选：本子集未实现”，API ID 宏保留",
+   "impact": "不能用 GPT 作为唤醒源",
+   "plan": "按需补：配置 EcuM 唤醒源 + 中断唤醒路径"
+  },
+  {
+   "item": "Can 时间戳与 CAN PN API 未实现",
+   "sws": "SWS 8.3 `Can_GetCurrentTime`/`Can_EnableEgressTimeStamp`/`Can_GetEgressTimeStamp`/`Can_GetIngressTimeStamp`/`Can_SetCanPnFrameDataMask`",
+   "now": "未实现（例程 `can_irq_perf` 用软件时间戳近似）",
+   "impact": "拿不到硬件时间戳，不能做高精度总线时间分析；不支持 CAN PN 唤醒过滤",
+   "plan": "MCAN 的 TS 计数器与 PN 过滤寄存器可用，按 SWS 补"
+  },
+  {
+   "item": "Dev Error 覆盖不等于 SWS 全部错误路径",
+   "sws": "各模块 SWS §7.2.1 开发错误表",
+   "now": "主要错误码都有检查（每模块错误码使用次数见溯源统计），少数边界条件未逐一验证",
+   "impact": "极端非法配置下的行为未全部被测试覆盖",
+   "plan": "按 SWS 错误表逐条设计负向测试用例"
+  },
+  {
+   "item": "无 MISRA/CERT C 静态分析证据",
+   "sws": "AUTOSAR 对 MCAL 的编码规范要求（MISRA C:2012）",
+   "now": "只有 `-Wall -Wextra` 零告警",
+   "impact": "不能声称编码规范合规",
+   "plan": "接 Polyspace/Coverity/PC-lint 跑 MISRA C:2012，逐条消警或写偏差说明"
+  },
+  {
+   "item": "无 WCET 测量",
+   "sws": "安全相关模块需提供最坏执行时间",
+   "now": "未测（例程只统计平均/循环耗时）",
+   "impact": "无法做时序安全分析",
+   "plan": "用 Lauterbach/示波器 GPIO 翻转法测最坏路径，或静态分析工具"
+  },
+  {
+   "item": "无单元测试与覆盖率报告",
+   "sws": "AUTOSAR 交付物惯例（模块级单元测试）",
+   "now": "20 个上板例程（集成级验证）",
+   "impact": "语句/分支覆盖率未知，回归依赖人工烧板",
+   "plan": "建 Unity/Ceedling 或 VectorCAST 单元测试工程"
+  },
+  {
+   "item": "无已知问题清单/Release Notes",
+   "sws": "商用 MCAL 随包交付物惯例",
+   "now": "README 的“待确认项”与本章第 15 节",
+   "impact": "缺陷追溯与版本对比弱",
+   "plan": "随版本维护 known issues 清单"
+  },
+  {
+   "item": "配置开关命名与 SWS 配置参数名不是一一对应",
+   "sws": "SWS §10 配置参数（如 McuInitClockApi）",
+   "now": "C 宏大写形式（如 `MCU_INIT_CLOCK_API`），含义对应但名称不同",
+   "impact": "配置工具无法直接映射到 SWS 参数名",
+   "plan": "提供 `<Mod>_Cfg.h` 与 SWS 配置参数的映射表"
+  },
+  {
+   "item": "调度函数需应用手动调用",
+   "sws": "SWS 规定 MainFunction 由 BSW Scheduler 周期调用",
+   "now": "例程在主循环调用（如 `Spi_MainFunction_Handling`、`Mem_MainFunction`、`Can_MainFunction_*`）",
+   "impact": "集成到 OS 后需配置 Alarm/Task 才能保证周期",
+   "plan": "提供 OS 调度表模板与周期建议"
+  },
+  {
+   "item": "Pwm/Adc 低功耗状态机 API 未实现",
+   "sws": "SWS 8.3 Pwm/Adc 的 Set/Get/PreparePowerState（各 4 个）",
+   "now": "`PWM_POWER_STATE_API`/`ADC_POWER_STATE_API` 默认 STD_OFF；Adc 实现 13/17、Pwm 9/13",
+   "impact": "不能参与 EcuM 的低功耗状态迁移，不能用 Adc/Pwm 作为唤醒相关外设",
+   "plan": "接入 EcuM 后按 SWS 补；PM 状态与输出关闭顺序需实测"
+  },
+  {
+   "item": "Icu 唤醒/边沿计数/异步通知 API 未实现",
+   "sws": "SWS 8.3 Icu 的 *Wakeup（3 个）、*EdgeCount/GetEdgeNumbers（4 个）、*NotificationAsync（2 个）",
+   "now": "实现信号测量 + 边沿检测主路径，共 17/26",
+   "impact": "不能统计脉冲个数、不能用 Icu 做唤醒源、不能用异步通知",
+   "plan": "GPTMR 捕获通道可扩展计数；异步通知依赖 OS，视集成计划"
+  }
+ ],
+ "verified": {
+  "Mcu": [
+   {
+    "sample": "mcu_clock_init",
+    "status": "PASS",
+    "log": "logs/20261102-135140-mcu_clock_init.log",
+    "data": "480 MHz 实测 479,997,400 Hz（−5 ppm）"
+   },
+   {
+    "sample": "mcu_reset_mode",
+    "status": "PASS",
+    "log": "logs/20261102-140030-mcu_reset_mode.log",
+    "data": "软复位约 4.2 µs，RESET_FLAG 可读"
+   }
+  ],
+  "Port": [
+   {
+    "sample": "port_pin_config",
+    "status": "PASS",
+    "log": "logs/20261102-135603-port_pin_config.log",
+    "data": "2000 组 LFSR 回环误码 0；上下拉/开漏 PASS"
+   }
+  ],
+  "Dio": [
+   {
+    "sample": "dio_led_button",
+    "status": "PASS",
+    "log": "logs/20261102-140549-dio_led_button.log",
+    "data": "写 127 ns、读 185 ns；DET +6"
+   }
+  ],
+  "Gpt": [
+   {
+    "sample": "gpt_periodic",
+    "status": "PASS",
+    "log": "logs/20261102-134707-gpt_periodic.log",
+    "data": "StartTimer 2973 ns；1 ms tick 0 计数误差"
+   },
+   {
+    "sample": "gpt_oneshot",
+    "status": "PASS",
+    "log": "logs/20261102-141404-gpt_oneshot.log",
+    "data": "1 ms 单发误差 +1066.7 ns（+1066.67 ppm）"
+   }
+  ],
+  "Pwm": [
+   {
+    "sample": "pwm_basic",
+    "status": "PASS",
+    "log": "logs/20261102-141320-pwm_basic.log",
+    "data": "10 kHz 占空比 0/25/50/75/100% 扫描"
+   },
+   {
+    "sample": "pwm_notify",
+    "status": "PASS",
+    "log": "logs/20261102-141427-pwm_notify.log",
+    "data": "40006 边沿/2 s，stddev 0.052 µs"
+   }
+  ],
+  "Icu": [
+   {
+    "sample": "icu_capture",
+    "status": "PASS",
+    "log": "logs/20261102-141450-icu_capture.log",
+    "data": "1 kHz 0 ppm、占空比 49.917%；100 kHz 占空比 41.7%"
+   }
+  ],
+  "Wdg": [
+   {
+    "sample": "wdg_trigger",
+    "status": "PASS",
+    "log": "logs/20261102-141513-wdg_trigger.log",
+    "data": "slow 1000 ms / fast 100 ms"
+   },
+   {
+    "sample": "wdg_timeout_reset",
+    "status": "已知限制",
+    "log": "logs/20261102-142810-wdg_timeout_reset.log",
+    "data": "跨复位抓包需两次 hwrun（第 15 节）"
+   }
+  ],
+  "Adc": [
+   {
+    "sample": "adc_single",
+    "status": "PASS",
+    "log": "logs/20261102-143144-adc_single.log",
+    "data": "ENOB 7.93/8.50 bit；508.4 kHz"
+   },
+   {
+    "sample": "adc_bench",
+    "status": "无日志",
+    "log": "-",
+    "data": "本轮未跑通（第 15 节）"
+   }
+  ],
+  "Spi": [
+   {
+    "sample": "spi_master_slave",
+    "status": "PASS",
+    "log": "logs/20261102-142330-spi_master_slave.log",
+    "data": "1 MHz、1024 B 双向 249 KB/s"
+   },
+   {
+    "sample": "spi_async_job",
+    "status": "PASS",
+    "log": "logs/20261102-142810-spi_async_job.log",
+    "data": "4 Job 并发 PASS"
+   }
+  ],
+  "I2c": [
+   {
+    "sample": "i2c_master_slave",
+    "status": "PASS（含已知偏差）",
+    "log": "logs/20261102-142919-i2c_master_slave.log",
+    "data": "1M 读 541.1 kbps；400k 读 1 字节误差"
+   },
+   {
+    "sample": "i2c_error",
+    "status": "PASS",
+    "log": "logs/20261102-142544-i2c_error.log",
+    "data": "nackPass=1、busyPass=1"
+   }
+  ],
+  "Can": [
+   {
+    "sample": "can_classic_echo",
+    "status": "PASS",
+    "log": "logs/20261102-142930-can_classic_echo.log",
+    "data": "200/200 帧 0 丢，4203 frame/s"
+   },
+   {
+    "sample": "can_fd_echo",
+    "status": "PASS（5M 降级）",
+    "log": "logs/20261102-143020-can_fd_echo.log",
+    "data": "500k/2M 64 B pingpong 30/30"
+   },
+   {
+    "sample": "can_filter",
+    "status": "PASS",
+    "log": "logs/20261102-141905-can_filter.log",
+    "data": "12 条过滤规则全 PASS"
+   },
+   {
+    "sample": "can_busoff",
+    "status": "PASS",
+    "log": "logs/20261102-142116-can_busoff.log",
+    "data": "TEC 平台 129；恢复后 pingpong PASS"
+   },
+   {
+    "sample": "can_irq_perf",
+    "status": "PASS",
+    "log": "logs/20261102-142208-can_irq_perf.log",
+    "data": "4 通道 8366 frame/s，CPU 4.62%"
+   }
+  ],
+  "Mem": [
+   {
+    "sample": "mem_flash_rw",
+    "status": "PASS",
+    "log": "logs/20261102-141617-mem_flash_rw.log",
+    "data": "写 261.8 KB/s、读 39.8 MB/s"
+   },
+   {
+    "sample": "mem_bench",
+    "status": "PASS",
+    "log": "logs/20261102-141425-mem_bench.log",
+    "data": "擦 2092.6/写 261.7/读 44859.8 KB/s"
+   }
+  ],
+  "Crc": [
+   {
+    "sample": "crc_bench",
+    "status": "PASS",
+    "log": "logs/20261102-135730-crc_bench.log",
+    "data": "8 算法标准向量 PASS；HW 60.2 MB/s"
+   },
+   {
+    "sample": "crc_integrity",
+    "status": "PASS",
+    "log": "logs/20261102-140431-crc_integrity.log",
+    "data": "flash/blank 双路径 PASS"
+   }
+  ]
+ }
+}

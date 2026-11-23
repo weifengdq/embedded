@@ -1,0 +1,24 @@
+ASS] addr claim: SA=0x00 NAME=0009180100000000 seen_at=251143 usavg/max = 954/971/988 us
+[PASS] DM1 fault: lamp=0x11 MIL=1 RSL=0 AWL=1 PL=0 SPN=100 FMI=4 OC=1
+conflict
+
+[j1939] addr conflict test: 两节点 preferred_sa=0x80，NAME 0x10000<0x20000
+  phase1(输者arb=1): A(CAN0,name=1000012300010003) sa=0x81 state=2 | B(CAN1,name=0800012300010003) sa=0x80 state=2 | claims_rx A=3 B=2
+  phase2(输者arb=0): A(CAN0,name=1000012300010002) sa=0xFE state=3 | B(CAN1,name=0800012300010003) sa=0x80 state=2 | claims_rx A=2 B=2
+[j1939] conflict test done, 默认配置已恢复
+
+letter:/$ [PASS] DM2 history via RTS/CTS: frames=1 dtc=2 (SPN 100/190)
+
+letter:/$ stat
+ECU : sa=0xFE state=1 rx=2 tx=1 err=0 req=1/1 claim_rx=1
+TEST: sa=0xF9 rx=1 tx=2 err=0 tp_bam_rx=0 tp_bam_tx=0 tp_rts_rx=0
+ECU tp: bam_tx=0 rts_tx=0 done_rx=0 done_tx=0 bytes_rx=0 bytes_tx=0 gap_min/max=0/0 us timeout=0 err=0
+TESTER: rx_total=394 rx_frames=1 unknown_pgn=2 last=0x0FEEF claim_seen=1
+req latency min/avg/max = 4/4/4 us (n=1)
+
+letter:/$ 
+letter:/$ [PASS] DM11 clear: lamp=0x00 dtc=0 (expect 0x00/0)
+
+=== RESULT: PASS (9 PASS / 0 FAIL) ===
+bus0: tx=512 rx=17 err=0 | bus1: tx=17 rx=512 err=0
+type 'run|stat|fault add <spn> <fmi>|fault clear|dm1|req <pgn>|mon <ms>|info'

@@ -1,0 +1,37 @@
+// can_08_mcan_arch.dot - HPM5E31 MCAN 架构与数据通路
+// 生成: dot -Tpng -Gdpi=300 can_08_mcan_arch.dot -o ../../docs/figures/08/fig-8-1-mcan-arch.png
+digraph MCAN_ARCH {
+    rankdir=LR;
+    graph [fontname="Noto Sans CJK SC", fontsize=12, bgcolor="white", pad=0.3];
+    node  [fontname="Noto Sans CJK SC", fontsize=11, shape=box, style="rounded,filled", fillcolor="#eef4fb", color="#4a6fa5"];
+    edge  [fontname="Noto Sans CJK SC", fontsize=10, color="#4a6fa5"];
+
+    cpu  [label="RV32-IMAFDCBP 内核\n480 MHz / DLM+ILM", fillcolor="#f6f0e6", color="#a5824a"];
+    ahb  [label="AHB 总线矩阵\n+ HRAM 接口", fillcolor="#f6f0e6", color="#a5824a"];
+
+    subgraph cluster_mcan {
+        label="MCAN0 (Bosch M_CAN)  ——  MCAN0..3 结构相同";
+        fontname="Noto Sans CJK SC"; fontsize=11; color="#4a6fa5"; style="rounded,dashed";
+        regs   [label="配置/状态寄存器\nCCCR TEST NBTP DBTP\nTDCR GFC SIDFC XIDFC ..."];
+        core   [label="CAN 协议内核\n位时序/位填充/CRC\nSOF..EOF 状态机", fillcolor="#e6f2ea", color="#4a8a5f"];
+        filter [label="过滤器单元\n标准 ID 列表\n扩展 ID 列表 + GFC", fillcolor="#e6f2ea", color="#4a8a5f"];
+        buf    [label="消息缓冲接口\nTX Buffer/FIFO/Queue\nTX Event FIFO\nRX FIFO0/1 + RX Buffer", fillcolor="#e6f2ea", color="#4a8a5f"];
+        tsu    [label="TSU 时间戳单元\n16/32/64 bit\n可接 PTPC 外部时基"];
+    }
+
+    ram [label="消息 RAM\nAHB SRAM 32 KB\n0xF0200000\n4 个实例共享，\n按 ram_offset 划分\n(.ahb_sram 段)", shape=cylinder, fillcolor="#fdf2d0", color="#b08a20"];
+    phy [label="TCAN1044AV\nCAN 收发器\nSTB=PE03(低=正常)", fillcolor="#f6f0e6", color="#a5824a"];
+    bus [label="CAN 总线\nCAN_H / CAN_L\n两端各 120 Ω", shape=component, fillcolor="#f6f0e6", color="#a5824a"];
+
+    cpu -> ahb [label="APB/AHB 访问"];
+    ahb -> regs [label="寄存器"];
+    ahb -> ram  [label="消息 RAM 读写"];
+    regs -> core [label="位时序/模式"];
+    core -> filter [label="接收位流"];
+    filter -> buf [label="命中帧"];
+    buf -> ram [label="DMA 式读写\n(消息存储接口)", dir=both];
+    core -> tsu [label="SOF/EOF 打戳"];
+    core -> phy [label="TXD"];
+    phy -> core [label="RXD"];
+    phy -> bus [label="差分", dir=both];
+}

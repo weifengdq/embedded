@@ -1,0 +1,3 @@
+ho_latency: avg=1 us max=1 us  roundtrip_rate=2148 /s
+THROUGHPUT classic 500k/SP87.5: n=2000 rx=2000 bad=0 total=464545 us => 4305 frame/s
+  payload: 0.28 Mbit/s (8B/frame @4305 fps), bus 500 kbit/s

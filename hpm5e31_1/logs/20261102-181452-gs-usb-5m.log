@@ -1,0 +1,121 @@
+
+==================================================================
+gs_usb 测试: 5m（20261102-181452）
+==================================================================
+主机: Linux 7.0.0-38-generic x86_64  脚本: test_5m.sh
+日志: logs/20261102-181452-gs-usb-5m.log
+工件: /tmp/gs_usb_artifacts
+内核 7.0.x —— 与开发约定 §1 一致
+  [PASS] 权限 OK（sudo -n）
+dmesg 基线时间戳: 1793614492（之后用 --since 只扫描新增行）
+  [PASS] 依赖命令齐全: dmesg ip ethtool cansend candump cangen canplayer
+  [PASS] 发现 4 个接口: 0 1 2 3
+
+---- ==== core：经典 500k + FD 1M/2M + FD 1M/5M（双向突发） ====
+
+---- [20261102-181452 classic-500k-01]: can0 -> can1 nom=500000 data=0 n=2000
+  can0: 	 bitrate 500000 sample-point 0.875 
+  classic-500k-01: recv=2000/2000 丢帧=0.000% 帧率=4375.3 fps 载荷=0.28 Mbit/s DLC=8 tx_err=0 rx_err=0 berr-counter tx 0 rx 0 | berr-counter tx 0 rx 0 | state ERROR-ACTIVE
+{"tag": "classic-500k-01", "nom": 500000, "dbit": 0, "n": 2000, "src": "can0", "dst": "can1", "tx_delta": 2000, "rx_delta": 2000, "recv": 2000, "rx_dlc": 8, "dlc_ok": true, "span_s": 0.4569, "fps": 4375.3, "payload_mbps": 0.28, "loss_pct": 0.0, "tx_err": 0, "rx_err": 0, "cangen_rc": 0, "berr0": "berr-counter tx 0 rx 0", "berr1": "berr-counter tx 0 rx 0", "state0": "state ERROR-ACTIVE", "state1": "state ERROR-ACTIVE", "verdict": "PASS"}
+  [PASS] classic-500k-01
+
+---- [20261102-181452 classic-500k-10]: can1 -> can0 nom=500000 data=0 n=2000
+  can0: 	 bitrate 500000 sample-point 0.875 
+  classic-500k-10: recv=2000/2000 丢帧=0.000% 帧率=4376.9 fps 载荷=0.28 Mbit/s DLC=8 tx_err=0 rx_err=0 berr-counter tx 0 rx 0 | berr-counter tx 0 rx 0 | state ERROR-ACTIVE
+{"tag": "classic-500k-10", "nom": 500000, "dbit": 0, "n": 2000, "src": "can1", "dst": "can0", "tx_delta": 2000, "rx_delta": 2000, "recv": 2000, "rx_dlc": 8, "dlc_ok": true, "span_s": 0.4567, "fps": 4376.9, "payload_mbps": 0.28, "loss_pct": 0.0, "tx_err": 0, "rx_err": 0, "cangen_rc": 0, "berr0": "berr-counter tx 0 rx 0", "berr1": "berr-counter tx 0 rx 0", "state0": "state ERROR-ACTIVE", "state1": "state ERROR-ACTIVE", "verdict": "PASS"}
+  [PASS] classic-500k-10
+
+---- [20261102-181452 fd-1m2m-01]: can0 -> can1 nom=1000000 data=2000000 n=2000
+  can0: 	 bitrate 1000000 sample-point 0.750 	 dbitrate 2000000 dsample-point 0.750 
+  fd-1m2m-01: recv=2000/2000 丢帧=0.000% 帧率=3192.3 fps 载荷=1.63 Mbit/s DLC=64 tx_err=0 rx_err=0 berr-counter tx 0 rx 0 | berr-counter tx 0 rx 0 | state ERROR-ACTIVE
+{"tag": "fd-1m2m-01", "nom": 1000000, "dbit": 2000000, "n": 2000, "src": "can0", "dst": "can1", "tx_delta": 2000, "rx_delta": 2000, "recv": 2000, "rx_dlc": 64, "dlc_ok": true, "span_s": 0.6262, "fps": 3192.3, "payload_mbps": 1.63, "loss_pct": 0.0, "tx_err": 0, "rx_err": 0, "cangen_rc": 0, "berr0": "berr-counter tx 0 rx 0", "berr1": "berr-counter tx 0 rx 0", "state0": "state ERROR-ACTIVE", "state1": "state ERROR-ACTIVE", "verdict": "PASS"}
+  [PASS] fd-1m2m-01
+
+---- [20261102-181452 fd-1m2m-10]: can1 -> can0 nom=1000000 data=2000000 n=2000
+  can0: 	 bitrate 1000000 sample-point 0.750 	 dbitrate 2000000 dsample-point 0.750 
+  fd-1m2m-10: recv=2000/2000 丢帧=0.000% 帧率=3194.3 fps 载荷=1.64 Mbit/s DLC=64 tx_err=0 rx_err=0 berr-counter tx 0 rx 0 | berr-counter tx 0 rx 0 | state ERROR-ACTIVE
+{"tag": "fd-1m2m-10", "nom": 1000000, "dbit": 2000000, "n": 2000, "src": "can1", "dst": "can0", "tx_delta": 2000, "rx_delta": 2000, "recv": 2000, "rx_dlc": 64, "dlc_ok": true, "span_s": 0.6258, "fps": 3194.3, "payload_mbps": 1.64, "loss_pct": 0.0, "tx_err": 0, "rx_err": 0, "cangen_rc": 0, "berr0": "berr-counter tx 0 rx 0", "berr1": "berr-counter tx 0 rx 0", "state0": "state ERROR-ACTIVE", "state1": "state ERROR-ACTIVE", "verdict": "PASS"}
+  [PASS] fd-1m2m-10
+
+---- [20261102-181452 fd-1m5m-01]: can0 -> can1 nom=1000000 data=5000000 n=4000
+  can0: 	 bitrate 1000000 sample-point 0.750 	 dbitrate 5000000 dsample-point 0.750 
+  fd-1m5m-01: recv=4000/4000 丢帧=0.000% 帧率=6988.5 fps 载荷=3.58 Mbit/s DLC=64 tx_err=0 rx_err=0 berr-counter tx 0 rx 0 | berr-counter tx 0 rx 0 | state ERROR-ACTIVE
+{"tag": "fd-1m5m-01", "nom": 1000000, "dbit": 5000000, "n": 4000, "src": "can0", "dst": "can1", "tx_delta": 4000, "rx_delta": 4000, "recv": 4000, "rx_dlc": 64, "dlc_ok": true, "span_s": 0.5722, "fps": 6988.5, "payload_mbps": 3.58, "loss_pct": 0.0, "tx_err": 0, "rx_err": 0, "cangen_rc": 0, "berr0": "berr-counter tx 0 rx 0", "berr1": "berr-counter tx 0 rx 0", "state0": "state ERROR-ACTIVE", "state1": "state ERROR-ACTIVE", "verdict": "PASS"}
+  [PASS] fd-1m5m-01
+
+---- [20261102-181452 fd-1m5m-10]: can1 -> can0 nom=1000000 data=5000000 n=4000
+  can0: 	 bitrate 1000000 sample-point 0.750 	 dbitrate 5000000 dsample-point 0.750 
+  fd-1m5m-10: recv=4000/4000 丢帧=0.000% 帧率=6995.1 fps 载荷=3.58 Mbit/s DLC=64 tx_err=0 rx_err=0 berr-counter tx 0 rx 0 | berr-counter tx 0 rx 0 | state ERROR-ACTIVE
+{"tag": "fd-1m5m-10", "nom": 1000000, "dbit": 5000000, "n": 4000, "src": "can1", "dst": "can0", "tx_delta": 4000, "rx_delta": 4000, "recv": 4000, "rx_dlc": 64, "dlc_ok": true, "span_s": 0.5717, "fps": 6995.1, "payload_mbps": 3.58, "loss_pct": 0.0, "tx_err": 0, "rx_err": 0, "cangen_rc": 0, "berr0": "berr-counter tx 0 rx 0", "berr1": "berr-counter tx 0 rx 0", "state0": "state ERROR-ACTIVE", "state1": "state ERROR-ACTIVE", "verdict": "PASS"}
+  [PASS] fd-1m5m-10
+  dmesg 安全检查: 无 oops/WARN（新增 0 行）
+
+  ==== core 汇总 ====
+  classic-500k-01  classic    recv=2000/2000 丢帧= 0.000%   4375.3 fps   0.28 Mbit/s tx_err=0 rx_err=0 PASS
+  classic-500k-10  classic    recv=2000/2000 丢帧= 0.000%   4376.9 fps   0.28 Mbit/s tx_err=0 rx_err=0 PASS
+  fd-1m2m-01       1000000/2000000 recv=2000/2000 丢帧= 0.000%   3192.3 fps   1.63 Mbit/s tx_err=0 rx_err=0 PASS
+  fd-1m2m-10       1000000/2000000 recv=2000/2000 丢帧= 0.000%   3194.3 fps   1.64 Mbit/s tx_err=0 rx_err=0 PASS
+  fd-1m5m-01       1000000/5000000 recv=4000/4000 丢帧= 0.000%   6988.5 fps   3.58 Mbit/s tx_err=0 rx_err=0 PASS
+  fd-1m5m-10       1000000/5000000 recv=4000/4000 丢帧= 0.000%   6995.1 fps   3.58 Mbit/s tx_err=0 rx_err=0 PASS
+  [PASS] 全部档位达判据（丢帧<1%、tx_err/rx_err=0、双向 ERROR-ACTIVE）
+
+---- ==== ext：DLC 扫描 + 5M 分段突发 + 8M 记录 + autosuspend ====
+
+---- [20261102-181452 dlc-1000000-5000000-can0]: FD DLC 扫描 1000000/5000000，can0 -> can1，16 档
+  DLC 期望 [0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64]
+  DLC 实收 [0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64]
+  [PASS] dlc-1000000-5000000-can0: FD DLC 0~64 共 16 档全部按原长度收到（BRS 生效）
+{"tag": "dlc-1000000-5000000-can0", "status": "dlc_sweep", "expected": [0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64], "got": [0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64], "verdict": "PASS"}
+  [PASS] dlc-1000000-5000000-can0: DLC 0~64 全部按原长度收到
+
+---- [20261102-181452 dlc-1000000-5000000-can1]: FD DLC 扫描 1000000/5000000，can1 -> can0，16 档
+  DLC 期望 [0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64]
+  DLC 实收 [0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64]
+  [PASS] dlc-1000000-5000000-can1: FD DLC 0~64 共 16 档全部按原长度收到（BRS 生效）
+{"tag": "dlc-1000000-5000000-can1", "status": "dlc_sweep", "expected": [0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64], "got": [0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64], "verdict": "PASS"}
+  [PASS] dlc-1000000-5000000-can1: DLC 0~64 全部按原长度收到
+
+---- [20261102-181452 loop-1000000-5000000]: FD 1000000/5000000 连发 6 轮 x 1000 帧（can0->can1 与 can1->can0 交替）
+  第 1 轮 can0->can1: tx=1000 rx=1000 state ERROR-ACTIVE berr-counter tx 0 rx 0
+  第 2 轮 can1->can0: tx=1000 rx=1000 state ERROR-ACTIVE berr-counter tx 0 rx 0
+  第 3 轮 can0->can1: tx=1000 rx=1000 state ERROR-ACTIVE berr-counter tx 0 rx 0
+  第 4 轮 can1->can0: tx=1000 rx=1000 state ERROR-ACTIVE berr-counter tx 0 rx 0
+  第 5 轮 can0->can1: tx=1000 rx=1000 state ERROR-ACTIVE berr-counter tx 0 rx 0
+  第 6 轮 can1->can0: tx=1000 rx=1000 state ERROR-ACTIVE berr-counter tx 0 rx 0
+  [PASS] loop-1000000-5000000: 6 轮 x 1000 帧全部收到（累计 6000 帧，无 TX 队列停住）
+{"tag":"loop-1000000-5000000","status":"burst_loop","rounds":6,"n":1000,"total_rx":6000,"ok_rounds":6,"verdict":"PASS"}
+
+---- [20261102-181452 fd-1m8m-01]: can0 -> can1 nom=1000000 data=8000000 n=1000
+  can0: 	 bitrate 1000000 sample-point 0.750 	 dbitrate 8000000 dsample-point 0.700 
+  fd-1m8m-01: recv=1000/1000 丢帧=0.000% 帧率=9981.4 fps 载荷=5.11 Mbit/s DLC=64 tx_err=0 rx_err=0 berr-counter tx 0 rx 0 | berr-counter tx 0 rx 0 | state ERROR-ACTIVE
+{"tag": "fd-1m8m-01", "nom": 1000000, "dbit": 8000000, "n": 1000, "src": "can0", "dst": "can1", "tx_delta": 1000, "rx_delta": 1000, "recv": 1000, "rx_dlc": 64, "dlc_ok": true, "span_s": 0.1001, "fps": 9981.4, "payload_mbps": 5.11, "loss_pct": 0.0, "tx_err": 0, "rx_err": 0, "cangen_rc": 0, "berr0": "berr-counter tx 0 rx 0", "berr1": "berr-counter tx 0 rx 0", "state0": "state ERROR-ACTIVE", "state1": "state ERROR-ACTIVE", "verdict": "PASS"}
+  [PASS] fd-1m8m-01
+
+---- [20261102-181452 autosuspend]: usbcore.autosuspend / 端口 power-control / 10 s 空闲存活
+  usbcore.autosuspend=2
+  gs_usb sysfs 设备: 1-8
+  1-8/power/control=on
+  [PASS] autosuspend: 10 s 空闲 20 次轮询 0 掉线（300 s 结论见 ch42 42.7.6 与 U-40-14）
+  dmesg 安全检查: 无 oops/WARN（新增 0 行）
+  dmesg 安全检查: 无 oops/WARN（新增 0 行）
+
+  ==== ext 汇总 ====
+  classic-500k-01  classic    recv=2000/2000 丢帧= 0.000%   4375.3 fps   0.28 Mbit/s tx_err=0 rx_err=0 PASS
+  classic-500k-10  classic    recv=2000/2000 丢帧= 0.000%   4376.9 fps   0.28 Mbit/s tx_err=0 rx_err=0 PASS
+  fd-1m2m-01       1000000/2000000 recv=2000/2000 丢帧= 0.000%   3192.3 fps   1.63 Mbit/s tx_err=0 rx_err=0 PASS
+  fd-1m2m-10       1000000/2000000 recv=2000/2000 丢帧= 0.000%   3194.3 fps   1.64 Mbit/s tx_err=0 rx_err=0 PASS
+  fd-1m5m-01       1000000/5000000 recv=4000/4000 丢帧= 0.000%   6988.5 fps   3.58 Mbit/s tx_err=0 rx_err=0 PASS
+  fd-1m5m-10       1000000/5000000 recv=4000/4000 丢帧= 0.000%   6995.1 fps   3.58 Mbit/s tx_err=0 rx_err=0 PASS
+  dlc-1000000-5000000-can0 PASS
+  dlc-1000000-5000000-can1 PASS
+  loop-1000000-5000000 PASS
+  fd-1m8m-01       1000000/8000000 recv=1000/1000 丢帧= 0.000%   9981.4 fps   5.11 Mbit/s tx_err=0 rx_err=0 PASS
+  [PASS] 全部档位达判据（丢帧<1%、tx_err/rx_err=0、双向 ERROR-ACTIVE）
+  [PASS] 测试后设备仍在线（sysfs: 1-8）
+  dmesg 安全检查: 无 oops/WARN（新增 0 行）
+
+==================================================================
+汇总: 5m
+==================================================================
+PASS=15  FAIL=0  内核异常=0
+结论: PASS

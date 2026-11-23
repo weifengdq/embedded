@@ -1,0 +1,47 @@
+t] GPTMR events ...
+[init] 事件通道就绪（EVT0=1 kHz, EV_CLOCK = 103965 us
+-- 4) DAQ 采集 600 ms --
+     list0 事件数=601 实测事件率=1000.4 Hz（配置 1000 Hz）
+     list0 ODT 帧数=1803（每事件 3 帧）总帧率=3101 frame/s
+     时间戳抖动：n=601 mean=1000 us min=1000 us max=1000 us sd=0 us
+     事件丢失：lost_events=0（按 g_tick_cnt 连续计数判定）
+  [PASS] DAQ 收到事件采样
+  [PASS] list0 事件率在 900~1100 Hz
+  [PASS] list0 无丢帧
+  [PASS] 时间戳平均间隔 ≈ 1000 us
+  [PASS] 时间戳最大间隔 < 3 ms
+     slave: cto_rx=54 daq_frames=1863 dropped=0 overload=0
+  [PASS] 从站 DAQ 队列无丢弃
+  [PASS] 从站 CAN 发送无 TX FIFO 满
+  [PASS] 停止 DAQ 后命令通道仍正常
+=== 自证结论：PASS（FAIL=0）===
+XCP SELFTEST PASS fail=0
+gw on
+Enet phy init passed !
+IPv4 Address: 192.168.2.100
+IPv4 Netmask: 255.255.255.0
+IPv4 Gateway: 192.168.2.1
+[lwip] cfg ip=192.168.2.100 mask=255.255.255.0 gw=192.168.2.1
+[lwip] aton+set: ip=6402A8C0 mask=00FFFFFF gw=0102A8C0
+[lwip] netif now: ip=6402A8C0 mask=00FFFFFF gw=0102A8C0 hwlen=6 mac=00:00:00:00:D0:0E
+[lwip] netif=en idx=1 MAC=00:00:00:00:D0:0E
+[lwip] IP=192.168.2.100 link=DOWN
+[lwip] MASK=255.255.255.0
+[lwip] GW=192.168.2.1
+[lwip] PHY link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D
+[lwip] link UP after 12 ms
+[lwip] netif=en idx=1 MAC=00:00:00:00:D0:0E
+[lwip] IP=192.168.2.100 link=UP
+[lwip] MASK=255.255.255.0
+[lwip] GW=192.168.2.1
+[lwip] PHY link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D
+[lwip] ready: IP=192.168.2.100 port 任意 UDP 可直接收
+[gw] app_lwip_init rc=0
+[gw] ch1: CAN1 <-> UDP 4000 (local 0.0.0.0)
+[gw] cannelloni v2 gateway ready, 1 channel(s), peer=auto-learn
+[gw] app_can_gw_init rc=0 port=4000 peer=(none)
+[gw] 转发已开启：主机 vcan0 <-> UDP 4000 <-> CAN1（CAN0 上跑 XCP 从站 0x555/0x556）
+GW ON PASS
+
+letter:/$ 
+letter:/$ 

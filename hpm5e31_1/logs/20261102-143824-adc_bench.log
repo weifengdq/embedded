@@ -1,0 +1,23 @@
+ 20 cycles)
+SELFTEST: first sample raw=34594 (1741972 uV), groer / adcerr / help
+adcbench 20000
+ADCBENCH: n=20000 ticks=648306 us=27012.8 -> 1350.64 us/sample, throughput=740.4 kHz
+ADCBENCH: theory fs=1388888 Hz, measured/theory=53.3%, last raw=35409 (1783012 uV)
+ADCBENCH: group1 total conversions=20003, det count=0
+
+letter:/$ 
+letter:/$ adcbench 50000
+ADCBENCH: n=50000 ticks=1621331 us=67555.5 -> 1351.11 us/sample, throughput=740.1 kHz
+ADCBENCH: theory fs=1388888 Hz, measured/theory=53.3%, last raw=35392 (1782156 uV)
+ADCBENCH: group1 total conversions=70004, det count=0
+
+letter:/$ 
+letter:/$ adcstream
+STREAM: samples=1 ptr=valid value=35907 status=2
+
+letter:/$ 
+letter:/$ adcerr
+DET: before=0 after=3 delta=3
+
+letter:/$ 
+letter:/$ 

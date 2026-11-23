@@ -1,0 +1,35 @@
+oop         N=200000  cyc/op=5.00  ns/op=10.43  f=95858 kHz
+--spd_info' for help
+spd_info
+gpio_speed @ hpm5e31_1: cpu=480000000 Hz
+  single pin: PA02 (USR LED, active high)
+  port bank : GPIOF PF16..PF26 (8x CAN 状态灯), mask=0x07FF0000
+  usage     : spd [N]  spd_bank  spd_fgpio  spd_dump  spd_info
+
+letter:/$ 
+letter:/$ spd 500000
+
+gpio_speed: cpu=480000000 Hz, N=500000, 1 cycle=2.08 ns
+---- 基准 ----
+empty_loop         N=500000  cyc/op=5.00  ns/op=10.41  f=95996 kHz
+---- 单脚(PA02) 翻转 ----
+api_toggle         N=500000  cyc/op=31.20  ns/op=65.00  f=15384 kHz
+reg_toggle         N=500000  cyc/op=31.20  ns/op=65.01  f=15381 kHz
+reg_set_clear      N=500000  cyc/op=62.40  ns/op=130.00  f=7692 kHz
+---- 端口级整字写(PF16..PF26) ----
+port_word_write    N=500000  cyc/op=31.20  ns/op=65.00  f=15384 kHz
+---- 读 ----
+read_pin           N=500000  cyc/op=55.20  ns/op=115.00  f=8695 kHz
+read_port          N=500000  cyc/op=36.00  ns/op=75.00  f=13333 kHz
+---- FGPIO(核心私有快速总线) ----
+fgpio_toggle       N=500000  cyc/op=7.00  ns/op=14.58  f=68569 kHz
+---- 结论: 单脚翻转上限约 7692 MHz(软件, 不含 PAD 边沿/示波器限制) ----
+
+letter:/$ 
+letter:/$ spd_dump
+GPIO0  DO[A]=0x00000000 DI[A]=0x407803F3
+GPIO0  DO[F]=0x07FF0000 DI[F]=0x04021A00
+GPIOM  PA02 controller=0, PF26 controller=0 (0=soc_gpio0, 2=core0_fast)
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,30 @@
+=== USB HID 键盘主机侧证据 ===
+时间: Fri Oct 30 12:35:53 PM CST 2026
+板端: scripts/hwrun.sh usb/usb_hid_keyboard --secs 25 --no-build
+设备节点: /sys/bus/usb/devices/1-8/
+
+--- sysfs 设备属性 ---
+idVendor       34b7
+idProduct      ffff
+manufacturer   HPMicro
+product        HPMicro HID DEMO
+serial         2024051702
+speed          480
+bDeviceClass   00
+
+--- 接口类 (3 = HID) ---
+/sys/bus/usb/devices/1-8/1-8:1.0/bInterfaceClass = 03
+
+--- 内核 HID 绑定日志 ---
+Oct 30 12:35:53 ubuntu kernel: usb 1-8: New USB device found, idVendor=34b7, idProduct=ffff, bcdDevice= 0.02
+Oct 30 12:35:53 ubuntu kernel: usb 1-8: Product: HPMicro HID DEMO
+Oct 30 12:35:53 ubuntu kernel: usb 1-8: Manufacturer: HPMicro
+Oct 30 12:35:53 ubuntu kernel: input: HPMicro HPMicro HID DEMO as /devices/pci0000:00/0000:00:14.0/usb1/1-8/1-8:1.0/0003:34B7:FFFF.0002/input/input15
+Oct 30 12:35:53 ubuntu kernel: hid-generic 0003:34B7:FFFF.0002: input,hidraw1: USB HID v1.11 Keyboard [HPMicro HPMicro HID DEMO] on usb-0000:00:14.0-8/input0
+
+--- input 设备 ---
+/sys/class/input/input15/name = HPMicro HPMicro HID DEMO
+
+--- hidraw 设备 ---
+crw------- 1 root root 240, 0 Oct 29 09:27 /dev/hidraw0
+crw------- 1 root root 240, 1 Oct 30 12:35 /dev/hidraw1

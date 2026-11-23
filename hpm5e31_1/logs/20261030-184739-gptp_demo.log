@@ -1,0 +1,14 @@
+000M SLAVE
+Enet phy init passed !
+[net] ENET + YT8011AN init  | link
+sleep 1000
+[sys] sleep 1000 ms (PTP keep-alive)
+
+letter:/$ 
+letter:/$ ptp
+[ptp] state=SLAVE domain=0 mech=P2P slaveOnly=true
+[ptp] hwclock=1651074121.622553300 s  offset=0 ns  pathdelay=0 ns  drift=0 (ppb*2^-16)
+[ptp] stepsRemoved=0 gm=000000..D00E prio1=248 class=255 link=DOWN
+
+letter:/$ 
+letter:/$ 

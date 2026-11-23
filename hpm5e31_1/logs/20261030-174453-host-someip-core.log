@@ -1,0 +1,43 @@
+letter:/$ [hwrun] post (持锁运行上位机测试): timeout 80 bash host/someip/run_client.sh core
+[run_client] mode=core board=192.168.2.100 local=192.168.2.1
+someip_client: board=192.168.2.100 local=192.168.2.1 event_port=30502
+== SD 发现 ==
+  PASS 收到组播 OfferService：service 0x1234 instance 0x0001 major 1 ttl 3 s
+       endpoint option: 192.168.2.100:30501 proto 0x11（UDP=0x11）
+  PASS FindService -> OfferService 0.7 ms（单播回 192.168.2.100:30490）
+  PASS 周期 OfferService: 2 条 / 4.0 s，重发间隔 均值 1499.7 ms（min 1499.7 / max 1499.7）
+== SD 发现 PASS ==
+
+== 方法 RPC ==
+  PASS add(2,3)                     rc=E_OK value=5 rtt=0.30 ms
+  PASS add(0xFFFFFFFF,1)            value=0（u32 回绕）
+  PASS get_version                  'hpm5e31-someip/1.0.0'
+  PASS set_led(1)                   
+  PASS set_led(0)                   
+  PASS temp getter                  42.250 C
+  PASS temp setter                  readback 42.250 C
+  PASS get_time(us)                 board_us=10079898
+  PASS unknown method -> ERROR(0x03) rc=E_UNKNOWN_METHOD
+  PASS response session 回显          （见下：RTT 统计）
+  RTT n=50 min=0.099 avg=0.105 p50=0.105 p99=0.125 max=0.125 ms
+== 方法 RPC PASS (10/10) ==
+
+== 事件订阅 ==
+  订阅前 1 s：收到 0 B，NOTIFICATION 0 条（应为 0）
+  PASS SubscribeEventgroup -> Ack ttl=3 counter=1
+  时基对齐：offset=-116413170.094 ms（最优样本 RTT 0.103 ms）
+  收到 NOTIFICATION 391 条 / 6.00 s，事件流量 10.6 kbit/s（订阅前 0.0 kbit/s）
+  事件               条数     周期ms       σms     minms     maxms     丢包       时延ms
+  counter          35   100.01     0.189     99.59    100.37      0 232826340.52/232826340.71
+  adc             349    10.03     0.535      9.57     19.88      0          -
+  temperature       7   500.06     0.240    499.79    500.51      0          -
+  Wextra: 期望周期 counter=100 ms / adc=10 ms / temperature=500 ms
+== 事件订阅 PASS ==
+
+================ 汇总 ================
+  discover   PASS
+  rpc        PASS
+  event      PASS
+  总计: PASS
+[hwrun] post rc=0
+---- LOG: logs/20261030-174453-someip_rpc.log (rc=0) ----

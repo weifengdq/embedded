@@ -1,0 +1,7 @@
+clk=80000000 Hz, cpu=480000000 Hz, mode=100k(normal), loopback=oAT24C128 etc.) to see ACK.
+i2c_scan 8 16
+scan 0x08..0x10: 9 addr, found=0 nack=9 other=0, avg_probe=751145 ns, total=6762 us
+note: avg_probe 含 NACK retry, 不能反推 SCL; 见 i2c_timing 的寄存器回读
+
+letter:/$ 
+letter:/$ 

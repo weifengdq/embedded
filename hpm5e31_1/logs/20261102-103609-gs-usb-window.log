@@ -1,0 +1,63 @@
+== gs_usb 90s 短窗口 2026-11-02 10:36:09（预算 75 s）==
+设备: sysfs 1-8
+
+---- [1/2] enum ----
+    link/can  promiscuity 0 allmulti 0 minmtu 16 maxmtu 16 
+    can state STOPPED (berr-counter tx 8 rx 127) restart-ms 0 
+	  gs_usb: tseg1 1..256 tseg2 1..128 sjw 1..128 brp 1..512 brp_inc 1
+	  gs_usb: dtseg1 1..32 dtseg2 1..16 dsjw 1..16 dbrp 1..256 dbrp_inc 1
+	  clock 80000000 numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535 tso_max_size 65536 tso_max_segs 65535 gro_max_size 65536 gso_ipv4_max_size 65536 gro_ipv4_max_size 65536 parentbus usb parentdev 1-8:1.0 
+38: can3: <NOARP,ECHO> mtu 16 qdisc noop state DOWN mode DEFAULT group default qlen 10
+    link/can  promiscuity 0 allmulti 0 minmtu 16 maxmtu 16 
+    can state STOPPED (berr-counter tx 8 rx 127) restart-ms 0 
+	  gs_usb: tseg1 1..256 tseg2 1..128 sjw 1..128 brp 1..512 brp_inc 1
+	  gs_usb: dtseg1 1..32 dtseg2 1..16 dsjw 1..16 dbrp 1..256 dbrp_inc 1
+	  clock 80000000 numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535 tso_max_size 65536 tso_max_segs 65535 gro_max_size 65536 gso_ipv4_max_size 65536 gro_ipv4_max_size 65536 parentbus usb parentdev 1-8:1.0 
+  [PASS] 测试后设备仍在线（sysfs: 1-8）
+  dmesg 安全检查: 无 oops/WARN（新增 10 行）
+
+==================================================================
+汇总: enum
+==================================================================
+PASS=10  FAIL=0  内核异常=0
+结论: PASS
+GS_RESULT: PASS;10;0;logs/20261102-103609-gs-usb-enum.log
+GS_RESULT: PASS;10;0;logs/20261102-103609-gs-usb-enum.log
+
+---- [2/2] classic ----
+           332       9      0      10       0       0 
+36: can1: <NOARP,UP,LOWER_UP,ECHO> mtu 72 qdisc pfifo_fast state UP mode DEFAULT group default qlen 10
+    link/can 
+    RX:  bytes packets errors dropped  missed   mcast           
+             3       1      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+             3       1      0       0       0       0 
+can1 RX 包数=1  can0 TX 包数=9
+  [FAIL] can1 RX 计数偏少（1）
+  [PASS] can0 TX 计数正常（TX=9）
+
+---- 8. 高位速率下的错误计数（正常应保持 ERROR-ACTIVE / 0 错误）
+can0: state UP state ERROR-ACTIVE berr-counter tx 128 rx 126 
+can1: state UP state ERROR-ACTIVE berr-counter tx 128 rx 126 
+  dmesg 安全检查: 无 oops/WARN（新增 29 行）
+  [PASS] 测试后设备仍在线（sysfs: 1-8）
+  dmesg 安全检查: 无 oops/WARN（新增 29 行）
+
+==================================================================
+汇总: classic
+==================================================================
+PASS=6  FAIL=4  内核异常=0
+结论: FAIL
+GS_RESULT: FAIL;6;4;logs/20261102-103609-gs-usb-classic.log
+GS_RESULT: FAIL;6;4;logs/20261102-103609-gs-usb-classic.log
+
+== 摘要 ==
+| 项 | 值 |
+|---|---|
+| 接口数 | 4 |
+| can0 驱动 | gs_usb |
+| enum | PASS |
+| classic | FAIL |
+| 窗口后设备在线 | 是 |
+| 窗口日志 | logs/20261102-103609-gs-usb-window.log |
+窗口结束 2026-11-02 10:36:30

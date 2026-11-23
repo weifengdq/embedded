@@ -1,0 +1,44 @@
+
+digraph qeo_qei {
+  rankdir=LR;
+  graph [fontname="Noto Sans CJK SC", fontsize=11, nodesep=0.3, ranksep=0.55, bgcolor="white"];
+  node  [fontname="Noto Sans CJK SC", fontsize=10, shape=box, style="rounded,filled",
+         fillcolor="#F6F8FA", color="#57606A", penwidth=0.9];
+  edge  [fontname="Noto Sans CJK SC", fontsize=9, color="#57606A", arrowsize=0.7];
+
+  subgraph cluster_qei {
+    label="QEIv2（HPM_QEI0，§40）";
+    fontname="Noto Sans CJK SC"; fontsize=10; color="#D0D7DE"; style="rounded";
+    pad  [label="A/B/Z 输入\n(IOC 复用 + 可选滤波)", fillcolor="#FFF8E1"];
+    dec  [label="正交解码\nABZ / PD / UD / UVW / sincos", fillcolor="#E6F4EA"];
+    ph   [label="位置计数 COUNT[PH]\nZ 相重置 COUNT[Z]", fillcolor="#E6F4EA"];
+    spd  [label="测速 COUNT[SPD]\n(脉冲数法 / 时长法)", fillcolor="#E6F4EA"];
+    wdg  [label="看门狗计数器", fillcolor="#E6F4EA"];
+  }
+
+  subgraph cluster_trgm {
+    label="TRGM（§38）";
+    fontname="Noto Sans CJK SC"; fontsize=10; color="#D0D7DE"; style="rounded";
+    pos_matrix [label="POS_MATRIX_SEL0\n位置矩阵\ntrgm_pos_matrix_in_from_qei0", fillcolor="#E8F0FE"];
+  }
+
+  subgraph cluster_qeo {
+    label="QEO（HPM_QEO0/1，§41）";
+    fontname="Noto Sans CJK SC"; fontsize=10; color="#D0D7DE"; style="rounded";
+    qeo_in [label="位置/角度输入\n(来自 TRGM 位置矩阵)", fillcolor="#FFF8E1"];
+    qeo_out [label="A/B/Z 正交输出\nU/V/W 霍尔输出", fillcolor="#E6F4EA"];
+    qeo_pwm [label="PWM/DAC 输出\n(角度->占空比)", fillcolor="#E6F4EA"];
+  }
+
+  pad -> dec -> ph;
+  dec -> spd;
+  dec -> wdg;
+  ph -> pos_matrix;
+  pos_matrix -> qeo_in;
+  qeo_in -> qeo_out;
+  qeo_in -> qeo_pwm;
+
+  qeo_out -> pins  [label="P0~P7 引脚\n(需 3 根飞线接回 QEI)", style="dashed", color="#DA3633"];
+  pins [label="QEI0 A/B/Z 引脚\n(PC07/PC06/PC05)", shape=box3d, fillcolor="#D2E3FC"];
+  pins -> pad [style="dashed", color="#DA3633"];
+}

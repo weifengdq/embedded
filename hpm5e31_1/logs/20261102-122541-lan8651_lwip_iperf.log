@@ -1,0 +1,10 @@
+bit/s (213.84 Mbit/s)
+[iperf] type=0 remote=192.168.2.1:55718 bytes=479854616 ms=10004 => 383728 kbit/s (383.73 Mbit/s)
+[phyor PHY link
+ip
+[net] netif t10  MAC 02:00:00:5e:31:01
+[net] IP 192.168.1.1  mask 192.168.1.1  gw 192.168.1.1  MTU 1500
+[net] up=1 link=0
+
+letter:/$ 
+letter:/$ 

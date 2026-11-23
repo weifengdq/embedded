@@ -1,0 +1,12 @@
+ghput
+[cfg] cpu=480 MHz, cases=6
+
+=== MCAN throughput (CAN0->CAN1 one-way, real bus, polling) ===
+can20-500k-8B    n=2000 rx=2000 bad=0 t=463708 us fps=4313 payload=0.28Mbps cyc/frame=111290 lec=0 tec=0 rec=0
+can20-1M-8B      n=2000 rx=2000 bad=0 t=232204 us fps=8613 payload=0.55Mbps cyc/frame=55729 lec=0 tec=0 rec=0
+fd-500k-2M-64B   n=2000 rx=2000 bad=0 t=759785 us fps=2632 payload=1.35Mbps cyc/frame=182348 lec=0 tec=0 rec=0
+fd-1M-2M-64B     n=2000 rx=2000 bad=0 t=703703 us fps=2842 payload=1.46Mbps cyc/frame=168889 lec=0 tec=0 rec=0
+fd-1M-5M-64B     n=2000 rx=2000 bad=0 t=317464 us fps=6300 payload=3.23Mbps cyc/frame=76191 lec=0 tec=0 rec=0
+fd-1M-8M-64B     n=2000 rx=2000 bad=0 t=220897 us fps=9054 payload=4.64Mbps cyc/frame=53015 lec=0 tec=0 rec=0
+THR SUMMARY done
+done. commands: info | thr [n] | one <idx> [n]

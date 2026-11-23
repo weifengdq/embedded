@@ -1,0 +1,37 @@
+ter)
+[app] canopen_node ready
+
+=== CANopen node1 self test1 s）
+  heartbeat 0x701 @1s                  FAIL  2.6 s 内收到 1 帧（期望 2~3）
+[test] EMCY 注入
+  EMCY 0x081 manufacturer              PASS  EMCY 计数 +1, code=0x1000
+  stats: heap=2876B rx=0 tx=0 retry=0 loops=1050890 maxloop=2656us canerr=0x0000
+=== RESULT: 10 PASS / 1 FAIL ===
+gw on
+Enet phy init passed !
+IPv4 Address: 192.168.2.100
+IPv4 Netmask: 255.255.255.0
+IPv4 Gateway: 192.168.2.1
+[lwip] cfg ip=192.168.2.100 mask=255.255.255.0 gw=192.168.2.1
+[lwip] aton+set: ip=6402A8C0 mask=00FFFFFF gw=0102A8C0
+[lwip] netif now: ip=6402A8C0 mask=00FFFFFF gw=0102A8C0 hwlen=6 mac=00:00:00:00:D0:0E
+[lwip] netif=en idx=1 MAC=00:00:00:00:D0:0E
+[lwip] IP=192.168.2.100 link=DOWN
+[lwip] MASK=255.255.255.0
+[lwip] GW=192.168.2.1
+[lwip] PHY link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D
+[lwip] link UP after 12 ms
+[lwip] netif=en idx=1 MAC=00:00:00:00:D0:0E
+[lwip] IP=192.168.2.100 link=UP
+[lwip] MASK=255.255.255.0
+[lwip] GW=192.168.2.1
+[lwip] PHY link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D
+[lwip] ready: IP=192.168.2.100 port 任意 UDP 可直接收
+[gw] lwip init rc=0 link=UP
+[gw] ch1: CAN1 <-> UDP 4000 (local 192.168.2.100)
+[gw] cannelloni v2 gateway ready, 1 channel(s), peer=auto-learn
+[gw] CAN1 <-> UDP4000 rc=0 (host: cannelloni -I vcan0 -R 192.168.2.100 -r 4000 -l 4000)
+[gw] forwarding ON, CAN0 node1 仍为 CANopen 从站
+
+letter:/$ 
+letter:/$ 

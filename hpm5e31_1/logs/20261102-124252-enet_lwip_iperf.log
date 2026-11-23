@@ -1,0 +1,24 @@
+ mode <1000|100>
+client <ip> [tcp|udp] | istop | cpu | sleep |    ___| |_| |_ ___ _ __   ___| 
+letter:/$ 
+=== enet_lwip_iperf: YT8011AN(1000BASE-T1) + lwIP + iperf2 ===
+lwIP 2.1.2
+[phy] EXT 0x9001 (RGMII cfg1) = 0x0110
+[phy] YT8011AN link up: 1000M SLAVE
+Enet phy init passed !
+[net] Enet controller + PHY  mode <1000|100>
+ip
+[net] netif  : en (index=1)
+[net] MAC    : 00:00:00:00:D0:0E
+[net] IP     : 192.168.2.100
+[net] NETMASK: 255.255.255.0
+[net] GW     : 192.168.2.1
+[net] link   : DOWN
+
+letter:/$ 
+letter:/$ link
+[phy] link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D thread=0
+
+letter:/$ 
+letter:/$ [phy] link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D thread=1
+[phy] link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D thread=1

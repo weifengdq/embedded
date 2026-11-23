@@ -1,0 +1,9 @@
+===========
+
+[hpm5e31_1] hello world (hpm5e31_1 board)
+cpu0000000 Hz
+ahb  : 200000000 Hz
+xpi0 : 100000000 Hz
+tick 1, uptime 1000 ms
+tick 2, uptime 2000 ms
+tick 3, uptime 3000 ms

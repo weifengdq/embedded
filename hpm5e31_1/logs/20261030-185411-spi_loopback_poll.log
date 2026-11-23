@@ -1,0 +1,12 @@
+MISO=PC12 MOSI=PC13 CS=PC11
+  src_clk=80000000 Hz, cpu=48000000000000' to re-measure
+spi_loop
+no-loopback rx: 00 00 00 00 00 00 00 00 (MOSI 数据 A0..A7)
+mosi-loopback rx: 00 00 00 00 00 00 00 00 -> MISMATCH(需外部短接 MISO-MOSI)
+
+letter:/$ 
+letter:/$ spi_sclk 256 1000000
+spi_sclk cfg=1000000 measured=994270 err=-5730 ppm, n=256 time=2059.80 us
+
+letter:/$ 
+letter:/$ 

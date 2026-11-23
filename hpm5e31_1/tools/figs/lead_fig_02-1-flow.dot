@@ -1,0 +1,17 @@
+digraph G {
+  graph [rankdir=LR, fontname="Noto Sans CJK SC", fontsize=12, nodesep=0.25, ranksep=0.4, bgcolor="white"];
+  node [shape=box, style="rounded,filled", fontname="Noto Sans CJK SC", fontsize=11, fillcolor="#e6fffa", color="#2f855a"];
+  edge [color="#4a5568", fontsize=9];
+  src [label="samples/<cat>/<name>/\nCMakeLists.txt + src/main.c"];
+  brd [label="boards/hpm5e31_1\nboard.c / clock.c / pinmux*.c\nBSP: letter-shell"];
+  sdk [label="HPM SDK v1.13.0\nCMake + drivers + middleware"];
+  cm  [label="cmake -GNinja -B build/...\n-DBOARD=hpm5e31_1\n-DHPM_BUILD_TYPE=flash_xip"];
+  ni  [label="ninja 构建"];
+  out [label="output/demo.elf / .bin / .map"];
+  jl  [label="J-Link JTAG\nloadfile demo.elf", fillcolor="#fed7d7", color="#c53030"];
+  fla [label="片内 Flash\n0x8000_0000", fillcolor="#fefcbf", color="#975a16"];
+  run [label="复位运行\nBOOT_MODE=00 XPI NOR 启动", fillcolor="#fefcbf", color="#975a16"];
+  uart[label="UART0 921600\nprintf + letter-shell", fillcolor="#e9d8ff", color="#6b46c1"];
+  host[label="远程主机\nscripts/serial_cap.py", fillcolor="#e2e8f0", color="#4a5568"];
+  src -> cm; brd -> cm; sdk -> cm; cm -> ni -> out -> jl -> fla -> run -> uart -> host;
+}

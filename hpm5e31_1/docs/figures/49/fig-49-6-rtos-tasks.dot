@@ -1,0 +1,27 @@
+
+digraph rtos {
+  rankdir=TB;
+  graph [fontname="Noto Sans CJK SC", fontsize=11, nodesep=0.26, ranksep=0.34, bgcolor="white"];
+  node  [fontname="Noto Sans CJK SC", fontsize=10, shape=box, style="rounded,filled", fillcolor="#F6F8FA", color="#6E7781"];
+  edge  [fontname="Noto Sans CJK SC", fontsize=9, color="#24292F"];
+
+  phy   [label="PHY / ENET0 DMA 环（16 × Rx + 8 × Tx，1536 B）", fillcolor="#DDF4E0"];
+  rx    [label="ethrx  优先级 6（最高任务）\nEth_GetRxBuffer → custom pbuf → tcpip_input\n无包 64 次空转后 vTaskDelay(1)，有包连续排空", fillcolor="#DDEBFF"];
+  mbox  [label="tcpip mbox（深度 32，trypost 不阻塞）"];
+  tcpip [label="tcpip  优先级 5\nlwIP 核心线程：协议解析 / TCP 状态机 / linkoutput\n→ Eth_ProvideTxBuffer + Eth_Transmit", fillcolor="#DDEBFF"];
+  app   [label="app  优先级 4\n初始化 + 上电自检（完成后自删）"];
+  mon   [label="ethmon  优先级 2\n5 s：CPU 占用 / 栈水位 / 吞吐计数", fillcolor="#FFF1CC"];
+  shell [label="shell  优先级 1\nletter-shell 轮询（10 ms）", fillcolor="#FFF1CC"];
+  idle  [label="IDLE  优先级 0\n1 kHz tick hook 采样空闲率 → CPU 占用", fillcolor="#F0F0F0"];
+
+  phy   -> rx    [label="轮询收包"];
+  rx    -> mbox  [label="netif->input = tcpip_input"];
+  mbox  -> tcpip;
+  tcpip -> phy   [style=dashed, label="linkoutput（Tx 只在 tcpip 线程）", constraint=false];
+  shell -> tcpip [style=dotted, label="eth ping / iperf（LOCK_TCPIP_CORE）"];
+  app   -> tcpip [style=dotted, label="tcpip_init → netif_add"];
+
+  {rank=same; mon; shell; idle;}
+  {rank=same; tcpip; }
+  app -> mon [style=invis];
+}

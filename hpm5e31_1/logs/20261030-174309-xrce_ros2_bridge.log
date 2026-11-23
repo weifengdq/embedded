@@ -1,0 +1,7 @@
+|_| |_ ___ _ __   ___| 
+letter:/$ \r\n=== xrce_ros2_bridge: XRC5.255.0
+IPv4 Gateway: 192.168.2.1
+[bridge] xrce init rc=0 state=connected\r\n[bridge] entities adc=0 status=1 cmd=0 ; shell: brstat | brrst\r\n[bridge] up=2015 ms state=connected adc=0 (0.0 Hz) cmd=0 ack_tx=0 status=0\r\n[bridge] tx dg=14 bytes=581 drop=0 err=2 | rx dg=14 samples=0 retrans=0\r\n[bridge] STAT adc_hz=0.0 cmd=0 => FAIL\r\nbrstat
+[bridge] up=2024 ms state=connected adc=0 (0.0 Hz) cmd=0 ack_tx=5 status=0\r\n[bridge] tx dg=15 bytes=605 drop=0 err=2 | rx dg=15 samples=0 retrans=0\r\n[bridge] STAT adc_hz=0.0 cmd=0 => FAIL\r\n
+letter:/$ 
+letter:/$ [bridge] up=7015 ms state=connected adc=500 (101.1 Hz) cmd=0 ack_tx=9 status=5\r\n[bridge] tx dg=518 bytes=16749 drop=0 err=2 | rx dg=19 samples=0 retrans=0\r\n[bridge] STAT adc_hz=101.1 cmd=0 => PASS\r\n[bridge] up=12015 ms state=connected adc=1000 (100.5 Hz) cmd=0 ack_tx=14 status=10\r\n[bridge] tx dg=1023 bytes=32977 drop=0 err=2 | rx dg=24 samples=0 retrans=0\r\n[bridge] STAT adc_hz=100.5 cmd=0 => PASS\r\n[bridge] up=17015 ms state=connected adc=1500 (100.3 Hz) cmd=0 ack_tx=19 status=15\r\n[bridge] tx dg=1528 bytes=49217 drop=0 err=2 | rx dg=29 samples=0 retrans=0\r\n[bridge] STAT adc_hz=100.3 cmd=0 => PASS\r\n

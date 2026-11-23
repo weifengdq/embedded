@@ -1,0 +1,20 @@
+it] Eth_Init done: ctrl=1 base=0xf1400000
+[init] EthTrcv_Init 36 B, ethertype=0x88B5
+eth tx 64 2000
+TX len=64 n=2000 ok=2000 fps=218269 mbit=143.2 dur=9163us
+
+letter:/$ 
+letter:/$ eth regs
+REG MACCFG=0x3004080C MACFF=0x80000000 DMA_BUS=0x03022080 DMA_OP=0x02202082
+REG DMA_STATUS=0x00660405 DMA_INTR_EN=0x00000000 MACA0=0x000000010002
+TD[0] tdes0=0xF0100000 own=1 es=0 fs=1 ls=1 tbs1=78 buf=0x01230300 state=2
+TD[1] tdes0=0xF0100000 own=1 es=0 fs=1 ls=1 tbs1=78 buf=0x01230900 state=2
+TD[2] tdes0=0xF0100000 own=1 es=0 fs=1 ls=1 tbs1=78 buf=0x01230F00 state=2
+TD[3] tdes0=0xF0100000 own=1 es=0 fs=1 ls=1 tbs1=78 buf=0x01231500 state=2
+TXBUF0: FF FF FF FF FF FF | 02 00 00 00 01 00 | 88 B5 | 45 54 48 30RD[0] rdes0=0x80000000 own=1 fs=0 ls=0 fl=0 buf=0x01233300 held=0
+RD[1] rdes0=0x80000000 own=1 fs=0 ls=0 fl=0 buf=0x01233900 held=0
+RD[2] rdes0=0x80000000 own=1 fs=0 ls=0 fl=0 buf=0x01233F00 held=0
+RD[3] rdes0=0x80000000 own=1 fs=0 ls=0 fl=0 buf=0x01234500 held=0
+
+letter:/$ 
+letter:/$ 

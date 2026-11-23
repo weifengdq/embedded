@@ -1,0 +1,32 @@
+digraph G {
+  graph [rankdir=LR, fontname="Noto Sans CJK SC", fontsize=12, nodesep=0.15, ranksep=0.6, bgcolor="white"];
+  node [shape=record, fontname="Noto Sans CJK SC", fontsize=11, style="filled", fillcolor="#e8f1fb", color="#2b6cb0"];
+  addr [shape=none, label=<<table border="0" cellborder="0" cellspacing="2">
+    <tr><td align="right">0xFFFF_FFFF</td></tr><tr><td align="right">0xF400_0000</td></tr>
+    <tr><td align="right">0xF300_0000</td></tr><tr><td align="right">0xF040_0000</td></tr>
+    <tr><td align="right">0xF030_0000</td></tr><tr><td align="right">0xF020_0000</td></tr>
+    <tr><td align="right">0xF00D_0000</td></tr><tr><td align="right">0xE600_0000</td></tr>
+    <tr><td align="right">0xE400_0000</td></tr><tr><td align="right">0x8000_3000</td></tr>
+    <tr><td align="right">0x8000_0000</td></tr><tr><td align="right">0x3000_0000</td></tr>
+    <tr><td align="right">0x0124_0000</td></tr><tr><td align="right">0x0120_0000</td></tr>
+    <tr><td align="right">0x0020_0000</td></tr><tr><td align="right">0x0002_0000</td></tr>
+    <tr><td align="right">0x0000_0000</td></tr></table>>];
+  region [shape=none, label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+    <tr><td align="left">系统控制/复位/时钟（SYSCTL/PPOR/PLLCTLV2/PCFG）</td></tr>
+    <tr><td align="left">XDMA 0xF310_0000 / 外设寄存器区 0xF000_0000 起</td></tr>
+    <tr><td align="left">PWM0/1、QEI、QEO、PLB、TRGM（0xF040_0000~）</td></tr>
+    <tr><td align="left">MCAN0~3（0xF030_0000~0xF030_C000）</td></tr>
+    <tr><td align="left">AHB SRAM 32 KB（0xF020_0000，DMA 低延迟）</td></tr>
+    <tr><td align="left">GPIO0 / FGPIO（0xF00D_0000 / 0x300_0000）</td></tr>
+    <tr><td align="left">MCHTMR 0xE600_0000（机器定时器）</td></tr>
+    <tr><td align="left">PLIC 0xE400_0000（中断控制器）</td></tr>
+    <tr><td align="left">片内 Flash 1 MB（应用区 @0x8000_3000）</td></tr>
+    <tr><td align="left">Flash 头：nor_cfg@0x400、boot header@0x1000</td></tr>
+    <tr><td align="left">DM 0x3000_0000（非 cacheable 数据）</td></tr>
+    <tr><td align="left">AXI SRAM 非 cacheable 64 KB</td></tr>
+    <tr><td align="left">AXI SRAM 256 KB（主数据区）</td></tr>
+    <tr><td align="left">DLM 128 KB（0x0020_0000）</td></tr>
+    <tr><td align="left">ILM 128 KB（0x0000_0000，向量表+代码）</td></tr>
+    <tr><td align="left">BootROM 128 KB（0x2000_0000，只读）</td></tr></table>>];
+  addr -> region [style=invis];
+}

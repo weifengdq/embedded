@@ -1,0 +1,24 @@
+dle during run)
+[sweep] frequency 1/10/100 kHz, duty=50%, f_gptmr2=100000000 Hz
+[icu] target=1000 Hz duty=16384/0x8000 -> period=100000 tick (1000.000 Hz, +0.00 ppm) high=49917 tick duty=49.917% (-0.083%)
+[icu] target=10000 Hz duty=16384/0x8000 -> period=10000 tick (10000.000 Hz, +0.00 ppm) high=4917 tick duty=49.170% (-0.830%)
+[icu] target=100000 Hz duty=16384/0x8000 -> period=1001 tick (99900.100 Hz, -999.00 ppm) high=417 tick duty=41.658% (-8.342%)
+[sweep] duty 20/50/80% @1 kHz
+[icu] target=1000 Hz duty=6553/0x8000 -> period=100000 tick (1000.000 Hz, +0.00 ppm) high=19915 tick duty=19.915% (-0.083%)
+[icu] target=1000 Hz duty=16384/0x8000 -> period=100001 tick (999.990 Hz, -10.00 ppm) high=49917 tick duty=49.917% (-0.083%)
+[icu] target=1000 Hz duty=26214/0x8000 -> period=100000 tick (1000.000 Hz, +0.00 ppm) high=79915 tick duty=79.915% (-0.084%)
+[edge] 1 s: edges=1998 expect=2000 (2*1000Hz*1s) delta=-2
+[ts] buffer len=32, idx=0, first_delta=100000 tick (1000.000 us), second_delta=100001 tick
+[ts] buf[0] = 7561
+[ts] buf[1] = 107561
+[ts] buf[2] = 207562
+[ts] buf[3] = 307562
+[det] before=1 after=6 delta=5
+[det] last: mod=122 inst=1 api=0x11 err=0x0A
+[icu] Icu v1.0.0 moduleID=122 f_gptmr2=100000000 Hz
+[icu] ch1 = GPTMR2 CAPT_3 <- TRGM0_P07 <- PD07; ch0 = GPTMR2 CAPT_2 <- TRGM0_P06 <- PD06
+[icu] last edge timestamp ch1 = 12207622, elapsed=100001 tick, input=ACTIVE
+[icu_capture] auto sweep done. cmds: icu freq|duty|meas|edge|ts|err|info
+[icu] target=1000 Hz duty=16384/0x8000 -> period=100001 tick (999.990 Hz, -10.00 ppm) high=49917 tick duty=49.917% (-0.083%)
+[icu] target=1000 Hz duty=16384/0x8000 -> period=100001 tick (999.990 Hz, -10.00 ppm) high=49917 tick duty=49.917% (-0.083%)
+[icu] target=1000 Hz duty=16384/0x8000 -> period=100001 tick (999.990 Hz, -10.00 ppm) high=49917 tick duty=49.917% (-0.083%)

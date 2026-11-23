@@ -1,0 +1,17 @@
+
+BENCH_BUS op=xip_memcpy size=65536  reps=4    cold_mbps=39.89 80 MHz opt=-O3 BENCH_FPU=0
+commands: comp | compinfo
+BENCH_COMPUTE kernel=mac_f32     unit=MFLOPS xip_mops=8.59      ilm_mops=7.25      xip_cyc_op=55.910 ilm_cyc_op=66.244 speedup=0.844
+BENCH_COMPUTE kernel=div_f32     unit=MOPS  xip_mops=3.55      ilm_mops=3.53      xip_cyc_op=135.164 ilm_cyc_op=136.168 speedup=0.993
+BENCH_COMPUTE kernel=sqrt_f32    unit=MOPS  xip_mops=1.93      ilm_mops=1.92      xip_cyc_op=248.867 ilm_cyc_op=250.478 speedup=0.994
+BENCH_COMPUTE kernel=sin_f32     unit=MOPS  xip_mops=0.23      ilm_mops=0.23      xip_cyc_op=2063.399 ilm_cyc_op=2067.821 speedup=0.998
+BENCH_COMPUTE kernel=cvt_f2i     unit=MOPS  xip_mops=26.60     ilm_mops=20.83     xip_cyc_op=18.043 ilm_cyc_op=23.039 speedup=0.783
+BENCH_COMPUTE kernel=mac_i32     unit=MOPS  xip_mops=158.45    ilm_mops=158.35    xip_cyc_op=3.029 ilm_cyc_op=3.031 speedup=0.999
+BENCH_COMPUTE kernel=div_i32     unit=MOPS  xip_mops=25.70     ilm_mops=25.69     xip_cyc_op=18.680 ilm_cyc_op=18.688 speedup=1.000
+BENCH_COMPUTE kernel=div_u64     unit=MOPS  xip_mops=8.25      ilm_mops=8.25      xip_cyc_op=58.147 ilm_cyc_op=58.148 speedup=1.000
+BENCH_COMPUTE kernel=q15_gain    unit=MOPS  xip_mops=79.23     ilm_mops=79.07     xip_cyc_op=6.059 ilm_cyc_op=6.070 speedup=0.998
+BENCH_COMPUTE kernel=ctz32       unit=MOPS  xip_mops=31.86     ilm_mops=31.84     xip_cyc_op=15.066 ilm_cyc_op=15.074 speedup=0.999
+BENCH_COMPUTE kernel=clz32       unit=MOPS  xip_mops=31.85     ilm_mops=29.86     xip_cyc_op=15.070 ilm_cyc_op=16.074 speedup=0.938
+BENCH_COMPUTE kernel=popcount    unit=MOPS  xip_mops=26.57     ilm_mops=28.11     xip_cyc_op=18.063 ilm_cyc_op=17.074 speedup=1.058
+COMPUTE_SWEEP_DONE
+comp

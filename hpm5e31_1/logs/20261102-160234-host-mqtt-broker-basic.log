@@ -1,0 +1,316 @@
+1793606554: New connection from 192.168.2.1:58343 on port 1883.
+1793606554: New client connected from 192.168.2.1:58343 as host-sub-check (p2, c1, k30).
+1793606554: No will message specified.
+1793606554: Sending CONNACK to host-sub-check (0, 0)
+1793606554: Received SUBSCRIBE from host-sub-check
+1793606554: 	hpm5e31/telemetry (QoS 1)
+1793606554: host-sub-check 1 hpm5e31/telemetry
+1793606554: 	hpm5e31/status (QoS 1)
+1793606554: host-sub-check 1 hpm5e31/status
+1793606554: 	hpm5e31/ack (QoS 1)
+1793606554: host-sub-check 1 hpm5e31/ack
+1793606554: Sending SUBACK to host-sub-check
+1793606554: Sending PUBLISH to host-sub-check (d0, q1, r1, m1, 'hpm5e31/status', ... (54 bytes))
+1793606554: Received PUBACK from host-sub-check (Mid: 1, RC:0)
+1793606554: Received PUBLISH from hpm5e31 (d0, q1, r0, m16, 'hpm5e31/telemetry', ... (148 bytes))
+1793606554: Sending PUBLISH to host-sub-check (d0, q1, r0, m2, 'hpm5e31/telemetry', ... (148 bytes))
+1793606554: Sending PUBACK to hpm5e31 (m16, rc0)
+1793606554: Received PUBACK from host-sub-check (Mid: 2, RC:0)
+1793606555: Received PUBLISH from hpm5e31 (d0, q1, r0, m17, 'hpm5e31/telemetry', ... (148 bytes))
+1793606555: Sending PUBLISH to host-sub-check (d0, q1, r0, m3, 'hpm5e31/telemetry', ... (148 bytes))
+1793606555: Sending PUBACK to hpm5e31 (m17, rc0)
+1793606555: Received PUBACK from host-sub-check (Mid: 3, RC:0)
+1793606556: Received PUBLISH from hpm5e31 (d0, q1, r0, m18, 'hpm5e31/telemetry', ... (148 bytes))
+1793606556: Sending PUBLISH to host-sub-check (d0, q1, r0, m4, 'hpm5e31/telemetry', ... (148 bytes))
+1793606556: Sending PUBACK to hpm5e31 (m18, rc0)
+1793606556: Received PUBACK from host-sub-check (Mid: 4, RC:0)
+1793606557: Received PUBLISH from hpm5e31 (d0, q1, r0, m19, 'hpm5e31/telemetry', ... (148 bytes))
+1793606557: Sending PUBLISH to host-sub-check (d0, q1, r0, m5, 'hpm5e31/telemetry', ... (148 bytes))
+1793606557: Sending PUBACK to hpm5e31 (m19, rc0)
+1793606557: Received PUBACK from host-sub-check (Mid: 5, RC:0)
+1793606558: Received PUBLISH from hpm5e31 (d0, q1, r0, m20, 'hpm5e31/telemetry', ... (148 bytes))
+1793606558: Sending PUBLISH to host-sub-check (d0, q1, r0, m6, 'hpm5e31/telemetry', ... (148 bytes))
+1793606558: Sending PUBACK to hpm5e31 (m20, rc0)
+1793606558: Received PUBACK from host-sub-check (Mid: 6, RC:0)
+1793606559: Received PUBLISH from hpm5e31 (d0, q1, r0, m21, 'hpm5e31/telemetry', ... (148 bytes))
+1793606559: Sending PUBLISH to host-sub-check (d0, q1, r0, m7, 'hpm5e31/telemetry', ... (148 bytes))
+1793606559: Sending PUBACK to hpm5e31 (m21, rc0)
+1793606559: Received PUBACK from host-sub-check (Mid: 7, RC:0)
+1793606560: Received PUBLISH from hpm5e31 (d0, q1, r0, m22, 'hpm5e31/telemetry', ... (148 bytes))
+1793606560: Sending PUBLISH to host-sub-check (d0, q1, r0, m8, 'hpm5e31/telemetry', ... (148 bytes))
+1793606560: Sending PUBACK to hpm5e31 (m22, rc0)
+1793606560: Received PUBACK from host-sub-check (Mid: 8, RC:0)
+1793606561: Received PUBLISH from hpm5e31 (d0, q1, r0, m23, 'hpm5e31/telemetry', ... (148 bytes))
+1793606561: Sending PUBLISH to host-sub-check (d0, q1, r0, m9, 'hpm5e31/telemetry', ... (148 bytes))
+1793606561: Sending PUBACK to hpm5e31 (m23, rc0)
+1793606561: Received PUBACK from host-sub-check (Mid: 9, RC:0)
+1793606562: Received PUBLISH from hpm5e31 (d0, q1, r0, m24, 'hpm5e31/telemetry', ... (148 bytes))
+1793606562: Sending PUBLISH to host-sub-check (d0, q1, r0, m10, 'hpm5e31/telemetry', ... (148 bytes))
+1793606562: Sending PUBACK to hpm5e31 (m24, rc0)
+1793606562: Received PUBACK from host-sub-check (Mid: 10, RC:0)
+1793606563: Received PUBLISH from hpm5e31 (d0, q1, r0, m25, 'hpm5e31/telemetry', ... (148 bytes))
+1793606563: Sending PUBLISH to host-sub-check (d0, q1, r0, m11, 'hpm5e31/telemetry', ... (148 bytes))
+1793606563: Sending PUBACK to hpm5e31 (m25, rc0)
+1793606563: Received PUBACK from host-sub-check (Mid: 11, RC:0)
+1793606564: Received PUBLISH from hpm5e31 (d0, q1, r0, m26, 'hpm5e31/telemetry', ... (148 bytes))
+1793606564: Sending PUBLISH to host-sub-check (d0, q1, r0, m12, 'hpm5e31/telemetry', ... (148 bytes))
+1793606564: Sending PUBACK to hpm5e31 (m26, rc0)
+1793606564: Received PUBACK from host-sub-check (Mid: 12, RC:0)
+1793606564: Received DISCONNECT from host-sub-check
+1793606564: Client host-sub-check disconnected.
+1793606564: New connection from 192.168.2.1:51587 on port 1883.
+1793606564: New client connected from 192.168.2.1:51587 as host-pub-cmd (p2, c1, k30).
+1793606564: No will message specified.
+1793606564: Sending CONNACK to host-pub-cmd (0, 0)
+1793606564: Received SUBSCRIBE from host-pub-cmd
+1793606564: 	hpm5e31/ack (QoS 1)
+1793606564: host-pub-cmd 1 hpm5e31/ack
+1793606564: 	hpm5e31/echo/reply (QoS 0)
+1793606564: host-pub-cmd 0 hpm5e31/echo/reply
+1793606564: 	hpm5e31/bench (QoS 0)
+1793606564: host-pub-cmd 0 hpm5e31/bench
+1793606564: 	hpm5e31/bench/done (QoS 0)
+1793606564: host-pub-cmd 0 hpm5e31/bench/done
+1793606564: Sending SUBACK to host-pub-cmd
+1793606565: Received PUBLISH from host-pub-cmd (d0, q1, r0, m2, 'hpm5e31/cmd/led', ... (2 bytes))
+1793606565: Sending PUBLISH to hpm5e31 (d0, q1, r0, m1, 'hpm5e31/cmd/led', ... (2 bytes))
+1793606565: Sending PUBACK to host-pub-cmd (m2, rc0)
+1793606565: Received PUBACK from hpm5e31 (Mid: 1, RC:0)
+1793606565: Received PUBLISH from hpm5e31 (d0, q1, r0, m27, 'hpm5e31/ack', ... (44 bytes))
+1793606565: Sending PUBLISH to host-pub-cmd (d0, q1, r0, m1, 'hpm5e31/ack', ... (44 bytes))
+1793606565: Sending PUBACK to hpm5e31 (m27, rc0)
+1793606565: Received PUBACK from host-pub-cmd (Mid: 1, RC:0)
+1793606565: Received PUBLISH from hpm5e31 (d0, q1, r0, m28, 'hpm5e31/telemetry', ... (148 bytes))
+1793606565: Sending PUBACK to hpm5e31 (m28, rc0)
+1793606566: Received DISCONNECT from host-pub-cmd
+1793606566: Client host-pub-cmd disconnected.
+1793606566: New connection from 192.168.2.1:45783 on port 1883.
+1793606566: New client connected from 192.168.2.1:45783 as host-pub-cmd (p2, c1, k30).
+1793606566: No will message specified.
+1793606566: Sending CONNACK to host-pub-cmd (0, 0)
+1793606566: Received SUBSCRIBE from host-pub-cmd
+1793606566: 	hpm5e31/ack (QoS 1)
+1793606566: host-pub-cmd 1 hpm5e31/ack
+1793606566: 	hpm5e31/echo/reply (QoS 0)
+1793606566: host-pub-cmd 0 hpm5e31/echo/reply
+1793606566: 	hpm5e31/bench (QoS 0)
+1793606566: host-pub-cmd 0 hpm5e31/bench
+1793606566: 	hpm5e31/bench/done (QoS 0)
+1793606566: host-pub-cmd 0 hpm5e31/bench/done
+1793606566: Sending SUBACK to host-pub-cmd
+1793606566: Received PUBLISH from host-pub-cmd (d0, q1, r0, m2, 'hpm5e31/cmd/period', ... (3 bytes))
+1793606566: Sending PUBLISH to hpm5e31 (d0, q1, r0, m2, 'hpm5e31/cmd/period', ... (3 bytes))
+1793606566: Sending PUBACK to host-pub-cmd (m2, rc0)
+1793606566: Received PUBACK from hpm5e31 (Mid: 2, RC:0)
+1793606566: Received PUBLISH from hpm5e31 (d0, q1, r0, m29, 'hpm5e31/ack', ... (52 bytes))
+1793606566: Sending PUBLISH to host-pub-cmd (d0, q1, r0, m1, 'hpm5e31/ack', ... (52 bytes))
+1793606566: Sending PUBACK to hpm5e31 (m29, rc0)
+1793606566: Received PUBACK from host-pub-cmd (Mid: 1, RC:0)
+1793606566: Received PUBLISH from hpm5e31 (d0, q1, r0, m30, 'hpm5e31/telemetry', ... (148 bytes))
+1793606566: Sending PUBACK to hpm5e31 (m30, rc0)
+1793606567: Received PUBLISH from hpm5e31 (d0, q1, r0, m31, 'hpm5e31/telemetry', ... (148 bytes))
+1793606567: Sending PUBACK to hpm5e31 (m31, rc0)
+1793606567: Received DISCONNECT from host-pub-cmd
+1793606567: Client host-pub-cmd disconnected.
+1793606567: New connection from 192.168.2.1:51481 on port 1883.
+1793606567: New client connected from 192.168.2.1:51481 as host-pub-cmd (p2, c1, k30).
+1793606567: No will message specified.
+1793606567: Sending CONNACK to host-pub-cmd (0, 0)
+1793606567: Received SUBSCRIBE from host-pub-cmd
+1793606567: 	hpm5e31/ack (QoS 1)
+1793606567: host-pub-cmd 1 hpm5e31/ack
+1793606567: 	hpm5e31/echo/reply (QoS 0)
+1793606567: host-pub-cmd 0 hpm5e31/echo/reply
+1793606567: 	hpm5e31/bench (QoS 0)
+1793606567: host-pub-cmd 0 hpm5e31/bench
+1793606567: 	hpm5e31/bench/done (QoS 0)
+1793606567: host-pub-cmd 0 hpm5e31/bench/done
+1793606567: Sending SUBACK to host-pub-cmd
+1793606567: Received PUBLISH from hpm5e31 (d0, q1, r0, m32, 'hpm5e31/telemetry', ... (148 bytes))
+1793606567: Sending PUBACK to hpm5e31 (m32, rc0)
+1793606567: Received PUBLISH from host-pub-cmd (d0, q1, r0, m2, 'hpm5e31/cmd/cansend', ... (17 bytes))
+1793606567: Sending PUBLISH to hpm5e31 (d0, q1, r0, m3, 'hpm5e31/cmd/cansend', ... (17 bytes))
+1793606567: Sending PUBACK to host-pub-cmd (m2, rc0)
+1793606568: Received PUBACK from hpm5e31 (Mid: 3, RC:0)
+1793606568: Received PUBLISH from hpm5e31 (d0, q1, r0, m33, 'hpm5e31/ack', ... (65 bytes))
+1793606568: Sending PUBLISH to host-pub-cmd (d0, q1, r0, m1, 'hpm5e31/ack', ... (65 bytes))
+1793606568: Sending PUBACK to hpm5e31 (m33, rc0)
+1793606568: Received PUBACK from host-pub-cmd (Mid: 1, RC:0)
+1793606568: Received PUBLISH from hpm5e31 (d0, q1, r0, m34, 'hpm5e31/telemetry', ... (148 bytes))
+1793606568: Sending PUBACK to hpm5e31 (m34, rc0)
+1793606568: Received PUBLISH from hpm5e31 (d0, q1, r0, m35, 'hpm5e31/telemetry', ... (148 bytes))
+1793606568: Sending PUBACK to hpm5e31 (m35, rc0)
+1793606569: Received DISCONNECT from host-pub-cmd
+1793606569: Client host-pub-cmd disconnected.
+1793606569: New connection from 192.168.2.1:35093 on port 1883.
+1793606569: New client connected from 192.168.2.1:35093 as host-pub-cmd (p2, c1, k30).
+1793606569: No will message specified.
+1793606569: Sending CONNACK to host-pub-cmd (0, 0)
+1793606569: Received SUBSCRIBE from host-pub-cmd
+1793606569: 	hpm5e31/ack (QoS 1)
+1793606569: host-pub-cmd 1 hpm5e31/ack
+1793606569: 	hpm5e31/echo/reply (QoS 0)
+1793606569: host-pub-cmd 0 hpm5e31/echo/reply
+1793606569: 	hpm5e31/bench (QoS 0)
+1793606569: host-pub-cmd 0 hpm5e31/bench
+1793606569: 	hpm5e31/bench/done (QoS 0)
+1793606569: host-pub-cmd 0 hpm5e31/bench/done
+1793606569: Sending SUBACK to host-pub-cmd
+1793606569: Received PUBLISH from hpm5e31 (d0, q1, r0, m36, 'hpm5e31/telemetry', ... (148 bytes))
+1793606569: Sending PUBACK to hpm5e31 (m36, rc0)
+1793606569: Received PUBLISH from host-pub-cmd (d0, q1, r0, m2, 'hpm5e31/cmd/echo', ... (33 bytes))
+1793606569: Sending PUBLISH to hpm5e31 (d0, q1, r0, m4, 'hpm5e31/cmd/echo', ... (33 bytes))
+1793606569: Sending PUBACK to host-pub-cmd (m2, rc0)
+1793606569: Received PUBLISH from host-pub-cmd (d0, q1, r0, m3, 'hpm5e31/cmd/echo', ... (33 bytes))
+1793606569: Sending PUBLISH to hpm5e31 (d0, q1, r0, m5, 'hpm5e31/cmd/echo', ... (33 bytes))
+1793606569: Sending PUBACK to host-pub-cmd (m3, rc0)
+1793606569: Received PUBLISH from host-pub-cmd (d0, q1, r0, m4, 'hpm5e31/cmd/echo', ... (33 bytes))
+1793606569: Sending PUBLISH to hpm5e31 (d0, q1, r0, m6, 'hpm5e31/cmd/echo', ... (33 bytes))
+1793606569: Sending PUBACK to host-pub-cmd (m4, rc0)
+1793606569: Received PUBLISH from host-pub-cmd (d0, q1, r0, m5, 'hpm5e31/cmd/echo', ... (33 bytes))
+1793606569: Sending PUBLISH to hpm5e31 (d0, q1, r0, m7, 'hpm5e31/cmd/echo', ... (33 bytes))
+1793606569: Sending PUBACK to host-pub-cmd (m5, rc0)
+1793606569: Received PUBLISH from host-pub-cmd (d0, q1, r0, m6, 'hpm5e31/cmd/echo', ... (33 bytes))
+1793606569: Sending PUBLISH to hpm5e31 (d0, q1, r0, m8, 'hpm5e31/cmd/echo', ... (33 bytes))
+1793606569: Sending PUBACK to host-pub-cmd (m6, rc0)
+1793606569: Received PUBLISH from host-pub-cmd (d0, q1, r0, m7, 'hpm5e31/cmd/echo', ... (33 bytes))
+1793606569: Sending PUBLISH to hpm5e31 (d0, q1, r0, m9, 'hpm5e31/cmd/echo', ... (33 bytes))
+1793606569: Sending PUBACK to host-pub-cmd (m7, rc0)
+1793606569: Received PUBLISH from host-pub-cmd (d0, q1, r0, m8, 'hpm5e31/cmd/echo', ... (33 bytes))
+1793606569: Sending PUBLISH to hpm5e31 (d0, q1, r0, m10, 'hpm5e31/cmd/echo', ... (33 bytes))
+1793606569: Sending PUBACK to host-pub-cmd (m8, rc0)
+1793606569: Received PUBLISH from host-pub-cmd (d0, q1, r0, m9, 'hpm5e31/cmd/echo', ... (33 bytes))
+1793606569: Sending PUBLISH to hpm5e31 (d0, q1, r0, m11, 'hpm5e31/cmd/echo', ... (33 bytes))
+1793606569: Sending PUBACK to host-pub-cmd (m9, rc0)
+1793606569: Received PUBLISH from host-pub-cmd (d0, q1, r0, m10, 'hpm5e31/cmd/echo', ... (33 bytes))
+1793606569: Sending PUBLISH to hpm5e31 (d0, q1, r0, m12, 'hpm5e31/cmd/echo', ... (33 bytes))
+1793606569: Sending PUBACK to host-pub-cmd (m10, rc0)
+1793606569: Received PUBLISH from host-pub-cmd (d0, q1, r0, m11, 'hpm5e31/cmd/echo', ... (33 bytes))
+1793606569: Sending PUBLISH to hpm5e31 (d0, q1, r0, m13, 'hpm5e31/cmd/echo', ... (33 bytes))
+1793606569: Sending PUBACK to host-pub-cmd (m11, rc0)
+1793606569: Received PUBLISH from host-pub-cmd (d0, q1, r0, m12, 'hpm5e31/cmd/echo', ... (34 bytes))
+1793606569: Sending PUBLISH to hpm5e31 (d0, q1, r0, m14, 'hpm5e31/cmd/echo', ... (34 bytes))
+1793606569: Sending PUBACK to host-pub-cmd (m12, rc0)
+1793606569: Received PUBLISH from host-pub-cmd (d0, q1, r0, m13, 'hpm5e31/cmd/echo', ... (34 bytes))
+1793606569: Sending PUBLISH to hpm5e31 (d0, q1, r0, m15, 'hpm5e31/cmd/echo', ... (34 bytes))
+1793606569: Sending PUBACK to host-pub-cmd (m13, rc0)
+1793606569: Received PUBLISH from host-pub-cmd (d0, q1, r0, m14, 'hpm5e31/cmd/echo', ... (34 bytes))
+1793606569: Sending PUBLISH to hpm5e31 (d0, q1, r0, m16, 'hpm5e31/cmd/echo', ... (34 bytes))
+1793606569: Sending PUBACK to host-pub-cmd (m14, rc0)
+1793606569: Received PUBLISH from host-pub-cmd (d0, q1, r0, m15, 'hpm5e31/cmd/echo', ... (34 bytes))
+1793606569: Sending PUBLISH to hpm5e31 (d0, q1, r0, m17, 'hpm5e31/cmd/echo', ... (34 bytes))
+1793606569: Sending PUBACK to host-pub-cmd (m15, rc0)
+1793606569: Received PUBLISH from host-pub-cmd (d0, q1, r0, m16, 'hpm5e31/cmd/echo', ... (34 bytes))
+1793606569: Sending PUBLISH to hpm5e31 (d0, q1, r0, m18, 'hpm5e31/cmd/echo', ... (34 bytes))
+1793606569: Sending PUBACK to host-pub-cmd (m16, rc0)
+1793606569: Received PUBLISH from host-pub-cmd (d0, q1, r0, m17, 'hpm5e31/cmd/echo', ... (34 bytes))
+1793606569: Sending PUBLISH to hpm5e31 (d0, q1, r0, m19, 'hpm5e31/cmd/echo', ... (34 bytes))
+1793606569: Sending PUBACK to host-pub-cmd (m17, rc0)
+1793606569: Received PUBLISH from host-pub-cmd (d0, q1, r0, m18, 'hpm5e31/cmd/echo', ... (34 bytes))
+1793606569: Sending PUBLISH to hpm5e31 (d0, q1, r0, m20, 'hpm5e31/cmd/echo', ... (34 bytes))
+1793606569: Sending PUBACK to host-pub-cmd (m18, rc0)
+1793606569: Received PUBLISH from host-pub-cmd (d0, q1, r0, m19, 'hpm5e31/cmd/echo', ... (34 bytes))
+1793606569: Sending PUBLISH to hpm5e31 (d0, q1, r0, m21, 'hpm5e31/cmd/echo', ... (34 bytes))
+1793606569: Sending PUBACK to host-pub-cmd (m19, rc0)
+1793606569: Received PUBACK from hpm5e31 (Mid: 4, RC:0)
+1793606569: Received PUBLISH from hpm5e31 (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (33 bytes))
+1793606569: Sending PUBLISH to host-pub-cmd (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (33 bytes))
+1793606569: Received PUBACK from hpm5e31 (Mid: 5, RC:0)
+1793606569: Received PUBLISH from hpm5e31 (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (33 bytes))
+1793606569: Sending PUBLISH to host-pub-cmd (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (33 bytes))
+1793606569: Received PUBACK from hpm5e31 (Mid: 6, RC:0)
+1793606569: Received PUBLISH from hpm5e31 (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (33 bytes))
+1793606569: Sending PUBLISH to host-pub-cmd (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (33 bytes))
+1793606569: Received PUBACK from hpm5e31 (Mid: 7, RC:0)
+1793606569: Received PUBLISH from hpm5e31 (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (33 bytes))
+1793606569: Sending PUBLISH to host-pub-cmd (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (33 bytes))
+1793606569: Received PUBACK from hpm5e31 (Mid: 8, RC:0)
+1793606569: Received PUBLISH from hpm5e31 (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (33 bytes))
+1793606569: Sending PUBLISH to host-pub-cmd (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (33 bytes))
+1793606569: Received PUBACK from hpm5e31 (Mid: 9, RC:0)
+1793606569: Received PUBLISH from hpm5e31 (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (33 bytes))
+1793606569: Sending PUBLISH to host-pub-cmd (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (33 bytes))
+1793606569: Received PUBACK from hpm5e31 (Mid: 10, RC:0)
+1793606569: Received PUBLISH from hpm5e31 (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (33 bytes))
+1793606569: Sending PUBLISH to host-pub-cmd (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (33 bytes))
+1793606569: Received PUBACK from hpm5e31 (Mid: 11, RC:0)
+1793606569: Received PUBLISH from hpm5e31 (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (33 bytes))
+1793606569: Sending PUBLISH to host-pub-cmd (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (33 bytes))
+1793606569: Received PUBACK from hpm5e31 (Mid: 12, RC:0)
+1793606569: Received PUBLISH from hpm5e31 (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (33 bytes))
+1793606569: Sending PUBLISH to host-pub-cmd (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (33 bytes))
+1793606569: Received PUBACK from hpm5e31 (Mid: 13, RC:0)
+1793606569: Received PUBLISH from hpm5e31 (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (33 bytes))
+1793606569: Sending PUBLISH to host-pub-cmd (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (33 bytes))
+1793606569: Received PUBACK from hpm5e31 (Mid: 14, RC:0)
+1793606569: Received PUBLISH from hpm5e31 (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (34 bytes))
+1793606569: Sending PUBLISH to host-pub-cmd (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (34 bytes))
+1793606569: Received PUBACK from hpm5e31 (Mid: 15, RC:0)
+1793606569: Received PUBLISH from hpm5e31 (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (34 bytes))
+1793606569: Sending PUBLISH to host-pub-cmd (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (34 bytes))
+1793606569: Received PUBACK from hpm5e31 (Mid: 16, RC:0)
+1793606569: Received PUBLISH from hpm5e31 (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (34 bytes))
+1793606569: Sending PUBLISH to host-pub-cmd (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (34 bytes))
+1793606569: Received PUBACK from hpm5e31 (Mid: 17, RC:0)
+1793606569: Received PUBLISH from hpm5e31 (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (34 bytes))
+1793606569: Sending PUBLISH to host-pub-cmd (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (34 bytes))
+1793606569: Received PUBACK from hpm5e31 (Mid: 18, RC:0)
+1793606569: Received PUBLISH from hpm5e31 (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (34 bytes))
+1793606569: Sending PUBLISH to host-pub-cmd (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (34 bytes))
+1793606569: Received PUBACK from hpm5e31 (Mid: 19, RC:0)
+1793606569: Received PUBLISH from hpm5e31 (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (34 bytes))
+1793606569: Sending PUBLISH to host-pub-cmd (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (34 bytes))
+1793606569: Received PUBACK from hpm5e31 (Mid: 20, RC:0)
+1793606569: Received PUBLISH from hpm5e31 (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (34 bytes))
+1793606569: Sending PUBLISH to host-pub-cmd (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (34 bytes))
+1793606569: Received PUBACK from hpm5e31 (Mid: 21, RC:0)
+1793606569: Received PUBLISH from hpm5e31 (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (34 bytes))
+1793606569: Sending PUBLISH to host-pub-cmd (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (34 bytes))
+1793606569: Received PUBLISH from host-pub-cmd (d0, q1, r0, m20, 'hpm5e31/cmd/echo', ... (34 bytes))
+1793606569: Sending PUBLISH to hpm5e31 (d0, q1, r0, m22, 'hpm5e31/cmd/echo', ... (34 bytes))
+1793606569: Sending PUBACK to host-pub-cmd (m20, rc0)
+1793606569: Received PUBACK from hpm5e31 (Mid: 22, RC:0)
+1793606569: Received PUBLISH from hpm5e31 (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (34 bytes))
+1793606569: Sending PUBLISH to host-pub-cmd (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (34 bytes))
+1793606569: Received PUBLISH from host-pub-cmd (d0, q1, r0, m21, 'hpm5e31/cmd/echo', ... (34 bytes))
+1793606569: Sending PUBLISH to hpm5e31 (d0, q1, r0, m23, 'hpm5e31/cmd/echo', ... (34 bytes))
+1793606569: Sending PUBACK to host-pub-cmd (m21, rc0)
+1793606569: Received PUBACK from hpm5e31 (Mid: 23, RC:0)
+1793606569: Received PUBLISH from hpm5e31 (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (34 bytes))
+1793606569: Sending PUBLISH to host-pub-cmd (d0, q0, r0, m0, 'hpm5e31/echo/reply', ... (34 bytes))
+1793606569: Received PUBLISH from hpm5e31 (d0, q1, r0, m37, 'hpm5e31/telemetry', ... (149 bytes))
+1793606569: Sending PUBACK to hpm5e31 (m37, rc0)
+1793606570: Received PUBLISH from hpm5e31 (d0, q1, r0, m38, 'hpm5e31/telemetry', ... (149 bytes))
+1793606570: Sending PUBACK to hpm5e31 (m38, rc0)
+1793606570: Received DISCONNECT from host-pub-cmd
+1793606570: Client host-pub-cmd disconnected.
+1793606570: New connection from 192.168.2.1:44109 on port 1883.
+1793606570: New client connected from 192.168.2.1:44109 as host-pub-cmd (p2, c1, k30).
+1793606570: No will message specified.
+1793606570: Sending CONNACK to host-pub-cmd (0, 0)
+1793606570: Received SUBSCRIBE from host-pub-cmd
+1793606570: 	hpm5e31/ack (QoS 1)
+1793606570: host-pub-cmd 1 hpm5e31/ack
+1793606570: 	hpm5e31/echo/reply (QoS 0)
+1793606570: host-pub-cmd 0 hpm5e31/echo/reply
+1793606570: 	hpm5e31/bench (QoS 0)
+1793606570: host-pub-cmd 0 hpm5e31/bench
+1793606570: 	hpm5e31/bench/done (QoS 0)
+1793606570: host-pub-cmd 0 hpm5e31/bench/done
+1793606570: Sending SUBACK to host-pub-cmd
+1793606570: Received PUBLISH from hpm5e31 (d0, q1, r0, m39, 'hpm5e31/telemetry', ... (149 bytes))
+1793606570: Sending PUBACK to hpm5e31 (m39, rc0)
+1793606570: Received PUBLISH from host-pub-cmd (d0, q1, r0, m2, 'hpm5e31/cmd/period', ... (4 bytes))
+1793606570: Sending PUBLISH to hpm5e31 (d0, q1, r0, m24, 'hpm5e31/cmd/period', ... (4 bytes))
+1793606570: Sending PUBACK to host-pub-cmd (m2, rc0)
+1793606571: Received PUBACK from hpm5e31 (Mid: 24, RC:0)
+1793606571: Received PUBLISH from hpm5e31 (d0, q1, r0, m40, 'hpm5e31/ack', ... (53 bytes))
+1793606571: Sending PUBLISH to host-pub-cmd (d0, q1, r0, m1, 'hpm5e31/ack', ... (53 bytes))
+1793606571: Sending PUBACK to hpm5e31 (m40, rc0)
+1793606571: Received PUBACK from host-pub-cmd (Mid: 1, RC:0)
+1793606571: Received PUBLISH from hpm5e31 (d0, q1, r0, m41, 'hpm5e31/telemetry', ... (149 bytes))
+1793606571: Sending PUBACK to hpm5e31 (m41, rc0)
+1793606572: Received DISCONNECT from host-pub-cmd
+1793606572: Client host-pub-cmd disconnected.
+1793606572: Received PUBLISH from hpm5e31 (d0, q1, r0, m42, 'hpm5e31/telemetry', ... (149 bytes))
+1793606572: Sending PUBACK to hpm5e31 (m42, rc0)

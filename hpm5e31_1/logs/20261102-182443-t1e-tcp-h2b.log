@@ -1,0 +1,36 @@
+2 last=99 us max=108 us (MDIO 阻塞会直接掉包)
+[lwip-eth=1518 tx_buf=8 rx_buf=16
+[lwip-eth] netif=e0 idx=1 MAC=02:00:00:00:01:00
+[lwip-eth] IP=192.168.2.100
+[lwip-eth] MASK=255.255.255.0
+[lwip-eth] GW=192.168.2.1  link=UP
+[lwip-eth] phy: link=UP known=1 speed=1000 Mbps duplex=full role=SLAVE
+[mcal-eth] PHY BMCR=0140 BMSR=000D GBSR=3000 PHYSR=8400
+[mcal-eth] ETH counter: rx_pkts=0 tx_pkts=1 drop_ovr=0 crc=0 undersize=0 oversize=0
+[lwip-eth] link=UP after 1005 ms
+[init] app_lwip_eth_init rc=0 (0=link up, 1=link down)
+[ping] seq=0 192.168.2.1: rtt=551 us
+[ping] seq=1 192.168.2.1: rtt=339 us
+[ping] seq=2 192.168.2.1: rtt=304 us
+[ping] seq=3 192.168.2.1: timeout
+[ping] seq=4 192.168.2.1: rtt=209 us
+[ping] 4/5 received, rtt min/avg/max = 209/350/551 us, jitter(avg |d|) = 114 us
+[selftest] ping gw: 4/5 rtt min/avg/max=209/350/551 us jitter=114 us
+[run] commands: eth | eth ping <ip> [n] [ms] | eth iserver [tcp|udp] | eth iclient <ip>
+eth iserver tcp
+[iperf] TCP server started on port 5001
+
+letter:/$ 
+letter:/$ [lwip-eth] sw : rx_frames=65412 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=32702 tx_err=0 tx_drop_len=0
+[lwip-eth] tx recycle: retry_ok=4084 retry_fail=0
+[lwip-eth] loop: gap_max=3301 us tx_max=36 us rx_drain_max=2408360 us
+[lwip-eth] link poll: n=15 last=100 us max=107 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=1/32
+[lwip-eth] hw : rx_frames=65412 rx_bytes=99006890 rx_empty=9985267 rx_err=0 | tx_frames=32702 tx_bytes=1765976 tx_busy=4084 tx_err=0
+[iperf] type=0 remote=192.168.2.1:37634 bytes=253231128 ms=8006 => 253040 kbit/s (253.04 Mbit/s)
+[lwip-eth] sw : rx_frames=173487 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=86733 tx_err=0 tx_drop_len=0
+[lwip-eth] tx recycle: retry_ok=10836 retry_fail=0
+[lwip-eth] loop: gap_max=5792 us tx_max=36 us rx_drain_max=2920884 us
+[lwip-eth] link poll: n=22 last=99 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=1/32
+[lwip-eth] hw : rx_frames=173487 rx_bytes=262620294 rx_empty=15173863 rx_err=0 | tx_frames=86733 tx_bytes=4683650 tx_busy=10836 tx_err=0

@@ -1,0 +1,119 @@
+{
+  "_comment": "第 39 章 gs_usb 图表数据；null = 待实测（图脚本会跳过并标注）",
+  "enum": {
+    "ifaces": 4,
+    "ifindex": [
+      35,
+      36,
+      37,
+      38
+    ],
+    "driver": "gs_usb",
+    "bus_info": "1-8:1.0",
+    "kernel": "7.0.0-38-generic",
+    "cap_hw_tx": true,
+    "cap_hw_rx": true,
+    "cap_hw_raw_clock": true,
+    "cap_sw_tx": true,
+    "cap_sw_rx": true,
+    "netdev_ready_ms": 0.1,
+    "usable_ms": 7.8,
+    "log": "logs/20261102-103609-gs-usb-enum.log",
+    "usable_min_ms": 6.5,
+    "usable_max_ms": 9.0,
+    "rebind_repeat": 5
+  },
+  "classic": {
+    "checks_pass": 11,
+    "checks_fail": 0,
+    "tx_frames_delta": 17,
+    "rx_frames_delta": 9,
+    "state": "ERROR-ACTIVE",
+    "log": "logs/20261102-103742-gs-usb-classic.log"
+  },
+  "latency": {
+    "count": 200,
+    "recv": 200,
+    "lost": 0,
+    "min_us": 228.2,
+    "median_us": 267.4,
+    "mean_us": 265.8,
+    "max_us": 693.3,
+    "p99_us": 299.0,
+    "stdev_us": 34.1,
+    "log": "logs/20261102-1059*-gs-usb-timestamp.log（同窗口 bench 输出，另见 RESULTS 表 C）"
+  },
+  "throughput": {
+    "duration_s": 5.02,
+    "tx_frames": 4692,
+    "rx_frames": 4692,
+    "tx_fps": 935.2,
+    "rx_fps": 935.2,
+    "loss_pct": 0.0,
+    "tx_errors": 0,
+    "rx_errors": 0,
+    "tx_dropped": 0,
+    "rx_dropped": 0,
+    "payload_kbps": 411.5,
+    "bus_load_pct": 20.76,
+    "bitrate": 500000,
+    "log": "logs/20261102-1059*-gs-usb-timestamp.log"
+  },
+  "four_ch": {
+    "checks_pass": 12,
+    "tx": {
+      "can0": 21,
+      "can1": 5,
+      "can2": 4,
+      "can3": 1
+    },
+    "crosstalk": 0,
+    "log": "logs/20261102-103834-gs-usb-4ch.log"
+  },
+  "timestamp": {
+    "count": 50,
+    "recv": 50,
+    "hw_ts": 50,
+    "sw_ts": 50,
+    "domain": "REALTIME",
+    "quantum_ns": 1000,
+    "monotonic_violations": 0,
+    "offset_vs_recv_realtime_us": {
+      "min": 62.7,
+      "median": 81.1,
+      "mean": 84.6,
+      "max": 191.8,
+      "stdev": 21.7
+    },
+    "sw_minus_hw_us": {
+      "median": 67.2,
+      "mean": 66.7,
+      "max": 76.1,
+      "stdev": 5.9
+    },
+    "hw_sw_interval_ratio": 0.999959,
+    "hw_sw_interval_ppm": -40.7,
+    "cmsg": "lvl1_type37_len48",
+    "log": "logs/20261102-105931-gs-usb-timestamp.log"
+  },
+  "modes": {
+    "checks_pass": 9,
+    "checks_fail": 0,
+    "skipped": 1,
+    "note": "listen-only 只收不发 / loopback 自发自收 均 PASS；one-shot 无 ACK 时 TEC 0->0（待固件确认）",
+    "log": "logs/20261102-110056-gs-usb-modes.log"
+  },
+  "termination": {
+    "checks_pass": 7,
+    "checks_fail": 0,
+    "expect_errno": "EOPNOTSUPP",
+    "note": "ip link set can0 termination 120 被拒绝（退出码非 0，ip -details 无 termination 属性）",
+    "log": "logs/20261102-105948-gs-usb-termination.log"
+  },
+  "compat": {
+    "checks_pass": 8,
+    "checks_fail": 0,
+    "note": "python-can 4.6.1 收发、candump/cansend、cangen 1000 帧、canplayer 回放 全 PASS",
+    "log": "logs/20261102-105948-gs-usb-compat.log"
+  }
+}

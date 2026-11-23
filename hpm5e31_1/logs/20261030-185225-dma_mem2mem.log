@@ -1,0 +1,8 @@
+presc=1 seg1=139 seg2=20 sjw=4, SP=87.5%
+fd     : arb 1 Mbit/so | dmasweep [bytes] | dmawidth [bytes] | dmachain
+dmachain
+chained 3x4096 B done in 37.46 us (328.0 MB/s)
+verify: match
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,16 @@
+
+digraph i2c_frame {
+  graph [rankdir=LR, fontname="Noto Sans CJK SC", fontsize=12, nodesep=0.22, ranksep=0.35, bgcolor="white", pad=0.2];
+  node  [shape=box, style="rounded,filled", fontname="Noto Sans CJK SC", fontsize=10.5, color="#57606A", fillcolor="#F6F8FA"];
+  edge  [fontname="Noto Sans CJK SC", fontsize=9, color="#57606A"];
+
+  s   [label="START\nSCL 高时\nSDA 下降", fillcolor="#DBEAFE"];
+  a7  [label="地址 7 位\n(A6..A0)", fillcolor="#FDE68A"];
+  rw  [label="R/W\n0=写 1=读", fillcolor="#FDE68A"];
+  ack [label="ACK\n从机拉低 SDA", fillcolor="#BBF7D0"];
+  d8  [label="数据 8 位\n(可多个)", fillcolor="#FDE68A"];
+  ack2[label="ACK\n每字节一个", fillcolor="#BBF7D0"];
+  p   [label="STOP\nSCL 高时\nSDA 上升", fillcolor="#FCA5A5"];
+
+  s -> a7 -> rw -> ack -> d8 -> ack2 -> p;
+}

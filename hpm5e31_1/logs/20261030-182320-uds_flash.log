@@ -1,0 +1,28 @@
+eady (UDS 0x34/0x36/0x37 -> 片内 Flash 0x800F0000)
+[uds_flash] post-reset: 下载区无有效镜像（尚未刷写或被擦除）
+
+[uds_flash] 镜像 32768 B @0x800F0000，安全窗口 0x800F0000~0x80100000，块 256 B
+  session=default(01) security=0 dl_active=0
+erase
+[uds_flash] erase 0x800F0000 32768 B OK（再次 run 前必须擦，否则魔数会留在 Flash 里）
+
+letter:/$ 
+letter:/$ run
+
+[uds_flash] run: 下载 32768 B 到 0x800F0000（最后 64 KB 安全区）
+  10 02 编程会话       PASS 
+  27 01 取种子          PASS seed=0xD2E3FB68 key=0x2B589DBE
+  27 02 解锁             PASS 
+  34 请求下载(擦除)  PASS rtt=16005 us maxBlock=258 pending=1
+  36 传输数据          PASS 128 块/24.2 KB/s 总耗时 1324313 us blk_rtt_avg=10202 max=10855
+  37 退出传输          PASS 
+  31 01 FF00 校验 CRC32  PASS ECU=0x791B3AB8 本地=0x791B3AB8
+  31 01 FF01 依赖检查  PASS magic/len/crc 一致
+  XIP 直读全镜像      PASS XIP crc=0x791B3AB8 memcmp=identical
+  flash: erase=14673 us write=118899 us programmed=32768 B (269.1 KB/s)
+  region@0x800F0000: magic=HPMIMG01 len=32768 crc=0x791B3AB8
+  11 01 复位             PASS 
+[uds_flash] PASS pass=10 fail=0（23.7 KB/s，镜像 32768 B）
+
+letter:/$ 
+letter:/$ 

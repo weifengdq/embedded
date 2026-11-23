@@ -1,0 +1,110 @@
+bit/s (282.55 Mbit/s)
+[iperf] type=0 remote=192.168.2.1:39426 bytes=461766680 ms=10004 => 369264 kbit/s (369.26 Mbit/s)
+[phyevels               nRST / nINT pin levels
+boot
+
+[auto] HW SPI  : read STATUS0 -> ret 0, value 0x00000000
+       tx: 00 00 08 00 00 00 00 00 00 00 00 00
+       rx: 00 00 00 00 00 00 08 00 00 00 00 00
+       echo OK -> using the SPI2 controller
+
+[bring-up] hardware reset (nRST low 2 ms) + TC6 + AN1760 + MAC
+           result: ok (0), nINT=0
+           PLCA disabled (CSMA/CD) for the probe, node_cnt=8
+
+=== LAN8651 bring-up state ===
+transport      : SPI2 controller, SCLK 2000000 Hz
+nRST PA19 = 1, nINT PA24 = 0
+control xfers = 75, echo errors = 0, spi errors = 0
+
+-- TC6 standard registers --
+  STDCAP      = 0x000005e5  (bit8 direct PHY access = 1)
+  STATUS0     = 0x00000000  (RESETC=0 HEADER_ERROR=0 LOSS_OF_FRAME=0)
+  CONFIG0     = 0x00009006  (SYNC=1 ZARFE=1)
+  BUFFER_STS  = 0x00003000  (tx_credits=16 rx_chunks=0)
+  INT_MASK0   = 0x00000780
+
+-- internal PHY --
+  PHY ID      = 0x0007c1b3 (expect 0x0007c1b3) MATCH
+  PHY STS1    = 0x0000 (bit11 PLCA change, bit13 link change)
+  PLCA        : en=0 node_id=0 node_cnt=8 to_tmr=32 burst_cnt=0 burst_tmr=128 status=0x0000 (PST=0)
+
+-- transfer statistics --
+  data xfers=0 tx_frames=0 tx_bytes=0 rx_frames=0 rx_bytes=0 rx_dropped=0
+  ext_status=0 hdr_bad=0 cfg_sync_lost=0 last_STATUS0=0x00000040
+
+letter:/$ 
+letter:/$ rdtest
+  rd 0x0002 #0 = 0x000005e5
+  rd 0x0002 #1 = 0x000005e5
+  rd 0x0002 #2 = 0x000005e5
+  rd 0x0008 #0 = 0x00000000
+  rd 0x0008 #1 = 0x00000000
+  rd 0x0008 #2 = 0x00000000
+  rd 0x0000 #0 = 0x00000011
+  rd 0x0000 #1 = 0x00000011
+  block 0x00..0x0F: 0x00000011 0x0007c1b4 0x000005e5 0x00000000 ...
+                   0x00000000 0x00000000 0x00000000 0x00003000 (0x08..0x0B)
+
+letter:/$ 
+letter:/$ speed 20000000
+SPI2 SCLK = 20000000 Hz (hardware), source 80000000 Hz
+
+letter:/$ 
+letter:/$ scan
+[scan] 32 reads of STDCAP per speed
+  request    actual     errors   stdcap       ns/read   
+  1000000    1000000    0        0x000005e5 103927      ok
+  2000000    2000000    0        0x000005e5 55125       ok
+  5000000    5000000    0        0x000005e5 26164       ok
+  10000000   10000000   0        0x000005e5 16491       ok
+  20000000   20000000   0        0x000005e5 11679       ok
+  25000000   0          0        0x000005e5 10975       ok
+[scan] last speed 0 Hz
+
+letter:/$ 
+letter:/$ speed 25000000
+SPI2 SCLK = 0 Hz (hardware), source 25000000 Hz
+
+letter:/$ 
+letter:/$ scan
+[scan] 32 reads of STDCAP per speed
+  request    actual     errors   stdcap       ns/read   
+  1000000    1000000    0        0x000005e5 104047      ok
+  2000000    2000000    0        0x000005e5 55350       ok
+  5000000    6000000    0        0x000005e5 23191       ok
+  10000000   12000000   0        0x000005e5 15170       ok
+  20000000   20000000   0        0x000005e5 11691       ok
+  25000000   0          0        0x000005e5 10941       ok
+[scan] last speed 0 Hz
+
+letter:/$ 
+letter:/$ rd 0x00040239
+[0x40239] = 0x00000000
+
+letter:/$ 
+letter:/$ probe
+
+=== LAN8651 bring-up state ===
+transport      : SPI2 controller, SCLK 0 Hz
+nRST PA19 = 1, nINT PA24 = 0
+control xfers = 33, echo errors = 0, spi errors = 0
+
+-- TC6 standard registers --
+  STDCAP      = 0x000005e5  (bit8 direct PHY access = 1)
+  STATUS0     = 0x00000000  (RESETC=0 HEADER_ERROR=0 LOSS_OF_FRAME=0)
+  CONFIG0     = 0x00009006  (SYNC=1 ZARFE=1)
+  BUFFER_STS  = 0x00003000  (tx_credits=16 rx_chunks=0)
+  INT_MASK0   = 0x00000780
+
+-- internal PHY --
+  PHY ID      = 0x0007c1b3 (expect 0x0007c1b3) MATCH
+  PHY STS1    = 0x0000 (bit11 PLCA change, bit13 link change)
+  PLCA        : en=0 node_id=0 node_cnt=8 to_tmr=32 burst_cnt=0 burst_tmr=128 status=0x0000 (PST=0)
+
+-- transfer statistics --
+  data xfers=0 tx_frames=0 tx_bytes=0 rx_frames=0 rx_bytes=0 rx_dropped=0
+  ext_status=0 hdr_bad=0 cfg_sync_lost=0 last_STATUS0=0x00000000
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+"""tools/figs/ch26-crash-tree.py —— 图 26-2：HPM5E31 上电/运行异常排查决策树
+
+输出：docs/figures/26/fig-26-2-debug-tree.png（graphviz 渲染）
+"""
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _common import render_dot  # noqa: E402
+
+DOT = r"""
+digraph debug_tree {
+  graph [rankdir=TB, fontname="Noto Sans CJK JP", fontsize=11, nodesep=0.30, ranksep=0.34,
+         bgcolor="white", pad=0.15];
+  node  [shape=box, style="rounded,filled", fontname="Noto Sans CJK JP", fontsize=10,
+         color="#8C959F", fillcolor="#F6F8FA", penwidth=0.8];
+  edge  [color="#57606A", arrowsize=0.7, penwidth=0.9];
+
+  start  [label="板子上电/运行异常", fillcolor="#DDF4FF", color="#1F6FEB", shape=box, style="rounded,filled,bold"];
+  q1     [label="1. 串口完全无输出？"];
+  a1     [label="查供电（3.3V/1.1V 域）与复位\n查 BOOT 模式引脚（XPI 启动）\n测 JTAG 能否连上（JLinkExe）"];
+  q2     [label="2. 有输出但卡死/复位？"];
+  a2     [label="抓 HardFault：mcause / mepc / mtval\n查栈溢出、空指针、未初始化时钟\n查 WDG 是否超时复位"];
+  q3     [label="3. 某个外设不工作？"];
+  q4     [label="时钟/复位开了吗？\n引脚复用（IOC）配了吗？"];
+  q5     [label="4. 通信类外设（CAN/以太网）不通？"];
+  a5     [label="CAN：120Ω 终端、位时序、TDC（E00016 同类）\n以太网：PHY 复位时序、RGMII 延时、MDIO 扫描"];
+  q6     [label="5. 低功耗唤醒异常？"];
+  a6     [label="查 Errata E00042：\nRETENTION[CPU0].bit3=0 时\nRESOURCE[AXIS].MODE 必须强制开"];
+
+  start -> q1;
+  q1 -> a1 [label=" 是"];
+  q1 -> q2 [label=" 否"];
+  q2 -> a2 [label=" 是"];
+  q2 -> q3 [label=" 否"];
+  q3 -> q4;
+  q4 -> q5 [label=" 已配好"];
+  q4 -> a1 [label=" 未配好", style=dashed];
+  q5 -> a5 [label=" 是"];
+  q5 -> q6 [label=" 否"];
+  q6 -> a6;
+}
+"""
+
+
+def main():
+    render_dot(DOT, 26, "fig-26-2-debug-tree")
+
+
+if __name__ == "__main__":
+    main()

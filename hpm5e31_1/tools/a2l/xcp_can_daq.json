@@ -1,0 +1,194 @@
+{
+  "generated_by": "tools/gen_a2l.py",
+  "project": {
+    "name": "HPM5E31_XCP",
+    "comment": "hpm5e31_1 第二阶段 XCP 标定测量工程",
+    "version": "1.0",
+    "project_no": "PRJ1"
+  },
+  "module": {
+    "name": "xcp_can_daq",
+    "comment": "XCP on CAN 从站 + DAQ 测量（CAN0 0x555/0x556）"
+  },
+  "memory_segments": [
+    {
+      "name": "RAM",
+      "comment": "AXI SRAM .data/.bss",
+      "prg_type": "DATA",
+      "memory_type": "RAM",
+      "attribute": "INTERN",
+      "address_type": 0,
+      "start": "0x01200000",
+      "size": "0x40000"
+    },
+    {
+      "name": "FLASH",
+      "comment": "XIP NOR（只读）",
+      "prg_type": "DATA",
+      "memory_type": "FLASH",
+      "attribute": "EXTERN",
+      "address_type": 0,
+      "start": "0x80000000",
+      "size": "0x100000"
+    }
+  ],
+  "xcp": {
+    "can_cmd_id": 1365,
+    "can_res_id": 1366,
+    "baudrate": 500000,
+    "sample_point": 87,
+    "max_cto": 8,
+    "max_dto": 8,
+    "version": 256,
+    "timestamp": {
+      "ticks": 1,
+      "size": "SIZE_DWORD",
+      "unit": "UNIT_1US"
+    },
+    "optional_cmds": [
+      "GET_COMM_MODE_INFO",
+      "GET_ID",
+      "SET_REQUEST",
+      "GET_SEED",
+      "UNLOCK",
+      "SET_MTA",
+      "UPLOAD",
+      "SHORT_UPLOAD",
+      "DOWNLOAD",
+      "MODIFY_BITS",
+      "SET_CAL_PAGE",
+      "GET_CAL_PAGE",
+      "GET_PAG_PROCESSOR_INFO",
+      "GET_SEGMENT_INFO",
+      "GET_PAGE_INFO",
+      "SET_DAQ_PTR",
+      "WRITE_DAQ",
+      "SET_DAQ_LIST_MODE",
+      "GET_DAQ_LIST_MODE",
+      "START_STOP_DAQ_LIST",
+      "START_STOP_SYNCH",
+      "GET_DAQ_CLOCK",
+      "GET_DAQ_PROCESSOR_INFO",
+      "GET_DAQ_RESOLUTION_INFO",
+      "GET_DAQ_EVENT_INFO",
+      "FREE_DAQ",
+      "ALLOC_DAQ",
+      "ALLOC_ODT",
+      "ALLOC_ODT_ENTRY"
+    ]
+  },
+  "daq": {
+    "config": "DYNAMIC",
+    "max_daq": 4,
+    "min_daq": 0,
+    "max_odt_entry_size": 7,
+    "prescaler_supported": true
+  },
+  "events": [
+    {
+      "name": "EVT_1ms",
+      "comment": "GPTMR 1 kHz 事件",
+      "number": 0,
+      "direction": "DAQ",
+      "max_daq_list": 4,
+      "cycle": 1,
+      "unit": "1MS",
+      "priority": 0
+    },
+    {
+      "name": "EVT_10ms",
+      "comment": "100 Hz 事件",
+      "number": 1,
+      "direction": "DAQ",
+      "max_daq_list": 4,
+      "cycle": 10,
+      "unit": "1MS",
+      "priority": 1
+    }
+  ],
+  "measurements": [
+    {
+      "name": "g_adc_raw",
+      "symbol": "g_adc_raw",
+      "type": "UWORD",
+      "conv": "cm_adc_volt",
+      "unit": "mV",
+      "min": 0,
+      "max": 3300,
+      "format": "%8.1",
+      "comment": "ADC0.IN1 原始值（PF26）",
+      "event": 0
+    },
+    {
+      "name": "g_tick_cnt",
+      "symbol": "g_tick_cnt",
+      "type": "ULONG",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 4294967295,
+      "format": "%10.0",
+      "comment": "1 kHz 事件计数（丢帧判定）",
+      "event": 0
+    },
+    {
+      "name": "g_pid_mid",
+      "symbol": "g_pid_mid",
+      "type": "SLONG",
+      "conv": "cm_ident",
+      "min": -1500000,
+      "max": 1500000,
+      "format": "%8.0",
+      "comment": "PID 积分项（定点 1/1000）",
+      "event": 0
+    },
+    {
+      "name": "g_cpu_load_pm",
+      "symbol": "g_cpu_load_pm",
+      "type": "UWORD",
+      "conv": "cm_permille",
+      "unit": "%",
+      "min": 0,
+      "max": 1000,
+      "format": "%6.1",
+      "comment": "主循环负载（千分比）",
+      "event": 0
+    },
+    {
+      "name": "g_u8_cnt",
+      "symbol": "g_u8_cnt",
+      "type": "UBYTE",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 255,
+      "format": "%3.0",
+      "comment": "1 kHz 计数低 8 位",
+      "event": 0
+    }
+  ],
+  "characteristics": [
+    {
+      "name": "g_kp",
+      "symbol": "g_kp",
+      "type": "FLOAT32_IEEE",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 10,
+      "format": "%6.3",
+      "comment": "PID 比例增益",
+      "unit": "-"
+    },
+    {
+      "name": "g_ki",
+      "symbol": "g_ki",
+      "type": "FLOAT32_IEEE",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 20,
+      "format": "%6.3",
+      "comment": "PID 积分增益",
+      "unit": "1/s"
+    }
+  ],
+  "axes": [],
+  "enumerations": {}
+}

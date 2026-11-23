@@ -1,0 +1,91 @@
+
+==================================================================
+gs_usb 测试: berr2（20261102-125008）
+==================================================================
+主机: Linux 7.0.0-38-generic x86_64  脚本: gs_berr2.sh
+日志: logs/20261102-125008-gs-usb-berr2.log
+工件: /tmp/gs_usb_artifacts
+内核 7.0.x —— 与开发约定 §1 一致
+  [PASS] 权限 OK（sudo -n）
+dmesg 基线时间戳: 1793595008（之后用 --since 只扫描新增行）
+  [PASS] 依赖命令齐全: dmesg ip ethtool cansend candump cangen canplayer
+  [PASS] 发现 4 个接口: 0 1 2 3
+
+---- 0. can0 berr-reporting on / can1 listen-only on（500k）
+state UP
+state ERROR-ACTIVE
+state UP
+state ERROR-ACTIVE
+
+---- 1. candump can0 后台抓帧；60 x cansend（每帧失败则 TEC +8）
+  frame 5: state UP state ERROR-ACTIVE berr-counter tx 0 rx 0 
+  frame 10: state UP state ERROR-ACTIVE berr-counter tx 0 rx 0 
+  frame 15: state UP state ERROR-ACTIVE berr-counter tx 0 rx 0 
+  frame 20: state UP state ERROR-ACTIVE berr-counter tx 0 rx 0 
+  frame 25: state UP state ERROR-ACTIVE berr-counter tx 0 rx 0 
+  frame 30: state UP state ERROR-ACTIVE berr-counter tx 0 rx 0 
+  frame 35: state UP state ERROR-ACTIVE berr-counter tx 0 rx 0 
+  frame 40: state UP state ERROR-ACTIVE berr-counter tx 0 rx 0 
+  frame 45: state UP state ERROR-ACTIVE berr-counter tx 0 rx 0 
+  frame 50: state UP state ERROR-ACTIVE berr-counter tx 0 rx 0 
+  frame 55: state UP state ERROR-ACTIVE berr-counter tx 0 rx 0 
+  frame 60: state UP state ERROR-ACTIVE berr-counter tx 0 rx 0 
+  can0 最终: state UP state ERROR-ACTIVE berr-counter tx 0 rx 0 
+  dump 行数: 60；CAN_ERR 帧数: 0
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+
+---- 2. 若 listen-only 无效（TEC 仍 0），改用 500k/250k 错配再发 60 帧
+  listen-only 下 TEC 未增长 -> 换速率错配
+  mismatch frame 10: state UP state ERROR-PASSIVE berr-counter tx 8 rx 127 
+  mismatch frame 20: state UP state ERROR-PASSIVE berr-counter tx 8 rx 127 
+  mismatch frame 30: state UP state ERROR-PASSIVE berr-counter tx 8 rx 127 
+  mismatch frame 40: state UP state ERROR-PASSIVE berr-counter tx 8 rx 127 
+  mismatch frame 50: state UP state ERROR-PASSIVE berr-counter tx 8 rx 127 
+  mismatch frame 60: state UP state ERROR-PASSIVE berr-counter tx 8 rx 127 
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+  can0  123   [8]  01 02 03 04 05 06 07 08
+
+---- 3. 判定
+  [FAIL] 仍未进入 BUS-OFF
+  [FAIL] 未收到 CAN_ERR_BUSOFF
+  [FAIL] 未收到 CAN_ERR_CRTL
+  dmesg 安全检查: 无 oops/WARN（新增 0 行）
+  [PASS] 测试后设备仍在线（sysfs: 1-8）
+  dmesg 安全检查: 无 oops/WARN（新增 0 行）
+
+==================================================================
+汇总: berr2
+==================================================================
+PASS=4  FAIL=3  内核异常=0
+结论: FAIL

@@ -1,0 +1,47 @@
+[hwlock] 陈旧锁：持有者 pid=486325 已不存在，自动清理
+[hwrun] board lock acquired (vss_signals) pid=481757
+J-Link Commander will now exit on Error
+Connecting to J-Link ...O.K.
+Downloading file [build/vss_signals-debug/output/demo.elf]...
+Programming flash [000%]000%]000%]000%]005%]005%]005%]005%]010%]010%]015%]015%]015%]015%]020%]020%]025%]025%]025%]025%]030%]030%]030%]030%]035%]035%]040%]040%]040%]040%]045%]045%]050%]050%]050%]050%]055%]055%]055%]055%]060%]060%]065%]065%]065%]065%]070%]070%]075%]075%]075%]075%]080%]080%]080%]080%]085%]085%]090%]090%]090%]090%]095%]095%]100%] Done.
+Verifying flash   [000%]000%]005%]005%]100%] Done.
+J-Link: Flash download: Bank 0 @ 0x80000000: 2 ranges affected (131072 bytes)
+J-Link: Flash download: Total: 2.433s (Prepare: 0.547s, Compare: 0.113s, Erase: 0.100s, Program: 1.486s, Verify: 0.060s, Restore: 0.126s)
+J-Link: Flash download: Program & Verify speed: 82 KB/s
+O.K.
+IPv4 Gateway: 192.168.2.1
+[lwip] cfg ip=192.168.2.100 mask=255.20000 rpm）
+
+vstat
+vss: ON rate=100 ms sent=18 tick=6 uptime=686 ms
+
+can0: tx=19 tx_fail=0 rx=0 busoff=0 tec=0 rec=0
+
+
+letter:/$ 
+letter:/$ [auto] 1.2 s 发送完成: vss: ON rate=100 ms sent=36 tick=12 uptime=1274 ms
+
+can0: tx=37 tx_fail=0 rx=0 busoff=0 tec=0 rec=0
+
+[hwrun] post (持锁运行上位机测试): timeout 45 bash host/vss/run_vss.sh
+=== VSS 解码：vcan0 (3.0 s)，共 90 帧 ===
+命中 VSS 帧 ID：0x400, 0x401, 0x402
+
+  VSS 路径                                                         ID     单位         帧数       min       avg       max 范围
+  ----------------------------------------------------------------------------------------------------------------------
+  Vehicle.Speed                                                  0x400  km/h       31     64.80     82.80    100.80 OK
+  Vehicle.Powertrain.CombustionEngine.Speed                      0x400  rpm        31   2464.00   4024.00   5584.00 OK
+  Vehicle.Powertrain.CombustionEngine.ECT                        0x401  celsius    29     83.00     85.17     87.00 OK
+  Vehicle.Powertrain.Transmission.CurrentGear                    0x401  none       29      1.00      1.90      6.00 OK
+  Vehicle.Cabin.Door.Row1.DriverSide.IsOpen                      0x401  none       29      0.00      0.34      1.00 OK
+  Vehicle.Powertrain.TractionBattery.StateOfCharge.Current       0x402  percent    30     66.40     72.20     78.00 OK
+
+  信号覆盖     : 6/6
+  范围检查     : PASS
+  VSS 路径校验 : PASS
+  帧数         : 90（要求 >= 10）
+  json         : /tmp/vss.json
+=== RESULT: PASS ===
+[hwrun] post rc=0
+---- LOG: logs/20261030-175924-vss_signals.log (rc=0) ----
+RC=0

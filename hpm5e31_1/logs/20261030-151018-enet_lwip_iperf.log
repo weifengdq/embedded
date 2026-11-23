@@ -1,0 +1,24 @@
+00M SLAVE
+Enet phy init passed !
+[net] Enet controller + PHY  mode <1000|100>
+sleep 3000
+[sys] sleep 3000 ms
+
+letter:/$ 
+letter:/$ txbench 20000 64
+[txbench] len=64 sent=20000 fail=0 0.032 s => 634875 pkt/s, 325.1 Mbit/s, 756 cyc/frame
+
+letter:/$ 
+letter:/$ txbench 20000 512
+[txbench] len=512 sent=20000 fail=0 0.104 s => 192270 pkt/s, 787.5 Mbit/s, 2496 cyc/frame
+
+letter:/$ 
+letter:/$ txbench 20000 1460
+[txbench] len=1460 sent=20000 fail=0 0.269 s => 74460 pkt/s, 869.7 Mbit/s, 6446 cyc/frame
+
+letter:/$ 
+letter:/$ txbench 20000 1460
+[txbench] len=1460 sent=20000 fail=0 0.269 s => 74459 pkt/s, 869.7 Mbit/s, 6447 cyc/frame
+
+letter:/$ 
+letter:/$ 

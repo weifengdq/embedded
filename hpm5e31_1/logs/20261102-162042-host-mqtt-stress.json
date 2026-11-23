@@ -1,0 +1,23 @@
+{
+ "n": 1000,
+ "qos": 0,
+ "mode": "throughput",
+ "broker": "192.168.2.1:1883",
+ "throughput": {
+  "publish_seconds": 5.0,
+  "publish_rate_msg_s": 200.0,
+  "recv": 739,
+  "loss": 261,
+  "loss_pct": 26.1,
+  "recv_seconds": 4.995,
+  "recv_rate_msg_s": 147.8,
+  "e2e_rtt_ms": {
+   "avg": 66.65,
+   "p50": 0.63,
+   "p95": 41.76,
+   "p99": 1438.54,
+   "max": 1473.03
+  }
+ },
+ "verdict": "FAIL"
+}

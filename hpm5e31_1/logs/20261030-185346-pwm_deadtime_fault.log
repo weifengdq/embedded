@@ -1,0 +1,12 @@
+D_AREA=0x00006400 (高16位整数=100, 低8位小数=0)
+      | fault <0|1>
+dinfo
+PWM0 clk=200000000 Hz  P6=PD06 P7=PD07 互补  PAIR_MODE=1
+  死区: ticks=100 -> DEAD_AREA=0x00006400 (高16位整数=100, 低8位小数=0)
+        换算: 500 ns = 0.500 us @ 200000000 Hz
+  故障: 同步故障输入=TRIG_IN_3, 当前注入=0, IRQ_STS_FAULT=0x00000000
+        PWM_CFG0[6]=0x00000010 (FAULT_EN_SYNC/FAULT_MODE 位域)
+  注意: 死区/故障的波形需示波器确认, 本示例只验证寄存器与状态位
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,12 @@
+
+  mode=classic 500k ext=11bit BS=0 STmin=0x00(=0 us) pad=0xCC
+  4095   586     273508    29.2      136099    OK
+[isotp_echo] PASS sizes=8/8 bytes=10934 rtt_avg=46154 us rtt_max=273508 us txmsg=8 rxmsg=8 seq_err=0 ovflw=0 timeout=0
+stat
+
+[isotp_echo] DUT stats: txmsg=8 rxmsg=8 txf=786 rxf=792 fc_tx=6 fc_rx=6 wait=0 seq=0 ovflw=0 timeout=0 link=0
+  last_tx=136099 us max_tx=136099 us last_rx=137079 us max_rx=137079 us max_len=4095/4095
+  port0 tx=792 rx=792 err=0 | port1 tx=792 rx=792 err=0 | echo_busy=0
+
+letter:/$ 
+letter:/$ 

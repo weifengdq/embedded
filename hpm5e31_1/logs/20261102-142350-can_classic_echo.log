@@ -1,0 +1,34 @@
+] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+[start] CAN0/CAN1 STARTED' / 'mode 0 start' / 'ver' / 'info'
+can echo 200
+ECHO classic 500k: n=200 ok=200 lost_req=0 lost_echo=0 bad=0 total=95493us
+  echo_latency: avg=238us max=245us  roundtrip=2094/s
+  rx_total=400 rx_overflow=0 tx_confirmed=400 busoff=0
+
+letter:/$ 
+letter:/$ can echo 200
+ECHO classic 500k: n=200 ok=200 lost_req=0 lost_echo=0 bad=0 total=95481us
+  echo_latency: avg=238us max=245us  roundtrip=2095/s
+  rx_total=400 rx_overflow=0 tx_confirmed=400 busoff=0
+
+letter:/$ 
+letter:/$ can stream 500
+STREAM classic 500k: sent=500 rx=500 bad=0 total=118757us => 4210 frame/s
+  payload=0.27 Mbit/s (8B/frame, 108 bit on wire)  bus=0.5 Mbit/s  wire_eff=53.9%
+  rx_overflow=0 tx_confirmed=900
+
+letter:/$ 
+letter:/$ can stat
+CAN0: mode=1 errstate=0 REC=0 TEC=0
+CAN1: mode=1 errstate=0 REC=0 TEC=0
+rx_total=500 rx_overflow=0 tx_confirmed=900 busoff=0 err_notify=0 det=8
+
+letter:/$ 
+letter:/$ can err
+DET: errors before=8 after=16 (delta=8)
+DET: last mod=80 inst=0 api=0x06 err=0x03
+DET: Can_GetVersionInfo / GetControllerMode ok=1
+
+letter:/$ 
+letter:/$ 

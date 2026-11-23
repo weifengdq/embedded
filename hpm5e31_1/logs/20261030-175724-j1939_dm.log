@@ -1,0 +1,25 @@
+0=ECU DM1 1s, CAN1=TESTER) ===
+run
+
+=== j1939_dm auto test (CAN0=ECU DM1 1s, CAN1=TESTER) ===
+
+[PASS] baseline DM1: lamp=0x00 dtc=0 (expect 0x00/0)
+[PASS] fault#1 SPN100/FMI4 -> lamp=0x10 AWL=1 SPN=100 FMI=4
+[PASS] fault#2 SPN190/FMI1 -> lamp=0x11 MIL=1 AWL=1
+[PASS] DM11 clear active: lamp=0x00 dtc=0 (expect 0x00/0)
+[PASS] DM2 history: frames=1 dtc=2 (SPN 100/190 via RTS/CTS)
+[PASS] DM3 clear history: DM2 dtc=0 lamp=0x00 (expect 0/0x00)
+  ---- DM1 lamp timeline (t since test start) ----
+  | idx | t(ms) | lamp | MIL | RSL | AWL | PL | DTC | SPN | FMI |
+  |   0 |   584 | 0x00 |  0  |  0  |  0  | 0  |  0  |   0 |  0  |
+  |   1 |  2584 | 0x10 |  0  |  0  |  1  | 0  |  1  | 100 |  4  |
+  |   2 |  4584 | 0x11 |  1  |  0  |  1  | 0  |  1  | 100 |  4  |
+  |   3 |  5584 | 0x00 |  0  |  0  |  0  | 0  |  0  |   0 |  0  |
+  DM1 last: lamp=0x00 [off] flash=0 dtc=0
+  DM2 last: lamp=0x00 [off] flash=0 dtc=0
+[PASS] lamp timeline entries=4 (expect >=4: off->AWL->MIL+AWL->off)
+
+=== RESULT: PASS (7 PASS / 0 FAIL) ===
+bus0: tx=15 rx=7 | bus1: tx=7 rx=15 | ecu dm1_tx=9 tester dm1_rx=8
+
+letter:/$ [PASS] baseline DM1: lamp=0x00 dtc=0 (expect 0x00/0)

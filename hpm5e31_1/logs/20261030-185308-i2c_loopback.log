@@ -1,0 +1,18 @@
+D12, open-drain(OD=1)+internal pull-up(PE/PS=1)
+  cpu=48000000K 正常)
+type 'i2c_soft_speed 400' or 'i2c_soft_recover'
+i2c_soft_selftest
+pin self-test A: input + internal pull-down/pull-up
+  SCL: pull-down DI=0, pull-up DI=1 OK
+  SDA: pull-down DI=0, pull-up DI=1 OK
+pin self-test B: output(open-drain) DI read-back (仅记录, 不作为 PASS 条件)
+  SCL: drive0->DI=1, release->DI=1
+  SDA: drive0->DI=1, release->DI=1
+selftest A: 0 errors -> PASS
+
+letter:/$ 
+letter:/$ i2c_soft_scan 8 16
+soft_scan 0x08..0x10: 9 addr, found=0 (0 = 总线无从器件, NACK 正常)
+
+letter:/$ 
+letter:/$ 

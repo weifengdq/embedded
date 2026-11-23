@@ -1,0 +1,16 @@
+general inactivity (A_DoIP_General_Inactivity) (peer=192.168.2.1 tx=8 x 1536 B, rx=16 x 1536 B, ethertype=0x88B5
+eth sleep 1500
+SLEEP done 1500ms
+
+letter:/$ 
+letter:/$ eth tx 64 2000
+TX len=64 n=2000 ok=2000 fps=219370 mbit=143.9 dur=9117us
+
+letter:/$ 
+letter:/$ eth tx 512 2000
+TX len=512 n=2000 ok=2000 fps=59257 mbit=251.3 dur=33751us
+
+letter:/$ 
+letter:/$ ===== HOST SIDE =====
+HOST iface=enp6s0 mac=c0:a2:b6:a6:a9:2c ethertype=0x88B5 mode=listen
+HOST listen secs=25.0 frames=3738 fps=149 lens={64:1949, 512:1789}

@@ -1,0 +1,41 @@
+0 / i2c_ms_bench
+06.43 us bw=472 kbps
+type i2c_ms_test 32 40    ___| |_| |_ ___ _ __   ___| 
+letter:/$ 
+=== i2c2_i2c3_master_slave (I2C2 master <-> I2C3 slave, user-wired) ===
+i2c2_i2c3_master_slave @ hpm5e31_1
+  I2C2 master: SCL=PD02 SDA=PD03, I2C3 slave: SCL=PD07 SDA=PD06 addr=0x50
+  clk: i2c2=80000000 H0 / i2c_ms_bench
+i2c_ms_info
+i2c2_i2c3_master_slave @ hpm5e31_1
+  I2C2 master: SCL=PD02 SDA=PD03, I2C3 slave: SCL=PD07 SDA=PD06 addr=0x50
+  clk: i2c2=80000000 Hz i2c3=80000000 Hz cpu=480000000 Hz, mode=100k
+  isr=16 addr_hit=8 rx_done=1 tx_done=1, dma=HDMA ch6
+  usage: i2c_ms_write [n] | i2c_ms_read [n] | i2c_ms_test [n] [khz] | i2c_ms_bench
+
+letter:/$ 
+letter:/$ i2c_ms_addr_only
+addr-only (n=0):
+  master i2c_master_write(n=0) -> success
+  slave : addr_hit+1 cmpl+1 isr+2
+  master: addr_hit+1 cmpl+1 isr+2
+  master regs: STATUS=0x00006405 SETUP=0x0c901885 INTREN=0x00000208
+addr-only (n=1 对照): -> FAIL
+  slave : addr_hit+1 cmpl+0 isr+1
+  master: addr_hit+1 cmpl+0
+
+letter:/$ 
+letter:/$ i2c_ms_od_probe
+A pushpull PD02=0: PD07=0 PD02_di=1
+B opendrain PD02=0: PD07=0 PD02_di=1
+C opendrain PD02=1: PD07=1 PD02_di=1
+D opendrain PD07=0: PD02=1 PD07_di=1
+
+letter:/$ 
+letter:/$ i2c_ms_ber 10000 1000
+ber: 10000 次 x (24 B 写 + 24 B 读) @ 1000 kHz
+  total=480000 B fail=0 err_xfer=0 err_bytes=0, 8249.30 ms, 58186 B/s
+  => PASS (0 错误)
+
+letter:/$ 
+letter:/$ 

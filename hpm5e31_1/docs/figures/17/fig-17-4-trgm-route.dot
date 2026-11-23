@@ -1,0 +1,34 @@
+
+digraph trgm {
+  rankdir=LR;
+  graph [fontname="Noto Sans CJK SC", fontsize=11, nodesep=0.25, ranksep=0.6, bgcolor="white"];
+  node  [fontname="Noto Sans CJK SC", fontsize=9.5, shape=box, style="rounded,filled",
+         fillcolor="#F6F8FA", color="#57606A", penwidth=0.9];
+  edge  [fontname="Noto Sans CJK SC", fontsize=9, color="#57606A", arrowsize=0.7];
+
+  subgraph cluster_in {
+    label="输入源（约 150 项）";
+    fontname="Noto Sans CJK SC"; fontsize=10; color="#D0D7DE"; style="rounded";
+    pwm  [label="PWM0/1 TRGO 0~7", fillcolor="#E8F0FE"];
+    gtmr [label="GPTMR0~3 OUT2/3", fillcolor="#E8F0FE"];
+    qei  [label="QEI0/1 触发/位置有效", fillcolor="#E8F0FE"];
+    sdm  [label="SDM0 比较器/越限", fillcolor="#E8F0FE"];
+    plb  [label="PLB_OUT00..", fillcolor="#E8F0FE"];
+    pin  [label="TRGM_P00..P31\n(引脚)", fillcolor="#FFF8E1"];
+    acmp [label="ACMP / ADC / DAC ...", fillcolor="#E8F0FE"];
+  }
+  mux [label="TRGM_OUT[n]\n(触发器: 同相/取反/边沿脉冲)", fillcolor="#E6F4EA", shape=box];
+  subgraph cluster_out {
+    label="输出目的";
+    fontname="Noto Sans CJK SC"; fontsize=10; color="#D0D7DE"; style="rounded";
+    o_pwm  [label="PWMx_TRIG_IN 0~7", fillcolor="#E6F4EA"];
+    o_cap  [label="GPTMRx_CAPT_2/3", fillcolor="#E6F4EA"];
+    o_adc  [label="ADC 序列/抢占触发", fillcolor="#E6F4EA"];
+    o_sdm  [label="SDM0 PWM_EVT (同步)", fillcolor="#E6F4EA"];
+    o_qeo  [label="QEO/QEI 触发", fillcolor="#E6F4EA"];
+    o_plb  [label="PLB_IN_00..31", fillcolor="#E6F4EA"];
+    o_pin  [label="TRGM_Pnn 引脚", fillcolor="#FFF8E1"];
+  }
+  pwm -> mux; gtmr -> mux; qei -> mux; sdm -> mux; plb -> mux; pin -> mux; acmp -> mux;
+  mux -> o_pwm; mux -> o_cap; mux -> o_adc; mux -> o_sdm; mux -> o_qeo; mux -> o_plb; mux -> o_pin;
+}

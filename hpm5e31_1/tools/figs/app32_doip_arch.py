@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+"""图 31-1：DoIP 在整车诊断架构中的位置（外部测试仪 ↔ DoIP 实体/网关 ↔ 车内子网）
+
+生成：python3 tools/figs/app32_doip_arch.py
+产物：docs/figures/31/fig-31-1-arch.png
+"""
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _common import render_dot  # noqa: E402
+
+DOT = r'''
+digraph doip_arch {
+  rankdir=LR;
+  graph [fontname="Noto Sans CJK SC", fontsize=11, bgcolor="white", pad=0.3, nodesep=0.35, ranksep=0.55];
+  node  [fontname="Noto Sans CJK SC", fontsize=10, shape=box, style="rounded,filled", fillcolor="#eef4f8"];
+  edge  [fontname="Noto Sans CJK SC", fontsize=9, color="#33506b"];
+
+  subgraph cluster_ext {
+    label="车间/产线侧"; style="rounded,dashed"; color="#7aa6c2"; fontsize=10;
+    tester [label="外部测试仪\n(诊断仪/OTA 服务器)\n逻辑地址 0x0E00", fillcolor="#ffd9a0"];
+    ethdoc [label="标准以太网\n100/1000BASE-T1\nIEEE 802.3", shape=note, fillcolor="#fff4d6"];
+  }
+
+  subgraph cluster_ecu {
+    label="本板 HPM5E31（DoIP 实体，逻辑地址 0x1000）"; style="rounded,dashed"; color="#7aa6c2"; fontsize=10;
+    doip  [label="DoIP 层\n(ISO 13400-2)\nTCP/UDP 13400", fillcolor="#c8e6c9"];
+    uds   [label="UDS 服务端\n(ISO 14229-1)\ncomponents/app_uds", fillcolor="#c8e6c9"];
+    app   [label="应用/DTC/刷写\nDID · Routine · Flash", fillcolor="#e8f5e9"];
+    can   [label="CAN/CAN FD\n(ISO 15765-2 ISO-TP)\n车内子网", fillcolor="#eef4f8"];
+  }
+
+  tester -> ethdoc [label="UDP 13400 车辆发现\nTCP 13400 诊断", color="#1F6FEB"];
+  ethdoc -> doip  [label="0x0001/0x0005/0x8001", color="#1F6FEB"];
+  doip  -> uds    [label="去掉 SA/TA 后\n就是一条 UDS PDU"];
+  uds   -> app    [label="0x22/0x2E/0x31..."];
+  app   -> can    [label="网关转发\n(本实现不含)"];
+  doip  -> tester [label="0x0004/0x0006/0x8002", style=dashed, color="#D29922"];
+}
+'''
+
+if __name__ == "__main__":
+    render_dot(DOT, 32, "fig-31-1-arch")

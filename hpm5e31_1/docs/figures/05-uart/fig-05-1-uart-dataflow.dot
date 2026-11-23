@@ -1,0 +1,26 @@
+
+digraph uart_paths {
+  graph [rankdir=LR, fontname="Noto Sans CJK SC", fontsize=12, nodesep=0.30, ranksep=0.45, bgcolor="white", pad=0.2];
+  node  [shape=box, style="rounded,filled", fontname="Noto Sans CJK SC", fontsize=10.5, color="#57606A", fillcolor="#F6F8FA"];
+  edge  [fontname="Noto Sans CJK SC", fontsize=9, color="#57606A"];
+
+  txd  [label="TXD 引脚", fillcolor="#DBEAFE"];
+  thr  [label="THR\n(写数据)"];
+  txf  [label="TX FIFO 32B", fillcolor="#FDE68A"];
+  sh   [label="发送移位寄存器"];
+  rxd  [label="RX 引脚", fillcolor="#DBEAFE"];
+  rxf  [label="RX FIFO 32B", fillcolor="#FDE68A"];
+  rbr  [label="RBR\n(读数据)"];
+  poll [label="① 轮询 LSR.DR", fillcolor="#BBF7D0"];
+  irq  [label="② RX FIFO 触发中断\n+ 环形缓冲", fillcolor="#BBF7D0"];
+  dma  [label="③ DMA\n(DMAMUX 请求)", fillcolor="#BBF7D0"];
+  mcr  [label="MCR.LOOP=1\n内部回环(自测用)", fillcolor="#FCA5A5"];
+
+  thr -> txf -> sh -> txd;
+  txd -> mcr [style=dashed, label="内部回环"];
+  mcr -> rxd [style=dashed];
+  rxd -> rxf -> rbr;
+  rbr -> poll;
+  rxf -> irq;
+  rxf -> dma;
+}

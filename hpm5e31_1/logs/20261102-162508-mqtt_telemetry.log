@@ -1,0 +1,10 @@
+se=0 peak=1/32
+[lwip-eth] hw : rx_frames=36 rx_bytes=14926 rx_empty=11874218 rx_err=0 | tx_frames=19 tx_bytes=1518 tx_busy=0 tx_err=0
+[lwip-eth] sw : rx_frames=60 rx_input_err=0 rx_pbuf_faed)
+mstat
+[mqtt] STAT st=CONNECTED up=0s sub=OK conn=1 ok=1 pub_tx=1 pub_rx=0 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=1 can_tx=1 can_rx=0 adc=34728 temp=35000mC loop_max=1216us evt=1 => PASS
+
+letter:/$ 
+letter:/$ [mqtt] STAT st=CONNECTED up=5s sub=OK conn=1 ok=1 pub_tx=6 pub_rx=0 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=6 can_tx=6 can_rx=5 adc=34717 temp=37000mC loop_max=2386us evt=1 => PASS

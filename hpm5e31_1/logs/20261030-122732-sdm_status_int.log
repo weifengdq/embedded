@@ -1,0 +1,31 @@
+
+  IRQ: enabled=1  isr_entries=0  last_status=0x00000000
+  s 待确认 17-A)
+commands: sstat | sirq | sclr
+sstat
+SDM0 clk=200000000 Hz  ch0: Sinc3 OSR=256 -> 理论数据率 = 200000000 / 256 = 781250 SPS
+  IRQ: enabled=1  isr_entries=0  last_status=0x00000000
+  status: data_ready=0  data_error=0  filter_status=0x00000000  fifo_count=0
+  comparator: data=0 (高门限 32000 / 低门限 1000, OSR=32)
+  结论: 配置与中断通路就绪; isr_entries=0 说明 MDAT 没有位流(本板无调制器)
+  限制: 要测真实数据/精度必须外接 ΣΔ 调制器(第 17 章 §12 待确认 17-A)
+
+letter:/$ 
+letter:/$ sirq
+isr_entries=0 last_status=0x00000000
+
+letter:/$ 
+letter:/$ sclr
+cleared
+
+letter:/$ 
+letter:/$ sstat
+SDM0 clk=200000000 Hz  ch0: Sinc3 OSR=256 -> 理论数据率 = 200000000 / 256 = 781250 SPS
+  IRQ: enabled=1  isr_entries=0  last_status=0x00000000
+  status: data_ready=0  data_error=0  filter_status=0x00000000  fifo_count=0
+  comparator: data=0 (高门限 32000 / 低门限 1000, OSR=32)
+  结论: 配置与中断通路就绪; isr_entries=0 说明 MDAT 没有位流(本板无调制器)
+  限制: 要测真实数据/精度必须外接 ΣΔ 调制器(第 17 章 §12 待确认 17-A)
+
+letter:/$ 
+letter:/$ 

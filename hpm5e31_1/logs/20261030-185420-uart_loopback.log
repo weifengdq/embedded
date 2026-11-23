@@ -1,0 +1,19 @@
+>RX inside controller
+uart_loopback @ hpm5e31_1
+  UART4 TX=P  9596    -416p    -416p
+     38400      38461      38460    1588p    1562p
+    115200     114942     114940   -2239p   -2256p
+    460800     454545     454540  -13574p  -13585p
+    921600     909090     909081  -13574p  -13583p
+   1500000    1481481    1481460  -12346p  -12360p
+   2000000    2000000    1999957       0p     -21p
+   3000000    3076923    3076829   25641p   25609p
+   4000000    4000000    3999843       0p     -39p
+   5000000    5000000    4999739       0p     -52p
+(reg_err 由回读分频计算, meas_err 为实测; 1 ppm = 0.0001%)
+try 'uart_baud 3000000' or 'uart_thru 4096 3000000'
+uart_selftest 128 16
+selftest baud=921600 bytes=128 chunk=16 errors=0 time=1.41 ms throughput=90 KB/s
+
+letter:/$ 
+letter:/$ 

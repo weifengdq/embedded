@@ -1,0 +1,79 @@
+
+==================================================================
+gs_usb 测试: classic（20261102-102830）
+==================================================================
+主机: Linux 7.0.0-38-generic x86_64  脚本: test_classic.sh
+日志: logs/20261102-102830-gs-usb-classic.log
+工件: /tmp/gs_usb_artifacts
+内核 7.0.x —— 与开发约定 §1 一致
+  [PASS] 权限 OK（sudo -n）
+dmesg 基线时间戳: 1793586510（之后用 --since 只扫描新增行）
+  [PASS] 依赖命令齐全: dmesg ip ethtool cansend candump cangen canplayer
+  [PASS] 发现 4 个接口: 0 1 2 3
+
+---- 1. 两通道以 500000 bit/s 起来（只做位时序，不启用其它特性）
+> sudo -n ip link set can0 type can bitrate 500000
+> sudo -n ip link set can0 up
+> sudo -n ip link set can1 type can bitrate 500000
+> sudo -n ip link set can1 up
+can0: state UP state ERROR-ACTIVE berr-counter tx 0 rx 0 
+can1: state UP state ERROR-ACTIVE berr-counter tx 0 rx 0 
+  dmesg 安全检查: 无 oops/WARN（新增 0 行）
+
+---- 2. can0 -> can1：标准帧 0x123（8 字节）
+> sudo -n cansend can0 123#1122334455667788
+  [FAIL] can1 收到 0x123 [8] 1122334455667788（未匹配 123 *\[8\] *11 22 33 44 55 66 77 88）
+    实际捕获 1 行:
+SIOCGIFINDEX: No such device
+
+---- 3. can1 -> can0：标准帧 0x321（3 字节），验证反向
+> sudo -n cansend can1 321#AABBCC
+  [FAIL] can0 收到 0x321 [3] AABBCC（未匹配 321 *\[3\] *AA BB CC）
+    实际捕获 1 行:
+SIOCGIFINDEX: No such device
+
+---- 4. 29 位扩展帧（0x18DAF110，UDS 物理响应 ID）
+> sudo -n cansend can0 18DAF110#0322F190
+  [FAIL] can1 收到 29 位帧 0x18DAF110（未匹配 18DAF110 *\[4\] *03 22 F1 90）
+    实际捕获 1 行:
+SIOCGIFINDEX: No such device
+
+---- 5. 0 字节帧（DLC=0）
+> sudo -n cansend can0 100#
+  [FAIL] can1 收到 0 字节帧 0x100（未匹配 100 *\[0\]）
+    实际捕获 1 行:
+SIOCGIFINDEX: No such device
+
+---- 6. RTR 远程帧（0x7FF，请求 8 字节）
+> sudo -n cansend can0 7FF#R8
+  [SKIP] RTR 帧未被 can1 报告（MCAN RTR 支持需确认，记为待确认）
+
+---- 7. 收发计数（ip -s link）
+22: can0: <NOARP,UP,LOWER_UP,ECHO> mtu 16 qdisc pfifo_fast state UP mode DEFAULT group default qlen 10
+    link/can 
+    RX:  bytes packets errors dropped  missed   mcast           
+            15       5      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+            12       4      0       0       0       0 
+23: can1: <NOARP,UP,LOWER_UP,ECHO> mtu 16 qdisc pfifo_fast state UP mode DEFAULT group default qlen 10
+    link/can 
+    RX:  bytes packets errors dropped  missed   mcast           
+            15       5      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+             3       1      0       0       0       0 
+can1 RX 包数=5  can0 TX 包数=4
+  [PASS] can1 至少收到 4 帧（RX=5）
+  [PASS] can0 TX 计数正常（TX=4）
+
+---- 8. 高位速率下的错误计数（正常应保持 ERROR-ACTIVE / 0 错误）
+can0: state UP state ERROR-ACTIVE berr-counter tx 0 rx 0 
+can1: state UP state ERROR-ACTIVE berr-counter tx 0 rx 0 
+  dmesg 安全检查: 无 oops/WARN（新增 7 行）
+  [PASS] 测试后设备仍在线（sysfs: 1-8）
+  dmesg 安全检查: 无 oops/WARN（新增 7 行）
+
+==================================================================
+汇总: classic
+==================================================================
+PASS=6  FAIL=4  内核异常=0
+结论: FAIL

@@ -1,0 +1,10 @@
+_bulk(u32 len)->bytes（板->主机分段）, 0x0007 crc32(bytes | offer | ip
+run
+[run] ---- SOME/IP-TP 分段/重组自测（4096 B）----
+[run] 分段 4096 B -> 3 段      : PASS
+[run] 重组 4096 B CRC 0x5D1C4EE3     : PASS
+[run] 乱序段被拒绝             : PASS
+[run] PASS (0 failed)
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,8 @@
+busyPass=0
+nack: addr=0x33 SyncTransmit=E_NOT_OK seqResult=3 (i2c_err all' / 'i2c_err info'
+i2c_err all
+i2c_error @ hpm5e31_1 | MCAL I2c 1.0.0 moduleID=113
+  runtimeErr=0 det=10 nackPass=1 busyPass=1
+
+letter:/$ 
+letter:/$ 

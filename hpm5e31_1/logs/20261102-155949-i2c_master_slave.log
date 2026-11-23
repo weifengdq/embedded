@@ -1,0 +1,51 @@
+00 (DENIED)
+[doip] routing activation sa=0x0E00 at=0x02 -> cod'i2c det'
+i2c regs
+  I2C2(master) SETUP=0x0c901885 TPM=0x00000000 CTRL=0x00001f00 STATUS=0x000063e1 ADDR=0x00000050
+  I2C3(target) SETUP=0x0c901889 TPM=0x00000000 CTRL=0x00000100 STATUS=0x000061e5 ADDR=0x00000050
+
+letter:/$ 
+letter:/$ i2c ber 1000
+ber: 1000 次 x (24B 写 + 24B 读) @ 100k
+  total=48000 B fail_wr=0 fail_rd=0 err_bytes=0, 4925.39 ms, 有效=9745 B/s
+  err-pos hist: 0:0 1:0 2:0 3:0 4:0 5:0 6:0 7:0 >7:0
+  => PASS (0 误码)
+
+letter:/$ 
+letter:/$ i2c init 400k
+i2c: re-init -> 400k
+  I2C2(master) SETUP=0x009023d5 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006005 ADDR=0x00000050
+  I2C3(target) SETUP=0x0c9023d1 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006001 ADDR=0x00000050
+
+letter:/$ 
+letter:/$ i2c regs
+  I2C2(master) SETUP=0x009023d5 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006005 ADDR=0x00000050
+  I2C3(target) SETUP=0x0c9023d1 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006001 ADDR=0x00000050
+
+letter:/$ 
+letter:/$ i2c ber 1000
+ber: 1000 次 x (24B 写 + 24B 读) @ 400k
+  total=48000 B fail_wr=0 fail_rd=0 err_bytes=0, 1516.18 ms, 有效=31658 B/s
+  err-pos hist: 0:0 1:0 2:0 3:0 4:0 5:0 6:0 7:0 >7:0
+  => PASS (0 误码)
+
+letter:/$ 
+letter:/$ i2c init 1m
+i2c: re-init -> 1m
+  I2C2(master) SETUP=0x00802155 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006005 ADDR=0x00000050
+  I2C3(target) SETUP=0x0c802151 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006001 ADDR=0x00000050
+
+letter:/$ 
+letter:/$ i2c regs
+  I2C2(master) SETUP=0x00802155 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006005 ADDR=0x00000050
+  I2C3(target) SETUP=0x0c802151 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006001 ADDR=0x00000050
+
+letter:/$ 
+letter:/$ i2c ber 1000
+ber: 1000 次 x (24B 写 + 24B 读) @ 1m
+  total=48000 B fail_wr=0 fail_rd=0 err_bytes=0, 829.82 ms, 有效=57843 B/s
+  err-pos hist: 0:0 1:0 2:0 3:0 4:0 5:0 6:0 7:0 >7:0
+  => PASS (0 误码)
+
+letter:/$ 
+letter:/$ 

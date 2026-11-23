@@ -1,0 +1,43 @@
+D12, open-drain(OD=1)+internal pull-up(PE/PS=1)
+  cpu=48000000K 正常)
+type 'i2c_soft_speed 400' or 'i2c_soft_recover'
+i2c_soft_info
+i2c_loopback @ hpm5e31_1: soft (bit-bang) I2C master
+  SCL=PD13 SDA=PD12, open-drain(OD=1)+internal pull-up(PE/PS=1)
+  cpu=480000000 Hz, half_cycles=2190 ovh_half=210 (SCL 目标≈109 kHz)
+  usage: i2c_soft_lines | i2c_soft_selftest | i2c_soft_speed <kHz> | i2c_soft_scan [from] [to] | i2c_soft_timing | i2c_soft_recover
+
+letter:/$ 
+letter:/$ i2c_soft_lines
+lines: SCL=1 SDA=1 (1=释放/上拉高, 0=被拉低)
+
+letter:/$ 
+letter:/$ i2c_soft_selftest
+pin self-test A: input + internal pull-down/pull-up
+  SCL: pull-down DI=0, pull-up DI=1 OK
+  SDA: pull-down DI=0, pull-up DI=1 OK
+pin self-test B: output(open-drain) DI read-back (仅记录, 不作为 PASS 条件)
+  SCL: drive0->DI=1, release->DI=1
+  SDA: drive0->DI=1, release->DI=1
+selftest A: 0 errors -> PASS
+
+letter:/$ 
+letter:/$ i2c_soft_timing
+soft I2C SCL sweep (半周期按 CPU 周期计算, 实测 10 个周期):
+target_kHz  half_cycles measured_kHz  err_ppm
+       100         2190          103    30000
+       400          390          445   112500
+      1000           30         1541   541000
+      2000           10         1542  -229000
+
+letter:/$ 
+letter:/$ i2c_soft_scan
+soft_scan 0x08..0x77: 112 addr, found=0 (0 = 总线无从器件, NACK 正常)
+
+letter:/$ 
+letter:/$ i2c_soft_recover
+before: SCL=1 SDA=1
+after 9-clock recovery: SCL=1 SDA=1 (1=释放/高)
+
+letter:/$ 
+letter:/$ 

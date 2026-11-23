@@ -1,0 +1,55 @@
+ck() -> E_OK
+PLL0: status=LOCKED MFI=40 MFN=0 MFD=240000000 DI/ mclock / mmeasure / mset 0|1 / mver / merr / help
+mclock
+PLL0: status=LOCKED MFI=40 MFN=0 MFD=240000000 DIV0=5(/2.0) DIV1=7(/2.4)
+node      Mcu_GetClockNodeHz   SDK clock_get_frequency
+cpu0       480000000 Hz         480000000 Hz
+ahb0       200000000 Hz         200000000 Hz
+xpi0       100000000 Hz         100000000 Hz
+mchtmr0     24000000 Hz          24000000 Hz   (固定 24 MHz)
+core(ext)  480000000 Hz
+
+letter:/$ 
+letter:/$ mset 1
+Mcu_InitClock(1) -> E_OK, pll=LOCKED
+Mcu_DistributePllClock() -> E_OK
+after switch: cfg=240000000 Hz, sdk=240000000 Hz
+
+letter:/$ 
+letter:/$ mclock
+PLL0: status=LOCKED MFI=40 MFN=0 MFD=240000000 DIV0=5(/2.0) DIV1=7(/2.4)
+node      Mcu_GetClockNodeHz   SDK clock_get_frequency
+cpu0       240000000 Hz         240000000 Hz
+ahb0       200000000 Hz         200000000 Hz
+xpi0       100000000 Hz         100000000 Hz
+mchtmr0     24000000 Hz          24000000 Hz   (固定 24 MHz)
+core(ext)  240000000 Hz
+
+letter:/$ 
+letter:/$ mmeasure
+MEAS: window=10000 us samples=239997400 239997800 239997800 239997800 239997800
+MEAS: core avg=239997720 Hz min=239997400 max=239997800 cfg=240000000 Hz err=-9 ppm
+MEAS: spread=400 Hz
+
+letter:/$ 
+letter:/$ mset 0
+Mcu_InitClock(0) -> E_OK, pll=LOCKED
+Mcu_DistributePllClock() -> E_OK
+after switch: cfg=480000000 Hz, sdk=480000000 Hz
+
+letter:/$ 
+letter:/$ mmeasure
+MEAS: window=10000 us samples=479995800 479997800 479997800 479997800 479997800
+MEAS: core avg=479997400 Hz min=479995800 max=479997800 cfg=480000000 Hz err=-5 ppm
+MEAS: spread=2000 Hz
+
+letter:/$ 
+letter:/$ mver
+Mcu_GetVersionInfo: vendor=0xFFFF module=101 sw=1.0.0
+
+letter:/$ 
+letter:/$ merr
+DET: before=0 after=3 delta=3
+
+letter:/$ 
+letter:/$ 

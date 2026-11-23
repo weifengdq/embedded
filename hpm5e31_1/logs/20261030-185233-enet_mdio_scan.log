@@ -1,0 +1,13 @@
+A31 MDIO=PA30, nRST=PB29 nINT=PB28, PHYADDR=1
+[mdio] PHY relea| phy [pa] | rst | link [pa]
+scan
+
+[mdio] scan MDIO bus (ENET0, clause22, addr 0..31)
+addr  ID1     ID2     OUI     MODEL REV  BMCR   BMSR   LINK
+----  ------  ------  ------  ----- ----  -----  -----  ----
+   0  4F51    EB01    13D47A  48    1    0140   000D   UP
+   1  4F51    EB01    13D47A  48    1    0140   000D   UP
+[mdio] 2 device(s) found
+
+letter:/$ 
+letter:/$ 

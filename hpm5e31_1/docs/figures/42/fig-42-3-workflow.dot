@@ -1,0 +1,16 @@
+digraph G {
+  rankdir=LR; nodesep=0.25; ranksep=0.30; pad=0.10;
+  graph [fontname="Noto Sans CJK SC", bgcolor="white"];
+  node [shape=box, style="rounded,filled", fontname="Noto Sans CJK SC", fontsize=10,
+        color="#57606A", fillcolor="#F6F8FA"];
+  edge [color="#57606A", arrowsize=0.7];
+  s1 [label="AUTOSAR SWS\n(R21-11/R25-11)"];
+  s2 [label="API / 配置设计\n(include + cfg)"];
+  s3 [label="寄存器级驱动\n(src/*.c)", fillcolor="#E6F4EA"];
+  s4 [label="例程 + shell\n(samples/mcal)"];
+  s5 [label="上板实测\nhwrun + logs/", fillcolor="#FFF4E5"];
+  s6 [label="章节 + 图 + PDF\n(ch42~49, v1.3.0)", fillcolor="#EAF2FF"];
+  s1 -> s2 -> s3 -> s4 -> s5 -> s6;
+  s5 -> s3 [label="修 bug", style=dashed, fontsize=9];
+  s6 -> s2 [label="补配置/补 API", style=dashed, fontsize=9];
+}

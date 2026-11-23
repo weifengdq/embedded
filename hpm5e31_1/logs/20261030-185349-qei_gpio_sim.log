@@ -1,0 +1,7 @@
+ 无飞线时位置恒为 0
+commands: qrun <edges_per_s> | qstop | qstat
+qrun 20000
+sim start: edge period 50 us (~20000 edges/s)
+
+letter:/$ 
+letter:/$ 

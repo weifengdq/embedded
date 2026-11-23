@@ -1,0 +1,31 @@
+clk=80000000 Hz, cpu=480000000 Hz, mode=100k(normal), loopback=oee ACK.
+i2c_info
+i2c_scan @ hpm5e31_1, I2C1 SCL=PD13 SDA=PD12 (I2C0 的 PC08 与 MCAN2_TXD 冲突)
+  src_clk=80000000 Hz, cpu=480000000 Hz, mode=100k(normal), loopback=on
+  bus: internal pull-up(PE=1,PS=1) + open-drain(OD=1), 无外部从器件
+  usage: i2c_scan [0x08..0x77] / i2c_timing / i2c_lines / i2c_loopback <0|1>
+
+letter:/$ 
+letter:/$ i2c_lines
+lines: SCL=1 SDA=1 (1=released/high), CMPL=0, BUSBUSY=0
+  SETUP=0x0c901885 TPM=0x00000000 (T_SP=4 T_SCLHI=392 T_SCLRATIO=1 T_SUDAT=12 T_HDDAT=16)
+
+letter:/$ 
+letter:/$ i2c_timing
+I2C timing: probe(addr only) x16. 注意 NACK 时驱动会空转 ADDRHIT 重试(5000 次),
+所以 probe 延迟=硬件传输时间+软件重试时间, 不能直接反推 SCL; SCL 用寄存器回读计算.
+mode             reg_SCL_kHz     reg_ns   probe_us
+  SETUP=0x0c901885 TPM=0x00000000 (T_SP=4 T_SCLHI=392 T_SCLRATIO=1 T_SUDAT=12 T_HDDAT=16)
+100k(normal)           100      (reg)        751.139
+  SETUP=0x009023d5 TPM=0x00000000 (T_SP=4 T_SCLHI=61 T_SCLRATIO=2 T_SUDAT=0 T_HDDAT=16)
+400k(fast)             400      (reg)        751.136
+  SETUP=0x00802155 TPM=0x00000000 (T_SP=4 T_SCLHI=21 T_SCLRATIO=2 T_SUDAT=0 T_HDDAT=0)
+1M(fast_plus)         1000      (reg)        751.139
+
+letter:/$ 
+letter:/$ i2c_scan 8 119
+scan 0x08..0x77: 112 addr, found=0 nack=112 other=0, avg_probe=751122 ns, total=84146 us
+estimated SCL = 10 bit / 751122 ns = 13 kHz (configured 100 kHz)
+
+letter:/$ 
+letter:/$ 

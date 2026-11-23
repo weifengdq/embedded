@@ -1,0 +1,31 @@
+=== [1] board stat before host injection ===
+J1939: sa=0x00 state=2 eec1=3645 ccvs1=365 et1=37 dm1=37 tx=4085 rx=0 dropped=2
+CANopen: node_state=5 heap=2876B rx=0 tx=0 retry=0 max_cycle=8033349us | master rx=2957 tx=2901 hb=28 emcy=0 sdo_tmo=0
+GW: rx_can=4086 tx_udp=128 rx_udp=2 tx_can=2 drop_can=0 drop_udp=3958 bad=0 peer=192.168.2.1:4000
+CPU: loops=6702263 max_loop=1444 us | 静态 RAM: j1939_stack=9760 bus=24
+
+=== [2] host -> board injection (cangen 11-bit 100/s x 4s) ===
+=== [3] board stat after injection ===
+J1939: sa=0x00 state=2 eec1=4307 ccvs1=431 et1=44 dm1=44 tx=4827 rx=0 dropped=402
+CANopen: node_state=5 heap=2876B rx=0 tx=0 retry=0 max_cycle=8033349us | master rx=3642 tx=3576 hb=33 emcy=0 sdo_tmo=0
+GW: rx_can=4828 tx_udp=870 rx_udp=402 tx_can=402 drop_can=0 drop_udp=3958 bad=0 peer=192.168.2.1:4000
+CPU: loops=7762895 max_loop=5062 us | 静态 RAM: j1939_stack=9760 bus=24
+
+=== [4] j1939_monitor on vcan0 (8 s) ===
+[monitor] if=vcan0 duration=8.0s filter=all
+
+---- PGN 周期统计 ----
+       PGN name                count  period avg(ms)   min(ms)   max(ms)
+0x0F004 EEC1                  800          10.013     9.693    20.059
+0x0FECA DM1                     8        1000.079   999.989  1000.289
+0x0FEEE ET1                     8        1000.077   999.989  1000.270
+0x0FEF1 CCVS1                  80         100.007    99.641   100.350
+
+frames=896
+
+---- DM1 灯状态时间线 ----
+  t=   0.139s lamp=0x10[AWL] SPN=100/FMI=4/OC=1
+
+TP: bam=0 rts=0 done=0 bytes=0 errors=0
+
+RESULT: PASS

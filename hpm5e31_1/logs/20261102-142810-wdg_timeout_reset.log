@@ -1,0 +1,9 @@
+[2J[1H
+ _         _   _                  _          _ _ 
+| |    ___| |_| |_ ___ _ __   ___| 
+letter:/$ 
+=== mcal wdg_timeout_reset (board hpm5e31_1) ===
+[boot] BOOT#1 (non-init RAM counter)  PPOR.RESET_FLAG=0x00000010  WDG0_reset=0
+[wdg] PPOR.RESET_FLAG at this boot = 0x00000010 (WDG0 bit16 = 0)
+[wdg] => 其它复位源（非 EWDG0）
+[auto] BOOT#1: EWDG0 armed 500 ms, NOT feeding -> EWDG0 timeout reset expected

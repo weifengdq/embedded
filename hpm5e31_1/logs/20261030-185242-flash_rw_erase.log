@@ -1,0 +1,13 @@
+
+  app image: 0x80000000 .. 0x800139c8 (etext), used 78 KB of | xipbw [bytes]
+xipbw 8192
+XIP read: memcpy(0x80020000 -> RAM 0x01202330), 8192 B, dcache on
+  cold: 172.46 us ->    45.3 MB/s
+  warm:  85.42 us ->    91.5 MB/s
+
+letter:/$ 
+letter:/$ flashrw 0x80080000 4096
+REFUSED: need 4-byte aligned addr in 0x800f0000..0x80100000, size<=64KB
+
+letter:/$ 
+letter:/$ 

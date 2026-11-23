@@ -1,0 +1,8 @@
+留窗口内 16 KB，注意 Flash 寿命)
+--- mem bench: 16 KB @0x800f0000 (reserved window) ---
+erase :   7.650 ms    2091.5 KB/s  4 sectors, mf_calls=4, max_call=1.909 ms
+write :  61.164 ms     261.6 KB/s  64 pages,  mf_calls=64, max_call=0.977 ms
+read  :   0.357 ms   44859.8 KB/s  32 chunks, mf_calls=32, max_call=0.020 ms
+xip   :   0.340 ms   47058.8 KB/s  (memcpy baseline,不含 Mem 作业开销)
+throughput summary: erase=2091.5 KB/s write=261.6 KB/s read=44859.8 KB/s
+MEMBENCH: PASS

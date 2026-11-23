@@ -1,0 +1,8 @@
+_width)
+gptmr clk = 100000000 Hz (1 tick = 10.00 ns)
+commands: cstat | crate <hz> <permille> | csrc <0|1>
+cstat
+capture: 还没有捕获事件(检查 TRGM 路由 / 信号源是否在跑)
+
+letter:/$ 
+letter:/$ 

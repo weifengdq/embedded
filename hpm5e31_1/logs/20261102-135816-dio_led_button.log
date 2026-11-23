@@ -1,0 +1,53 @@
+n: AUTOSAR Dio on HPM5E31 ===
+Port_Init done; Dio channels=16 groups=3
+SELFTEST: LED write=1 readback=1
+type: dio / dled od 0 0xFF / derr / dver
+dio
+Dio: moduleID=120 channels=16 groups=3 (Dio 无 Init，引脚由 Port_Init 配)
+ch0=PA02 LED ch1=PA03 BTN ch2=PC11 ch3=PA27 ch4..11=CAN LEDs ch12=PC12 ch13=PA28 ch14=PC10 ch15=PA26
+commands: dio | dled <on|off|flip> | dbtn | dscan | dleds <hex> | dport <0..5> | dgroup | dmasked <lvl> <mask> | derr | dver
+
+letter:/$ 
+letter:/$ dled on
+LED: write=1 readback=1
+
+letter:/$ 
+letter:/$ dled flip
+LED: write=0 readback=0
+
+letter:/$ 
+letter:/$ dbtn
+BTN: PA03=0 (pressed=high) events=0
+
+letter:/$ 
+letter:/$ dleds A5
+LEDS: pattern=0xA5
+
+letter:/$ 
+letter:/$ dport 5
+PORT5: DI=0x073AFA00 DO=0x04380000
+
+letter:/$ 
+letter:/$ dgroup
+GROUP Usr  (GPIOA[3:2]) = 0x0 (bit0=LED bit1=BTN)
+GROUP CanLeds(GPIOF[23:16]) = 0x3A
+
+letter:/$ 
+letter:/$ dmasked 0 0xFF
+MASKED: GPIOF DO=0x04380000 (level=0x0 mask=0xFF)
+
+letter:/$ 
+letter:/$ dscan
+SCAN: 8 颗 CAN 灯走 1
+SCAN: done
+
+letter:/$ 
+letter:/$ derr
+DET: before=0 after=6 delta=6
+
+letter:/$ 
+letter:/$ dver
+Dio_GetVersionInfo: vendor=0xFFFF module=120 sw=1.0.0
+
+letter:/$ 
+letter:/$ 

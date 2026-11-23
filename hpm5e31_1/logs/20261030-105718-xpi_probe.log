@@ -1,0 +1,4 @@
+pi-probe] toggle 2 ok
+[xpi-probe] toggle 3 ok
+[xpi-probe] toggle 4 ok
+[xpi-probe] flash word-sum = 0xffffff00 (XIP still readable)

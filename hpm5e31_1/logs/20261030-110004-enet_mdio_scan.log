@@ -1,0 +1,65 @@
+A31 MDIO=PA30, nRST=PB29 nINT=PB28, PHYADDR=1
+[mdio] PHY relea| phy [pa] | rst | link [pa]
+scan
+
+[mdio] scan MDIO bus (ENET0, clause22, addr 0..31)
+addr  ID1     ID2     OUI     MODEL REV  BMCR   BMSR   LINK
+----  ------  ------  ------  ----- ----  -----  -----  ----
+   0  4F51    EB01    13D47A  48    1    0140   000D   UP
+   1  4F51    EB01    13D47A  48    1    0140   000D   UP
+[mdio] 2 device(s) found
+
+letter:/$ 
+letter:/$ phy 1
+PHY@1 ID1=4F51 ID2=EB01
+  BMCR=0140 reset=0 loopback=0 speed_bit=1 an_en=0 pwr_dn=0 isolate=0 restrt_an=0 duplex=1
+  BMSR=000D link=1 an_done=0 an_able=1 10FD=0 100FD=0 lp_1000FD=0
+  GBCR=0000 (ms_manual=0 ms=SLAVE adv1000full=0)  GBSR=3000 (ms_resolved=SLAVE local_rx_ok=1 lp1000full=0)
+  PHYSTS(0x11)=8400  mode=1000M
+
+letter:/$ 
+letter:/$ rd 1 0 16
+PHY1 REG[0x00] = 0x0140 (320)
+PHY1 REG[0x01] = 0x000D (13)
+PHY1 REG[0x02] = 0x4F51 (20305)
+PHY1 REG[0x03] = 0xEB01 (60161)
+PHY1 REG[0x04] = 0x0000 (0)
+PHY1 REG[0x05] = 0x0000 (0)
+PHY1 REG[0x06] = 0x0000 (0)
+PHY1 REG[0x07] = 0x0000 (0)
+PHY1 REG[0x08] = 0x0000 (0)
+PHY1 REG[0x09] = 0x0000 (0)
+PHY1 REG[0x0A] = 0x3000 (12288)
+PHY1 REG[0x0B] = 0x0000 (0)
+PHY1 REG[0x0C] = 0x0000 (0)
+PHY1 REG[0x0D] = 0x0000 (0)
+PHY1 REG[0x0E] = 0x0000 (0)
+PHY1 REG[0x0F] = 0x0000 (0)
+
+letter:/$ 
+letter:/$ rd 1 16 16
+PHY1 REG[0x10] = 0x0000 (0)
+PHY1 REG[0x11] = 0x8400 (33792)
+PHY1 REG[0x12] = 0x0000 (0)
+PHY1 REG[0x13] = 0x4400 (17408)
+PHY1 REG[0x14] = 0x0000 (0)
+PHY1 REG[0x15] = 0x0000 (0)
+PHY1 REG[0x16] = 0x0000 (0)
+PHY1 REG[0x17] = 0x00E0 (224)
+PHY1 REG[0x18] = 0x0000 (0)
+PHY1 REG[0x19] = 0x0000 (0)
+PHY1 REG[0x1A] = 0x0000 (0)
+PHY1 REG[0x1B] = 0x0000 (0)
+PHY1 REG[0x1C] = 0x0000 (0)
+PHY1 REG[0x1D] = 0x0000 (0)
+PHY1 REG[0x1E] = 0x0000 (0)
+PHY1 REG[0x1F] = 0x0000 (0)
+
+letter:/$ 
+letter:/$ link 1
+[mdio] poll BMSR.LINK of PHY@1, 20 x 100ms ...
+  [ 0] BMSR=000D link=1 an_done=0  GBSR=3000 PHYSTS=8400
+[mdio] LINK UP
+
+letter:/$ 
+letter:/$ 

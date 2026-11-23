@@ -1,0 +1,17 @@
+LAN8651 up: MAC 02:00:00:5e:31:01, transport=SPI2
+[net] netif 
+ip
+[net] netif t10  MAC 02:00:00:5e:31:01
+[net] IP   192.168.1.100
+[net] mask 255.255.255.0
+[net] gw   192.168.1.1
+[net] MTU  1500
+[net] up=1 link=0
+
+letter:/$ 
+letter:/$ link
+[link] PHYID=0x0007c1b3 BMSR=0x0805/0x0805 link=1 netif_link=0
+[link] PLCA en=0 node=0/8 to=32 burst=0/128 status=0x0000 PST=0
+
+letter:/$ 
+letter:/$ 

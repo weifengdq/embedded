@@ -1,0 +1,20 @@
+55.255.255.0
+IPv4 Gateway: 192.168.2.1
+[lwip] cfg ip=192.168.2�� -> PASS
+[doip] running=1 ver=0x02 entity=0x1000 tester=0x0E00 port=13400 max_conn=3 max_payload=4096
+[doip] VIN=HPM5E31TESTVIN001
+[doip] EID=00:00:00:00:D0:0E GID=00:00:00:00:00:01 further=0x00
+[doip] timer initial=2000 ms general=300000 ms alive=500 ms announce=3 x 500 ms period=0 ms
+[doip] udp_rx=0 ident=0 ann_tx=0 tcp_accept=0 tcp_close=0
+[doip] route_ok=0 route_deny=0 diag_rx=0 diag_tx=0 big_msg=0
+[doip] alive_tx=0 alive_ok=0 alive_timeout=0 initial_timeout=0 general_timeout=0 err_hdr=0
+[doip] ready: 主机跑 bash host/doip/run_client.sh all
+doip start
+[doip] start rc=0 PASS
+
+letter:/$ 
+letter:/$ doip selftest
+[doip] selftest: 49 项检查，0 失败 -> PASS
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,29 @@
+oller: SCL PD02 / SDA PD03；I2C3 target addr=0x50 SCL PD07 / SD/ 'i2c xfer 32' / 'i2c async 16' / 'i2c ber 200' / 'i2c det'
+i2c xfer 32
+  100k  wr   n=32   PASS err=0   t=3238.76 us 线速率=88.9 kbps(有效 79.0 kbps)
+  100k  rd   n=32   PASS err=0   t=3233.82 us 线速率=89.0 kbps(有效 79.1 kbps)
+
+letter:/$ 
+letter:/$ i2c init 400k
+i2c: re-init -> 400k
+  I2C2(master) SETUP=0x009023d5 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006005 ADDR=0x00000050
+  I2C3(target) SETUP=0x0c9023d1 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006001 ADDR=0x00000050
+
+letter:/$ 
+letter:/$ i2c xfer 32
+  400k  wr   n=32   PASS err=0   t=992.78 us 线速率=290.0 kbps(有效 257.8 kbps)
+  400k  rd   n=32   PASS err=0   t=988.77 us 线速率=291.2 kbps(有效 258.9 kbps)
+
+letter:/$ 
+letter:/$ i2c init 1m
+i2c: re-init -> 1m
+  I2C2(master) SETUP=0x00802155 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006005 ADDR=0x00000050
+  I2C3(target) SETUP=0x0c802151 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006001 ADDR=0x00000050
+
+letter:/$ 
+letter:/$ i2c xfer 32
+  1m    wr   n=32   PASS err=0   t=538.44 us 线速率=534.8 kbps(有效 475.4 kbps)
+  1m    rd   n=32   PASS err=0   t=536.62 us 线速率=536.6 kbps(有效 477.0 kbps)
+
+letter:/$ 
+letter:/$ 

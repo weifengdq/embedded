@@ -1,0 +1,65 @@
+ch: AUTOSAR Crc library on HPM5E31 ===
+Crc 1.0.0 module=201 vendor=0xffff
+  CRC8 SAE J1850         HW accel  conv=0x009 (inixcheck | crcbench
+crcinfo
+Crc 1.0.0 module=201 vendor=0xffff
+  CRC8 SAE J1850         HW accel  conv=0x009 (init_direct xor_hw feed_word poly_right, chain=no(SW))
+  CRC8 H2F               HW accel  conv=0x009 (init_direct xor_hw feed_word poly_right, chain=no(SW))
+  CRC16 CCITT-FALSE      HW accel  conv=0x109 (init_direct xor_hw feed_word poly_right, chain=yes)
+  CRC16 ARC(0x8005)      HW accel  conv=0x109 (init_direct xor_hw feed_word poly_right, chain=yes)
+  CRC32 Ethernet         HW accel  conv=0x009 (init_direct xor_hw feed_word poly_right, chain=no(SW))
+  CRC32 P4(0xF4ACFB13)   HW accel  conv=0x009 (init_direct xor_hw feed_word poly_right, chain=no(SW))
+  CRC32 P76(0x6938392D)  HW accel  conv=0x109 (init_direct xor_hw feed_word poly_right, chain=yes)
+  CRC64 ECMA-182         SW table (no HW usable)
+
+letter:/$ 
+letter:/$ crcvec
+--- crc vector: check value of "123456789" (SWS_Crc 7.2) ---
+[PASS] CRC8 SAE J1850         0x4B
+[PASS] CRC8 H2F               0xDF
+[PASS] CRC16 CCITT-FALSE      0x29B1
+[PASS] CRC16 ARC(0x8005)      0xBB3D
+[PASS] CRC32 Ethernet         0xCBF43926
+[PASS] CRC32 P4(0xF4ACFB13)   0x1697D06A
+[PASS] CRC32 P76(0x6938392D)  0x4DB36B68
+[PASS] CRC64 ECMA-182         0x995DC9BBDF1939FA
+--- crc chain: one-shot vs 2/3-step (Crc_IsFirstCall=FALSE) ---
+[PASS] CRC8 SAE J1850         chain
+[PASS] CRC8 H2F               chain
+[PASS] CRC16 CCITT-FALSE      chain
+[PASS] CRC16 ARC(0x8005)      chain
+[PASS] CRC32 Ethernet         chain
+[PASS] CRC32 P4(0xF4ACFB13)   chain
+[PASS] CRC32 P76(0x6938392D)  chain
+[PASS] CRC64 ECMA-182         chain
+crcvec: PASS
+
+letter:/$ 
+letter:/$ crcxcheck
+--- crc hw/sw cross-check on 4KB ---
+[PASS] CRC8 SAE J1850         hw=yes hw=0x000000000000002D sw=0x000000000000002D
+[PASS] CRC8 H2F               hw=yes hw=0x0000000000000039 sw=0x0000000000000039
+[PASS] CRC16 CCITT-FALSE      hw=yes hw=0x000000000000CA84 sw=0x000000000000CA84
+[PASS] CRC16 ARC(0x8005)      hw=yes hw=0x000000000000ABFB sw=0x000000000000ABFB
+[PASS] CRC32 Ethernet         hw=yes hw=0x00000000401175E6 sw=0x00000000401175E6
+[PASS] CRC32 P4(0xF4ACFB13)   hw=yes hw=0x00000000E16DB9F6 sw=0x00000000E16DB9F6
+[PASS] CRC32 P76(0x6938392D)  hw=yes hw=0x00000000C7A9BD3D sw=0x00000000C7A9BD3D
+[PASS] CRC64 ECMA-182         hw=NO(SW only) hw=0x2B7519B520DE7CA2 sw=0x2B7519B520DE7CA2
+crcxcheck: PASS
+
+letter:/$ 
+letter:/$ crcbench
+--- crc throughput: 4096 B x 64 iters, cpu=480000000 Hz ---
+algo                    sw_MBps  sw_cyc/B  hw_MBps  hw_cyc/B  speedup
+CRC8 SAE J1850            22.81     21.04    60.20      7.97     2.64x
+CRC8 H2F                  22.81     21.04    60.20      7.97     2.64x
+CRC16 CCITT-FALSE         17.11     28.05    60.20      7.97     3.52x
+CRC16 ARC(0x8005)         19.16     25.05    60.20      7.97     3.14x
+CRC32 Ethernet            20.83     23.04    60.21      7.97     2.89x
+CRC32 P4(0xF4ACFB13)      20.83     23.04    60.21      7.97     2.89x
+CRC32 P76(0x6938392D)     19.96     24.04    60.21      7.97     3.02x
+CRC64 ECMA-182            17.75     27.04    17.75     27.04     1.00x
+hw_calls=910 sw_fallbacks=1282
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,17 @@
+et phy init passed !
+IPv4 Address: 192.168.2.100
+IPv4 Netmask: | selftest | offer | stopoffer | sub | ip
+run
+[run] ---- 方法级回环自测 ----
+[run] add(2,3)            : PASS (5)
+[run] add(0xFFFFFFFF,1)   : PASS
+[run] get_version         : PASS (hpm5e31-someip/1.0.0)
+[run] set_led(1)->(0)     : PASS
+[run] temp get (31.5 C)   : PASS
+[run] temp set 42.25 C    : PASS (readback 42250 mc)
+[run] unknown method      : PASS (rc=0x03)
+[run] request_no_return   : PASS
+[run] PASS (0 failed)
+
+letter:/$ 
+letter:/$ 

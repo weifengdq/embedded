@@ -1,0 +1,23 @@
+-
+  CAN0@500k  TEC=  0 REC=  0 LEC=7 BO=0 EP=0 EW=0 ACT=1 tdcv'run' to rerun, 'info' for details
+run
+
+=== mcan_error_recovery: CAN1 故意错配 250k，CAN0 500k ===
+--- 阶段1: 制造 ACK 错误直到 bus-off ---
+  CAN0@500k  TEC=111 REC=  0 LEC=0 BO=0 EP=0 EW=1 ACT=1 tdcv=0
+  CAN1@500k
+         listen-only TEC=  0 REC=  0 LEC=0 BO=0 EP=0 EW=0 ACT=1 tdcv=0
+[tx] submit st=0 idx=16
+  CAN0(busoff) TEC=135 REC=  0 LEC=3 BO=0 EP=1 EW=1 ACT=3 tdcv=0
+  RESULT: 未在 200ms 内进入 bus-off (FAIL)
+--- 阶段2: 修好 CAN1=500k，调用 mcan_recover_from_busoff() ---
+  recover st=0 recovered=1, took=0 us
+  CAN0(recover) TEC=135 REC=  0 LEC=3 BO=0 EP=1 EW=1 ACT=3 tdcv=0
+--- 阶段3: 恢复后正常收发 ---
+  sent=1 got=1 id=0x123 dlc=8 data0=0xDEADBEEF => PASS
+  CAN0(after) TEC=118 REC=  0 LEC=0 BO=0 EP=0 EW=1 ACT=1 tdcv=0
+  CAN1(after) TEC=  0 REC=  0 LEC=0 BO=0 EP=0 EW=0 ACT=1 tdcv=0
+SUMMARY: pass=4 fail=2 FAILED
+
+letter:/$ 
+letter:/$ 

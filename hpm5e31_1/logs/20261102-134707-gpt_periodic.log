@@ -1,0 +1,18 @@
+= 10.0 ns)
+notification enabled, timer started; commands: gpt_indow ...
+[bench] window=10000 ms ticks=9999 expect=10000 error=-100.000 ppm
+[bench] 1 ms tick actual = 1000.100010 us, freq = 999.900 Hz
+[isr] n=10000 period=1000.000 us (expect 1000.000 us)
+[isr] jitter: min=999.746 max=1000.256 pp=0.510 us  stddev=0.095 us (46 cycles)
+[isr] entry latency: min=68 max=379 ticks (1 tick = 10.0 ns) mean=753.2 ns
+[cal] window: dmcycle=480000438 = 1.000001 s @ f_cpu=480000000 Hz, predef d=1000005 us
+[cal] GPTMR0 actual = 100000409 Hz, clock_get_frequency = 100000000 Hz, deviation = +4.1 ppm
+[cal] reload=100000 -> tick = 999.995913 us, 1 s wall-clock ticks = 1000.004
+[api] Gpt_GetTimeElapsed: mean=142.2 cycles (296.3 ns) min=137 max=2364
+[api] Gpt_GetTimeRemaining: mean=159.3 cycles (331.9 ns) min=153 max=3294
+[api] Gpt_StartTimer: mean=1427.1 cycles (2973.1 ns) min=1392 max=3666
+[predef] raw: 1us16=5525 1us24=11015573 1us32=11015573 100us32=110155
+[predef] delta: 1us32=11018942 us, 100us32=110189 (x100 us), ratio=1.00
+[det] before=0 after=3 delta=3
+[det] last: mod=100 inst=0 api=0x00 err=0x16 (expect mod=100 api=0x00/0x05/0x16)
+[gpt_periodic] auto suite done. commands: gpt_info | gpt_cal [ms] | gpt_bench [sec] | gpt_api | gpt_predef | gpt_err | gpt_stat

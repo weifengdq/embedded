@@ -1,0 +1,17 @@
+# host/rust —— 本项目自研的 Rust 上位机工具（cargo workspace）
+#
+# 设计原则：
+#   1) 纯 std，不引入任何 crates —— 离线（无外网/无 cargo 镜像）也能 cargo build/test；
+#   2) 全部可离线自测：解析器/协议栈都有 #[cfg(test)] 单元测试，不依赖板卡与 CAN 硬件；
+#   3) 与 host/ 下 Python 工具职责互补（见 host/README.md 的语言矩阵）。
+[workspace]
+resolver = "2"
+members = ["candump2csv", "isotp", "udsdec"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[profile.release]
+opt-level = 2

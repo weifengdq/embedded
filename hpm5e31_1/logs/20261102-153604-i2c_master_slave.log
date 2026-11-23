@@ -1,0 +1,290 @@
+oller: SCL PD02 / SDA PD03；I2C3 target addr=0x50 SCL PD07 / SD 200' / 'i2c det'
+i2c init 400k
+i2c: re-init -> 400k
+  I2C2(master) SETUP=0x009023d5 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006005 ADDR=0x00000050
+  I2C3(target) SETUP=0x009023d1 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006001 ADDR=0x00000050
+
+letter:/$ 
+letter:/$ i2c rdloop 24 50
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+rdloop: n=24 x cnt=50 @ 400k -> fail=49 err_bytes=1107
+  cycles min=359909 max=3020777 (us: 0.74 .. 6.29)
+  err-pos hist: 0:49 1:46 2:46 3:46 4:46 5:46 6:46 7:46 >7:736
+  slave ISR: addr_hit=0
+
+letter:/$ 
+letter:/$ i2c patch m sudat 12
+i2c: I2C2 SETUP 0x009023d5 -> 0x0c9023d5 (sudat=12)
+
+letter:/$ 
+letter:/$ i2c rdloop 24 50
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+=2 rx=00 tx=BA
+0
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] id-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=0=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+  [rd-diff] i=0 rx=00 tx=80
+  [rd-diff] i=1 rx=00 tx=9D
+  [rd-diff] i=2 rx=00 tx=BA
+rdloop: n=24 x cnt=50 @ 400k -> fail=50 err_bytes=809
+  cycles min=361113 max=3019058 (us: 0.75 .. 6.28)
+  err-pos hist: 0:50 1:33 2:33 3:33 4:33 5:33 6:33 7:33 >7:528
+  slave ISR: addr_hit=0
+
+letter:/$ 
+letter:/$ i2c init 400k
+i2c: re-init -> 400k
+  I2C2(master) SETUP=0x009023d5 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006005 ADDR=0x00000050
+  I2C3(target) SETUP=0x009023d1 TPM=0x00000000 CTRL=0x00000000 STATUS=0x00006001 ADDR=0x00000050
+
+letter:/$ 
+letter:/$ i2c patch m sudat 12
+i2c: I2C2 SETUP 0x009023d5 -> 0x0c9023d5 (sudat=12)
+
+letter:/$ 
+letter:/$ i2c patch s sudat 12
+i2c: I2C3 SETUP 0x009023d1 -> 0x0c9023d1 (sudat=12)
+
+letter:/$ 
+letter:/$ i2c rdloop 24 50
+rdloop: n=24 x cnt=50 @ 400k -> fail=0 err_bytes=0
+  cycles min=361101 max=362310 (us: 0.75 .. 0.75)
+  err-pos hist: 0:0 1:0 2:0 3:0 4:0 5:0 6:0 7:0 >7:0
+  slave ISR: addr_hit=0
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,8 @@
+__| |_| |_ ___ _ __   ___| 
+letter:/$ 
+[app] canopen_node (CA�
+  heartbeat 0x701 @1s                  PASS  2.6 s 内收到 2 帧（期望 2~3）
+[test] EMCY 注入
+  EMCY 0x081 manufacturer              PASS  EMCY 计数 +1, code=0x1000
+  stats: heap=2876B rx=0 tx=0 retry=0 loops=538898 maxloop=2945us canerr=0x0000
+=== RESULT: 11 PASS / 0 FAIL ===

@@ -1,0 +1,15 @@
+{
+ "cmd": "period",
+ "arg": "500",
+ "broker": "192.168.2.1:1883",
+ "pub_topic": "hpm5e31/cmd/period",
+ "payload": "500",
+ "ack": {
+  "dev": "hpm5e31",
+  "cmd": "period",
+  "ok": 1,
+  "period": 500
+ },
+ "ack_rtt_ms": 1.046,
+ "verdict": "PASS"
+}

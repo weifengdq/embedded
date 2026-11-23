@@ -1,0 +1,102 @@
+)
+---- MII(clause22) registers ----
+  0x00 BMCR  = 0x0140
+val] | poll [secs] | restore
+dump
+---- MII(clause22) registers ----
+  0x00 BMCR  = 0x0140
+  0x01 BMSR  = 0x000D
+  0x02 ID1   = 0x4F51
+  0x03 ID2   = 0xEB01
+  0x04 ANAR  = 0x0000
+  0x05 ANLPAR = 0x0000
+  0x06 ANER  = 0x0000
+  0x09 GBCR  = 0x0000
+  0x0A GBSR  = 0x3000
+  0x0D MMDAC = 0x4007
+  0x0E MMDAD = 0x0000
+  0x11 PHYSR = 0x8400
+  0x12 INTMSK = 0x0000
+  0x13 INTST  = 0x0000
+  0x17 INTST2 = 0x0000
+---- EXT registers (via mii 0x1E/0x1F) ----
+  ext 0x0000 broadcast ctrl  = 0x0000
+  ext 0x9000 SMI_SDS_PHY     = 0x0000
+  ext 0x9001 RGMII_CFG1      = 0x0110
+  ext 0x9030 COMMON_CTRL1    = 0x2000
+  ext 0x9081 LTT link train  = 0x000A
+  ext 0x9082 LRT local rcv   = 0x0004
+  ext 0x9083 RRT remote rcv  = 0x0008
+---- MMD registers (via mii 0x0D/0x0E) ----
+  MMD1 0x0834 = 0x8001 (force_config=SLAVE, phy_type=1000BASE-T1)
+  MMD7 0x0200 = 0x0000 (an_en=0)
+
+letter:/$ 
+letter:/$ status
+[phy] link=UP speed=1000M duplex=FULL role=SLAVE local_rx_ok=1 remote_rx_ok=1
+[phy] BMCR=0140 BMSR=000D GBCR=0000 GBSR=3000 PHYSR=8400 an_cmplt=0
+
+letter:/$ 
+letter:/$ mode 100 slave
+[phy] apply mode: speed=100M role=SLAVE an=0 ...
+---- MMD registers (via mii 0x0D/0x0E) ----
+  MMD1 0x0834 = 0x8001 (force_config=SLAVE, phy_type=1000BASE-T1)
+  MMD7 0x0200 = 0x0000 (an_en=0)
+[phy] waiting link up (<= 3000 ms) ...
+[phy] LINK UP after poll: speed=1000M role=SLAVE
+[phy] link=UP speed=1000M duplex=FULL role=SLAVE local_rx_ok=1 remote_rx_ok=1
+[phy] BMCR=0140 BMSR=000D GBCR=0000 GBSR=3000 PHYSR=8400 an_cmplt=0
+
+letter:/$ 
+letter:/$ poll 4
+[phy] poll status every 200ms for 4 s:
+  [   0 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [ 200 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [ 400 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [ 600 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [ 800 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [1000 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [1200 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [1400 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [1600 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [1800 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [2000 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [2200 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [2400 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [2600 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [2800 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [3000 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [3200 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [3400 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [3600 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [3800 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+
+letter:/$ 
+letter:/$ restore
+[phy] restore board default: 1000BASE-T1 slave, RXC delay on, tx_delay_sel=1
+[phy] waiting link up (<= 3000 ms) ...
+[phy] LINK UP after poll: speed=1000M role=SLAVE
+[phy] link=UP speed=1000M duplex=FULL role=SLAVE local_rx_ok=1 remote_rx_ok=1
+[phy] BMCR=0140 BMSR=000D GBCR=0000 GBSR=3000 PHYSR=8400 an_cmplt=0
+
+letter:/$ 
+letter:/$ poll 3
+[phy] poll status every 200ms for 3 s:
+  [   0 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [ 200 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [ 400 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [ 600 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [ 800 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [1000 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [1200 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [1400 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [1600 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [1800 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [2000 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [2200 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [2400 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [2600 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+  [2800 ms] link=1 speed=1000M role=SLAVE PHYSR=8400 GBSR=3000
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,21 @@
+ 无飞线时位置恒为 0
+commands: qrun <edges_per_s> | qstop | qstat
+qrun 20000
+sim start: edge period 50 us (~20000 edges/s)
+
+letter:/$ 
+letter:/$ qstat
+QEI0: phase=0  pos=0  angle=0  z=0  | sim edges=986 running=1
+  note: 位置为 0 -> 检查 PD07->PC07 / PD06->PC06 两根飞线
+
+letter:/$ 
+letter:/$ qstop
+sim stopped, generated edges = 1946
+
+letter:/$ 
+letter:/$ qstat
+QEI0: phase=0  pos=0  angle=0  z=0  | sim edges=1946 running=0
+  note: 位置为 0 -> 检查 PD07->PC07 / PD06->PC06 两根飞线
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,104 @@
+Traceback (most recent call last):
+  File "host/doip/run_tests.py", line 405, in main
+    case()
+    ~~~~^^
+  File "host/doip/run_tests.py", line 257, in test_bulk_outbound_4k
+    pt, pay, _ = c.recv_frame(5.0)
+                 ~~~~~~~~~~~~^^^^^
+  File "host/doip/doip_client.py", line 296, in recv_frame
+    hdr = self._recv_exact(8, to)
+  File "host/doip/doip_client.py", line 286, in _recv_exact
+    raise DoIPError("连接被对端关闭")
+doip_client.DoIPError: 连接被对端关闭
+
+[test_vehicle_discovery_plain]
+    [measure] UDP 0x0001 发现 RTT 均值                      129.55 us n=5
+    [measure] UDP 0x0001 发现 RTT 最大                      289.86 us 
+  PASS (1 ms)
+
+[test_vehicle_discovery_eid_vin]
+  PASS (1 ms)
+
+[test_entity_status_and_power_mode]
+    [measure] UDP 0x4001 实体状态 RTT                        99.78 us max_sockets=3 max_data=516
+    [measure] UDP 0x4003 电源模式 RTT                        81.50 us mode=0x01
+  PASS (0 ms)
+
+[test_vehicle_announcement_broadcast]
+    [measure] 广播声明条数 / 4 s                                5.00 条 src=('192.168.2.100', 13400)
+    [measure] 声明间隔均值                                   1000.05 ms n=4
+    [measure] 声明间隔最大偏差                                    0.89 ms 
+  PASS (4144 ms)
+
+[test_routing_activation_ok]
+    [measure] 路由激活 RTT                                 1219.69 us 0x0006/0x10
+  PASS (3 ms)
+
+[test_routing_activation_denied]
+  PASS (5 ms)
+
+[test_uds_full_sequence]
+  PASS (5 ms)
+
+[test_uds_pending_78_and_timing]
+    [measure] 0x8002 ACK 时延                             166.95 us 回调只入队、不阻塞
+    [measure] 慢服务最终响应时间                              150560.83 us 含 1 条 0x78
+    [measure] 3E 00 平均往返                                228.98 us n=20，TCP 已建连
+  PASS (158 ms)
+
+[test_uds_negative_responses]
+    [measure] 负响应 NRC 检查                                  3.00 条 0x11/0x31/0x13
+  PASS (3 ms)
+
+[test_bulk_inbound_4k]
+    [measure] 入向 4008 B 帧的否定应答时延                        265.99 us 0x8003/0x04 超长
+    [measure] 入向 516 B 帧 ACK+响应时延                       236.25 us UDS 回 NRC 0x33
+  PASS (3 ms)
+
+[test_bulk_outbound_4k]
+    [measure] 出向 4000 B 单帧总耗时                           375.34 us 4008 B / 含 0x8002 ACK
+    [measure] 出向 4000 B 吞吐                               85.43 Mbit/s 单帧
+  FAIL (3005 ms): 连接被对端关闭
+
+[test_diag_address_errors]
+  PASS (2 ms)
+
+[test_generic_header_nack]
+  PASS (5 ms)
+
+[test_dual_connection_alive_check]
+  PASS (905 ms)
+
+[test_initial_inactivity_timeout]
+    [measure] initial inactivity 断链时间                  2000.40 ms A_DoIP_Initial_Inactivity=2000 ms
+  PASS (2002 ms)
+
+[test_general_inactivity_timeout]
+    [measure] general inactivity 断链时间                  2998.70 ms 板端 timer general 3000
+  PASS (3001 ms)
+
+========== 结果：PASS 15 / FAIL 1（总 13.2 s）==========
+  FAIL test_bulk_outbound_4k                      连接被对端关闭
+
+---- 实测数据（书稿表格直接抄这一节）----
+| 指标 | 数值 | 单位 | 备注 |
+|---|---|---|---|
+| UDP 0x0001 发现 RTT 均值 | 129.55 | us | n=5 |
+| UDP 0x0001 发现 RTT 最大 | 289.86 | us |  |
+| UDP 0x4001 实体状态 RTT | 99.78 | us | max_sockets=3 max_data=516 |
+| UDP 0x4003 电源模式 RTT | 81.50 | us | mode=0x01 |
+| 广播声明条数 / 4 s | 5.00 | 条 | src=('192.168.2.100', 13400) |
+| 声明间隔均值 | 1000.05 | ms | n=4 |
+| 声明间隔最大偏差 | 0.89 | ms |  |
+| 路由激活 RTT | 1219.69 | us | 0x0006/0x10 |
+| 0x8002 ACK 时延 | 166.95 | us | 回调只入队、不阻塞 |
+| 慢服务最终响应时间 | 150560.83 | us | 含 1 条 0x78 |
+| 3E 00 平均往返 | 228.98 | us | n=20，TCP 已建连 |
+| 负响应 NRC 检查 | 3.00 | 条 | 0x11/0x31/0x13 |
+| 入向 4008 B 帧的否定应答时延 | 265.99 | us | 0x8003/0x04 超长 |
+| 入向 516 B 帧 ACK+响应时延 | 236.25 | us | UDS 回 NRC 0x33 |
+| 出向 4000 B 单帧总耗时 | 375.34 | us | 4008 B / 含 0x8002 ACK |
+| 出向 4000 B 吞吐 | 85.43 | Mbit/s | 单帧 |
+| initial inactivity 断链时间 | 2000.40 | ms | A_DoIP_Initial_Inactivity=2000 ms |
+| general inactivity 断链时间 | 2998.70 | ms | 板端 timer general 3000 |
+JSON -> temp2/doip_tests.json

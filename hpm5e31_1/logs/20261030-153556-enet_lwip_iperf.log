@@ -1,0 +1,26 @@
+00M SLAVE
+Enet phy init passed !
+[net] Enet controller + PHY  mode <1000|100>
+cacheinfo
+[cache] MCACHE_CTL=0x00007f03 dc_en=1 ic_en=1 writearound=3
+
+letter:/$ 
+letter:/$ ip
+[net] netif  : en (index=1)
+[net] MAC    : 00:00:00:00:D0:0E
+[net] IP     : 192.168.2.100
+[net] NETMASK: 255.255.255.0
+[net] GW     : 192.168.2.1
+[net] link   : DOWN
+
+letter:/$ 
+letter:/$ link
+[phy] link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D thread=0
+
+letter:/$ 
+letter:/$ iserver tcp
+[iperf] TCP server started on port 5001
+
+letter:/$ 
+letter:/$ [cpu] busy=33.3% (cpu=480000000 Hz, window=25.23 s)
+[iperf] type=0 remote=192.168.2.1:46132 bytes=1128267800 ms=10003 => 902336 kbit/s (902.34 Mbit/s)

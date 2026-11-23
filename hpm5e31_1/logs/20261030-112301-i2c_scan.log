@@ -1,0 +1,40 @@
+to a real slave (AT24C128 etc.) to see ACK.
+SCL->SCL/SDA->SDA     ___| |_| |_ ___ _ __   ___| 
+letter:/$ 
+=== i2c_scan (I2C0 PC08/PC09, no slave on board) ===
+i2c_scan @ hpm5e31_1, I2C1 SCL=PD13 SDA=PD12 (I2C0 的 PC08 与 MCAN2_TXD 冲突)
+  src_clk=80000000 Hz, cpu=480000000 Hz, mode=100k(normal), loopback=oto a real slave (AT24C128 etc.) to see ACK.
+i2c_info
+i2c_scan @ hpm5e31_1, I2C1 SCL=PD13 SDA=PD12 (I2C0 的 PC08 与 MCAN2_TXD 冲突)
+  src_clk=80000000 Hz, cpu=480000000 Hz, mode=100k(normal), loopback=on
+  bus: internal pull-up(PE=1,PS=1) + open-drain(OD=1), 无外部从器件
+  usage: i2c_scan [0x08..0x77] / i2c_timing / i2c_lines / i2c_loopback <0|1>
+
+letter:/$ 
+letter:/$ i2c_lines
+lines: SCL=1 SDA=1 (1=released/high), CMPL=0, BUSBUSY=0
+
+letter:/$ 
+letter:/$ i2c_scan 8 119
+scan 0x08..0x77: 112 addr, found=0 nack=112 other=0, avg_probe=751220 ns, total=84157 us
+estimated SCL = 10 bit / 751220 ns = 13 kHz (configured 100 kHz)
+
+letter:/$ 
+letter:/$ i2c_timing
+I2C SCL timing: probe(tx addr only) x16, 10 SCL periods per probe
+mode             cfg_SCl_kHz   meas_kHz   probe_ns  err_ppm
+100k(normal)            100         13     751140  -870000
+400k(fast)              400         13     752021  -967500
+1M(fast_plus)          1000         13     751135  -987000
+
+letter:/$ 
+letter:/$ i2c_loopback 0
+IOC LOOP_BACK on SCL/SDA = off (重新初始化 I2C0)
+lines: SCL=1 SDA=1 (1=released/high), CMPL=0, BUSBUSY=0
+
+letter:/$ 
+letter:/$ i2c_lines
+lines: SCL=1 SDA=1 (1=released/high), CMPL=0, BUSBUSY=0
+
+letter:/$ 
+letter:/$ 

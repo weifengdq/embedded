@@ -1,0 +1,16 @@
+m5e31_1) ===
+commands: bus | xiprep | uartbw | busclocks | businfo
+
+=== bus clocks ===
+cpu0   : 480000000 Hz
+ahb0   : 200000000 Hz
+axis   : 200000000 Hz
+axic   : 200000000 Hz
+axif   : 200000000 Hz
+mchtmr : 24000000 Hz
+xpi0   : 100000000 Hz
+理论 AXI(S) 32bit 带宽 = 800 MB/s
+
+=== XPI flash read bandwidth (src=0x800113c0 in FLASH) ===
+BENCH_BUS op=xip_memcpy size=1024   reps=256  cold_mbps=37.94     warm_mbps=159.22    cold_cyc_byte=12.650 warm_cyc_byte=3.015
+BENCH_BUS op=xip_memcpy size=4096   reps=64   cold_mbps=39.40     warm_mbps=159.80    cold_cyc_byte=12.182 warm_cyc_byte=3.004

@@ -1,0 +1,61 @@
+/T = 10000.000 Hz   duty = (b-a)/T = 50.00%
+  pins: P6=PD06  P
+commands: pwm <hz> <permille> | pinfo | pmeas
+psweep
+[meas] reload=6749 cmp=6751  period=100.005 us (9999.5 Hz)  high=50.044 us  duty=50.04%
+       period jitter: min=99.730 max=100.280 pp=0.550 us
+       high  jitter: pp=46.710 us (=4671.0 tick)
+       target: 10000 Hz / 500 permille -> freq err -50.0 ppm, duty err +0.042%
+[meas] reload=34 cmp=35  period=100.006 us (9999.4 Hz)  high=50.036 us  duty=50.03%
+       period jitter: min=99.940 max=100.060 pp=0.120 us
+       high  jitter: pp=0.170 us (=17.0 tick)
+       target: 1000 Hz / 250 permille -> freq err +8999441.2 ppm, duty err +25.033%
+--- sweep 0: target 1000 Hz / 250 permille ---
+[meas] reload=1203 cmp=1203  period=1000.005 us (1000.0 Hz)  high=249.999 us  duty=25.00%
+       period jitter: min=999.940 max=1000.030 pp=0.090 us
+       high  jitter: pp=0.070 us (=7.0 tick)
+       target: 1000 Hz / 250 permille -> freq err -4.9 ppm, duty err -0.000%
+[meas] reload=3 cmp=4  period=808.737 us (1236.5 Hz)  high=250.018 us  duty=30.91%
+       period jitter: min=426.150 max=1000.040 pp=573.890 us
+       high  jitter: pp=0.090 us (=9.0 tick)
+       target: 10000 Hz / 500 permille -> freq err -876350.4 ppm, duty err -19.085%
+--- sweep 1: target 10000 Hz / 500 permille ---
+[meas] reload=12039 cmp=12040  period=100.005 us (9999.5 Hz)  high=50.038 us  duty=50.04%
+       period jitter: min=99.900 max=100.090 pp=0.190 us
+       high  jitter: pp=0.170 us (=17.0 tick)
+       target: 10000 Hz / 500 permille -> freq err -50.0 ppm, duty err +0.035%
+[meas] reload=33 cmp=34  period=100.003 us (9999.7 Hz)  high=50.020 us  duty=50.02%
+       period jitter: min=99.910 max=100.080 pp=0.170 us
+       high  jitter: pp=0.210 us (=21.0 tick)
+       target: 20000 Hz / 750 permille -> freq err -500016.7 ppm, duty err -24.982%
+--- sweep 2: target 20000 Hz / 750 permille ---
+[meas] reload=24077 cmp=24078  period=50.005 us (19998.0 Hz)  high=37.522 us  duty=75.04%
+       period jitter: min=49.950 max=50.070 pp=0.120 us
+       high  jitter: pp=0.180 us (=18.0 tick)
+       target: 20000 Hz / 750 permille -> freq err -100.0 ppm, duty err +0.037%
+[meas] reload=68 cmp=68  period=49.670 us (20133.1 Hz)  high=37.525 us  duty=75.55%
+       period jitter: min=27.150 max=50.080 pp=22.930 us
+       high  jitter: pp=0.180 us (=18.0 tick)
+       target: 50000 Hz / 100 permille -> freq err -597338.9 ppm, duty err +65.550%
+--- sweep 3: target 50000 Hz / 100 permille ---
+[meas] reload=60185 cmp=60187  period=20.005 us (49987.5 Hz)  high=2.000 us  duty=10.00%
+       period jitter: min=19.920 max=20.120 pp=0.200 us
+       high  jitter: pp=0.150 us (=15.0 tick)
+       target: 50000 Hz / 100 permille -> freq err -249.9 ppm, duty err -0.005%
+[meas] reload=170 cmp=171  period=20.005 us (49988.5 Hz)  high=2.002 us  duty=10.01%
+       period jitter: min=19.920 max=20.080 pp=0.160 us
+       high  jitter: pp=0.140 us (=14.0 tick)
+       target: 100000 Hz / 500 permille -> freq err -500114.7 ppm, duty err -39.990%
+--- sweep 4: target 100000 Hz / 500 permille ---
+[meas] reload=120347 cmp=120348  period=10.005 us (99950.0 Hz)  high=5.038 us  duty=50.35%
+       period jitter: min=9.930 max=10.080 pp=0.150 us
+       high  jitter: pp=0.180 us (=18.0 tick)
+       target: 100000 Hz / 500 permille -> freq err -499.7 ppm, duty err +0.353%
+sweep done, back to 10 kHz / 50%
+
+letter:/$ [meas] reload=352 cmp=353  period=11.284 us (88624.8 Hz)  high=5.659 us  duty=50.15%
+       period jitter: min=9.920 max=100.050 pp=90.130 us
+       high  jitter: pp=45.160 us (=4516.0 tick)
+       target: 10000 Hz / 500 permille -> freq err +7862480.5 ppm, duty err +0.150%
+
+letter:/$ 

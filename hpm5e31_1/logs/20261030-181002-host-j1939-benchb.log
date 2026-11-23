@@ -1,0 +1,37 @@
+=== j1939_monitor（8 s，冻结/quiet 只出统计）===
+[monitor] if=vcan0 duration=8.0s filter=all
+
+---- PGN 周期统计 ----
+       PGN name                count  period avg(ms)   min(ms)   max(ms)
+0x0F004 EEC1                  793          10.089     9.582    20.200
+0x0FECA DM1                     7        1166.760   999.917  2000.241
+0x0FEEE ET1                     7        1166.759   999.905  2000.262
+0x0FEF1 CCVS1                  80         101.273    99.390   199.795
+
+frames=887
+
+---- DM1 灯状态时间线 ----
+  t=   0.001s lamp=0x10[AWL] SPN=100/FMI=4/OC=1
+
+TP: bam=0 rts=0 done=0 bytes=0 errors=0
+
+RESULT: PASS
+
+=== dm1_decode（3 s）===
+[dm1_decode] if=vcan0 duration=3.0s
+
+[DM1] PGN=0x0FECA SA=0x00 lamp=0x10 [AWL] flash=0 t=0.920s
+   SPN=100     FMI=4  OC=1   | 电压低于正常
+   >> lamp change @ t=0.920s: 0x10 [AWL]
+
+[DM1] PGN=0x0FECA SA=0x00 lamp=0x10 [AWL] flash=0 t=1.920s
+   SPN=100     FMI=4  OC=1   | 电压低于正常
+
+[DM1] PGN=0x0FECA SA=0x00 lamp=0x10 [AWL] flash=0 t=2.920s
+   SPN=100     FMI=4  OC=1   | 电压低于正常
+
+---- 汇总 ----
+DM1+DM2 frames=3 (DM2=0) distinct DTC=1
+  SPN=100     FMI=4  出现 3 次
+
+RESULT: PASS

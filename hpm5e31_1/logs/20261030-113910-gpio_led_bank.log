@@ -1,0 +1,52 @@
+HITE PF18
+  [2] CAN1.RED   PF20
+  [3] CAN1.WHITE PF16
+  [400
+  bit4 -> CAN2.RED   DO[F]=0x00400000
+  bit5 -> CAN2.WHITE DO[F]=0x00200000
+  bit6 -> CAN3.RED   DO[F]=0x00800000
+  bit7 -> CAN3.WHITE DO[F]=0x00080000
+type 'ledbank_marquee 120 16' or 'ledbank_breath 1'
+ledbank_info
+gpio_led_bank @ hpm5e31_1: 8x CAN status LED on GPIOF
+  [0] CAN0.RED   PF26
+  [1] CAN0.WHITE PF18
+  [2] CAN1.RED   PF20
+  [3] CAN1.WHITE PF16
+  [4] CAN2.RED   PF22
+  [5] CAN2.WHITE PF21
+  [6] CAN3.RED   PF23
+  [7] CAN3.WHITE PF19
+  current mask=0x00, DO[F]=0x00000000, DI[F]=0x02023A00
+  usage: ledbank_mask <hex> | ledbank_marquee [ms] [steps] | ledbank_breath [cycles] | ledbank_seq [ms]
+
+letter:/$ 
+letter:/$ ledbank_mask 55
+mask=0x37, DO[F]=0x04740000
+
+letter:/$ 
+letter:/$ ledbank_marquee 40 6
+marquee: period=40 ms, steps=6
+  t=979 ms step=6 -> CAN0.RED   (PF26) mask=0x01
+  t=1020 ms step=6 -> CAN0.WHITE (PF18) mask=0x02
+  t=1061 ms step=6 -> CAN1.RED   (PF20) mask=0x04
+  t=1101 ms step=6 -> CAN1.WHITE (PF16) mask=0x08
+  t=1142 ms step=6 -> CAN2.RED   (PF22) mask=0x10
+  t=1183 ms step=6 -> CAN2.WHITE (PF21) mask=0x20
+
+letter:/$ 
+letter:/$ ledbank_breath 1
+breath: software PWM, 50 steps / 2000 us period, 1 cycles
+  duty=0% (32 位端口写)
+  duty=20% (32 位端口写)
+  duty=40% (32 位端口写)
+  duty=60% (32 位端口写)
+  duty=80% (32 位端口写)
+  duty=100% (32 位端口写)
+  duty=80% (32 位端口写)
+  duty=60% (32 位端口写)
+  duty=40% (32 位端口写)
+  duty=20% (32 位端口写)
+
+letter:/$ 
+letter:/$ 

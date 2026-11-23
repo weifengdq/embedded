@@ -1,0 +1,9 @@
+
+commands: bstat | bdiv <n>
+bstat
+[blink] PLB_OUT -> PF15(LOOP_BACK) -> TRGM_P15 -> CAP2: cap_n=0
+       未捕到 -> 检查 PLB 输出/LOOP_BACK/TRGM 路由
+       PLB LUT0=0x0000aaaa  PF15.FUNC_CTL=0x00010011  PF14.FUNC_CTL=0x00000011
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,69 @@
+ initialized (default 500k classic)
+[gs] usb device initialized, waiting for host enumeration...
+[2J[1H
+ _         _   _                  _          _ _ 
+| |    ___| |_| |_ ___ _ __   ___| 
+letter:/$ 
+=== gs_usb_candle: gs_usb/candleLight 4x CAN FD (HPM5E31) ===
+[gs] VID:PID=1209:2323 feature=0x351B(timestamp/FD/GET_STATE/BERR)
+[gs] 4x MCAN initialized (default 500k classic)
+[gs] usb device initialized, waiting for host enumeration...
+[gs] usb=1 rx=0 tx=0 echo=0 in_sent=0 in_drop=0 out_drop=0
+[gs] MODE ch=0 mode=1 flags=0x110
+[gs] CAN0 START fd=1 loop=0 listen=0 one_shot=0
+[gs] MODE ch=0 mode=1 flags=0x110
+[gs] CAN0 START fd=1 loop=0 listen=0 one_shot=0
+[gs] usb=1 rx=0 tx=1 echo=1 in_sent=1 in_drop=0 out_drop=0
+[gs] usb=1 rx=0 tx=4 echo=4 in_sent=4 in_drop=0 out_drop=0
+[gs] MODE ch=0 mode=0 flags=0x0
+[gs] MODE ch=0 mode=1 flags=0x110
+[gs] CAN0 START fd=1 loop=0 listen=0 one_shot=0
+[gs] MODE ch=0 mode=0 flags=0x0
+[gs] MODE ch=0 mode=1 flags=0x110
+[gs] CAN0 START fd=1 loop=0 listen=0 one_shot=0
+[gs] usb=1 rx=0 tx=5 echo=5 in_sent=5 in_drop=0 out_drop=0
+[gs] MODE ch=0 mode=0 flags=0x0
+[gs] MODE ch=0 mode=1 flags=0x110
+[gs] CAN0 START fd=1 loop=0 listen=0 one_shot=0
+[gs] MODE ch=0 mode=0 flags=0x0
+[gs] MODE ch=0 mode=1 flags=0x110
+[gs] CAN0 START fd=1 loop=0 listen=0 one_shot=0
+[gs] usb=1 rx=0 tx=5 echo=5 in_sent=5 in_drop=0 out_drop=0
+[gs] usb=1 rx=0 tx=5 echo=5 in_sent=5 in_drop=0 out_drop=0
+[gs] MODE ch=0 mode=0 flags=0x0
+[gs] MODE ch=0 mode=1 flags=0x110
+[gs] CAN0 START fd=1 loop=0 listen=0 one_shot=0
+[gs] MODE ch=0 mode=0 flags=0x0
+[gs] MODE ch=0 mode=1 flags=0x110
+[gs] CAN0 START fd=1 loop=0 listen=0 one_shot=0
+[gs] usb=1 rx=0 tx=6 echo=6 in_sent=6 in_drop=0 out_drop=0
+[gs] usb=1 rx=1 tx=7 echo=7 in_sent=8 in_drop=0 out_drop=0
+[gs] usb=1 rx=1 tx=8 echo=8 in_sent=9 in_drop=0 out_drop=0
+[gs] usb=1 rx=1 tx=9 echo=9 in_sent=10 in_drop=0 out_drop=0
+[gs] MODE ch=0 mode=0 flags=0x0
+[gs] MODE ch=0 mode=0 flags=0x0
+[gs] usb=1 rx=1 tx=10 echo=10 in_sent=11 in_drop=0 out_drop=0
+[gs] usb=1 rx=1 tx=10 echo=10 in_sent=11 in_drop=0 out_drop=0
+[gs] usb=1 rx=1 tx=10 echo=10 in_sent=11 in_drop=0 out_drop=0
+[gs] usb=1 rx=1 tx=10 echo=10 in_sent=11 in_drop=0 out_drop=0
+[gs] usb=1 rx=1 tx=10 echo=10 in_sent=11 in_drop=0 out_drop=0
+[gs] usb=1 rx=1 tx=10 echo=10 in_sent=11 in_drop=0 out_drop=0
+[gs] MODE ch=0 mode=1 flags=0x110
+[gs] CAN0 START fd=1 loop=0 listen=0 one_shot=0
+[gs] MODE ch=0 mode=1 flags=0x110
+[gs] CAN0 START fd=1 loop=0 listen=0 one_shot=0
+[gs] usb=1 rx=1 tx=13 echo=13 in_sent=14 in_drop=0 out_drop=0
+[gs] MODE ch=0 mode=0 flags=0x0
+[gs] MODE ch=0 mode=0 flags=0x0
+[gs] usb=1 rx=2 tx=14 echo=14 in_sent=16 in_drop=0 out_drop=0
+[gs] usb=1 rx=2 tx=14 echo=14 in_sent=16 in_drop=0 out_drop=0
+[gs] usb=1 rx=2 tx=14 echo=14 in_sent=16 in_drop=0 out_drop=0
+[gs] usb=1 rx=2 tx=14 echo=14 in_sent=16 in_drop=0 out_drop=0
+[gs] MODE ch=0 mode=1 flags=0x10
+[gs] CAN0 START fd=0 loop=0 listen=0 one_shot=0
+[gs] MODE ch=0 mode=1 flags=0x10
+[gs] CAN0 START fd=0 loop=0 listen=0 one_shot=0
+[gs] usb=1 rx=3 tx=15 echo=15 in_sent=18 in_drop=0 out_drop=0
+[gs] MODE ch=0 mode=0 flags=0x0
+[gs] MODE ch=0 mode=0 flags=0x0
+[gs] usb=1 rx=4 tx=16 echo=16 in_sent=20 in_drop=0 out_drop=0

@@ -1,0 +1,35 @@
+
+digraph sdm {
+  rankdir=LR;
+  graph [fontname="Noto Sans CJK SC", fontsize=11, nodesep=0.3, ranksep=0.5, bgcolor="white"];
+  node  [fontname="Noto Sans CJK SC", fontsize=10, shape=box, style="rounded,filled",
+         fillcolor="#F6F8FA", color="#57606A", penwidth=0.9];
+  edge  [fontname="Noto Sans CJK SC", fontsize=9, color="#57606A", arrowsize=0.7];
+
+  sensor [label="外部 ΣΔ 调制器\n(如 AMC1306 / AD7401)\n输出 1 bit 位流", fillcolor="#FFF8E1"];
+  mclk   [label="SDM0_CLK_x 输出\n(给调制器的时钟)", shape=box3d, fillcolor="#D2E3FC"];
+  mdat   [label="SDM0_DAT_x 输入\n(位流)", shape=box3d, fillcolor="#D2E3FC"];
+
+  subgraph cluster_f {
+    label="通道滤波模块 ×4（每通道独立）";
+    fontname="Noto Sans CJK SC"; fontsize=10; color="#D0D7DE"; style="rounded";
+    cap  [label="输入捕获\n模式 0~5\n(上升沿/双沿/Manchester...)", fillcolor="#E6F4EA"];
+    pcm  [label="第一滤波器 PCM_CIC\nSinc1/2/3/SincFast\nOSR 1~256\n-> 16/32 bit", fillcolor="#E6F4EA"];
+    amp  [label="第二滤波器 AMP_CIC\nSinc1/2/3/SincFast\nOSR 1~32", fillcolor="#E6F4EA"];
+    cmp  [label="3 个比较器\n高/低/越限", fillcolor="#FCE8E6"];
+    fifo [label="FIFO 16×32 bit\n可配门限", fillcolor="#E6F4EA"];
+    ts   [label="TIMESTAMP\n(参考时间戳)", fillcolor="#E6F4EA"];
+  }
+  trgm [label="TRGM PWM_EVT ×16\nSDSYNC 同步事件", fillcolor="#FFF8E1"];
+  cpu  [label="CPU / DMA / IRQ", shape=box3d, fillcolor="#D2E3FC"];
+
+  mclk -> sensor [label="调制时钟", style="dashed"];
+  sensor -> mdat [label="位流", style="dashed"];
+  mdat -> cap;
+  trgm -> cap [label="同步采样"];
+  cap -> pcm -> fifo -> cpu;
+  cap -> amp -> cmp;
+  cmp -> trgm [label="越限触发", style="dashed"];
+  cap -> ts;
+  fifo -> ts;
+}

@@ -1,0 +1,181 @@
+ontrollers=4 hth=16 filters=36
+  [mode] ctrl=0 -> 2
+  [mode]1040 rx_overflow=0 tx_confirmed=1040
+FD stream 64B: sent=500 rx_driver=500 rx_app=500 bad=0 total=177389us => 2819 frame/s
+  payload=1.44 Mbit/s (uid=64 B), 仲裁 0.5 Mbit/s / 数据 2 Mbit/s
+  rx_overflow=0 tx_confirmed=1539
+type 'can probe' / 'can sizes' / 'can stream 500' / 'can stat' / 'can err'
+can matrix 50
+FD 矩阵：64B ping-pong，每项 50 轮（A->B 与 B->A 各一帧为 1 轮）
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD 500k/2M  TDCO=15 (已知可用基线) (baud cfg ID2) ---
+  [regs] CAN0 CCCR=0x00000300 NBTP=0x06008A13 DBTP=0x00810D41 TDCR=0x00000F0F PSR=0x0019300F ECR=0x00000000
+         LEC=7 TDCV=25 mtq (PSR[22:16]), DLEC=0
+  64B pingpong: ok=50/50 avg=704us max=729us | CAN0 errstate=0 REC=0 TEC=0
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD 500k/2M  SP80 TDCO=16 (baud cfg ID16) ---
+  [regs] CAN0 CCCR=0x00000300 NBTP=0x06008A13 DBTP=0x00810E31 TDCR=0x00001010 PSR=0x001A300F ECR=0x00000000
+         LEC=7 TDCV=26 mtq (PSR[22:16]), DLEC=0
+  64B pingpong: ok=50/50 avg=705us max=719us | CAN0 errstate=0 REC=0 TEC=0
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD 500k/2M  SP85 TDCO=17 (baud cfg ID17) ---
+  [regs] CAN0 CCCR=0x00000300 NBTP=0x06008A13 DBTP=0x00810F21 TDCR=0x00001111 PSR=0x001B300F ECR=0x00000000
+         LEC=7 TDCV=27 mtq (PSR[22:16]), DLEC=0
+  64B pingpong: ok=50/50 avg=705us max=718us | CAN0 errstate=0 REC=0 TEC=0
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD 500k/1M  no TDC (baud cfg ID4) ---
+  [regs] CAN0 CCCR=0x00000300 NBTP=0x06008A13 DBTP=0x00011241 TDCR=0x00001111 PSR=0x0000300F ECR=0x00000000
+         LEC=7 TDCV=0 mtq (PSR[22:16]), DLEC=0
+  64B pingpong: ok=50/50 avg=846us max=859us | CAN0 errstate=0 REC=0 TEC=0
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD 500k/5M  SP75 TDCO=12 (baud cfg ID6) ---
+  [regs] CAN0 CCCR=0x00000300 NBTP=0x06008A13 DBTP=0x00800A31 TDCR=0x00000C0C PSR=0x0016300F ECR=0x00000000
+         LEC=7 TDCV=22 mtq (PSR[22:16]), DLEC=0
+  64B pingpong: ok=50/50 avg=364us max=370us | CAN0 errstate=0 REC=0 TEC=0
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD 500k/5M  SP75 TDCO=8 (baud cfg ID7) ---
+  [regs] CAN0 CCCR=0x00000300 NBTP=0x06008A13 DBTP=0x00800A31 TDCR=0x00000808 PSR=0x0012300F ECR=0x00000000
+         LEC=7 TDCV=18 mtq (PSR[22:16]), DLEC=0
+  64B pingpong: ok=50/50 avg=364us max=370us | CAN0 errstate=0 REC=0 TEC=0
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD 500k/5M  SP75 TDCO=10 (baud cfg ID8) ---
+  [regs] CAN0 CCCR=0x00000300 NBTP=0x06008A13 DBTP=0x00800A31 TDCR=0x00000A0A PSR=0x0014300F ECR=0x00000000
+         LEC=7 TDCV=20 mtq (PSR[22:16]), DLEC=0
+  64B pingpong: ok=50/50 avg=364us max=370us | CAN0 errstate=0 REC=0 TEC=0
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD 500k/5M  SP75 TDCO=13 (baud cfg ID9) ---
+  [regs] CAN0 CCCR=0x00000300 NBTP=0x06008A13 DBTP=0x00800A31 TDCR=0x00000D0D PSR=0x0017300F ECR=0x00000000
+         LEC=7 TDCV=23 mtq (PSR[22:16]), DLEC=0
+  64B pingpong: ok=50/50 avg=364us max=369us | CAN0 errstate=0 REC=0 TEC=0
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD 500k/5M  SP75 TDCO=14 (baud cfg ID10) ---
+  [regs] CAN0 CCCR=0x00000300 NBTP=0x06008A13 DBTP=0x00800A31 TDCR=0x00000E0E PSR=0x0018300F ECR=0x00000000
+         LEC=7 TDCV=24 mtq (PSR[22:16]), DLEC=0
+  64B pingpong: ok=50/50 avg=364us max=370us | CAN0 errstate=0 REC=0 TEC=0
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD 500k/5M  SP80 TDCO=12 (baud cfg ID11) ---
+  [regs] CAN0 CCCR=0x00000300 NBTP=0x06008A13 DBTP=0x00800B21 TDCR=0x00000C0C PSR=0x0016300F ECR=0x00000000
+         LEC=7 TDCV=22 mtq (PSR[22:16]), DLEC=0
+  64B pingpong: ok=50/50 avg=364us max=369us | CAN0 errstate=0 REC=0 TEC=0
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD 500k/5M  SP875 TDCO=13 (baud cfg ID12) ---
+  [regs] CAN0 CCCR=0x00000300 NBTP=0x06008A13 DBTP=0x00800C11 TDCR=0x00000D0D PSR=0x0017300F ECR=0x00000000
+         LEC=7 TDCV=23 mtq (PSR[22:16]), DLEC=0
+  64B pingpong: ok=50/50 avg=365us max=371us | CAN0 errstate=0 REC=0 TEC=0
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD 1M/5M    SP75 TDCO=12 (baud cfg ID13) ---
+  [regs] CAN0 CCCR=0x00000300 NBTP=0x02011C09 DBTP=0x00800A31 TDCR=0x00000C0C PSR=0x0016300F ECR=0x00000000
+         LEC=7 TDCV=22 mtq (PSR[22:16]), DLEC=0
+  64B pingpong: ok=50/50 avg=312us max=318us | CAN0 errstate=0 REC=0 TEC=0
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD 500k/5M  TDCO=20 (旧配置/复现故障) (baud cfg ID3) ---
+  [regs] CAN0 CCCR=0x00000300 NBTP=0x06008A13 DBTP=0x00800A31 TDCR=0x00000C0C PSR=0x0016300F ECR=0x00000000
+         LEC=7 TDCV=22 mtq (PSR[22:16]), DLEC=0
+  64B pingpong: ok=50/50 avg=364us max=370us | CAN0 errstate=0 REC=0 TEC=0
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD 500k/2M  TDCO=1 (测 TDCV) (baud cfg ID14) ---
+  [regs] CAN0 CCCR=0x00000301 NBTP=0x06008A13 DBTP=0x00810D41 TDCR=0x00000101 PSR=0x000034E7 ECR=0x002000F8
+         LEC=7 TDCV=0 mtq (PSR[22:16]), DLEC=0
+  64B pingpong: ok=0/50 avg=0us max=0us | CAN0 errstate=2 REC=0 TEC=248
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD 500k/5M  TDCO=1 (测 TDCV) (baud cfg ID15) ---
+  [regs] CAN0 CCCR=0x00000301 NBTP=0x06008A13 DBTP=0x00800A31 TDCR=0x00000101 PSR=0x000034E5 ECR=0x004000F8
+         LEC=5 TDCV=0 mtq (PSR[22:16]), DLEC=0
+  64B pingpong: ok=0/50 avg=0us max=0us | CAN0 errstate=2 REC=0 TEC=248
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD 500k/5M  TDCO=20 (非法, 驱动应拒绝) (baud cfg ID18) ---
+  cfg_switch failed st=1
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+
+letter:/$ 
+letter:/$ can at 500 3
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD probe (baud cfg ID3) ---
+  [regs] CAN0 CCCR=0x00000300 NBTP=0x06008A13 DBTP=0x00800A31 TDCR=0x00000C0C PSR=0x0016300D ECR=0x00400000
+         LEC=5 TDCV=22 mtq (PSR[22:16]), DLEC=0
+  64B pingpong: ok=500/500 avg=369us max=2153us | CAN0 errstate=0 REC=0 TEC=0
+
+letter:/$ 
+letter:/$ can stream 2000 3
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+stream @ baud cfg ID3
+FD stream 64B: sent=2000 rx_driver=2000 rx_app=2000 bad=0 total=367010us => 5449 frame/s
+  payload=2.79 Mbit/s (uid=64 B), 仲裁 0.5 Mbit/s / 数据 2 Mbit/s
+  rx_overflow=0 tx_confirmed=5839
+
+letter:/$ 
+letter:/$ can stream 2000 2
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+stream @ baud cfg ID2
+FD stream 64B: sent=2000 rx_driver=2000 rx_app=2000 bad=0 total=709249us => 2820 frame/s
+  payload=1.44 Mbit/s (uid=64 B), 仲裁 0.5 Mbit/s / 数据 2 Mbit/s
+  rx_overflow=0 tx_confirmed=7839
+
+letter:/$ 
+letter:/$ can stat
+CAN0: mode=1 errstate=0 REC=0 TEC=0
+CAN1: mode=1 errstate=0 REC=0 TEC=0
+rx_total=2000 rx_overflow=0 tx_confirmed=7840 busoff=8 det=0
+
+letter:/$ 
+letter:/$ 

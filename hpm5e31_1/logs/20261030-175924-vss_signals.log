@@ -1,0 +1,9 @@
+IPv4 Gateway: 192.168.2.1
+[lwip] cfg ip=192.168.2.100 mask=255.20000 rpm）
+vstat
+vss: ON rate=100 ms sent=18 tick=6 uptime=686 ms
+can0: tx=19 tx_fail=0 rx=0 busoff=0 tec=0 rec=0
+
+letter:/$ 
+letter:/$ [auto] 1.2 s 发送完成: vss: ON rate=100 ms sent=36 tick=12 uptime=1274 ms
+can0: tx=37 tx_fail=0 rx=0 busoff=0 tec=0 rec=0

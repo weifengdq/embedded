@@ -1,0 +1,73 @@
+
+==================================================================
+gs_usb 测试: modes（20261102-110056）
+==================================================================
+主机: Linux 7.0.0-38-generic x86_64  脚本: test_modes.sh
+日志: logs/20261102-110056-gs-usb-modes.log
+工件: /tmp/gs_usb_artifacts
+内核 7.0.x —— 与开发约定 §1 一致
+  [PASS] 权限 OK（sudo -n）
+dmesg 基线时间戳: 1793588456（之后用 --since 只扫描新增行）
+  [PASS] 依赖命令齐全: dmesg ip ethtool cansend candump cangen canplayer
+  [PASS] 发现 4 个接口: 0 1 2 3
+
+---- 1. listen-only：can0 设 listen-only，can1 正常发
+71: can0: <NOARP,UP,LOWER_UP,ECHO> mtu 16 qdisc pfifo_fast state UP mode DEFAULT group default qlen 10
+    link/can  promiscuity 0 allmulti 0 minmtu 16 maxmtu 16 
+    can <LISTEN-ONLY> state ERROR-ACTIVE (berr-counter tx 0 rx 0) restart-ms 0 
+	  bitrate 500000 sample-point 0.875
+	  tq 12 prop-seg 69 phase-seg1 70 phase-seg2 20 sjw 10 brp 1
+	  gs_usb: tseg1 1..256 tseg2 1..128 sjw 1..128 brp 1..512 brp_inc 1
+	  gs_usb: dtseg1 1..32 dtseg2 1..16 dsjw 1..16 dbrp 1..256 dbrp_inc 1
+	  clock 80000000 numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535 tso_max_size 65536 tso_max_segs 65535 gro_max_size 65536 gso_ipv4_max_size 65536 gro_ipv4_max_size 65536 parentbus usb parentdev 1-8:1.0 
+  [PASS] can0 以 listen-only 模式起来（ip -details 可见）
+> sudo -n cansend can1 555#1122334455667788
+  [PASS] listen-only 的 can0 收到了 can1 的帧（只能收）
+can1 状态（listen-only 对端不 ACK 时会报错，属预期）: 
+  dmesg 安全检查: 无 oops/WARN（新增 11 行）
+
+---- 2. loopback：can0 打开 loopback，自己发自己收
+71: can0: <NOARP,UP,LOWER_UP,ECHO> mtu 16 qdisc pfifo_fast state UP mode DEFAULT group default qlen 10
+    link/can  promiscuity 0 allmulti 0 minmtu 16 maxmtu 16 
+    can <LOOPBACK> state ERROR-ACTIVE (berr-counter tx 0 rx 0) restart-ms 0 
+	  bitrate 500000 sample-point 0.875
+	  tq 12 prop-seg 69 phase-seg1 70 phase-seg2 20 sjw 10 brp 1
+	  gs_usb: tseg1 1..256 tseg2 1..128 sjw 1..128 brp 1..512 brp_inc 1
+	  gs_usb: dtseg1 1..32 dtseg2 1..16 dsjw 1..16 dbrp 1..256 dbrp_inc 1
+	  clock 80000000 numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535 tso_max_size 65536 tso_max_segs 65535 gro_max_size 65536 gso_ipv4_max_size 65536 gro_ipv4_max_size 65536 parentbus usb parentdev 1-8:1.0 
+  [PASS] can0 以 loopback 模式起来
+> sudo -n cansend can0 666#DEADBEEF
+  [PASS] loopback 生效：can0 收到自己发的 0x666
+  dmesg 安全检查: 无 oops/WARN（新增 22 行）
+
+---- 3. one-shot：无 ACK 时单帧只发一次（不重传）
+71: can0: <NOARP,UP,LOWER_UP,ECHO> mtu 16 qdisc pfifo_fast state UP mode DEFAULT group default qlen 10
+    link/can  promiscuity 0 allmulti 0 minmtu 16 maxmtu 16 
+    can <ONE-SHOT> state ERROR-ACTIVE (berr-counter tx 0 rx 0) restart-ms 0 
+	  bitrate 500000 sample-point 0.875
+	  tq 12 prop-seg 69 phase-seg1 70 phase-seg2 20 sjw 10 brp 1
+	  gs_usb: tseg1 1..256 tseg2 1..128 sjw 1..128 brp 1..512 brp_inc 1
+	  gs_usb: dtseg1 1..32 dtseg2 1..16 dsjw 1..16 dbrp 1..256 dbrp_inc 1
+	  clock 80000000 numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535 tso_max_size 65536 tso_max_segs 65535 gro_max_size 65536 gso_ipv4_max_size 65536 gro_ipv4_max_size 65536 parentbus usb parentdev 1-8:1.0 
+  [PASS] can0 以 one-shot 模式起来
+> sudo -n cansend can0 701#AA
+> sudo -n cansend can0 702#AA
+> sudo -n cansend can0 703#AA
+> sudo -n cansend can0 704#AA
+> sudo -n cansend can0 705#AA
+> sudo -n cansend can0 706#AA
+> sudo -n cansend can0 707#AA
+> sudo -n cansend can0 708#AA
+8 帧后:    TEC 0 -> 0
+  [SKIP] one-shot 行为待确认（state=）
+  dmesg 安全检查: 无 oops/WARN（新增 22 行）
+
+---- 4. 收尾：恢复默认模式
+  [PASS] 测试后设备仍在线（sysfs: 1-8）
+  dmesg 安全检查: 无 oops/WARN（新增 22 行）
+
+==================================================================
+汇总: modes
+==================================================================
+PASS=9  FAIL=0  内核异常=0
+结论: PASS

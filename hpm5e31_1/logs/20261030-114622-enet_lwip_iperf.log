@@ -1,0 +1,22 @@
+rf: YT8011AN(1000BASE-T1) + lwIP + iperf2 ===
+lwIP 2.1.2
+[phy] EXT 0x9001 (RGMII cfg1) = 0x0110
+[phy] YT8011AN link up: 1000M SLAVE
+Enet phy init passed !
+[net] Enet controller + PHY  mode <1000|100>
+link
+[phy] link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D thread=0
+
+letter:/$ 
+letter:/$ sleep 15000
+[sys] sleep 15000 ms
+
+letter:/$ [phy] link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D thread=1
+
+letter:/$ iclient 192.168.2.1 tcp
+[iperf] TCP client to 192.168.2.1 started
+
+letter:/$ [cpu] busy=96.7% (cpu=480000000 Hz, window=15.66 s)
+
+letter:/$ [cpu] busy=99.5% (cpu=480000000 Hz, window=5.66 s)
+[iperf] type=1 remote=192.168.2.1:5001 bytes=518158404 ms=10000 => 414520 kbit/s (414.52 Mbit/s)

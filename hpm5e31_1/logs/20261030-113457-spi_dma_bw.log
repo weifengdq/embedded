@@ -1,0 +1,25 @@
+ ch0(TX)/ch1(RX)
+  tx_req=0x3 rx_req=0x2, DMAMUX TX=0 RX=1
+  60000000   timing init failed
+sdma_info
+spi_dma_bw @ hpm5e31_1: SPI1 + HDMA
+  src_clk=80000000 Hz, cpu=480000000 Hz, sclk=20000000 Hz, dma ch0(TX)/ch1(RX)
+  tx_req=0x3 rx_req=0x2, DMAMUX TX=0 RX=1
+  usage: sdma_test [bytes] [sclk_hz] / sdma_bench
+
+letter:/$ 
+letter:/$ sdma_test 2048 20000000
+sdma_test n=2048 sclk=20000000 rc=0 time=822 us bw=2490 KB/s theory=2500 KB/s eff=99%
+
+letter:/$ 
+letter:/$ sdma_bench
+      sclk    bytes    time_us       KB/s     theory   eff%
+   1000000     2048      16395        124        125     99
+   5000000     2048       3280        624        625     99
+  10000000     2048       1641       1247       1250     99
+  20000000     2048        822       2490       2500     99
+  40000000     2048        590       3466       5000     69
+  60000000   timing init failed
+
+letter:/$ 
+letter:/$ 

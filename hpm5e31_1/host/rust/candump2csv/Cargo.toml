@@ -1,0 +1,13 @@
+[package]
+name = "candump2csv"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "candump2csv"
+path = "src/main.rs"
+
+[lib]
+name = "candump2csv"
+path = "src/lib.rs"

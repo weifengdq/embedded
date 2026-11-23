@@ -1,0 +1,27 @@
+
+digraph shell_flow {
+  graph [rankdir=LR, fontname="Noto Sans CJK SC", fontsize=12, nodesep=0.30, ranksep=0.45, bgcolor="white", pad=0.2];
+  node  [shape=box, style="rounded,filled", fontname="Noto Sans CJK SC", fontsize=11, color="#57606A", fillcolor="#F6F8FA"];
+  edge  [fontname="Noto Sans CJK SC", fontsize=9, color="#57606A"];
+
+  pc   [label="PC 串口终端\n921600 8N1", shape=box, fillcolor="#DBEAFE"];
+  uart [label="UART0\nPA00/PA01", fillcolor="#FDE68A"];
+  isr  [label="RX 中断 ISR\nuart_read_byte()", fillcolor="#FCA5A5"];
+  ring [label="环形缓冲\n512 B (s_rx_ring)"];
+  task [label="shellTask()\n主循环调用"];
+  edit [label="行编辑/解析\n参数拆分"];
+  tbl  [label="shellCommand 段\n16 条命令", fillcolor="#BBF7D0"];
+  cmd  [label="命令函数\nexample: cmd_info()", fillcolor="#FDE68A"];
+  out  [label="shell->write()\nuart_send_data()", fillcolor="#FCA5A5"];
+
+  pc -> uart [label="按键"];
+  uart -> isr [label="DR 中断"];
+  isr -> ring [label="入队"];
+  ring -> task [label="取字符"];
+  task -> edit;
+  edit -> tbl [label="按名字查找"];
+  tbl -> cmd;
+  cmd -> out [label="printf/输出"];
+  out -> uart [label="阻塞发送", style=dashed];
+  uart -> pc [label="回显"];
+}

@@ -1,0 +1,149 @@
+[hwrun] board lock acquired (canopen_node) pid=430569
+J-Link Commander will now exit on Error
+Connecting to J-Link ...O.K.
+Downloading file [build/canopen_node-debug/output/demo.elf]...
+Programming flash [000%]000%]000%]000%]005%]005%]005%]005%]010%]010%]010%]010%]015%]015%]015%]015%]020%]020%]020%]020%]025%]025%]025%]025%]030%]030%]030%]030%]035%]035%]035%]035%]040%]040%]040%]040%]045%]045%]045%]045%]050%]050%]050%]050%]055%]055%]055%]055%]060%]060%]060%]060%]065%]065%]065%]065%]070%]070%]070%]070%]075%]075%]075%]075%]080%]080%]080%]080%]085%]085%]085%]085%]090%]090%]090%]090%]095%]095%]095%]095%]100%] Done.
+Verifying flash   [000%]000%]005%]005%]085%]085%]100%] Done.
+J-Link: Flash download: Bank 0 @ 0x80000000: 2 ranges affected (163840 bytes)
+J-Link: Flash download: Total: 2.864s (Prepare: 0.547s, Compare: 0.143s, Erase: 0.123s, Program: 1.848s, Verify: 0.074s, Restore: 0.126s)
+J-Link: Flash download: Program & Verify speed: 83 KB/s
+O.K.
+ter)
+
+[app] canopen_node ready
+
+
+
+=== CANopen node1 self test1 s）
+
+  heartbeat 0x701 @1s                  PASS  2.6 s 内收到 2 帧（期望 2~3）
+
+[test] EMCY 注入
+
+  EMCY 0x081 manufacturer              PASS  EMCY 计数 +1, code=0x1000
+
+  stats: heap=2876B rx=0 tx=0 retry=0 loops=1090070 maxloop=2679us canerr=0x0000
+
+=== RESULT: 11 PASS / 0 FAIL ===
+
+gw on
+Enet phy init passed !
+IPv4 Address: 192.168.2.100
+IPv4 Netmask: 255.255.255.0
+IPv4 Gateway: 192.168.2.1
+[lwip] cfg ip=192.168.2.100 mask=255.255.255.0 gw=192.168.2.1
+
+[lwip] aton+set: ip=6402A8C0 mask=00FFFFFF gw=0102A8C0
+
+[lwip] netif now: ip=6402A8C0 mask=00FFFFFF gw=0102A8C0 hwlen=6 mac=00:00:00:00:D0:0E
+
+[lwip] netif=en idx=1 MAC=00:00:00:00:D0:0E
+
+[lwip] IP=192.168.2.100 link=DOWN
+
+[lwip] MASK=255.255.255.0
+
+[lwip] GW=192.168.2.1
+
+[lwip] PHY link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D
+
+[lwip] link UP after 12 ms
+
+[lwip] netif=en idx=1 MAC=00:00:00:00:D0:0E
+
+[lwip] IP=192.168.2.100 link=UP
+
+[lwip] MASK=255.255.255.0
+
+[lwip] GW=192.168.2.1
+
+[lwip] PHY link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D
+
+[lwip] ready: IP=192.168.2.100 port 任意 UDP 可直接收
+
+[gw] lwip init rc=0 link=UP
+
+[gw] ch1: CAN1 <-> UDP 4000 (local 192.168.2.100)
+
+[gw] cannelloni v2 gateway ready, 1 channel(s), peer=auto-learn
+
+[gw] CAN1 <-> UDP4000 rc=0 (host: cannelloni -I vcan0 -R 192.168.2.100 -r 4000 -l 4000)
+
+[gw] forwarding ON, CAN0 node1 仍为 CANopen 从站
+
+
+letter:/$ 
+letter:/$ [hwrun] post (持锁运行上位机测试): timeout 70 bash host/canopen/run_all.sh
+===== co_node_test.py =====
+=== CANopen node 1 test on vcan0 (socketcan) ===
+  NMT start -> heartbeat state 5         PASS  hb=1
+  SDO read 0x1000 deviceType             PASS  0x00000191
+  SDO read 0x1018:1 vendor-ID            PASS  0x0000A531
+  SDO read 0x1017 heartbeat              PASS  1000 ms
+  SDO segmented upload 0x1008            PASS  32 B 'HPM5E31 CANopen node 1'
+  SDO write 0x1017 = 200                 PASS  read back 200
+  heartbeat 200 ms (2.2 s)               PASS  10 frames, avg=206.3 ms, max|dev|=7.5 ms
+  SDO write 0x1017 restore 1000          PASS  read back 1000
+  EMCY 0x081 on 0x2106 write             PASS  count=1 code=0x0001
+  EMCY counter 0x2107                    PASS  1
+  NMT stop -> heartbeat state 4          PASS  
+  NMT start -> heartbeat state 5         PASS  
+  NMT reset communication -> boot-up     PASS  
+  NMT start after reset                  PASS  
+
+=== RESULT: 14 PASS / 0 FAIL ===
+===== co_pdo_bench.py =====
+=== CANopen PDO benchmark on vcan0 (node 1, SYNC 10.0 ms) ===
+  TPDO1 mapping (2 objects)                PASS  cnt=2 0x21010010 0x21020020
+  TPDO1 mapping entry1 = 0x2101:0/16       PASS  0x21010010
+  TPDO1 mapping entry2 = 0x2102:0/32       PASS  0x21020020
+[bench] TPDO1 sync: SYNC 10.0 ms x 5.0 s
+  TPDO1 同步: 丢帧                             FAIL  0.20% (491/492)
+  TPDO1 同步: 平均延迟                           PASS  avg=2.30 ms p99=2.75 max=2.83
+  TPDO1 同步: 周期抖动 σ                         PASS  σ=0.60 ms max|dev|=12.62 ms avg=10.20 ms
+  TPDO2 事件型 1000 ms (5 s)                  PASS  5 frames
+  RPDO1 -> 0x2100 回环                       PASS  0001->0001 0002->0002 0000->0000
+
+  指标                     数值
+  ------------------------ ------------------------------
+  SYNC 帧数                  492
+  TPDO1 帧数                 491
+  丢帧率                      0.20 %
+  TPDO1 平均周期               10.20 ms
+  周期抖动 σ                   0.60 ms
+  周期最大偏差                   12.62 ms
+  端到端延迟 min                1.47 ms
+  端到端延迟 avg                2.30 ms
+  端到端延迟 p99                2.75 ms
+  端到端延迟 max                2.83 ms
+
+=== RESULT: 7 PASS / 1 FAIL ===
+---- co_pdo_bench.py rc=1 ----
+===== co_sdo_seg.py =====
+=== CANopen SDO segmented benchmark on vcan0 (node 1, 5 iterations) ===
+Traceback (most recent call last):
+  File "host/canopen/co_sdo_seg.py", line 177, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "host/canopen/co_sdo_seg.py", line 98, in main
+    t_up1k, data1k = bench_upload(node, 0x2001, args.iterations)
+                     ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "host/canopen/co_sdo_seg.py", line 41, in bench_upload
+    data = node.sdo.upload(index, 0)
+  File "pyenv/lib/python3.14/site-packages/canopen/sdo/client.py", line 129, in upload
+    data = fp.read()
+  File "pyenv/lib/python3.14/site-packages/canopen/sdo/client.py", line 303, in read
+    return self.readall()
+           ~~~~~~~~~~~~^^
+  File "pyenv/lib/python3.14/site-packages/canopen/sdo/client.py", line 309, in read
+    response = self.sdo_client.request_response(request)
+  File "pyenv/lib/python3.14/site-packages/canopen/sdo/client.py", line 95, in request_response
+    return self.read_response()
+           ~~~~~~~~~~~~~~~~~~^^
+  File "pyenv/lib/python3.14/site-packages/canopen/sdo/client.py", line 83, in read_response
+    raise SdoAbortedError(abort_code)
+canopen.sdo.exceptions.SdoAbortedError: Code 0x05040000, Timeout of transfer communication detected
+---- co_sdo_seg.py rc=1 ----
+[hwrun] post rc=1
+---- LOG: logs/20261030-174516-canopen_node.log (rc=0) ----
+RC=0

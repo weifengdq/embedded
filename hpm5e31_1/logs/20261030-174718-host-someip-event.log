@@ -1,0 +1,20 @@
+letter:/$ [hwrun] post (持锁运行上位机测试): timeout 80 bash host/someip/run_client.sh event
+[run_client] mode=event board=192.168.2.100 local=192.168.2.1
+someip_client: board=192.168.2.100 local=192.168.2.1 event_port=30502
+== 事件订阅 ==
+  订阅前 1 s：收到 0 B，NOTIFICATION 0 条（应为 0）
+  PASS SubscribeEventgroup -> Ack ttl=3 counter=1
+  时基对齐：offset=-116604923.373 ms（最优样本 RTT 0.105 ms）
+  收到 NOTIFICATION 391 条 / 6.01 s，事件流量 10.6 kbit/s（订阅前 0.0 kbit/s）
+  事件               条数     周期ms       σms     minms     maxms     丢包       时延ms
+  counter          35   100.01     0.201     99.49    100.43      0  0.39/0.58
+  adc             349    10.03     0.543      9.67     20.00      0          -
+  temperature       7   499.94     0.415    499.38    500.61      0          -
+  Wextra: 期望周期 counter=100 ms / adc=10 ms / temperature=500 ms
+== 事件订阅 PASS ==
+
+================ 汇总 ================
+  event      PASS
+  总计: PASS
+[hwrun] post rc=0
+---- LOG: logs/20261030-174718-someip_event.log (rc=0) ----

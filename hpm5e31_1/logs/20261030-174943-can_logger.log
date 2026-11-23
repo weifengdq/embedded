@@ -1,0 +1,42 @@
+y | stat
+stat
+stat: log=RUN count=68 dropped=0 gen_on=1 gen_seq=68 uptime=683 ms
+
+letter:/$ 
+letter:/$ replay 20 300
+replay: sent=20 ok=20 fail=0 gap=300 us
+verify: 0x300 frames=93 bad_order=1 first_bad_idx=73 result=FAIL
+
+letter:/$ 
+letter:/$ log dump 20
+# candump: 20 frames (start=78) epoch_base=1793000000
+(1998638.680000) can0 300#05000000A55AC33C
+(1998638.978000) can0 300#06000000A55AC33C
+(1998638.281000) can0 300#07000000A55AC33C
+(1998638.582000) can0 300#08000000A55AC33C
+(1998638.881000) can0 300#09000000A55AC33C
+(1998638.187000) can0 300#0A000000A55AC33C
+(1998638.485000) can0 300#0B000000A55AC33C
+(1998638.793000) can0 300#0C000000A55AC33C
+(1998638.089000) can0 300#0D000000A55AC33C
+(1998638.395000) can0 300#0E000000A55AC33C
+(1998638.695000) can0 300#0F000000A55AC33C
+(1998638.999000) can0 300#10000000A55AC33C
+(1998638.300000) can0 300#11000000A55AC33C
+(1998638.602000) can0 300#12000000A55AC33C
+(1998638.904000) can0 300#13000000A55AC33C
+(1998638.615000) can0 300#49000000A55AC33C
+(1998638.238000) can0 300#4A000000A55AC33C
+(1998638.236000) can0 300#4B000000A55AC33C
+(1998638.240000) can0 300#4C000000A55AC33C
+(1998638.232000) can0 300#4D000000A55AC33C
+# end candump
+
+letter:/$ 
+letter:/$ verify
+verify: 0x300 frames=102 bad_order=2 first_bad_idx=73 result=FAIL
+
+letter:/$ 
+letter:/$ [auto] 1.5 s 采集完成: stat: log=RUN count=169 dropped=0 gen_on=1 gen_seq=149 uptime=1506 ms
+replay: sent=20 ok=20 fail=0 gap=200 us
+verify: 0x300 frames=189 bad_order=3 first_bad_idx=73 result=FAIL

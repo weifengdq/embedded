@@ -1,0 +1,19 @@
+:CAN0->CAN1, B:CAN2->CAN3) 8B classic 500k:
+  sent A=1000 B=10 / 'can stat'
+can run 800
+STREAM 4ch (A:CAN0->CAN1, B:CAN2->CAN3) 8B classic 500k:
+  sent A=800 B=800  rx_total=1600  elapsed=191287us => 8364 frame/s total
+  per-channel: 4182 frame/s (500 kbit/s 8B 理论上限 ~4386 frame/s)
+  CPU in Can_MainFunction_*: 4242501 cycles = 8838us of 191287us = 4.62%
+  Can_Write CAN_BUSY retries=39550  tx_confirmed=4000
+  pair A: n=800 avg=246us max=257us  histogram:
+    <300         800 (100.0%)
+  pair B: n=800 avg=244us max=255us  histogram:
+    <300         800 (100.0%)
+
+letter:/$ 
+letter:/$ can pp 100
+PINGPONG 4ch simultaneous: n=100  A ok=100 avg=245us max=273us | B ok=100 avg=244us max=249us  total=49220us
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,35 @@
+00005 00001000 00000000
+  +0x1000 boot_header    : tag=0xbf velayout | dump [offset] [len]
+layout
+Flash base=0x80000000 size=1024 KB
+  +0x0400 nor_cfg_option : fcf90002 00000005 00001000 00000000
+  +0x1000 boot_header    : tag=0xbf ver=0x10 len=144 fw_count=1 dc_off=0 sig_off=0
+  fw[0]: offset=0x2000  size=0x0fa30 (64048 B)  entry=0x80003000
+  app image: 0x80000000..0x800129b0 (etext, 74 KB), boot header says app at +0x2000
+  safe rw window: +0xf0000..+0xFFFFF (64 KB)
+
+  布局表:
+  | 偏移        | 大小      | 内容                     |
+  |-------------|-----------|--------------------------|
+  | 0x00000     | 0x400     | 保留                     |
+  | 0x00400     | 0x10      | nor_cfg_option (XPI 配置)|
+  | 0x01000     | 0x90      | boot_header + fw[0]      |
+  | 0x02000     | 0x0fa30   | 应用镜像 fw[0]           |
+  | 0x11a30     | 0xde5d0   | 未使用                   |
+  | 0xf0000     | 0x10000   | 读写测试安全区           |
+
+letter:/$ 
+letter:/$ dump 0x400 64
+80000400: 02 00 f9 fc 05 00 00 00 00 10 00 00 00 00 00 00
+80000410: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+80000420: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+80000430: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+
+letter:/$ 
+letter:/$ dump 0x1000 48
+80001000: bf 10 90 00 00 00 00 00 00 00 00 01 00 00 00 00
+80001010: 00 20 00 00 30 fa 00 00 00 00 00 00 00 00 00 00
+80001020: 00 30 00 80 00 00 00 00 00 30 00 80 00 00 00 00
+
+letter:/$ 
+letter:/$ 

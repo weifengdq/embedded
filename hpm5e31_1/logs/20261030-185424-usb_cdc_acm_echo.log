@@ -1,0 +1,3 @@
+cho: USB0 CDC ACM device ===
+cdc_acm_init done, waiting for host enumeration...
+shell: usbinfo | usbsend [n]

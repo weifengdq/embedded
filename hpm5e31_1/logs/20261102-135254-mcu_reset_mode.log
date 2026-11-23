@@ -1,0 +1,27 @@
+ (J-Link)
+BOOT: reason=MCU_RESET_UNDEFINED
+type: minfo / mclboard reboots and reports MCU_SW_RESET
+minfo
+Mcu reset/mode demo: moduleID=101
+RESET: reason=MCU_RESET_UNDEFINED(3) raw=0x00000010
+RESET: bit4 debug reset (J-Link)
+commands: minfo | mclear | mreset | mmode <run|reset> | mver | merr
+
+letter:/$ 
+letter:/$ mclear
+PPOR RESET_FLAG cleared (W1C)
+RESET: reason=MCU_RESET_UNDEFINED(3) raw=0x00000000
+
+letter:/$ 
+letter:/$ mreset
+Mcu_PerformReset(): software reset in ~4 us ...
+[2J[1H
+ _         _   _                  _          _ _ 
+| |    ___| |_| |_ ___ _ __   ___| 
+letter:/$ 
+=== mcu_reset_mode: AUTOSAR Mcu reset source / software reset ===
+RESET: reason=MCU_SW_RESET(2) raw=0x80000000
+RESET: bit31 software reset <- Mcu_PerformReset worked
+BOOT: reason=MCU_SW_RESET
+type: minfo / mclear / mreset / mmode 0|2 / mver / merr
+try: mclear;mreset  -> board reboots and reports MCU_SW_RESET

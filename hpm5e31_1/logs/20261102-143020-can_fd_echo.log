@@ -1,0 +1,21 @@
+ontrollers=4 hth=16 filters=36
+start failed, check transceiveran stat' / 'can err'
+can at 30 2
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD probe (baud cfg ID2) ---
+  64B pingpong: ok=30/30 avg=707us max=730us | CAN0 errstate=0 REC=0 TEC=0
+
+letter:/$ 
+letter:/$ can at 30 4
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD probe (baud cfg ID4) ---
+  64B pingpong: ok=30/30 avg=848us max=859us | CAN0 errstate=0 REC=0 TEC=0
+
+letter:/$ 
+letter:/$ 

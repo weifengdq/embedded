@@ -1,0 +1,22 @@
+xpect hit/drop vs actual)
+  #  can_id      case               n run' to rerun
+can run
+filter test: 13 cases (expect hit/drop vs actual)
+  #  can_id      case                      expect    got       verdict
+   0 0x00000123  mask 0x123/0x7FF          FIFO0     FIFO0     PASS
+   1 0x00000321  mask 0x321/0x7FF          FIFO0     FIFO0     PASS
+   2 0x00000405  range 0x400..0x40F        FIFO0     FIFO0     PASS
+   3 0x0000060A  mask 0x600/0x7F0          FIFO0     FIFO0     PASS
+   4 0x00000500  dual {0x500,0x501}        FIFO1     FIFO1     PASS
+   5 0x00000501  dual {0x500,0x501}        FIFO1     FIFO1     PASS
+   6 0x00000502  no match -> drop          drop      drop      PASS
+   7 0x00000705  reject 0x700..0x7FF       drop      drop      PASS
+   8 0x000007FF  reject 0x700..0x7FF       drop      drop      PASS
+   9 0x98FF0001  ext range 0x18FFFFFF      FIFO0     FIFO0     PASS
+  10 0x9ABC1234  ext mask 0x1FFF0000       FIFO0     FIFO0     PASS
+  11 0x9FFFFFF0  ext dual {..F0,..F1}      FIFO1     FIFO1     PASS
+  12 0x92345678  ext no match -> drop      drop      drop      PASS
+filter: pass=13 fail=0  (rx_total=18 rx_overflow=0 tx_confirmed=26)
+
+letter:/$ 
+letter:/$ 

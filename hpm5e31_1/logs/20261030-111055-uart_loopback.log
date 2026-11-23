@@ -1,0 +1,55 @@
+>RX inside controller
+uart_loopback @ hpm5e31_1
+  UART4 TX=P 9596       9596    -416p    -416p
+     38400      38461      38460    1588p    1562p
+    115200     114942     114940   -2239p   -2256p
+    460800     454545     454540  -13574p  -13585p
+    921600     909090     909081  -13574p  -13583p
+   1500000    1481481    1481457  -12346p  -12362p
+   2000000    2000000    1999960       0p     -20p
+   3000000    3076923    3076832   25641p   25610p
+   4000000    4000000    3999832       0p     -42p
+   5000000    5000000    4999736       0p     -52p
+(reg_err 由回读分频计算, meas_err 为实测; 1 ppm = 0.0001%)
+try 'uart_baud 3000000' or 'uart_thru 4096 3000000'
+uart_info
+uart_loopback @ hpm5e31_1
+  UART4 TX=PC16? pad PC16, RX=PC17, irq=0, 内部 MCR LOOP 回环
+  src_clk=80000000 Hz, requested=921600, OSCR=8, DIV=11 -> reg_baud=909090
+  FIFO=32 bytes, cpu=480000000 Hz
+  console: UART0 921600 (寄存器回读 909090 Hz 分频)
+
+letter:/$ 
+letter:/$ uart_selftest 1024 16
+selftest baud=921600 bytes=1024 chunk=16 errors=0 time=11.30 ms throughput=90 KB/s
+
+letter:/$ 
+letter:/$ uart_thru 4096 921600
+thru baud=921600 bytes=4096 errors=0 measured=90 KB/s theoretical=92 KB/s efficiency=97%
+
+letter:/$ 
+letter:/$ uart_fifo
+fifo: sent=96 without reading, fifo_size=32, received=33, overrun=0, framing=0
+
+letter:/$ 
+letter:/$ uart_baud 3000000
+baud=3000000 reg_baud=3076923 measured=3076825 reg_err=25641 ppm meas_err=25608 ppm
+
+letter:/$ 
+letter:/$ uart_err
+baud rate accuracy: loopback TX burst + TEMT, bits=10/byte (8N1), src=80000000 Hz
+   request   reg_baud   measured  reg_err meas_err
+      9600       9596       9596    -416p    -416p
+     38400      38461      38460    1588p    1562p
+    115200     114942     114940   -2239p   -2256p
+    460800     454545     454541  -13574p  -13582p
+    921600     909090     909081  -13574p  -13583p
+   1500000    1481481    1481459  -12346p  -12360p
+   2000000    2000000    1999961       0p     -19p
+   3000000    3076923    3076820   25641p   25606p
+   4000000    4000000    3999846       0p     -38p
+   5000000    5000000    4999769       0p     -46p
+(reg_err 由回读分频计算, meas_err 为实测; 1 ppm = 0.0001%)
+
+letter:/$ 
+letter:/$ 

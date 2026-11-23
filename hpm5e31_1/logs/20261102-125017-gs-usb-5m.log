@@ -1,0 +1,19 @@
+
+==================================================================
+gs_usb 测试: 5m（20261102-125017）
+==================================================================
+主机: Linux 7.0.0-38-generic x86_64  脚本: test_5m.sh
+日志: logs/20261102-125017-gs-usb-5m.log
+工件: /tmp/gs_usb_artifacts
+内核 7.0.x —— 与开发约定 §1 一致
+  [PASS] 权限 OK（sudo -n）
+dmesg 基线时间戳: 1793595017（之后用 --since 只扫描新增行）
+  [PASS] 依赖命令齐全: dmesg ip ethtool cansend candump cangen canplayer
+  [PASS] 发现 4 个接口: 0 1 2 3
+
+---- 配置 FD 1000000/2000000（fd_1m_2m）
+
+
+state UP
+state ERROR-PASSIVE
+dbitrate 2000000

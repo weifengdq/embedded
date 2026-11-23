@@ -1,0 +1,18 @@
+_bulk(u32 len)->bytes（板->主机分段）, 0x0007 crc32(bytesOWN
+[someip] OfferService -> 224.244.224.245:30490, endpoint 192.168.2.100:30501, ttl=3 s
+[someip] shell: stat | tpstat | run | selftest | offer | ip
+run
+[run] ---- SOME/IP-TP 分段/重组自测（4096 B）----
+[run] 分段 4096 B -> 3 段      : PASS
+[run] 重组 4096 B CRC 0x5D1C4EE3     : PASS
+[run] 乱序段被拒绝             : PASS
+[run] PASS (0 failed)
+
+letter:/$ 
+letter:/$ tpstat
+[tp] 段长上限 1392 B（87 x 16），逻辑报文上限 4096 B
+[tp] 收：段 0 / 完整报文 0 / 丢弃 0  |  发：段 3
+[tp] 重组器：active=0 已收 0 B，期望 offset 0
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,18 @@
+ISO PC12 MOSI PC13 (mode 0, 1000000 Hz)
+  SPI3 slave : SCLK PAms_test 128 20000000 / spi_ms_read 32
+spi_ms_test 128 10000000
+bidir        n=128  PASS errors=0   time=107.45 us bw=1191 KB/s
+
+letter:/$ 
+letter:/$ spi_ms_test 128 20000000
+  dbg m_tx= 31 38 3F 46 4D 54 5B 62 | m_rx= E5 B0 BB C6 D1 DC E7 F2 | s_tx= A5 B0 BB C6 D1 DC E7 F2 | s_rx= 31 38 3F 46 4D 54 5B 62
+  dbg SPI1.STATUS=0x00404000 SPI3.STATUS=0x00014000 SPI3.CTRL=0x11000018
+bidir        n=128  FAIL errors=1   time=55.80 us bw=2293 KB/s
+
+letter:/$ 
+letter:/$ spi_ms_poll 64
+poll         n=64   FAIL errors=5   time=71.92 us bw=889 KB/s
+  m_rx[0..3]=E5 B0 BB C6 s_tx[0..3]=A5 B0 BB C6
+
+letter:/$ 
+letter:/$ 

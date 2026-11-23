@@ -1,0 +1,28 @@
+
+digraph diag {
+  rankdir=TB;
+  graph [fontname="Noto Sans CJK SC", fontsize=11, bgcolor="white", nodesep=0.30, ranksep=0.38];
+  node  [shape=box, style="rounded,filled", fontname="Noto Sans CJK SC", fontsize=9.5,
+         color="#57606A", fillcolor="#F6F8FA", penwidth=0.9];
+  edge  [fontname="Noto Sans CJK SC", fontsize=8.8, color="#57606A", arrowsize=0.7];
+
+  q0 [label="上电/复位后：nINT(PA24) 是否为低？\n(nRST 释放后芯片应拉低 IRQ_N)", fillcolor="#E7EEF8"];
+  q1 [label="SDO(PA22) 三态测试 (命令 misopull / rsttest)\nRESET_N=0: nINT=1 & SDO=1(高阻)\nRESET_N=1: nINT=0 & CS 有效时 SDO 被驱动", fillcolor="#E6F4EA"];
+  q2 [label="12 字节控制帧 + echo 校验 (rx[4..7] == tx[0..3])"];
+  r_ok  [label="链路通 → 继续 AN1760 / MAC / PLCA", fillcolor="#E6F4EA"];
+  q3 [label="SPI2 控制器 mode 0~3 × 硬件CS/GPIO CS\n(命令 hwchk / trans) 有 echo？", fillcolor="#FFF8E6"];
+  q4 [label="GPIO 位翻转 SPI (命令 trans bb)\n1 us 半周期, mode 0", fillcolor="#FFF8E6"];
+  r_bb [label="位翻转通、控制器不通\n→ SPI2 控制器侧问题\n(用 hwchk 打印 TRANSFMT/CTRL/TIMING 定位)", fillcolor="#FFEBE9", color="#DA3633"];
+  q5 [label="位翻转也不通：交换 MISO/MOSI 再试\n(本板 net 名 SPI2_MISO=PA22 已用原理图核对)"];
+  q6 [label="仍不通：示波器测\n① 3V3/VDDP/VDDAU 电源\n② X2 25 MHz 晶振 XTI\n③ SCLK/SDI 串联器件是否 DNP", fillcolor="#FFEBE9", color="#DA3633"];
+
+  q0 -> q1 [label="先证明芯片活着"];
+  q1 -> q2;
+  q2 -> r_ok [label="echo 正确"];
+  q2 -> q3 [label="全 0 / 全 FF"];
+  q3 -> q4 [label="无 echo"];
+  q3 -> r_ok [label="有 echo (换用控制器)"];
+  q4 -> r_bb [label="有 echo"];
+  q4 -> q5 [label="无 echo"];
+  q5 -> q6;
+}

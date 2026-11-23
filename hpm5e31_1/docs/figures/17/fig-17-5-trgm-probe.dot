@@ -1,0 +1,29 @@
+
+digraph probe {
+  rankdir=LR;
+  graph [fontname="Noto Sans CJK SC", fontsize=11, nodesep=0.34, ranksep=0.55, bgcolor="white"];
+  node  [fontname="Noto Sans CJK SC", fontsize=9.5, shape=box, style="rounded,filled",
+         fillcolor="#F6F8FA", color="#57606A", penwidth=0.9];
+  edge  [fontname="Noto Sans CJK SC", fontsize=8.5, color="#57606A", arrowsize=0.7];
+
+  subgraph cluster_s {
+    label="被测链路（每段都能单独观测）";
+    fontname="Noto Sans CJK SC"; fontsize=10; color="#D0D7DE"; style="rounded";
+    gen  [label="① GPTMR0 CH2\n比较输出 1 kHz\nCMPEN=1", fillcolor="#D2E3FC"];
+    plb  [label="③ PLB TYPE A ch0\nLUT0=0xAAAA\n(直通 in0)", fillcolor="#E6F4EA"];
+    pin  [label="⑤ TRGM_P15 引脚\n+ IOC LOOP_BACK", fillcolor="#FFF8E1"];
+    cap  [label="④ GPTMR0 CH3\n捕获 CAPT_3\nCAPPOS/CAPF", fillcolor="#D2E3FC"];
+  }
+  t_in  [label="② TRGM 输入\nTRGM_IN[0x10]=OUT2\nTRGM_IN[0x44]=PLB_OUT00", fillcolor="#FCE8E6"];
+  t_out [label="② TRGM 输出\nTRGM_OUT[0x38/0x39]\nTRGM_OUT[0x0F]=P15", fillcolor="#FCE8E6"];
+  reg  [label="只读回读寄存器\nTRGM_IN[5] @+0x600\nTRGM_OUT[5] @+0x680\n软件轮询电平翻转", fillcolor="#F6F8FA", shape=note];
+
+  gen -> t_in [label="OUT2"];
+  t_in -> plb [label="PLB_IN_00"];
+  plb -> t_out [label="PLB_OUT00"];
+  t_out -> cap [label="CAPT_3"];
+  plb -> pin [label="TRGM_P15 输出"];
+  pin -> cap [label="TRGM0_P15 输入(回环)"];
+  t_in -> reg [style="dashed", label="读电平"];
+  t_out -> reg [style="dashed", label="读电平"];
+}

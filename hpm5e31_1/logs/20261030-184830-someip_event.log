@@ -1,0 +1,13 @@
+eip/1.0.0
+Enet phy init passed !
+IPv4 Address: 192.168.2.100 | run | selftest | offer | stopoffer | sub | ip
+run
+[run] ---- 订阅 + 事件通路自测（模拟上位机 192.168.2.1:30600）----
+[run] subscribe -> ack      : PASS
+[run] 1 s 内事件条数         : counter=10 adc=101 temp=2
+[run] 事件周期 100/10/500ms  : PASS
+[run] unsubscribe(TTL=0)     : PASS
+[run] PASS (0 failed)
+
+letter:/$ 
+letter:/$ 

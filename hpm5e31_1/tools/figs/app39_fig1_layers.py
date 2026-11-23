@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+"""fig-40-1: 应用层协议栈分层与映射（graphviz）"""
+import subprocess, pathlib
+out = pathlib.Path(__file__).resolve().parents[2] / "docs/figures/39"
+out.mkdir(parents=True, exist_ok=True)
+dot = r"""
+digraph app_layers {
+  graph [rankdir=LR, fontname="Helvetica", nodesep=0.18, ranksep=0.55, bgcolor="white", pad=0.2];
+  node  [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, fillcolor="#eef4fb", color="#4a78a8"];
+  edge  [color="#6b8fb3", arrowsize=0.7];
+
+  subgraph cluster_proto {
+    label="应用层协议（第 29~39 章）"; fontsize=11; color="#c9d8e8"; style="rounded";
+    uds   [label="UDS\nISO 14229"];
+    iso   [label="ISO-TP\nISO 15765-2", fillcolor="#dff0df"];
+    j1939 [label="J1939\nSAE J1939-21/71/73"];
+    co    [label="CANopen\nCiA 301"];
+    xcp   [label="XCP\nASAM XCP 1.5"];
+    someip[label="SOME/IP\n+ SD + TP"];
+    xrce  [label="XRCE-DDS\n+ ROS 2"];
+    ptp   [label="PTP / gPTP\nIEEE 1588 / 802.1AS"];
+    dlt   [label="DLT / VSS\n日志与信号"];
+  }
+
+  subgraph cluster_trans {
+    label="传输 / 网络 / 中间件"; fontsize=11; color="#c9d8e8"; style="rounded";
+    can   [label="CAN / CAN FD\n500k / 1M-2M", fillcolor="#fff3d6"];
+    lwip  [label="lwIP 2.1.2\nUDP / TCP / 组播", fillcolor="#fff3d6"];
+    agent [label="Micro-XRCE-DDS\nAgent（主机）", fillcolor="#f3e6f7"];
+    bridge[label="cannelloni\nCAN <-> UDP", fillcolor="#f3e6f7"];
+  }
+
+  subgraph cluster_hw {
+    label="板级硬件与驱动"; fontsize=11; color="#c9d8e8"; style="rounded";
+    mcan  [label="MCAN×4\n（AHB SRAM 消息 RAM）", fillcolor="#e8e8e8"];
+    enet  [label="ENET0 + YT8011AN\nRGMII 1000M / 1588", fillcolor="#e8e8e8"];
+    gptmr [label="GPTMR\n事件触发 1kHz", fillcolor="#e8e8e8"];
+    flash [label="片内 NOR\nXIP / 刷写", fillcolor="#e8e8e8"];
+  }
+
+  uds -> iso; iso -> can;
+  j1939 -> can; co -> can; xcp -> can;
+  someip -> lwip; xrce -> lwip; xrce -> agent;
+  ptp -> lwip; dlt -> lwip;
+  bridge -> can; bridge -> lwip;
+  can -> mcan; lwip -> enet;
+  xcp -> gptmr;
+  uds -> flash [style=dashed, label="0x34/36/37"];
+}
+"""
+p = out / "fig-40-1-app-layers.dot"
+p.write_text(dot)
+subprocess.run(["dot", "-Tpng", "-Gdpi=200", str(p), "-o", str(out / "fig-40-1-app-layers.png")], check=True)
+print(out / "fig-40-1-app-layers.png")

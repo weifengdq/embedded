@@ -1,0 +1,42 @@
+---- CoreMark run 1 ----
+[2J[1H
+ _         _   _           ter:/$ 2K performance run parameters for coremark.
+CoreMark Size    : 666
+Total ticks      : 3291527042
+Total time (secs): 15.805197
+Iterations/Sec   : 1898.109899
+Iterations       : 30000
+Compiler version : GCC11.1.0
+Compiler flags   : gcc-11.1.0 -O3 
+Memory location  : STACK_DLM
+seedcrc          : 0xe9f5
+[0]crclist       : 0xe714
+[0]crcmatrix     : 0x1fd7
+[0]crcstate      : 0x8e3a
+[0]crcfinal      : 0x5275
+Correct operation validated. See README.md for run and reporting rules.
+CoreMark 1.0 : 1898.109899 / GCC11.1.0 gcc-11.1.0 -O3  / STACK_DLM
+TIMEBASE mcycle_secs=15.805197 mchtmr_secs=15.805197 diff_ppm=0.0 cpu_hz=480000000 mchtmr_hz=24000000
+BENCH_RUN idx=1 score=1898.1099 iters=0 secs=15.805197 wall=21.668394 mtime_secs=15.805197 cmhz=3.9544
+
+---- CoreMark run 2 ----
+2K performance run parameters for coremark.
+CoreMark Size    : 666
+Total ticks      : 3291642086
+Total time (secs): 15.805436
+Iterations/Sec   : 1898.081116
+Iterations       : 30000
+Compiler version : GCC11.1.0
+Compiler flags   : gcc-11.1.0 -O3 
+Memory location  : STACK_DLM
+seedcrc          : 0xe9f5
+[0]crclist       : 0xe714
+[0]crcmatrix     : 0x1fd7
+[0]crcstate      : 0x8e3a
+[0]crcfinal      : 0x5275
+Correct operation validated. See README.md for run and reporting rules.
+CoreMark 1.0 : 1898.081116 / GCC11.1.0 gcc-11.1.0 -O3  / STACK_DLM
+TIMEBASE mcycle_secs=15.805436 mchtmr_secs=15.805436 diff_ppm=0.0 cpu_hz=480000000 mchtmr_hz=24000000
+BENCH_RUN idx=2 score=1898.0811 iters=0 secs=15.805436 wall=21.666503 mtime_secs=15.805436 cmhz=3.9543
+
+---- CoreMark run 3 ----

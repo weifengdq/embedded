@@ -1,0 +1,14 @@
+=10 press_delta=5 release_delta=5 bounce_delta=0
+[selftest] ex release #5
+btn_selftest 3
+[selftest] loop_back=OK cycles=3 isr_delta=6 press_delta=3 release_delta=3 bounce_delta=0
+[selftest] expect press=3 release=3 when debounce=20 ms < gap=25 ms
+
+letter:/$ [   853 ms] BTN press   #8
+[   853 ms] BTN release #8
+
+letter:/$ btn_stat
+isr=16  press=8  release=8  bounce_rejected=0  level=0
+
+letter:/$ 
+letter:/$ 

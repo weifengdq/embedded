@@ -1,0 +1,31 @@
+00 (DENIED)
+[doip] routing activation sa=0x0E00 at=0x02 -> cod rc=0
+[mqtt] online status published (retained)
+mqtt hex connect
+mqtt CONNECT packet (86 B):
+10 54 00 04 4D 51 54 54 04 2E 04 38 00 07 68 70
+6D 35 65 33 31 00 0E 68 70 6D 35 65 33 31 2F 73
+74 61 74 75 73 00 2F 7B 22 64 65 76 22 3A 22 68
+70 6D 35 65 33 31 22 2C 22 6F 6E 6C 69 6E 65 22
+3A 66 61 6C 73 65 2C 22 72 65 61 73 6F 6E 22 3A
+22 6C 77 74 22 7D 
+
+letter:/$ 
+letter:/$ mqtt match
+  match(hpm5e31/cmd/#, hpm5e31/cmd/led) = 1
+  match(hpm5e31/+/led, hpm5e31/cmd/led) = 1
+  match(hpm5e31/+/led, hpm5e31/cmd/x/led) = 0
+  match(hpm5e31/#, hpm5e31) = 1
+  match(#, $SYS/broker/uptime) = 0
+  match(a/+/c, a/b/c) = 1
+
+letter:/$ 
+letter:/$ mstat
+[mqtt] STAT st=CONNECTED up=0s sub=OK conn=1 ok=1 pub_tx=1 pub_rx=0 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=1 can_tx=1 can_rx=0 adc=34682 temp=34000mC loop_max=3920us evt=1 => PASS
+
+letter:/$ 
+letter:/$ [mqtt] STAT st=CONNECTED up=5s sub=OK conn=1 ok=1 pub_tx=6 pub_rx=0 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=6 can_tx=6 can_rx=5 adc=34812 temp=36000mC loop_max=3920us evt=1 => PASS
+[mqtt] STAT st=CONNECTED up=10s sub=OK conn=1 ok=1 pub_tx=11 pub_rx=0 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=11 can_tx=11 can_rx=10 adc=34908 temp=36000mC loop_max=3920us evt=1 => PASS

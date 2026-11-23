@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+"""图 31-3：单条 TCP 连接的 DoIP 状态机（本仓库 components/app_doip/src/app_doip.c 实际状态）
+
+生成：python3 tools/figs/app32_doip_fsm.py
+产物：docs/figures/31/fig-31-3-fsm.png
+"""
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _common import render_dot  # noqa: E402
+
+DOT = r'''
+digraph doip_fsm {
+  rankdir=LR;
+  graph [fontname="Noto Sans CJK SC", fontsize=11, bgcolor="white", pad=0.3];
+  node  [fontname="Noto Sans CJK SC", fontsize=10, shape=box, style="rounded,filled", fillcolor="#eef4f8"];
+  edge  [fontname="Noto Sans CJK SC", fontsize=9, color="#33506b"];
+
+  CLOSED [label="CLOSED\n空槽位", fillcolor="#eeeeee"];
+  CONNECTED [label="CONNECTED\n等 0x0005\nA_DoIP_Initial_Inactivity\n= 2000 ms", fillcolor="#ffd9a0"];
+  ACTIVATED [label="ACTIVATED\n可收发 0x8001\nA_DoIP_General_Inactivity\n= 300 s（可配）", fillcolor="#c8e6c9"];
+  ALIVE [label="ALIVE_CHECK\n已发 0x0007\n等 0x0008\n500 ms", fillcolor="#ffe0b2"];
+
+  CLOSED -> CONNECTED [label="TCP 三次握手\n(accept)"];
+  CONNECTED -> ACTIVATED [label="0x0005 -> 0x0006/0x10\n记下 tester SA"];
+  CONNECTED -> CLOSED [label="2 s 内没收到\n路由激活请求", color="#c62828"];
+  ACTIVATED -> ACTIVATED [label="0x8001 诊断\n(刷新 general 定时器)"];
+  ACTIVATED -> ALIVE [label="同 SA 新连接\n抢占 / 主机命令\ndoip alive"];
+  ALIVE -> ACTIVATED [label="收到 0x0008\n(老 socket 仍有效)", color="#2EA043"];
+  ALIVE -> CLOSED [label="500 ms 无应答\n(踢掉老 socket)", color="#c62828"];
+  ACTIVATED -> CLOSED [label="general inactivity\n/ 对端 FIN / 帧错", color="#c62828"];
+  CONNECTED -> CLOSED [label="对端 FIN / 帧错", color="#c62828"];
+}
+'''
+
+if __name__ == "__main__":
+    render_dot(DOT, 32, "fig-31-3-fsm")

@@ -1,0 +1,3643 @@
+{
+ "Mcu": {
+  "module": "Mcu",
+  "sws_file": "AUTOSAR_CP_SWS_MCUDriver.txt",
+  "sws_release": "R25-11",
+  "apis": [
+   {
+    "name": "Mcu_Init",
+    "service_name": "Mcu_Init",
+    "service_id": "0x00",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Mcu.h",
+    "syntax": "void Mcu_Init ( const Mcu_ConfigType* ConfigPtr )",
+    "description": "This service initializes the MCU driver."
+   },
+   {
+    "name": "Mcu_InitRamSection",
+    "service_name": "Mcu_InitRamSection",
+    "service_id": "0x01",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Mcu.h",
+    "syntax": "Std_ReturnType Mcu_InitRamSection ( Mcu_RamSectionType RamSection )",
+    "description": "This service initializes the RAM section wise."
+   },
+   {
+    "name": "Mcu_InitClock",
+    "service_name": "Mcu_InitClock",
+    "service_id": "0x02",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Mcu.h",
+    "syntax": "Std_ReturnType Mcu_InitClock ( Mcu_ClockType ClockSetting )",
+    "description": "This service initializes the PLL and other MCU specific clock options."
+   },
+   {
+    "name": "Mcu_DistributePllClock",
+    "service_name": "Mcu_DistributePllClock",
+    "service_id": "0x03",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Mcu.h",
+    "syntax": "Std_ReturnType Mcu_DistributePllClock ( void )",
+    "description": "This service activates the PLL clock to the MCU clock distribution."
+   },
+   {
+    "name": "Mcu_GetPllStatus",
+    "service_name": "Mcu_GetPllStatus",
+    "service_id": "0x04",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Mcu.h",
+    "syntax": "Mcu_PllStatusType Mcu_GetPllStatus ( void )",
+    "description": "This service provides the lock status of the PLL."
+   },
+   {
+    "name": "Mcu_GetResetReason",
+    "service_name": "Mcu_GetResetReason",
+    "service_id": "0x05",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Mcu.h",
+    "syntax": "Mcu_ResetType Mcu_GetResetReason ( void )",
+    "description": "The service reads the reset type from the hardware, if supported."
+   },
+   {
+    "name": "Mcu_GetResetRawValue",
+    "service_name": "Mcu_GetResetRawValue",
+    "service_id": "0x06",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Mcu.h",
+    "syntax": "Mcu_RawResetType Mcu_GetResetRawValue ( void )",
+    "description": "The service reads the reset type from the hardware register, if supported."
+   },
+   {
+    "name": "Mcu_PerformReset",
+    "service_name": "Mcu_PerformReset",
+    "service_id": "0x07",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Mcu.h",
+    "syntax": "void Mcu_PerformReset ( void )",
+    "description": "The service performs a microcontroller reset."
+   },
+   {
+    "name": "Mcu_SetMode",
+    "service_name": "Mcu_SetMode",
+    "service_id": "0x08",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Mcu.h",
+    "syntax": "void Mcu_SetMode ( Mcu_ModeType McuMode )",
+    "description": "This service activates the MCU power modes."
+   },
+   {
+    "name": "Mcu_GetVersionInfo",
+    "service_name": "Mcu_GetVersionInfo",
+    "service_id": "0x09",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Mcu.h",
+    "syntax": "void Mcu_GetVersionInfo ( Std_VersionInfoType* versioninfo )",
+    "description": "This service returns the version information of this module."
+   },
+   {
+    "name": "Mcu_GetRamState",
+    "service_name": "Mcu_GetRamState",
+    "service_id": "0x0a",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Mcu.h",
+    "syntax": "Mcu_RamStateType Mcu_GetRamState ( void )",
+    "description": "This service provides the actual status of the microcontroller Ram. (if supported)"
+   }
+  ],
+  "dev_errors": [
+   {
+    "code": "MCU_E_CLOCK_FAILURE",
+    "value": null
+   },
+   {
+    "code": "MCU_E_PARAM_CONFIG",
+    "value": "0x0A"
+   },
+   {
+    "code": "MCU_E_PARAM_CLOCK",
+    "value": "0x0B"
+   },
+   {
+    "code": "MCU_E_PARAM_MODE",
+    "value": "0x0C"
+   },
+   {
+    "code": "MCU_E_PARAM_RAMSECTION",
+    "value": "0x0D"
+   },
+   {
+    "code": "MCU_E_PLL_NOT_LOCKED",
+    "value": "0x0E"
+   },
+   {
+    "code": "MCU_E_UNINIT",
+    "value": "0x0F"
+   },
+   {
+    "code": "MCU_E_PARAM_POINTER",
+    "value": "0x10"
+   },
+   {
+    "code": "MCU_E_INIT_FAILED",
+    "value": "0x11"
+   }
+  ],
+  "types": [
+   "Mcu_ConfigType",
+   "Mcu_PllStatusType",
+   "Mcu_ClockType",
+   "Mcu_ResetType",
+   "Mcu_RawResetType",
+   "Mcu_ModeType",
+   "Mcu_RamSectionType",
+   "Mcu_RamStateType"
+  ],
+  "containers": [
+   {
+    "idx": 1,
+    "name": "Mcu"
+   },
+   {
+    "idx": 2,
+    "name": "McuGeneralConfiguration"
+   },
+   {
+    "idx": 3,
+    "name": "McuClockSettingConfig"
+   },
+   {
+    "idx": 4,
+    "name": "McuModuleConfiguration"
+   },
+   {
+    "idx": 5,
+    "name": "McuDemEventParameterRefs"
+   },
+   {
+    "idx": 6,
+    "name": "McuModeSettingConf"
+   },
+   {
+    "idx": 7,
+    "name": "McuRamSectorSettingConf"
+   },
+   {
+    "idx": 8,
+    "name": "McuClockReferencePoint"
+   },
+   {
+    "idx": 9,
+    "name": "McuPublishedInformation"
+   },
+   {
+    "idx": 10,
+    "name": "McuResetReasonConf"
+   }
+  ],
+  "published": " For details refer to [2] Chapter 10.3 “Published Information” . 49 of 50 Document ID 31: AUTOSAR_CP_SWS_MCUDriver Specification of MCU Driver AUTOSAR CP R25-11 A Change history of AUTOSAR traceable items Please note that the lists in this chapter also include traceable items that have been removed from the specification in a later version. These items do not appear as hyper- links in the document. A.1 Traceable item history of this document according to AU- TOSAR Release R25-11 A.1.1 Added Specification Items in R25-11 Number Heading [SWS_Mcu_00300] Clock source failure. Table A.1: Added Spec",
+  "callbacks": [],
+  "callback_section_head": " There are no callback notifications for the MCU driver. The callback notifications are implemented in another module (ICU driver and/or complex drivers). ",
+  "scheduled": [],
+  "expected_interfaces": " In this chapter all interfaces required from other modules are listed. 8.6.1 Mandatory interfaces Note: This section defines all interfaces, which are required to fulfill the core function- ality of the module. [SWS_Mcu_00166] Definition of mandatory interfaces required by module Mcu ⌈ API Function Header File Description Dem_SetEventStatus Dem.h Called by SW-Cs or BSW modules to report monitor status information to the Dem. BSW modules calling Dem_SetEventStatus can safely ignore the return value. This API will be available only if ({Dem/Dem ConfigSet/DemEventParameter/DemEvent ReportingType} == STANDARD_REPORTING) ⌋ 8.6.2 Optional interfaces This section defines all interfaces, which are "
+ },
+ "Port": {
+  "module": "Port",
+  "sws_file": "AUTOSAR_CP_SWS_PortDriver.txt",
+  "sws_release": "R25-11",
+  "apis": [
+   {
+    "name": "Port_Init",
+    "service_name": "Port_Init",
+    "service_id": "0x00",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Port.h",
+    "syntax": "void Port_Init ( const Port_ConfigType* ConfigPtr )",
+    "description": "Initializes the Port Driver module."
+   },
+   {
+    "name": "Port_SetPinDirection",
+    "service_name": "Port_SetPinDirection",
+    "service_id": "0x01",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Port.h",
+    "syntax": "void Port_SetPinDirection ( Port_PinType Pin, Port_PinDirectionType Direction )",
+    "description": "Sets the port pin direction"
+   },
+   {
+    "name": "Port_RefreshPortDirection",
+    "service_name": "Port_RefreshPortDirection",
+    "service_id": "0x02",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Port.h",
+    "syntax": "void Port_RefreshPortDirection ( void )",
+    "description": "Refreshes port direction."
+   },
+   {
+    "name": "Port_GetVersionInfo",
+    "service_name": "Port_GetVersionInfo",
+    "service_id": "0x03",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Port.h",
+    "syntax": "void Port_GetVersionInfo ( Std_VersionInfoType* versioninfo )",
+    "description": "Returns the version information of this module."
+   },
+   {
+    "name": "Port_SetPinMode",
+    "service_name": "Port_SetPinMode",
+    "service_id": "0x04",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Port.h",
+    "syntax": "void Port_SetPinMode ( Port_PinType Pin, Port_PinModeType Mode )",
+    "description": "Sets the port pin mode."
+   }
+  ],
+  "dev_errors": [
+   {
+    "code": "PORT_E_PARAM_CONFIG",
+    "value": null
+   },
+   {
+    "code": "PORT_E_INIT_FAILED",
+    "value": null
+   },
+   {
+    "code": "PORT_E_UNINIT",
+    "value": null
+   },
+   {
+    "code": "PORT_E_PARAM_PIN",
+    "value": "0x0A"
+   },
+   {
+    "code": "PORT_E_DIRECTION_UNCHANGEABLE",
+    "value": "0x0B"
+   },
+   {
+    "code": "PORT_E_PARAM_INVALID_MODE",
+    "value": "0x0D"
+   },
+   {
+    "code": "PORT_E_MODE_UNCHANGEABLE",
+    "value": "0x0E"
+   },
+   {
+    "code": "PORT_E_PARAM_POINTER",
+    "value": "0x10"
+   },
+   {
+    "code": "PORT_E_PARAM_INVALID_DIRECTION",
+    "value": "0x11"
+   }
+  ],
+  "types": [
+   "Port_ConfigType",
+   "Port_PinType",
+   "Port_PinDirectionType",
+   "Port_PinModeType"
+  ],
+  "containers": [
+   {
+    "idx": 1,
+    "name": "PortConfigSet"
+   },
+   {
+    "idx": 2,
+    "name": "Port"
+   },
+   {
+    "idx": 3,
+    "name": "PortContainer"
+   },
+   {
+    "idx": 4,
+    "name": "PortGeneral"
+   },
+   {
+    "idx": 5,
+    "name": "PortPin"
+   }
+  ],
+  "published": "",
+  "callbacks": [],
+  "callback_section_head": "",
+  "scheduled": [],
+  "expected_interfaces": ""
+ },
+ "Dio": {
+  "module": "Dio",
+  "sws_file": "AUTOSAR_CP_SWS_DIODriver.txt",
+  "sws_release": "R25-11",
+  "apis": [
+   {
+    "name": "Dio_ReadChannel",
+    "service_name": "Dio_ReadChannel",
+    "service_id": "0x00",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Dio.h",
+    "syntax": "Dio_LevelType Dio_ReadChannel ( Dio_ChannelType ChannelId )",
+    "description": "Returns the value of the specified DIO channel."
+   },
+   {
+    "name": "Dio_WriteChannel",
+    "service_name": "Dio_WriteChannel",
+    "service_id": "0x01",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Dio.h",
+    "syntax": "void Dio_WriteChannel ( Dio_ChannelType ChannelId, Dio_LevelType Level )",
+    "description": "Service to set a level of a channel."
+   },
+   {
+    "name": "Dio_ReadPort",
+    "service_name": "Dio_ReadPort",
+    "service_id": "0x02",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Dio.h",
+    "syntax": "Dio_PortLevelType Dio_ReadPort ( Dio_PortType PortId )",
+    "description": "Returns the level of all channels of that port."
+   },
+   {
+    "name": "Dio_WritePort",
+    "service_name": "Dio_WritePort",
+    "service_id": "0x03",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Dio.h",
+    "syntax": "void Dio_WritePort ( Dio_PortType PortId, Dio_PortLevelType Level )",
+    "description": "Service to set a value of the port."
+   },
+   {
+    "name": "Dio_ReadChannelGroup",
+    "service_name": "Dio_ReadChannelGroup",
+    "service_id": "0x04",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Dio.h",
+    "syntax": "Dio_PortLevelType Dio_ReadChannelGroup ( const Dio_ChannelGroupType* ChannelGroupIdPtr )",
+    "description": "This Service reads a subset of the adjoining bits of a port."
+   },
+   {
+    "name": "Dio_WriteChannelGroup",
+    "service_name": "Dio_WriteChannelGroup",
+    "service_id": "0x05",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Dio.h",
+    "syntax": "void Dio_WriteChannelGroup ( const Dio_ChannelGroupType* ChannelGroupIdPtr, Dio_PortLevelType Level )",
+    "description": "Service to set a subset of the adjoining bits of a port to a specified level."
+   },
+   {
+    "name": "Dio_GetVersionInfo",
+    "service_name": "Dio_GetVersionInfo",
+    "service_id": "0x12",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Dio.h",
+    "syntax": "void Dio_GetVersionInfo ( Std_VersionInfoType* VersionInfo )",
+    "description": "Service to get the version information of this module."
+   },
+   {
+    "name": "Dio_FlipChannel",
+    "service_name": "Dio_FlipChannel",
+    "service_id": "0x11",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Dio.h",
+    "syntax": "Dio_LevelType Dio_FlipChannel ( Dio_ChannelType ChannelId )",
+    "description": "Service to flip (change from 1 to 0 or from 0 to 1) the level of a channel and return the level of the channel after flip. 34 of 52 Document ID 20: AUTOSAR_CP_SWS_DIODriver Specification of DIO Driver AUTOSAR CP R25-11"
+   },
+   {
+    "name": "Dio_MaskedWritePort",
+    "service_name": "Dio_MaskedWritePort",
+    "service_id": "0x13",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Dio.h",
+    "syntax": "void Dio_MaskedWritePort ( Dio_PortType PortId, Dio_PortLevelType Level, Dio_PortLevelType Mask )",
+    "description": "Service to set the value of a given port with required mask."
+   }
+  ],
+  "dev_errors": [
+   {
+    "code": "DIO_E_PARAM_POINTER",
+    "value": null
+   },
+   {
+    "code": "DIO_E_PARAM_INVALID_CHANNEL_ID",
+    "value": "0x0A"
+   },
+   {
+    "code": "DIO_E_PARAM_INVALID_PORT_ID",
+    "value": "0x14"
+   },
+   {
+    "code": "DIO_E_PARAM_INVALID_GROUP",
+    "value": "0x1F"
+   }
+  ],
+  "types": [
+   "Dio_ChannelType",
+   "Dio_PortType",
+   "Dio_ChannelGroupType",
+   "Dio_LevelType",
+   "Dio_PortLevelType"
+  ],
+  "containers": [
+   {
+    "idx": 1,
+    "name": "Variants"
+   },
+   {
+    "idx": 2,
+    "name": "Dio"
+   },
+   {
+    "idx": 3,
+    "name": "DioGeneral"
+   },
+   {
+    "idx": 4,
+    "name": "DioPort"
+   },
+   {
+    "idx": 5,
+    "name": "DioChannel"
+   },
+   {
+    "idx": 6,
+    "name": "DioChannelGroup"
+   },
+   {
+    "idx": 7,
+    "name": "DioConfig"
+   }
+  ],
+  "published": "",
+  "callbacks": [],
+  "callback_section_head": " This chapter lists all functions provided by the Dio module to lower layers. The Dio module does not provide any callback notifications. Callbacks related to the functionality of the Dio module are implemented in another module (ICU Driver and / or complex drivers). ",
+  "scheduled": [],
+  "expected_interfaces": " This chapter lists all functions the Dio module requires from other modules. 36 of 52 Document ID 20: AUTOSAR_CP_SWS_DIODriver Specification of DIO Driver AUTOSAR CP R25-11 8.6.1 Mandatory Interfaces None 8.6.2 Optional Interfaces This chapter defines all interfaces which are required to fulfill an optional functionality of the module. [SWS_Dio_00140] Definition of optional interfaces requested by module Dio ⌈ API Function Header File Description Det_ReportError Det.h Service to report development errors. ⌋ 37 of 52 Document ID 20: AUTOSAR_CP_SWS_DIODriver Specification of DIO Driver AUTOSAR CP R25-11 "
+ },
+ "Gpt": {
+  "module": "Gpt",
+  "sws_file": "AUTOSAR_CP_SWS_GPTDriver.txt",
+  "sws_release": "R25-11",
+  "apis": [
+   {
+    "name": "Gpt_GetVersionInfo",
+    "service_name": "Gpt_GetVersionInfo",
+    "service_id": "0x00",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Gpt.h",
+    "syntax": "void Gpt_GetVersionInfo ( Std_VersionInfoType* VersionInfoPtr )",
+    "description": "Returns the version information of this module."
+   },
+   {
+    "name": "Gpt_Init",
+    "service_name": "Gpt_Init",
+    "service_id": "0x01",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Gpt.h",
+    "syntax": "void Gpt_Init ( const Gpt_ConfigType* ConfigPtr )",
+    "description": "Initializes the GPT driver."
+   },
+   {
+    "name": "Gpt_DeInit",
+    "service_name": "Gpt_DeInit",
+    "service_id": "0x02",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Gpt.h",
+    "syntax": "void Gpt_DeInit ( void )",
+    "description": "Deinitializes the GPT driver."
+   },
+   {
+    "name": "Gpt_GetTimeElapsed",
+    "service_name": "Gpt_GetTimeElapsed",
+    "service_id": "0x03",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Gpt.h",
+    "syntax": "Gpt_ValueType Gpt_GetTimeElapsed ( Gpt_ChannelType Channel )",
+    "description": "Returns the time already elapsed."
+   },
+   {
+    "name": "Gpt_GetTimeRemaining",
+    "service_name": "Gpt_GetTimeRemaining",
+    "service_id": "0x04",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Gpt.h",
+    "syntax": "Gpt_ValueType Gpt_GetTimeRemaining ( Gpt_ChannelType Channel )",
+    "description": "Returns the time remaining until the target time is reached."
+   },
+   {
+    "name": "Gpt_StartTimer",
+    "service_name": "Gpt_StartTimer",
+    "service_id": "0x05",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (but not for the same timer channel)",
+    "available_via": "Gpt.h",
+    "syntax": "void Gpt_StartTimer ( Gpt_ChannelType Channel, Gpt_ValueType Value )",
+    "description": "Starts a timer channel."
+   },
+   {
+    "name": "Gpt_StopTimer",
+    "service_name": "Gpt_StopTimer",
+    "service_id": "0x06",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (but not for the same timer channel)",
+    "available_via": "Gpt.h",
+    "syntax": "void Gpt_StopTimer ( Gpt_ChannelType Channel )",
+    "description": "Stops a timer channel."
+   },
+   {
+    "name": "Gpt_EnableNotification",
+    "service_name": "Gpt_EnableNotification",
+    "service_id": "0x07",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (but not for the same timer channel)",
+    "available_via": "Gpt.h",
+    "syntax": "void Gpt_EnableNotification ( Gpt_ChannelType Channel )",
+    "description": "Enables the interrupt notification for a channel (relevant in normal mode)."
+   },
+   {
+    "name": "Gpt_DisableNotification",
+    "service_name": "Gpt_DisableNotification",
+    "service_id": "0x08",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (but not for the same timer channel)",
+    "available_via": "Gpt.h",
+    "syntax": "void Gpt_DisableNotification ( Gpt_ChannelType Channel )",
+    "description": "Disables the interrupt notification for a channel (relevant in normal mode)."
+   },
+   {
+    "name": "Gpt_SetMode",
+    "service_name": "Gpt_SetMode",
+    "service_id": "0x09",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Gpt.h",
+    "syntax": "void Gpt_SetMode ( Gpt_ModeType Mode )",
+    "description": "Sets the operation mode of the GPT."
+   },
+   {
+    "name": "Gpt_DisableWakeup",
+    "service_name": "Gpt_DisableWakeup",
+    "service_id": "0x0a",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (but not for the same timer channel)",
+    "available_via": "Gpt.h",
+    "syntax": "void Gpt_DisableWakeup ( Gpt_ChannelType Channel )",
+    "description": "Disables the wakeup interrupt of a channel (relevant in sleep mode)."
+   },
+   {
+    "name": "Gpt_EnableWakeup",
+    "service_name": "Gpt_EnableWakeup",
+    "service_id": "0x0b",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (but not for the same timer channel)",
+    "available_via": "Gpt.h",
+    "syntax": "void Gpt_EnableWakeup ( Gpt_ChannelType Channel )",
+    "description": "Enables the wakeup interrupt of a channel (relevant in sleep mode)."
+   },
+   {
+    "name": "Gpt_CheckWakeup",
+    "service_name": "Gpt_CheckWakeup",
+    "service_id": "0x0c",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Gpt.h",
+    "syntax": "void Gpt_CheckWakeup ( EcuM_WakeupSourceType WakeupSource )",
+    "description": "Checks if a wakeup capable GPT channel is the source for a wakeup event and calls the ECU state manager service EcuM_SetWakeupEvent in case of a valid GPT channel wakeup event."
+   },
+   {
+    "name": "Gpt_GetPredefTimerValue",
+    "service_name": "Gpt_GetPredefTimerValue",
+    "service_id": "0x0d",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Gpt.h",
+    "syntax": "Std_ReturnType Gpt_GetPredefTimerValue ( Gpt_PredefTimerType PredefTimer, uint32* TimeValuePtr )",
+    "description": "Delivers the current value of the desired GPT Predef Timer."
+   }
+  ],
+  "dev_errors": [
+   {
+    "code": "GPT_E_MODE",
+    "value": null
+   },
+   {
+    "code": "GPT_E_BUSY",
+    "value": null
+   },
+   {
+    "code": "GPT_E_INIT_FAILED",
+    "value": null
+   },
+   {
+    "code": "GPT_E_UNINIT",
+    "value": "0x0A"
+   },
+   {
+    "code": "GPT_E_ALREADY_INITIALIZED",
+    "value": "0x0D"
+   },
+   {
+    "code": "GPT_E_PARAM_CHANNEL",
+    "value": "0x14"
+   },
+   {
+    "code": "GPT_E_PARAM_VALUE",
+    "value": "0x15"
+   },
+   {
+    "code": "GPT_E_PARAM_POINTER",
+    "value": "0x16"
+   },
+   {
+    "code": "GPT_E_PARAM_PREDEF_TIMER",
+    "value": "0x17"
+   },
+   {
+    "code": "GPT_E_PARAM_MODE",
+    "value": "0x1F"
+   },
+   {
+    "code": "GPT_E_PARAM_CHAN",
+    "value": null
+   }
+  ],
+  "types": [
+   "Gpt_ConfigType",
+   "Gpt_ChannelType",
+   "Gpt_ValueType",
+   "Gpt_ModeType",
+   "Gpt_PredefTimerType"
+  ],
+  "containers": [
+   {
+    "idx": 1,
+    "name": "Gpt"
+   },
+   {
+    "idx": 2,
+    "name": "GptDriverConfiguration"
+   },
+   {
+    "idx": 3,
+    "name": "GptClockReferencePoint"
+   },
+   {
+    "idx": 4,
+    "name": "GptChannelConfigSet"
+   },
+   {
+    "idx": 5,
+    "name": "GptChannelConfiguration"
+   },
+   {
+    "idx": 6,
+    "name": "GptWakeupConfiguration"
+   },
+   {
+    "idx": 7,
+    "name": "GptConfigurationOfOptApiServices"
+   }
+  ],
+  "published": " For details refer to [2] Chapter 10.3 “Published Information” . [SWS_Gpt_00380] ⌈The standardized common published parameters as required by [SRS_BSW_00402] shall be published within the header file of this module and need to be provided in the BSW Module Description. The according module abbreviation is defined into General Specification of Basic Software Modules [2].⌋ Additional module-specific published parameters are listed below if applicable. 68 of 72 Document ID 30: AUTOSAR_CP_SWS_GPTDriver Specification of GPT Driver AUTOSAR CP R25-11 A Not applicable requirements [SWS_Gpt_NA_00381] U",
+  "callbacks": [
+   "Gpt_DisableNotification",
+   "Gpt_EnableNotification",
+   "Gpt_Notification_<channel>"
+  ],
+  "callback_section_head": " Since the GPT is a driver module it doesn’t provide any callback functions for lower layer modules. ",
+  "scheduled": [],
+  "expected_interfaces": " In this chapter all interfaces required from other modules are listed. 8.6.1 Mandatory interfaces Note: This section defines all interfaces, which are required to fulfill the core function- ality of the module. [SWS_Gpt_91002] Definition of mandatory interfaces required by module Gpt ⌈ API Function Header File Description Det_ReportRuntimeError Det.h Service to report runtime errors. If a callout has been configured then this callout shall be called. ⌋ 8.6.2 Optional interfaces This section defines all interfaces, which are required to fulfill an optional functionality of the module. [SWS_Gpt_00406] Definition of optional interfaces requested by module Gpt Upstream requirements: SRS_SPAL_00"
+ },
+ "Pwm": {
+  "module": "Pwm",
+  "sws_file": "AUTOSAR_CP_SWS_PWMDriver.txt",
+  "sws_release": "R25-11",
+  "apis": [
+   {
+    "name": "Pwm_Init",
+    "service_name": "Pwm_Init",
+    "service_id": "0x00",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Pwm.h",
+    "syntax": "void Pwm_Init ( const Pwm_ConfigType* ConfigPtr )",
+    "description": "Service for PWM initialization."
+   },
+   {
+    "name": "Pwm_DeInit",
+    "service_name": "Pwm_DeInit",
+    "service_id": "0x01",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Pwm.h",
+    "syntax": "void Pwm_DeInit ( void )",
+    "description": "Service for PWM De-Initialization."
+   },
+   {
+    "name": "Pwm_SetDutyCycle",
+    "service_name": "Pwm_SetDutyCycle",
+    "service_id": "0x02",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant for different channel numbers",
+    "available_via": "Pwm.h",
+    "syntax": "void Pwm_SetDutyCycle ( Pwm_ChannelType ChannelNumber, uint16 DutyCycle )",
+    "description": "Service sets the duty cycle of the PWM channel."
+   },
+   {
+    "name": "Pwm_SetPeriodAndDuty",
+    "service_name": "Pwm_SetPeriodAndDuty",
+    "service_id": "0x03",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant for different channel numbers",
+    "available_via": "Pwm.h",
+    "syntax": "void Pwm_SetPeriodAndDuty ( Pwm_ChannelType ChannelNumber, Pwm_PeriodType Period, uint16 DutyCycle )",
+    "description": "Service sets the period and the duty cycle of a PWM channel"
+   },
+   {
+    "name": "Pwm_SetOutputToIdle",
+    "service_name": "Pwm_SetOutputToIdle",
+    "service_id": "0x04",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant for different channel numbers",
+    "available_via": "Pwm.h",
+    "syntax": "void Pwm_SetOutputToIdle ( Pwm_ChannelType ChannelNumber )",
+    "description": "Service sets the PWM output to the configured Idle state."
+   },
+   {
+    "name": "Pwm_GetOutputState",
+    "service_name": "Pwm_GetOutputState",
+    "service_id": "0x05",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different channel numbers",
+    "available_via": "Pwm.h",
+    "syntax": "Pwm_OutputStateType Pwm_GetOutputState ( Pwm_ChannelType ChannelNumber )",
+    "description": "Service to read the internal state of the PWM output signal."
+   },
+   {
+    "name": "Pwm_DisableNotification",
+    "service_name": "Pwm_DisableNotification",
+    "service_id": "0x06",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant for different channel numbers",
+    "available_via": "Pwm.h",
+    "syntax": "void Pwm_DisableNotification ( Pwm_ChannelType ChannelNumber )",
+    "description": "Service to disable the PWM signal edge notification."
+   },
+   {
+    "name": "Pwm_EnableNotification",
+    "service_name": "Pwm_EnableNotification",
+    "service_id": "0x07",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant for different channel numbers",
+    "available_via": "Pwm.h",
+    "syntax": "void Pwm_EnableNotification ( Pwm_ChannelType ChannelNumber, Pwm_EdgeNotificationType Notification )",
+    "description": "Service to enable the PWM signal edge notification according to notification parameter."
+   },
+   {
+    "name": "Pwm_SetPowerState",
+    "service_name": "Pwm_SetPowerState",
+    "service_id": "0x09",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Pwm.h",
+    "syntax": "Std_ReturnType Pwm_SetPowerState ( Pwm_PowerStateRequestResultType* Result )",
+    "description": "This API configures the Pwm module so that it enters the already prepared power state, chosen between a predefined set of configured ones."
+   },
+   {
+    "name": "Pwm_GetCurrentPowerState",
+    "service_name": "Pwm_GetCurrentPowerState",
+    "service_id": "0x0a",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Pwm.h",
+    "syntax": "Std_ReturnType Pwm_GetCurrentPowerState ( Pwm_PowerStateType* CurrentPowerState, Pwm_PowerStateRequestResultType* Result )",
+    "description": "This API returns the current power state of the PWM HW unit."
+   },
+   {
+    "name": "Pwm_GetTargetPowerState",
+    "service_name": "Pwm_GetTargetPowerState",
+    "service_id": "0x0b",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Pwm.h",
+    "syntax": "Std_ReturnType Pwm_GetTargetPowerState ( Pwm_PowerStateType* TargetPowerState, Pwm_PowerStateRequestResultType* Result )",
+    "description": "This API returns the Target power state of the PWM HW unit."
+   },
+   {
+    "name": "Pwm_PreparePowerState",
+    "service_name": "Pwm_PreparePowerState",
+    "service_id": "0x0c",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Pwm.h",
+    "syntax": "Std_ReturnType Pwm_PreparePowerState ( Pwm_PowerStateType PowerState, Pwm_PowerStateRequestResultType* Result )",
+    "description": "This API starts the needed process to allow the PWM HW module to enter the requested power state."
+   },
+   {
+    "name": "Pwm_GetVersionInfo",
+    "service_name": "Pwm_GetVersionInfo",
+    "service_id": "0x08",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Pwm.h",
+    "syntax": "void Pwm_GetVersionInfo ( Std_VersionInfoType* versioninfo )",
+    "description": "Service returns the version information of this module."
+   }
+  ],
+  "dev_errors": [
+   {
+    "code": "PWM_E_PARAM_",
+    "value": null
+   },
+   {
+    "code": "PWM_E_INIT_FAILED",
+    "value": "0x10"
+   },
+   {
+    "code": "PWM_E_UNINIT",
+    "value": "0x11"
+   },
+   {
+    "code": "PWM_E_PARAM_CHANNEL",
+    "value": "0x12"
+   },
+   {
+    "code": "PWM_E_PERIOD_UNCHANGEABLE",
+    "value": "0x13"
+   },
+   {
+    "code": "PWM_E_ALREADY_INITIALIZED",
+    "value": "0x14"
+   },
+   {
+    "code": "PWM_E_PARAM_POINTER",
+    "value": "0x15"
+   },
+   {
+    "code": "PWM_E_POWER_STATE_NOT_SUPPORTED",
+    "value": "0x17"
+   },
+   {
+    "code": "PWM_E_TRANSITION_NOT_POSSIBLE",
+    "value": "0x18"
+   },
+   {
+    "code": "PWM_E_PERIPHERAL_NOT_PREPARED",
+    "value": "0x19"
+   },
+   {
+    "code": "PWM_E_PARAM_CHAN",
+    "value": null
+   },
+   {
+    "code": "PWM_E_PERIOD_UN",
+    "value": null
+   },
+   {
+    "code": "PWM_E_ALREADY_INI",
+    "value": null
+   },
+   {
+    "code": "PWM_E_POWER_",
+    "value": null
+   },
+   {
+    "code": "PWM_E_NOT_DISENGAGED",
+    "value": "0x16"
+   },
+   {
+    "code": "PWM_E_NOT_DISEN",
+    "value": null
+   }
+  ],
+  "types": [
+   "Pwm_ChannelType",
+   "Pwm_PeriodType",
+   "Pwm_OutputStateType",
+   "Pwm_EdgeNotificationType",
+   "Pwm_ChannelClassType",
+   "Pwm_ConfigType",
+   "Pwm_PowerStateRequestResultType",
+   "Pwm_PowerStateType"
+  ],
+  "containers": [
+   {
+    "idx": 1,
+    "name": "Pwm"
+   },
+   {
+    "idx": 2,
+    "name": "PwmGeneral"
+   },
+   {
+    "idx": 3,
+    "name": "PwmPowerStateConfig"
+   },
+   {
+    "idx": 4,
+    "name": "PwmChannel"
+   },
+   {
+    "idx": 5,
+    "name": "PwmChannelConfigSet"
+   },
+   {
+    "idx": 6,
+    "name": "PwmConfigurationOfOptApiServices"
+   }
+  ],
+  "published": " For details refer to [2] Chapter 10.3 “Published Information” . 63 of 65 Document ID 37: AUTOSAR_CP_SWS_PWMDriver Specification of PWM Driver AUTOSAR CP R25-11 A Not applicable requirements [SWS_Pwm_NA_00153] Upstream requirements: SRS_BSW_00159, SRS_BSW_00167, SRS_BSW_00170, SRS_BSW_ 00419, SRS_BSW_00383, SRS_BSW_00375, SRS_BSW_00416, SRS_BSW_00168, SRS_BSW_00423, SRS_BSW_00424, SRS_BSW_ 00425, SRS_BSW_00426, SRS_BSW_00427, SRS_BSW_00428, SRS_BSW_00429, SRS_BSW_00432, SRS_BSW_00433, SRS_BSW_ 00417, SRS_BSW_00161, SRS_BSW_00162, SRS_BSW_00005, SRS_BSW_00415, SRS_BSW_00164, SRS_BSW_00325, SRS_",
+  "callbacks": [
+   "Pwm_DisableNotification",
+   "Pwm_EnableNotification",
+   "Pwm_Notification_<"
+  ],
+  "callback_section_head": " Since the PWM Driver is a module on the lowest architectural layer it doesn’t provide any call-back functions for lower layer modules. ",
+  "scheduled": [],
+  "expected_interfaces": " In this chapter all interfaces required from other modules are listed. 8.6.1 Mandatory interfaces Note: This section defines all interfaces, which are required to fulfill the core function- ality of the module. 41 of 65 Document ID 37: AUTOSAR_CP_SWS_PWMDriver Specification of PWM Driver AUTOSAR CP R25-11 As this module is part of the MCAL layer, it access directly to the microcontroller regis- ters and therefore doesn’t need any lower interfaces. [SWS_Pwm_91006] Definition of mandatory interfaces required by module Pwm ⌈ API Function Header File Description Det_ReportRuntimeError Det.h Service to report runtime errors. If a callout has been configured then this callout shall be called. ⌋ 8"
+ },
+ "Icu": {
+  "module": "Icu",
+  "sws_file": "AUTOSAR_CP_SWS_ICUDriver.txt",
+  "sws_release": "R25-11",
+  "apis": [
+   {
+    "name": "Icu_Init",
+    "service_name": "Icu_Init",
+    "service_id": "0x00",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_Init ( const Icu_ConfigType* ConfigPtr )",
+    "description": "This function initializes the driver."
+   },
+   {
+    "name": "Icu_DeInit",
+    "service_name": "Icu_DeInit",
+    "service_id": "0x01",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_DeInit ( void )",
+    "description": "This function de-initializes the ICU module."
+   },
+   {
+    "name": "Icu_SetMode",
+    "service_name": "Icu_SetMode",
+    "service_id": "0x02",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_SetMode ( Icu_ModeType Mode )",
+    "description": "This function sets the ICU mode."
+   },
+   {
+    "name": "Icu_DisableWakeup",
+    "service_name": "Icu_DisableWakeup",
+    "service_id": "0x03",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_DisableWakeup ( Icu_ChannelType Channel )",
+    "description": "This function disables the wakeup capability of a single ICU channel."
+   },
+   {
+    "name": "Icu_EnableWakeup",
+    "service_name": "Icu_EnableWakeup",
+    "service_id": "0x04",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_EnableWakeup ( Icu_ChannelType Channel )",
+    "description": "This function (re-)enables the wakeup capability of the given ICU channel."
+   },
+   {
+    "name": "Icu_CheckWakeup",
+    "service_name": "Icu_CheckWakeup",
+    "service_id": "0x15",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_CheckWakeup ( EcuM_WakeupSourceType WakeupSource )",
+    "description": "Checks if a wakeup capable ICU channel is the source for a wakeup event and calls the ECU state manager service EcuM_SetWakeupEvent in case of a valid ICU channel wakeup event."
+   },
+   {
+    "name": "Icu_SetActivationCondition",
+    "service_name": "Icu_SetActivationCondition",
+    "service_id": "0x05",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_SetActivationCondition ( Icu_ChannelType Channel, Icu_ActivationType Activation )",
+    "description": "This function sets the activation-edge for the given channel."
+   },
+   {
+    "name": "Icu_DisableNotification",
+    "service_name": "Icu_DisableNotification",
+    "service_id": "0x06",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_DisableNotification ( Icu_ChannelType Channel )",
+    "description": "This function disables the notification of a channel."
+   },
+   {
+    "name": "Icu_EnableNotification",
+    "service_name": "Icu_EnableNotification",
+    "service_id": "0x07",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_EnableNotification ( Icu_ChannelType Channel )",
+    "description": "This function enables the notification on the given channel."
+   },
+   {
+    "name": "Icu_GetInputState",
+    "service_name": "Icu_GetInputState",
+    "service_id": "0x08",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "Icu_InputStateType Icu_GetInputState ( Icu_ChannelType Channel )",
+    "description": "This function returns the status of the ICU input."
+   },
+   {
+    "name": "Icu_StartTimestamp",
+    "service_name": "Icu_StartTimestamp",
+    "service_id": "0x09",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_StartTimestamp ( Icu_ChannelType Channel, Icu_ValueType* BufferPtr, uint16 BufferSize, uint16 NotifyInterval )",
+    "description": "This function starts the capturing of timer values on the edges."
+   },
+   {
+    "name": "Icu_StopTimestamp",
+    "service_name": "Icu_StopTimestamp",
+    "service_id": "0x0a",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_StopTimestamp ( Icu_ChannelType Channel )",
+    "description": "This function stops the timestamp measurement of the given channel."
+   },
+   {
+    "name": "Icu_GetTimestampIndex",
+    "service_name": "Icu_GetTimestampIndex",
+    "service_id": "0x0b",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "Icu_IndexType Icu_GetTimestampIndex ( Icu_ChannelType Channel )",
+    "description": "This function reads the timestamp index of the given channel."
+   },
+   {
+    "name": "Icu_ResetEdgeCount",
+    "service_name": "Icu_ResetEdgeCount",
+    "service_id": "0x0c",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_ResetEdgeCount ( Icu_ChannelType Channel )",
+    "description": "This function resets the value of the counted edges to zero."
+   },
+   {
+    "name": "Icu_EnableEdgeCount",
+    "service_name": "Icu_EnableEdgeCount",
+    "service_id": "0x0d",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_EnableEdgeCount ( Icu_ChannelType Channel )",
+    "description": "This function enables the counting of edges of the given channel."
+   },
+   {
+    "name": "Icu_EnableEdgeDetection",
+    "service_name": "Icu_EnableEdgeDetection",
+    "service_id": "0x16",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_EnableEdgeDetection ( Icu_ChannelType Channel )",
+    "description": "This function enables / re-enables the detection of edges of the given channel."
+   },
+   {
+    "name": "Icu_DisableEdgeDetection",
+    "service_name": "Icu_DisableEdgeDetection",
+    "service_id": "0x17",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_DisableEdgeDetection ( Icu_ChannelType Channel )",
+    "description": "This function disables the detection of edges of the given channel."
+   },
+   {
+    "name": "Icu_DisableEdgeCount",
+    "service_name": "Icu_DisableEdgeCount",
+    "service_id": "0x0e",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_DisableEdgeCount ( Icu_ChannelType Channel )",
+    "description": "This function disables the counting of edges of the given channel."
+   },
+   {
+    "name": "Icu_GetEdgeNumbers",
+    "service_name": "Icu_GetEdgeNumbers",
+    "service_id": "0x0f",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "Icu_EdgeNumberType Icu_GetEdgeNumbers ( Icu_ChannelType Channel )",
+    "description": "This function reads the number of counted edges."
+   },
+   {
+    "name": "Icu_StartSignalMeasurement",
+    "service_name": "Icu_StartSignalMeasurement",
+    "service_id": "0x13",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_StartSignalMeasurement ( Icu_ChannelType Channel )",
+    "description": "This function starts the measurement of signals."
+   },
+   {
+    "name": "Icu_StopSignalMeasurement",
+    "service_name": "Icu_StopSignalMeasurement",
+    "service_id": "0x14",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_StopSignalMeasurement ( Icu_ChannelType Channel )",
+    "description": "This function stops the measurement of signals of the given channel."
+   },
+   {
+    "name": "Icu_GetTimeElapsed",
+    "service_name": "Icu_GetTimeElapsed",
+    "service_id": "0x10",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "Icu_ValueType Icu_GetTimeElapsed ( Icu_ChannelType Channel )",
+    "description": "Description This function reads the elapsed Signal Low Time for the given channel."
+   },
+   {
+    "name": "Icu_GetDutyCycleValues",
+    "service_name": "Icu_GetDutyCycleValues",
+    "service_id": "0x11",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_GetDutyCycleValues ( Icu_ChannelType Channel, Icu_DutyCycleType* DutyCycleValues )",
+    "description": "This function reads the coherent active time and period time for the given ICU Channel."
+   },
+   {
+    "name": "Icu_GetVersionInfo",
+    "service_name": "Icu_GetVersionInfo",
+    "service_id": "0x12",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_GetVersionInfo ( Std_VersionInfoType* versioninfo )",
+    "description": "This function returns the version information of this module."
+   },
+   {
+    "name": "Icu_DisableNotificationAsync",
+    "service_name": "Icu_DisableNotificationAsync",
+    "service_id": "0x18",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_DisableNotificationAsync ( Icu_ChannelType Channel )",
+    "description": "This function disables the notification of a channel."
+   },
+   {
+    "name": "Icu_EnableNotificationAsync",
+    "service_name": "Icu_EnableNotificationAsync",
+    "service_id": "0x19",
+    "sync": "Asynchronous",
+    "reentrancy": "Non Reentrant Reentrant (limited according to ICU050)",
+    "available_via": "Icu.h",
+    "syntax": "void Icu_EnableNotificationAsync ( Icu_ChannelType Channel )",
+    "description": "This function enables the notification on the given channel."
+   }
+  ],
+  "dev_errors": [
+   {
+    "code": "ICU_E_NOT_STARTED",
+    "value": null
+   },
+   {
+    "code": "ICU_E_PARAM_POINTER",
+    "value": null
+   },
+   {
+    "code": "ICU_E_PARAM_BUFFER_PTR",
+    "value": null
+   },
+   {
+    "code": "ICU_E_PARAM_CHANNEL",
+    "value": "0x0B"
+   },
+   {
+    "code": "ICU_E_PARAM_ACTIVATION",
+    "value": "0x0C"
+   },
+   {
+    "code": "ICU_E_INIT_FAILED",
+    "value": "0x0D"
+   },
+   {
+    "code": "ICU_E_PARAM_BUFFER_SIZE",
+    "value": "0x0E"
+   },
+   {
+    "code": "ICU_E_PARAM_MODE",
+    "value": "0x0F"
+   },
+   {
+    "code": "ICU_E_UNINIT",
+    "value": "0x14"
+   },
+   {
+    "code": "ICU_E_BUSY_OPERATION",
+    "value": "0x16"
+   },
+   {
+    "code": "ICU_E_ALREADY_INITIALIZED",
+    "value": "0x17"
+   },
+   {
+    "code": "ICU_E_PARAM_NOTIFY_INTERVAL",
+    "value": "0x18"
+   },
+   {
+    "code": "ICU_E_PARAM_VINFO",
+    "value": "0x19"
+   },
+   {
+    "code": "ICU_E_ALREADY_INI",
+    "value": null
+   },
+   {
+    "code": "ICU_E_PARAM_",
+    "value": null
+   }
+  ],
+  "types": [
+   "Icu_ModeType",
+   "Icu_ChannelType",
+   "Icu_InputStateType",
+   "Icu_ConfigType",
+   "Icu_ActivationType",
+   "Icu_ValueType",
+   "Icu_DutyCycleType",
+   "Icu_IndexType",
+   "Icu_EdgeNumberType",
+   "Icu_MeasurementModeType",
+   "Icu_SignalMeasurementPropertyType",
+   "Icu_TimestampBufferType"
+  ],
+  "containers": [
+   {
+    "idx": 1,
+    "name": "Icu"
+   },
+   {
+    "idx": 2,
+    "name": "IcuGeneral"
+   },
+   {
+    "idx": 3,
+    "name": "IcuOptionalApis"
+   },
+   {
+    "idx": 4,
+    "name": "IcuChannel"
+   },
+   {
+    "idx": 5,
+    "name": "IcuSignalEdgeDetection"
+   }
+  ],
+  "published": " [SWS_Icu_00131] Upstream requirements: SRS_BSW_00384 ⌈The ICU driver shall describe which other modules (in which versions) are required. This description shall be done by the implementer.⌋ 100 of 102 Document ID 23: AUTOSAR_CP_SWS_ICUDriver Specification of ICU Driver AUTOSAR CP R25-11 A Not applicable requirements [SWS_Icu_NA_00999] Upstream requirements: SRS_BSW_00300, SRS_BSW_00301, SRS_BSW_00302, SRS_BSW_ 00304, SRS_BSW_00305, SRS_BSW_00306, SRS_BSW_00307, SRS_BSW_00308, SRS_BSW_00309, SRS_BSW_00310, SRS_BSW_ 00312, SRS_BSW_00314, SRS_BSW_00318, SRS_BSW_00321, SRS_BSW_00325, SRS_BSW_0032",
+  "callbacks": [
+   "Icu_DisableNotification",
+   "Icu_DisableNotificationAsync",
+   "Icu_EnableNotification",
+   "Icu_EnableNotificationAsync",
+   "Icu_SignalNotification_<Channel>",
+   "Icu_TimestampNotification_<Channel>"
+  ],
+  "callback_section_head": " Since the ICU is a driver module, it doesn’t provide any callback functions for lower layer modules. ",
+  "scheduled": [],
+  "expected_interfaces": " In this chapter, all interfaces required from other modules are listed. 8.6.1 Mandatory Interfaces This chapter defines all interfaces, which are required, in order to fulfill the core func- tionality of the module. [SWS_Icu_91001] Definition of mandatory interfaces required by module Icu ⌈ API Function Header File Description Det_ReportRuntimeError Det.h Service to report runtime errors. If a callout has been configured then this callout shall be called. ⌋ 56 of 102 Document ID 23: AUTOSAR_CP_SWS_ICUDriver Specification of ICU Driver AUTOSAR CP R25-11 8.6.2 Optional Interfaces This chapter defines all interfaces which are required to fulfil an optional functionality of the module. [SWS_Icu"
+ },
+ "Wdg": {
+  "module": "Wdg",
+  "sws_file": "AUTOSAR_CP_SWS_WatchdogDriver.txt",
+  "sws_release": "R25-11",
+  "apis": [
+   {
+    "name": "Wdg_Init",
+    "service_name": "Wdg_Init",
+    "service_id": "0x00",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Wdg.h",
+    "syntax": "void Wdg_Init ( const Wdg_ConfigType* ConfigPtr )",
+    "description": "Initializes the module."
+   },
+   {
+    "name": "Wdg_SetMode",
+    "service_name": "Wdg_SetMode",
+    "service_id": "0x01",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Wdg.h",
+    "syntax": "Std_ReturnType Wdg_SetMode ( WdgIf_ModeType Mode )",
+    "description": "Switches the watchdog into the mode Mode."
+   },
+   {
+    "name": "Wdg_SetTriggerCondition",
+    "service_name": "Wdg_SetTriggerCondition",
+    "service_id": "0x03",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Wdg.h",
+    "syntax": "void Wdg_SetTriggerCondition ( uint16 timeout )",
+    "description": "Sets the timeout value for the trigger counter."
+   },
+   {
+    "name": "Wdg_GetVersionInfo",
+    "service_name": "Wdg_GetVersionInfo",
+    "service_id": "0x04",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Wdg.h",
+    "syntax": "void Wdg_GetVersionInfo ( Std_VersionInfoType* versioninfo )",
+    "description": "Returns the version information of the module."
+   }
+  ],
+  "dev_errors": [
+   {
+    "code": "WDG_E_INIT_FAILED",
+    "value": null
+   },
+   {
+    "code": "WDG_E_DRIVER_",
+    "value": null
+   },
+   {
+    "code": "WDG_E_DRIVER_STATE",
+    "value": "0x10"
+   },
+   {
+    "code": "WDG_E_PARAM_MODE",
+    "value": "0x11"
+   },
+   {
+    "code": "WDG_E_PARAM_CONFIG",
+    "value": "0x12"
+   },
+   {
+    "code": "WDG_E_PARAM_TIMEOUT",
+    "value": "0x13"
+   },
+   {
+    "code": "WDG_E_PARAM_POINTER",
+    "value": "0x14"
+   },
+   {
+    "code": "WDG_E_MODE_FAILED",
+    "value": null
+   },
+   {
+    "code": "WDG_E_DISABLE_REJECTED",
+    "value": null
+   },
+   {
+    "code": "WDG_E_DISABLE_",
+    "value": null
+   },
+   {
+    "code": "WDG_E_DISABLE_RE",
+    "value": null
+   }
+  ],
+  "types": [
+   "Wdg_ConfigType"
+  ],
+  "containers": [
+   {
+    "idx": 1,
+    "name": "Wdg"
+   },
+   {
+    "idx": 2,
+    "name": "WdgSettingsFast"
+   },
+   {
+    "idx": 1,
+    "name": "WdgPublishedInformation"
+   }
+  ],
+  "published": " For details refer to [2] Chapter 10.3 “Published Information” . 10.3.1 WdgPublishedInformation [ECUC_Wdg_00074] Definition of EcucParamConfContainerDef WdgPublished Information ⌈ 42 of 47 Document ID 39: AUTOSAR_CP_SWS_WatchdogDriver Specification of Watchdog Driver AUTOSAR CP R25-11 Container Name WdgPublishedInformation Parent Container Wdg Description Container holding all Wdg specific published information parameters Multiplicity 1 Configuration Parameters Included Parameters Parameter Name Multiplicity ECUC ID WdgTriggerMode 1 [ECUC_Wdg_00127] No Included Containers ⌋ [ECUC_Wdg_00127] De",
+  "callbacks": [],
+  "callback_section_head": " This chapter lists all functions provided by the Wdg module to lower layer modules. The Wdg module has no call back notifications ",
+  "scheduled": [],
+  "expected_interfaces": " This chapter lists all functions that the Wdg module requires from other modules. 8.6.1 Mandatory interfaces This module does not require any mandatory interfaces. 30 of 47 Document ID 39: AUTOSAR_CP_SWS_WatchdogDriver Specification of Watchdog Driver AUTOSAR CP R25-11 8.6.2 Optional interfaces This chapter lists all interfaces which are required to fulfill an optional functionality of the module. [SWS_Wdg_00111] Definition of optional interfaces requested by module Wdg ⌈ API Function Header File Description Dem_SetEventStatus Dem.h Called by SW-Cs or BSW modules to report monitor status information to the Dem. BSW modules calling Dem_SetEventStatus can safely ignore the return value. This "
+ },
+ "Adc": {
+  "module": "Adc",
+  "sws_file": "AUTOSAR_CP_SWS_ADCDriver.txt",
+  "sws_release": "R25-11",
+  "apis": [
+   {
+    "name": "Adc_Init",
+    "service_name": "Adc_Init",
+    "service_id": "0x00",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Adc.h",
+    "syntax": "void Adc_Init ( const Adc_ConfigType* ConfigPtr )",
+    "description": "Initializes the ADC hardware units and driver."
+   },
+   {
+    "name": "Adc_SetupResultBuffer",
+    "service_name": "Adc_SetupResultBuffer",
+    "service_id": "0x0c",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Adc.h",
+    "syntax": "Std_ReturnType Adc_SetupResultBuffer ( Adc_GroupType Group, Adc_ValueGroupType* DataBufferPtr )",
+    "description": "Initializes ADC driver with the group specific result buffer start address where the conversion results will be stored. The application has to ensure that the application buffer, where Data BufferPtr points to, can hold all the conversion results of the specified group. The initialization with Adc_S"
+   },
+   {
+    "name": "Adc_DeInit",
+    "service_name": "Adc_DeInit",
+    "service_id": "0x01",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Adc.h",
+    "syntax": "void Adc_DeInit ( void )",
+    "description": "Returns all ADC HW Units to a state comparable to their power on reset state."
+   },
+   {
+    "name": "Adc_StartGroupConversion",
+    "service_name": "Adc_StartGroupConversion",
+    "service_id": "0x02",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Adc.h",
+    "syntax": "void Adc_StartGroupConversion ( Adc_GroupType Group )",
+    "description": "Starts the conversion of all channels of the requested ADC Channel group."
+   },
+   {
+    "name": "Adc_StopGroupConversion",
+    "service_name": "Adc_StopGroupConversion",
+    "service_id": "0x03",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Adc.h",
+    "syntax": "void Adc_StopGroupConversion ( Adc_GroupType Group )",
+    "description": "Stops the conversion of the requested ADC Channel group."
+   },
+   {
+    "name": "Adc_ReadGroup",
+    "service_name": "Adc_ReadGroup",
+    "service_id": "0x04",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Adc.h",
+    "syntax": "Std_ReturnType Adc_ReadGroup ( Adc_GroupType Group, Adc_ValueGroupType* DataBufferPtr )",
+    "description": "Reads the group conversion result of the last completed conversion round of the requested group and stores the channel values starting at the DataBufferPtr address. The group channel values are stored in ascending channel number order ( in contrast to the storage layout of the result buffer if strea"
+   },
+   {
+    "name": "Adc_EnableHardwareTrigger",
+    "service_name": "Adc_EnableHardwareTrigger",
+    "service_id": "0x05",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Adc.h",
+    "syntax": "void Adc_EnableHardwareTrigger ( Adc_GroupType Group )",
+    "description": "Enables the hardware trigger for the requested ADC Channel group."
+   },
+   {
+    "name": "Adc_DisableHardwareTrigger",
+    "service_name": "Adc_DisableHardwareTrigger",
+    "service_id": "0x06",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Adc.h",
+    "syntax": "void Adc_DisableHardwareTrigger ( Adc_GroupType Group )",
+    "description": "Disables the hardware trigger for the requested ADC Channel group."
+   },
+   {
+    "name": "Adc_EnableGroupNotification",
+    "service_name": "Adc_EnableGroupNotification",
+    "service_id": "0x07",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Adc.h",
+    "syntax": "void Adc_EnableGroupNotification ( Adc_GroupType Group )",
+    "description": "Enables the notification mechanism for the requested ADC Channel group."
+   },
+   {
+    "name": "Adc_DisableGroupNotification",
+    "service_name": "Adc_DisableGroupNotification",
+    "service_id": "0x08",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Adc.h",
+    "syntax": "void Adc_DisableGroupNotification ( Adc_GroupType Group )",
+    "description": "Disables the notification mechanism for the requested ADC Channel group."
+   },
+   {
+    "name": "Adc_GetGroupStatus",
+    "service_name": "Adc_GetGroupStatus",
+    "service_id": "0x09",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Adc.h",
+    "syntax": "Adc_StatusType Adc_GetGroupStatus ( Adc_GroupType Group )",
+    "description": "Returns the conversion status of the requested ADC Channel group."
+   },
+   {
+    "name": "Adc_GetStreamLastPointer",
+    "service_name": "Adc_GetStreamLastPointer",
+    "service_id": "0x0b",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Adc.h",
+    "syntax": "Adc_StreamNumSampleType Adc_GetStreamLastPointer ( Adc_GroupType Group, Adc_ValueGroupType** PtrToSamplePtr )",
+    "description": "Returns the number of valid samples per channel, stored in the result buffer. Reads a pointer, pointing to a position in the group result buffer. With the pointer position, the results of all group channels of the last completed conversion round can be accessed. With the pointer and the return value"
+   },
+   {
+    "name": "Adc_GetVersionInfo",
+    "service_name": "Adc_GetVersionInfo",
+    "service_id": "0x0a",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Adc.h",
+    "syntax": "void Adc_GetVersionInfo ( Std_VersionInfoType* versioninfo )",
+    "description": "Returns the version information of this module."
+   },
+   {
+    "name": "Adc_SetPowerState",
+    "service_name": "Adc_SetPowerState",
+    "service_id": "0x10",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Adc.h",
+    "syntax": "Std_ReturnType Adc_SetPowerState ( Adc_PowerStateRequestResultType* Result )",
+    "description": "This API configures the Adc module so that it enters the already prepared power state, chosen between a predefined set of configured ones."
+   },
+   {
+    "name": "Adc_GetCurrentPowerState",
+    "service_name": "Adc_GetCurrentPowerState",
+    "service_id": "0x11",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Adc.h",
+    "syntax": "Std_ReturnType Adc_GetCurrentPowerState ( Adc_PowerStateType* CurrentPowerState, Adc_PowerStateRequestResultType* Result )",
+    "description": "This API returns the current power state of the ADC HW unit."
+   },
+   {
+    "name": "Adc_GetTargetPowerState",
+    "service_name": "Adc_GetTargetPowerState",
+    "service_id": "0x12",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Adc.h",
+    "syntax": "Std_ReturnType Adc_GetTargetPowerState ( Adc_PowerStateType* TargetPowerState, Adc_PowerStateRequestResultType* Result )",
+    "description": "This API returns the Target power state of the ADC HW unit."
+   },
+   {
+    "name": "Adc_PreparePowerState",
+    "service_name": "Adc_PreparePowerState",
+    "service_id": "0x13",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Adc.h",
+    "syntax": "Std_ReturnType Adc_PreparePowerState ( Adc_PowerStateType PowerState, Adc_PowerStateRequestResultType* Result )",
+    "description": "This API starts the needed process to allow the ADC HW module to enter the requested power state."
+   }
+  ],
+  "dev_errors": [
+   {
+    "code": "ADC_E_ALREADY_INITIALIZED",
+    "value": null
+   },
+   {
+    "code": "ADC_E_PARAM_CONFIG",
+    "value": null
+   },
+   {
+    "code": "ADC_E_BUFFER_UNINIT",
+    "value": null
+   },
+   {
+    "code": "ADC_E_UNINIT",
+    "value": "0x0A"
+   },
+   {
+    "code": "ADC_E_PARAM_POINTER",
+    "value": "0x14"
+   },
+   {
+    "code": "ADC_E_PARAM_GROUP",
+    "value": "0x15"
+   },
+   {
+    "code": "ADC_E_WRONG_CONV_MODE",
+    "value": "0x16"
+   },
+   {
+    "code": "ADC_E_WRONG_TRIGG_SRC",
+    "value": "0x17"
+   },
+   {
+    "code": "ADC_E_NOTIF_CAPABILITY",
+    "value": "0x18"
+   },
+   {
+    "code": "ADE_E_BUFFER_UNINIT",
+    "value": "0x19"
+   },
+   {
+    "code": "ADE_E_POWER_STATE_NOT_SUPPORTED",
+    "value": "0x1B"
+   },
+   {
+    "code": "ADC_E_PERIPHERAL_NOT_PREPARED",
+    "value": "0x1D"
+   },
+   {
+    "code": "ADC_E_BUSY",
+    "value": "0x0B"
+   },
+   {
+    "code": "ADC_E_IDLE",
+    "value": "0x0C"
+   },
+   {
+    "code": "ADC_E_NOT_DISENGAGED",
+    "value": "0x1A"
+   },
+   {
+    "code": "ADC_E_TRANSITION_NOT_POSSIBLE",
+    "value": "0x1C"
+   },
+   {
+    "code": "ADC_E_PARAM_",
+    "value": null
+   },
+   {
+    "code": "ADC_E_NOT_DISEN",
+    "value": null
+   },
+   {
+    "code": "ADC_E_POWER_STATE_NOT_SUPPORTED",
+    "value": null
+   },
+   {
+    "code": "ADC_E_TRANSITION_",
+    "value": null
+   }
+  ],
+  "types": [
+   "Adc_ConfigType",
+   "Adc_ChannelType",
+   "Adc_GroupType",
+   "Adc_ValueGroupType",
+   "Adc_PrescaleType",
+   "Adc_ConversionTimeType",
+   "Adc_SamplingTimeType",
+   "Adc_ResolutionType",
+   "Adc_StatusType",
+   "Adc_TriggerSourceType",
+   "Adc_GroupConvModeType",
+   "Adc_GroupPriorityType",
+   "Adc_GroupDefType",
+   "Adc_StreamNumSampleType",
+   "Adc_StreamBufferModeType",
+   "Adc_GroupAccessModeType",
+   "Adc_HwTriggerSignalType",
+   "Adc_HwTriggerTimerType",
+   "Adc_PriorityImplementationType",
+   "Adc_GroupReplacementType",
+   "Adc_ChannelRangeSelectType",
+   "Adc_ResultAlignmentType",
+   "Adc_PowerStateType",
+   "Adc_PowerStateRequestResultType"
+  ],
+  "containers": [
+   {
+    "idx": 1,
+    "name": "Adc"
+   },
+   {
+    "idx": 2,
+    "name": "AdcGeneral"
+   },
+   {
+    "idx": 3,
+    "name": "AdcPowerStateConfig"
+   },
+   {
+    "idx": 4,
+    "name": "AdcConfigSet"
+   },
+   {
+    "idx": 5,
+    "name": "AdcChannel"
+   },
+   {
+    "idx": 6,
+    "name": "AdcHwUnit"
+   },
+   {
+    "idx": 1,
+    "name": "AdcPublishedInformation"
+   }
+  ],
+  "published": " For details refer to the [1] Chapter 10.3 “Published Information” . 10.3.1 AdcPublishedInformation [ECUC_Adc_00030] Definition of EcucParamConfContainerDef AdcPublishedIn- formation ⌈ Container Name AdcPublishedInformation Parent Container Adc Description Additional published parameters not covered by \"Common\" Published Information. Note that these parameters have \"PUBLISHED-INFORMATION\" configuration class setting, since they are published information. Multiplicity 1 Configuration Parameters Included Parameters Parameter Name Multiplicity ECUC ID AdcChannelValueSigned 1 [ECUC_Adc_00410] AdcG",
+  "callbacks": [
+   "Adc_DisableGroupNotification",
+   "Adc_EnableGroupNotification",
+   "IoHwAb_AdcNotification<"
+  ],
+  "callback_section_head": " Since the ADC Driver is a module on the lowest architectural layer it doesn’t provide any call-back functions for lower layer modules. ",
+  "scheduled": [],
+  "expected_interfaces": " In this chapter all interfaces required from other modules are listed. 8.6.1 Mandatory Interfaces This chapter defines all interfaces which are required to fulfill a core functionality of the module. [SWS_Adc_00530] Definition of mandatory interfaces required by module Adc ⌈ API Function Header File Description Det_ReportRuntimeError Det.h Service to report runtime errors. If a callout has been configured then this callout shall be called. ⌋ 8.6.2 Optional Interfaces This chapter defines all interfaces which are required to fulfill an optional functionality of the module. [SWS_Adc_00377] Definition of optional interfaces requested by module Adc ⌈ API Function Header File Description Det_Rep"
+ },
+ "Spi": {
+  "module": "Spi",
+  "sws_file": "AUTOSAR_CP_SWS_SPIHandlerDriver.txt",
+  "sws_release": "R25-11",
+  "apis": [
+   {
+    "name": "Spi_Init",
+    "service_name": "Spi_Init",
+    "service_id": "0x00",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Spi.h",
+    "syntax": "void Spi_Init ( const Spi_ConfigType* ConfigPtr )",
+    "description": "Service for SPI initialization."
+   },
+   {
+    "name": "Spi_DeInit",
+    "service_name": "Spi_DeInit",
+    "service_id": "0x01",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Spi.h",
+    "syntax": "Std_ReturnType Spi_DeInit ( void )",
+    "description": "Service for SPI de-initialization."
+   },
+   {
+    "name": "Spi_WriteIB",
+    "service_name": "Spi_WriteIB",
+    "service_id": "0x02",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Spi.h",
+    "syntax": "Std_ReturnType Spi_WriteIB ( Spi_ChannelType Channel, const Spi_DataBufferType* DataBufferPtr )",
+    "description": "Service for writing one or more data to an IB SPI Handler/Driver Channel specified by parameter."
+   },
+   {
+    "name": "Spi_AsyncTransmit",
+    "service_name": "Spi_AsyncTransmit",
+    "service_id": "0x03",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Spi.h",
+    "syntax": "Std_ReturnType Spi_AsyncTransmit ( Spi_SequenceType Sequence )",
+    "description": "Service to transmit data on the SPI bus."
+   },
+   {
+    "name": "Spi_ReadIB",
+    "service_name": "Spi_ReadIB",
+    "service_id": "0x04",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Spi.h",
+    "syntax": "Std_ReturnType Spi_ReadIB ( Spi_ChannelType Channel, Spi_DataBufferType* DataBufferPointer )",
+    "description": "Service for reading synchronously one or more data from an IB SPI Handler/Driver Channel specified by parameter."
+   },
+   {
+    "name": "Spi_SetupEB",
+    "service_name": "Spi_SetupEB",
+    "service_id": "0x05",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Spi.h",
+    "syntax": "Std_ReturnType Spi_SetupEB ( Spi_ChannelType Channel, const Spi_DataBufferType* SrcDataBufferPtr, Spi_DataBufferType* DesDataBufferPtr, Spi_NumberOfDataType Length )",
+    "description": "Service to setup the buffers and the length of data for the EB SPI Handler/Driver Channel specified."
+   },
+   {
+    "name": "Spi_GetStatus",
+    "service_name": "Spi_GetStatus",
+    "service_id": "0x06",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Spi.h",
+    "syntax": "Spi_StatusType Spi_GetStatus ( void )",
+    "description": "Service returns the SPI Handler/Driver software module status."
+   },
+   {
+    "name": "Spi_GetJobResult",
+    "service_name": "Spi_GetJobResult",
+    "service_id": "0x07",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Spi.h",
+    "syntax": "Spi_JobResultType Spi_GetJobResult ( Spi_JobType Job )",
+    "description": "This service returns the last transmission result of the specified Job."
+   },
+   {
+    "name": "Spi_GetSequenceResult",
+    "service_name": "Spi_GetSequenceResult",
+    "service_id": "0x08",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Spi.h",
+    "syntax": "Spi_SeqResultType Spi_GetSequenceResult ( Spi_SequenceType Sequence )",
+    "description": "This service returns the last transmission result of the specified Sequence."
+   },
+   {
+    "name": "Spi_GetVersionInfo",
+    "service_name": "Spi_GetVersionInfo",
+    "service_id": "0x09",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Spi.h",
+    "syntax": "void Spi_GetVersionInfo ( Std_VersionInfoType* versioninfo )",
+    "description": "This service returns the version information of this module."
+   },
+   {
+    "name": "Spi_SyncTransmit",
+    "service_name": "Spi_SyncTransmit",
+    "service_id": "0x0a",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Spi.h",
+    "syntax": "Std_ReturnType Spi_SyncTransmit ( Spi_SequenceType Sequence )",
+    "description": "Service to transmit data on the SPI bus"
+   },
+   {
+    "name": "Spi_GetHWUnitStatus",
+    "service_name": "Spi_GetHWUnitStatus",
+    "service_id": "0x0b",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Spi.h",
+    "syntax": "Spi_StatusType Spi_GetHWUnitStatus ( Spi_HWUnitType HWUnit ) 53 of 112 Document ID 38: AUTOSAR_CP_SWS_SPIHandlerDriver Specification of SPI Handler/Driver AUTOSAR CP R25-11",
+    "description": "This service returns the status of the specified SPI Hardware microcontroller peripheral."
+   },
+   {
+    "name": "Spi_Cancel",
+    "service_name": "Spi_Cancel",
+    "service_id": "0x0c",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Spi.h",
+    "syntax": "void Spi_Cancel ( Spi_SequenceType Sequence )",
+    "description": "Service cancels the specified on-going sequence transmission."
+   },
+   {
+    "name": "Spi_SetAsyncMode",
+    "service_name": "Spi_SetAsyncMode",
+    "service_id": "0x0d",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Spi.h",
+    "syntax": "Std_ReturnType Spi_SetAsyncMode ( Spi_AsyncModeType Mode )",
+    "description": "Service to set the asynchronous mechanism mode for SPI busses handled asynchronously."
+   }
+  ],
+  "dev_errors": [
+   {
+    "code": "SPI_E_SEQ_IN_PROCESS",
+    "value": null
+   },
+   {
+    "code": "SPI_E_PARAM_POINTER",
+    "value": null
+   },
+   {
+    "code": "SPI_E_HARDWARE_ERROR",
+    "value": null
+   },
+   {
+    "code": "SPI_E_PARAM_CHANNEL",
+    "value": "0x0A"
+   },
+   {
+    "code": "SPI_E_PARAM_JOB",
+    "value": "0x0B"
+   },
+   {
+    "code": "SPI_E_PARAM_SEQ",
+    "value": "0x0C"
+   },
+   {
+    "code": "SPI_E_PARAM_LENGTH",
+    "value": "0x0D"
+   },
+   {
+    "code": "SPI_E_PARAM_UNIT",
+    "value": "0x0E"
+   },
+   {
+    "code": "SPI_E_UNINIT",
+    "value": "0x1A"
+   },
+   {
+    "code": "SPI_E_ALREADY_INITIALIZED",
+    "value": "0x4A"
+   },
+   {
+    "code": "SPI_E_SEQ_PENDING",
+    "value": "0x2A"
+   },
+   {
+    "code": "SPI_E_SEQ_",
+    "value": null
+   }
+  ],
+  "types": [
+   "Spi_ConfigType",
+   "Spi_StatusType",
+   "Spi_JobResultType",
+   "Spi_SeqResultType",
+   "Spi_DataBufferType",
+   "Spi_NumberOfDataType",
+   "Spi_ChannelType",
+   "Spi_JobType",
+   "Spi_SequenceType",
+   "Spi_HWUnitType",
+   "Spi_AsyncModeType"
+  ],
+  "containers": [
+   {
+    "idx": 1,
+    "name": "Spi"
+   },
+   {
+    "idx": 2,
+    "name": "SpiDemEventParameterRefs"
+   },
+   {
+    "idx": 3,
+    "name": "SpiGeneral"
+   },
+   {
+    "idx": 4,
+    "name": "SpiSequence"
+   },
+   {
+    "idx": 5,
+    "name": "SpiChannel"
+   },
+   {
+    "idx": 6,
+    "name": "SpiChannelList"
+   },
+   {
+    "idx": 7,
+    "name": "SpiJob"
+   },
+   {
+    "idx": 8,
+    "name": "SpiExternalDevice"
+   },
+   {
+    "idx": 9,
+    "name": "SpiDriver"
+   },
+   {
+    "idx": 10,
+    "name": "SpiPublishedInformation"
+   }
+  ],
+  "published": " For details refer to [2] Chapter 10.3 “Published Information” . ",
+  "callbacks": [
+   "Spi_MainFunction_Handling"
+  ],
+  "callback_section_head": " This chapter lists all functions provided by the SPI module to lower layer modules. The SPI Handler/Driver module belongs to the lowest layer of AUTOSAR Software Architecture hence this module specification has not identified any callback functions. ",
+  "scheduled": [
+   "Spi_MainFunction_Handling"
+  ],
+  "expected_interfaces": " This chapter lists all functions that the SPI Handler/Driver requires from other modules. 8.6.1 Mandatory interfaces The SPI Handler/Driver module requires some interfaces to fulfill its core functionality. [SWS_Spi_00389] Definition of mandatory interfaces required by module Spi ⌈ API Function Header File Description Det_ReportRuntimeError Det.h Service to report runtime errors. If a callout has been configured then this callout shall be called. ⌋ 8.6.2 Optional interfaces This chapter defines all interfaces which are required to fulfill an optional functionality of SPI Handler/Driver module. 57 of 112 Document ID 38: AUTOSAR_CP_SWS_SPIHandlerDriver Specification of SPI Handler/Driver AUTO"
+ },
+ "I2c": {
+  "module": "I2c",
+  "sws_file": "AUTOSAR_CP_SWS_I2CDriver.txt",
+  "sws_release": "R25-11",
+  "apis": [
+   {
+    "name": "I2C_Init",
+    "service_name": "I2C_Init",
+    "service_id": "0x00",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "I2c.h",
+    "syntax": "void I2C_Init ( const I2C_ConfigType* ConfigPtr )",
+    "description": "This service initializes the I2C Driver. Tags: atp.Status=draft"
+   },
+   {
+    "name": "I2C_DeInit",
+    "service_name": "I2C_DeInit",
+    "service_id": "0x01",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "I2c.h",
+    "syntax": "void I2C_DeInit ( void )",
+    "description": "This service de-initializes the I2C Driver. Tags: atp.Status=draft"
+   },
+   {
+    "name": "I2C_SetupEB",
+    "service_name": "I2C_SetupEB",
+    "service_id": "0x02",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "I2c.h",
+    "syntax": "Std_ReturnType I2C_SetupEB ( I2C_JobType JobId, I2C_AddressType NodeAddress, const I2C_DataPtrType* TxDataBufferPtr, I2C_DataPtrType* RxDataBufferPtr, I2C_NumberOfDataType Length )",
+    "description": "API shall setup the buffers and the length of data for the EB I2C Driver Job specified. Tags: atp.Status=draft"
+   },
+   {
+    "name": "I2C_AsyncTransmit",
+    "service_name": "I2C_AsyncTransmit",
+    "service_id": "0x03",
+    "sync": "Asynchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "I2c.h",
+    "syntax": "Std_ReturnType I2C_AsyncTransmit ( I2C_SequenceType SequenceId )",
+    "description": "The service conducts an asynchronous data transmission according to the parameters provided to the I2C_SetupEB() service. The callback I2C_SeqEndNotification() is called, when the asynchronous operation has finished. Tags: atp.Status=draft"
+   },
+   {
+    "name": "I2C_SyncTransmit",
+    "service_name": "I2C_SyncTransmit",
+    "service_id": "0x04",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "I2c.h",
+    "syntax": "Std_ReturnType I2C_SyncTransmit ( I2C_SequenceType SequenceId )",
+    "description": "This service sends or receives data using a blocking mechanism according to the parameters provided to the I2C_SetupEB() service. Tags: atp.Status=draft"
+   },
+   {
+    "name": "I2C_GetVersionInfo",
+    "service_name": "I2C_GetVersionInfo",
+    "service_id": "0x07",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "I2c.h",
+    "syntax": "void I2C_GetVersionInfo ( Std_VersionInfoType* VersionInfo )",
+    "description": "This service returns the version information of this module. Tags: atp.Status=draft"
+   },
+   {
+    "name": "I2C_GetSequenceResult",
+    "service_name": "I2C_GetSequenceResult",
+    "service_id": "0x09",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "I2c.h",
+    "syntax": "I2C_SequenceResultType I2C_GetSequenceResult ( I2C_SequenceType SequenceId )",
+    "description": "This service returns the current status of the given SequenceId. Tags: atp.Status=draft"
+   },
+   {
+    "name": "I2C_GetChannelStatus",
+    "service_name": "I2C_GetChannelStatus",
+    "service_id": "0x0B",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "I2c.h",
+    "syntax": "I2C_ChannelStatusType I2C_GetChannelStatus ( I2C_ChannelType Channel )",
+    "description": "This service returns the status of the specified I2C Hardware peripheral."
+   }
+  ],
+  "dev_errors": [
+   {
+    "code": "I2C_E_PARAM_JOB",
+    "value": "0x00"
+   },
+   {
+    "code": "I2C_E_PARAM_SEQUENCE",
+    "value": "0x01"
+   },
+   {
+    "code": "I2C_E_PARAM_POINTER",
+    "value": "0x02"
+   },
+   {
+    "code": "I2C_E_UNINIT",
+    "value": "0x03"
+   },
+   {
+    "code": "I2C_E_WRONG_CONDITION",
+    "value": "0x04"
+   },
+   {
+    "code": "I2C_E_PARAM_UNIT",
+    "value": "0x05"
+   },
+   {
+    "code": "I2C_E_NACK_RECEIVED",
+    "value": "0x00"
+   },
+   {
+    "code": "I2C_E_ARBITRATION_FAILURE",
+    "value": "0x01"
+   },
+   {
+    "code": "I2C_E_FIFO_HANDLING",
+    "value": "0x02"
+   },
+   {
+    "code": "I2C_E_PARAM_SE",
+    "value": null
+   },
+   {
+    "code": "I2C_E_PARAM_",
+    "value": null
+   },
+   {
+    "code": "I2C_E_BUS_FAILURE",
+    "value": null
+   },
+   {
+    "code": "I2C_E_WRONG_MODE",
+    "value": null
+   }
+  ],
+  "types": [
+   "I2C_AddressType",
+   "I2C_ChannelStatusType",
+   "I2C_ChannelType",
+   "I2C_ConfigType",
+   "I2C_DataPtrType",
+   "I2C_JobType",
+   "I2C_NumberOfDataType",
+   "I2C_SequenceType",
+   "I2C_SequenceResultType"
+  ],
+  "containers": [
+   {
+    "idx": 1,
+    "name": "I2C"
+   },
+   {
+    "idx": 2,
+    "name": "I2CGeneral"
+   },
+   {
+    "idx": 3,
+    "name": "I2CConfigSet"
+   },
+   {
+    "idx": 4,
+    "name": "I2CChannel"
+   },
+   {
+    "idx": 5,
+    "name": "I2CJob"
+   },
+   {
+    "idx": 6,
+    "name": "I2CSequence"
+   }
+  ],
+  "published": " For details refer to [2] Chapter 10.3 “Published Information” . 47 of 54 Document ID 1101: AUTOSAR_CP_SWS_I2CDriver Specification of I2C Driver AUTOSAR CP R25-11 A Not applicable requirements [CP_SWS_I2C_NA_00999] Status: DRAFT Upstream requirements: SRS_SPAL_12267, SRS_SPAL_12463, SRS_SPAL_12068, SRS_- SPAL_12069, SRS_SPAL_12169, SRS_SPAL_12064, SRS_SPAL_- 12067, SRS_SPAL_12077, SRS_SPAL_12078, SRS_SPAL_12092, SRS_SPAL_12265 ⌈These requirements are not applicable to this specification.⌋ 48 of 54 Document ID 1101: AUTOSAR_CP_SWS_I2CDriver Specification of I2C Driver AUTOSAR CP R25-11 B Change",
+  "callbacks": [
+   "I2C_MainFunction"
+  ],
+  "callback_section_head": " This chapter lists all functions provided by the I2C module to lower layer modules. The I2C Driver module belongs to the lowest layer of AUTOSAR Software Architecture hence this module specification has not identified any callback functions. ",
+  "scheduled": [
+   "I2C_MainFunction"
+  ],
+  "expected_interfaces": " In this chapter all interfaces required from other modules are listed. 8.6.1 Mandatory interfaces The I2C Driver module requires some interfaces to fulfill its core functionality. 30 of 54 Document ID 1101: AUTOSAR_CP_SWS_I2CDriver Specification of I2C Driver AUTOSAR CP R25-11 [CP_SWS_I2C_00831] Definition of mandatory interfaces required by module I2 C Status: DRAFT ⌈ API Function Header File Description There are no mandatory interfaces. ⌋ 8.6.2 Optional interfaces This section defines all interfaces, which are required to fulfill an optional functionality of the I2C Driver module. [CP_SWS_I2C_00830] Definition of optional interfaces requested by module I2C Status: DRAFT ⌈ API Function He"
+ },
+ "Can": {
+  "module": "Can",
+  "sws_file": "AUTOSAR_CP_SWS_CANDriver.txt",
+  "sws_release": "R25-11",
+  "apis": [
+   {
+    "name": "Can_Init",
+    "service_name": "Can_Init",
+    "service_id": "0x00",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Can.h",
+    "syntax": "void Can_Init ( const Can_ConfigType* Config )",
+    "description": "This function initializes the module."
+   },
+   {
+    "name": "Can_GetVersionInfo",
+    "service_name": "Can_GetVersionInfo",
+    "service_id": "0x07",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Can.h",
+    "syntax": "void Can_GetVersionInfo ( Std_VersionInfoType* versioninfo )",
+    "description": "This function returns the version information of this module."
+   },
+   {
+    "name": "Can_DeInit",
+    "service_name": "Can_DeInit",
+    "service_id": "0x10",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Can.h",
+    "syntax": "void Can_DeInit ( void )",
+    "description": "This function de-initializes the module."
+   },
+   {
+    "name": "Can_SetBaudrate",
+    "service_name": "Can_SetBaudrate",
+    "service_id": "0x0f",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different Controllers. Non reentrant for the same Controller.",
+    "available_via": "Can.h",
+    "syntax": "Std_ReturnType Can_SetBaudrate ( uint8 Controller, uint16 BaudRateConfigID )",
+    "description": "This service shall set the baud rate configuration of the CAN controller. Depending on necessary baud rate modifications the controller might have to reset."
+   },
+   {
+    "name": "Can_SetControllerMode",
+    "service_name": "Can_SetControllerMode",
+    "service_id": "0x03",
+    "sync": "Asynchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Can.h",
+    "syntax": "Std_ReturnType Can_SetControllerMode ( uint8 Controller, Can_ControllerStateType Transition )",
+    "description": "This function performs software triggered state transitions of the CAN controller State machine."
+   },
+   {
+    "name": "Can_DisableControllerInterrupts",
+    "service_name": "Can_DisableControllerInterrupts",
+    "service_id": "0x04",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Can.h",
+    "syntax": "void Can_DisableControllerInterrupts ( uint8 Controller )",
+    "description": "This function disables all interrupts for this CAN controller."
+   },
+   {
+    "name": "Can_EnableControllerInterrupts",
+    "service_name": "Can_EnableControllerInterrupts",
+    "service_id": "0x05",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Can.h",
+    "syntax": "void Can_EnableControllerInterrupts ( uint8 Controller )",
+    "description": "This function enables all allowed interrupts."
+   },
+   {
+    "name": "Can_CheckWakeup",
+    "service_name": "Can_CheckWakeup",
+    "service_id": "0x0b",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Can.h",
+    "syntax": "Std_ReturnType Can_CheckWakeup ( uint8 Controller )",
+    "description": "This function checks if a wakeup has occurred for the given controller."
+   },
+   {
+    "name": "Can_GetControllerErrorState",
+    "service_name": "Can_GetControllerErrorState",
+    "service_id": "0x11",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant for the same ControllerId",
+    "available_via": "Can.h",
+    "syntax": "Std_ReturnType Can_GetControllerErrorState ( uint8 ControllerId, Can_ErrorStateType* ErrorStatePtr )",
+    "description": "This service obtains the error state of the CAN controller."
+   },
+   {
+    "name": "Can_GetControllerMode",
+    "service_name": "Can_GetControllerMode",
+    "service_id": "0x12",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Can.h",
+    "syntax": "Std_ReturnType Can_GetControllerMode ( uint8 Controller, Can_ControllerStateType* ControllerModePtr )",
+    "description": "This service reports about the current status of the requested CAN controller."
+   },
+   {
+    "name": "Can_GetControllerRxErrorCounter",
+    "service_name": "Can_GetControllerRxErrorCounter",
+    "service_id": "0x30",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant for the same ControllerId",
+    "available_via": "Can.h",
+    "syntax": "Std_ReturnType Can_GetControllerRxErrorCounter ( uint8 ControllerId, uint8* RxErrorCounterPtr )",
+    "description": "Returns the Rx error counter for a CAN controller. This value might not be available for all CAN controllers, in which case E_NOT_OK would be returned. Please note that the value of the counter might not be correct at the moment the API returns it, because the Rx counter is handled asynchronously in"
+   },
+   {
+    "name": "Can_GetControllerTxErrorCounter",
+    "service_name": "Can_GetControllerTxErrorCounter",
+    "service_id": "0x31",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant for the same ControllerId",
+    "available_via": "Can.h",
+    "syntax": "Std_ReturnType Can_GetControllerTxErrorCounter ( uint8 ControllerId, uint8* TxErrorCounterPtr )",
+    "description": "Returns the Tx error counter for a CAN controller. This value might not be available for all CAN controllers, in which case E_NOT_OK would be returned. Please note that the value of the counter might not be correct at the moment the API returns it, because the Tx counter is handled asynchronously in"
+   },
+   {
+    "name": "Can_GetCurrentTime",
+    "service_name": "Can_GetCurrentTime",
+    "service_id": "0x32",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Can.h",
+    "syntax": "Std_ReturnType Can_GetCurrentTime ( uint8 ControllerId, Can_TimeStampType* timeStampPtr )",
+    "description": "Returns a time value out of the HW registers according to the capability of the HW Important Note: Can_GetCurrentTime may be called within an exclusive area. Tags: atp.Status=draft"
+   },
+   {
+    "name": "Can_EnableEgressTimeStamp",
+    "service_name": "Can_EnableEgressTimeStamp",
+    "service_id": "0x33",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Can.h",
+    "syntax": "void Can_EnableEgressTimeStamp ( Can_HwHandleType Hth )",
+    "description": "Activates egress time stamping on a dedicated HTH. Some HW does store once the egress time stamp marker and some HW needs it always before transmission. There will be no \"disable\" functionality, due to the fact, that the message type is always \"time stamped\" by network design. Tags: atp.Status=draft"
+   },
+   {
+    "name": "Can_GetEgressTimeStamp",
+    "service_name": "Can_GetEgressTimeStamp",
+    "service_id": "0x34",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant for the same TxPduId.",
+    "available_via": "Can.h",
+    "syntax": "Std_ReturnType Can_GetEgressTimeStamp ( PduIdType TxPduId, Can_HwHandleType Hth, Can_TimeStampType* timeStampPtr )",
+    "description": "Reads back the egress time stamp on a dedicated message object. It needs to be called within the TxConfirmation() function. Tags: atp.Status=draft"
+   },
+   {
+    "name": "Can_GetIngressTimeStamp",
+    "service_name": "Can_GetIngressTimeStamp",
+    "service_id": "0x35",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant for the same Hrh, Reentrant for different Hrh",
+    "available_via": "Can.h",
+    "syntax": "Std_ReturnType Can_GetIngressTimeStamp ( Can_HwHandleType Hrh, Can_TimeStampType* timeStampPtr )",
+    "description": "Reads back the ingress time stamp on a dedicated message object. It needs to be called within the RxIndication() function. Tags: atp.Status=draft"
+   },
+   {
+    "name": "Can_SetCanPnFrameDataMask",
+    "service_name": "Can_SetCanPnFrameDataMask",
+    "service_id": "0x13",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different Controllers. Non reentrant for the same Controller.",
+    "available_via": "Can.h",
+    "syntax": "Std_ReturnType Can_SetCanPnFrameDataMask ( uint8 Controller, uint8* DataMaskArrayPtr, uint8 Length )",
+    "description": "This service sets the PN frame data mask used in the selective activation of the CAN controller during run-time. Note that a change of the PN frame data mask only gets active when CAN controller is currently in sleep or next time it transits to sleep."
+   },
+   {
+    "name": "Can_Write",
+    "service_name": "Can_Write",
+    "service_id": "0x06",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant (thread-safe)",
+    "available_via": "Can.h",
+    "syntax": "Std_ReturnType Can_Write ( Can_HwHandleType Hth, const Can_PduType* PduInfo )",
+    "description": "This function is called by CanIf to pass a CAN message to CanDrv for transmission."
+   }
+  ],
+  "dev_errors": [
+   {
+    "code": "CAN_E_PARAM_",
+    "value": null
+   },
+   {
+    "code": "CAN_E_TRANSI",
+    "value": null
+   },
+   {
+    "code": "CAN_E_TRANSITION",
+    "value": null
+   },
+   {
+    "code": "CAN_E_DATALOST",
+    "value": null
+   },
+   {
+    "code": "CAN_E_PARAM_POINTER",
+    "value": "0x01"
+   },
+   {
+    "code": "CAN_E_PARAM_HANDLE",
+    "value": "0x02"
+   },
+   {
+    "code": "CAN_E_PARAM_DATA_LENGTH",
+    "value": "0x03"
+   },
+   {
+    "code": "CAN_E_PARAM_CONTROLLER",
+    "value": "0x04"
+   },
+   {
+    "code": "CAN_E_UNINIT",
+    "value": "0x05"
+   },
+   {
+    "code": "CAN_E_PARAM_BAUDRATE",
+    "value": "0x07"
+   },
+   {
+    "code": "CAN_E_INIT_FAILED",
+    "value": "0x09"
+   },
+   {
+    "code": "CAN_E_PARAM_LPDU",
+    "value": "0x0A"
+   }
+  ],
+  "types": [
+   "Can_ConfigType",
+   "Can_PduType",
+   "Can_IdType",
+   "Can_HwHandleType",
+   "Can_HwType",
+   "Can_ErrorStateType",
+   "Can_ControllerStateType",
+   "Can_ErrorType",
+   "Can_TimeStampType"
+  ],
+  "containers": [
+   {
+    "idx": 1,
+    "name": "Can"
+   },
+   {
+    "idx": 2,
+    "name": "CanGeneral"
+   },
+   {
+    "idx": 3,
+    "name": "CanController"
+   },
+   {
+    "idx": 4,
+    "name": "CanControllerBaudrateConfig"
+   },
+   {
+    "idx": 5,
+    "name": "CanControllerFdBaudrateConfig"
+   },
+   {
+    "idx": 6,
+    "name": "CanPartialNetwork"
+   },
+   {
+    "idx": 7,
+    "name": "CanPnFrameDataMaskSpec"
+   },
+   {
+    "idx": 8,
+    "name": "CanHardwareObject"
+   },
+   {
+    "idx": 9,
+    "name": "CanHwFilter"
+   },
+   {
+    "idx": 10,
+    "name": "CanConfigSet"
+   },
+   {
+    "idx": 11,
+    "name": "CanMainFunctionRWPeriods"
+   },
+   {
+    "idx": 12,
+    "name": "CanXLGeneral"
+   },
+   {
+    "idx": 13,
+    "name": "CanXLController"
+   },
+   {
+    "idx": 14,
+    "name": "CanXLHardwareObject"
+   },
+   {
+    "idx": 15,
+    "name": "CanXLHwFilter"
+   },
+   {
+    "idx": 16,
+    "name": "CanXLBaudrateConfig"
+   },
+   {
+    "idx": 17,
+    "name": "CanXLEthEgressFifo"
+   },
+   {
+    "idx": 18,
+    "name": "CanXLEthIngressFifo"
+   }
+  ],
+  "published": "",
+  "callbacks": [
+   "Can_MainFunction_BusOff",
+   "Can_MainFunction_Mode",
+   "Can_MainFunction_Read",
+   "Can_MainFunction_Wakeup",
+   "Can_MainFunction_Write"
+  ],
+  "callback_section_head": "",
+  "scheduled": [
+   "Can_MainFunction_BusOff",
+   "Can_MainFunction_Mode",
+   "Can_MainFunction_Read",
+   "Can_MainFunction_Wakeup",
+   "Can_MainFunction_Write"
+  ],
+  "expected_interfaces": ""
+ },
+ "Mem": {
+  "module": "Mem",
+  "sws_file": "AUTOSAR_CP_SWS_MemoryDriver.txt",
+  "sws_release": "R25-11",
+  "apis": [
+   {
+    "name": "Mem_Init",
+    "service_name": "Mem_Init",
+    "service_id": "0x01",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Mem.h",
+    "syntax": "void Mem_Init ( const Mem_ConfigType* configPtr )",
+    "description": "Initialization function - initializes all variables and sets the module state to initialized."
+   },
+   {
+    "name": "Mem_DeInit",
+    "service_name": "Mem_DeInit",
+    "service_id": "0x0b",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Mem.h",
+    "syntax": "void Mem_DeInit ( void )",
+    "description": "De-initialize module. If there is still an access job pending, it is immediately terminated (using hardware cancel operation) and the Mem driver module state is set to unitialized. Therefore, Mem must be re-initialized before it will accept any new job requests after this service is processed."
+   },
+   {
+    "name": "Mem_GetVersionInfo",
+    "service_name": "Mem_GetVersionInfo",
+    "service_id": "0x02",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Mem.h",
+    "syntax": "void Mem_GetVersionInfo ( Std_VersionInfoType* versionInfoPtr )",
+    "description": "Service to return the version information of the Mem module."
+   },
+   {
+    "name": "Mem_GetJobResult",
+    "service_name": "Mem_GetJobResult",
+    "service_id": "0x04",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Mem.h",
+    "syntax": "MemAcc_MemJobResultType Mem_GetJobResult ( Mem_InstanceIdType instanceId )",
+    "description": "Service to return results of the most recent job."
+   },
+   {
+    "name": "Mem_Suspend",
+    "service_name": "Mem_Suspend",
+    "service_id": "0x0c",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Mem.h",
+    "syntax": "Std_ReturnType Mem_Suspend ( Mem_InstanceIdType instanceId )",
+    "description": "Suspend active memory operation using hardware mechanism."
+   },
+   {
+    "name": "Mem_Resume",
+    "service_name": "Mem_Resume",
+    "service_id": "0x0d",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Mem.h",
+    "syntax": "Std_ReturnType Mem_Resume ( Mem_InstanceIdType instanceId )",
+    "description": "Resume suspended memory operation using hardware mechanism."
+   },
+   {
+    "name": "Mem_PropagateError",
+    "service_name": "Mem_PropagateError",
+    "service_id": "0x08",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Mem.h",
+    "syntax": "void Mem_PropagateError ( Mem_InstanceIdType instanceId )",
+    "description": "This service can be used to report an access error in case the Mem driver cannot provide the access error information - typically for ECC faults. It is called by the system ECC handler to propagate an ECC error to the memory upper layers.."
+   },
+   {
+    "name": "Mem_Read",
+    "service_name": "Mem_Read",
+    "service_id": "0x05",
+    "sync": "Asynchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Mem.h",
+    "syntax": "Std_ReturnType Mem_Read ( Mem_InstanceIdType instanceId, Mem_AddressType sourceAddress, Mem_DataType* destinationDataPtr, Mem_LengthType length )",
+    "description": "Triggers a read job to copy the from the source address into the referenced destination data buffer. The result of this service can be retrieved using the Mem_GetJobResult API. If the read operation was successful, the result of the job is MEM_JOB_OK. If the read operation failed, the result of the "
+   },
+   {
+    "name": "Mem_Write",
+    "service_name": "Mem_Write",
+    "service_id": "0x06",
+    "sync": "Asynchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Mem.h",
+    "syntax": "Std_ReturnType Mem_Write ( Mem_InstanceIdType instanceId, Mem_AddressType targetAddress, const Mem_DataType* sourceDataPtr, Mem_LengthType length )",
+    "description": "Triggers a write job to store the passed data to the provided address area with given address and length. The result of this service can be retrieved using the Mem_GetJobResult API. If the write operation was successful, the job result is MEM_JOB_OK. If there was an issue writing the data, the resul"
+   },
+   {
+    "name": "Mem_Erase",
+    "service_name": "Mem_Erase",
+    "service_id": "0x07",
+    "sync": "Asynchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Mem.h",
+    "syntax": "Std_ReturnType Mem_Erase ( Mem_InstanceIdType instanceId, Mem_AddressType targetAddress, Mem_LengthType length )",
+    "description": "Triggers an erase job of the given sector/sector batch defined by targetAddress and length. The result of this service can be retrieved using the Mem_GetJobResult API. If the erase operation was successful, the result of the job is MEM_JOB_OK. If the erase operation failed, e.g. due to a hardware is"
+   },
+   {
+    "name": "Mem_BlankCheck",
+    "service_name": "Mem_BlankCheck",
+    "service_id": "0x09",
+    "sync": "Asynchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Mem.h",
+    "syntax": "Std_ReturnType Mem_BlankCheck ( Mem_InstanceIdType instanceId, Mem_AddressType targetAddress, Mem_LengthType length )",
+    "description": "Triggers a job to check the erased state of the page which is referenced by targetAddress. The result of this service can be retrieved using the Mem_GetJobResult API. If the checked page is blank, the result of the job is MEM_JOB_OK. Otherwise, if the page is not blank, the result is MEM_INCONSISTEN"
+   },
+   {
+    "name": "Mem_HwSpecificService",
+    "service_name": "Mem_HwSpecificService",
+    "service_id": "0x0a",
+    "sync": "Asynchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Mem.h",
+    "syntax": "Std_ReturnType Mem_HwSpecificService ( Mem_InstanceIdType instanceId, Mem_HwServiceIdType hwServiceId, Mem_DataType* dataPtr, Mem_LengthType* lengthPtr )",
+    "description": "Triggers a hardware specific memory driver job. dataPtr can be used to pass and return data to/ from this service. This service is just a dispatcher to the hardware specific service implementation referenced by hwServiceId. The result of this service can be retrieved using the Mem_GetJobResult API. "
+   }
+  ],
+  "dev_errors": [
+   {
+    "code": "MEM_E_JOB_PENDING",
+    "value": null
+   },
+   {
+    "code": "MEM_E_UNINIT",
+    "value": "0x01"
+   },
+   {
+    "code": "MEM_E_PARAM_POINTER",
+    "value": "0x02"
+   },
+   {
+    "code": "MEM_E_PARAM_ADDRESS",
+    "value": "0x03"
+   },
+   {
+    "code": "MEM_E_PARAM_LENGTH",
+    "value": "0x04"
+   },
+   {
+    "code": "MEM_E_PARAM_INSTANCE_ID",
+    "value": "0x05"
+   }
+  ],
+  "types": [
+   "Mem_AddressType",
+   "Mem_ConfigType",
+   "Mem_DataType",
+   "Mem_InstanceIdType",
+   "Mem_LengthType",
+   "Mem_HwServiceIdType"
+  ],
+  "containers": [
+   {
+    "idx": 1,
+    "name": "Mem"
+   },
+   {
+    "idx": 2,
+    "name": "MemInstance"
+   }
+  ],
+  "published": " [ECUC_Mem_00020] Definition of EcucParamConfContainerDef MemPublished Information ⌈ Container Name MemPublishedInformation Parent Container Mem Description Additional published parameters not covered by CommonPublishedInformation container. Note that these parameters do not have any configuration class setting, since they are published information. Multiplicity 1 Configuration Parameters Included Parameters Parameter Name Multiplicity ECUC ID MemErasedValue 1 [ECUC_Mem_00021] No Included Containers ⌋ [ECUC_Mem_00021] Definition of EcucIntegerParamDef MemErasedValue ⌈ Parameter Name MemErasedV",
+  "callbacks": [
+   "Mem_MainFunction"
+  ],
+  "callback_section_head": "",
+  "scheduled": [
+   "Mem_MainFunction"
+  ],
+  "expected_interfaces": ""
+ },
+ "Crc": {
+  "module": "Crc",
+  "sws_file": "AUTOSAR_CP_SWS_CRCLibrary.txt",
+  "sws_release": "R25-11",
+  "apis": [
+   {
+    "name": "Crc_CalculateCRC8",
+    "service_name": "Crc_CalculateCRC8",
+    "service_id": "0x01",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Crc.h",
+    "syntax": "uint8 Crc_CalculateCRC8 ( const uint8* Crc_DataPtr, uint32 Crc_Length, uint8 Crc_StartValue8, boolean Crc_IsFirstCall )",
+    "description": "This service makes a CRC8 calculation on Crc_Length data bytes, with SAE J1850 parameters"
+   },
+   {
+    "name": "Crc_CalculateCRC8H2F",
+    "service_name": "Crc_CalculateCRC8H2F",
+    "service_id": "0x05",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Crc.h",
+    "syntax": "uint8 Crc_CalculateCRC8H2F ( const uint8* Crc_DataPtr, uint32 Crc_Length, uint8 Crc_StartValue8H2F, boolean Crc_IsFirstCall )",
+    "description": "This service makes a CRC8 calculation with the Polynomial 0x2F on Crc_Length"
+   },
+   {
+    "name": "Crc_CalculateCRC16",
+    "service_name": "Crc_CalculateCRC16",
+    "service_id": "0x02",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Crc.h",
+    "syntax": "uint16 Crc_CalculateCRC16 ( const uint8* Crc_DataPtr, uint32 Crc_Length, uint16 Crc_StartValue16, boolean Crc_IsFirstCall )",
+    "description": "This service makes a CRC16 calculation on Crc_Length data bytes."
+   },
+   {
+    "name": "Crc_CalculateCRC16ARC",
+    "service_name": "Crc_CalculateCRC16ARC",
+    "service_id": "0x08",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Crc.h",
+    "syntax": "uint16 Crc_CalculateCRC16ARC ( const uint8* Crc_DataPtr, uint32 Crc_Length, uint16 Crc_StartValue16, boolean Crc_IsFirstCall )",
+    "description": "This service makes a CRC16 calculation on Crc_Length data bytes, using the polynomial 0x8005."
+   },
+   {
+    "name": "Crc_CalculateCRC32",
+    "service_name": "Crc_CalculateCRC32",
+    "service_id": "0x03",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Crc.h",
+    "syntax": "uint32 Crc_CalculateCRC32 ( const uint8* Crc_DataPtr, uint32 Crc_Length, uint32 Crc_StartValue32, boolean Crc_IsFirstCall )",
+    "description": "This service makes a CRC32 calculation on Crc_Length data bytes."
+   },
+   {
+    "name": "Crc_CalculateCRC32P4",
+    "service_name": "Crc_CalculateCRC32P4",
+    "service_id": "0x06",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Crc.h",
+    "syntax": "uint32 Crc_CalculateCRC32P4 ( const uint8* Crc_DataPtr, uint32 Crc_Length, uint32 Crc_StartValue32, boolean Crc_IsFirstCall )",
+    "description": "This service makes a CRC32 calculation on Crc_Length data bytes, using the polynomial 0xF4 ACFB13. This CRC routine is used by E2E Profile 4."
+   },
+   {
+    "name": "Crc_CalculateCRC32P76",
+    "service_name": "Crc_CalculateCRC32P76",
+    "service_id": "0x09",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Crc.h",
+    "syntax": "uint32 Crc_CalculateCRC32P76 ( const uint8* Crc_DataPtr, uint32 Crc_Length, uint32 Crc_StartValue32, boolean Crc_IsFirstCall )",
+    "description": "This service makes a CRC32 calculation on Crc_Length data bytes, using the polynomial 0x0x6938392D. Tags: atp.Status=draft"
+   },
+   {
+    "name": "Crc_CalculateCRC64",
+    "service_name": "Crc_CalculateCRC64",
+    "service_id": "0x07",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Crc.h",
+    "syntax": "uint64 Crc_CalculateCRC64 ( const uint8* Crc_DataPtr, uint32 Crc_Length, uint64 Crc_StartValue64, boolean Crc_IsFirstCall )",
+    "description": "This service makes a CRC64 calculation on Crc_Length data bytes, using the polynomial 0x42 F0E1EBA9EA3693. This CRC routine is used by E2E Profile 7."
+   },
+   {
+    "name": "Crc_GetVersionInfo",
+    "service_name": "Crc_GetVersionInfo",
+    "service_id": "0x04",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Crc.h",
+    "syntax": "void Crc_GetVersionInfo ( Std_VersionInfoType* Versioninfo )",
+    "description": "This service returns the version information of this module."
+   }
+  ],
+  "dev_errors": [],
+  "types": [],
+  "containers": [
+   {
+    "idx": 2,
+    "name": "Containers"
+   },
+   {
+    "idx": 1,
+    "name": "Crc"
+   }
+  ],
+  "published": " For details refer to [2] Chapter 10.3 “Published Information” . [SWS_Crc_00050] Upstream requirements: SRS_BSW_00402 ⌈The standardized common published parameters as required by SRS_BSW_00402 in the SRS General on Basic Software Modules [3] shall be pub- lished within the header file of this module and need to be provided in the BSW Mod- uleDescription. The according module abbreviation can be found in the SWS General on Basic Software Modules [2].⌋ Additional module-specific published parameters are listed below if applicable. [SWS_Crc_00048] ⌈ Information elements Information element name T",
+  "callbacks": [],
+  "callback_section_head": " None. 41 of 59 Document ID 16: AUTOSAR_CP_SWS_CRCLibrary Specification of CRC Library AUTOSAR CP R25-11 ",
+  "scheduled": [],
+  "expected_interfaces": " In this chapter, all interfaces required from other modules are listed. 8.6.1 Mandatory interfaces None 8.6.2 Optional interfaces None. 8.6.3 Configurable interfaces None. "
+ },
+ "Eth": {
+  "module": "Eth",
+  "sws_file": "AUTOSAR_CP_SWS_EthernetDriver.txt",
+  "sws_release": "R25-11",
+  "apis": [
+   {
+    "name": "Eth_Init",
+    "service_name": "Eth_Init",
+    "service_id": "0x01",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Eth.h",
+    "syntax": "void Eth_Init ( const Eth_ConfigType* CfgPtr )",
+    "description": "Initializes the Ethernet Driver"
+   },
+   {
+    "name": "Eth_SetControllerMode",
+    "service_name": "Eth_SetControllerMode",
+    "service_id": "0x03",
+    "sync": "Asynchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_SetControllerMode ( uint8 CtrlIdx, Eth_ModeType CtrlMode )",
+    "description": "Enables / Disables Rx/Tx communication of the indexed controller"
+   },
+   {
+    "name": "Eth_GetControllerMode",
+    "service_name": "Eth_GetControllerMode",
+    "service_id": "0x04",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_GetControllerMode ( uint8 CtrlIdx, Eth_ModeType* CtrlModePtr )",
+    "description": "Obtains the communication state of the indexed controller"
+   },
+   {
+    "name": "Eth_GetPhysAddr",
+    "service_name": "Eth_GetPhysAddr",
+    "service_id": "0x08",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Eth.h",
+    "syntax": "void Eth_GetPhysAddr ( uint8 CtrlIdx, uint8* PhysAddrPtr )",
+    "description": "Obtains the physical source address used by the indexed controller"
+   },
+   {
+    "name": "Eth_SetPhysAddr",
+    "service_name": "Eth_SetPhysAddr",
+    "service_id": "0x13",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant for the same CtrlIdx, reentrant for different",
+    "available_via": "Eth.h",
+    "syntax": "void Eth_SetPhysAddr ( uint8 CtrlIdx, const uint8* PhysAddrPtr )",
+    "description": "Sets the physical source address used by the indexed controller"
+   },
+   {
+    "name": "Eth_UpdatePhysAddrFilter",
+    "service_name": "Eth_UpdatePhysAddrFilter",
+    "service_id": "0x12",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant for the same CtrlIdx, reentrant for different",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_UpdatePhysAddrFilter ( uint8 CtrlIdx, const uint8* PhysAddrPtr, uint16 VlanId, Eth_FilterActionType Action )",
+    "description": "Update the physical source address to/from the indexed controller filter. If the controller is not"
+   },
+   {
+    "name": "Eth_WriteMii",
+    "service_name": "Eth_WriteMii",
+    "service_id": "0xa0",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different CtrlIdxs, non reentrant for the same CtrlIdx.",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_WriteMii ( uint8 CtrlIdx, uint8 TrcvIdx, uint8 RegIdx, uint16 RegVal )",
+    "description": "Writes a transceiver register."
+   },
+   {
+    "name": "Eth_ReadMii",
+    "service_name": "Eth_ReadMii",
+    "service_id": "0xa1",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different CtrlIdxs, non reentrant for the same CtrlIdx.",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_ReadMii ( uint8 CtrlIdx, uint8 TrcvIdx, uint8 RegIdx, uint16* RegValPtr )",
+    "description": "Reads a transceiver register."
+   },
+   {
+    "name": "Eth_GetCounterValues",
+    "service_name": "Eth_GetCounterValues",
+    "service_id": "0x14",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_GetCounterValues ( uint8 CtrlIdx, Eth_CounterType* CounterPtr )",
+    "description": "Reads a list with drop counter values of the corresponding controller. The meaning of these"
+   },
+   {
+    "name": "Eth_GetRxStats",
+    "service_name": "Eth_GetRxStats",
+    "service_id": "0x15",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_GetRxStats ( uint8 CtrlIdx, Eth_RxStatsType* RxStats )",
+    "description": "Returns the following list according to IETF RFC2819, where the maximal possible value shall"
+   },
+   {
+    "name": "Eth_GetTxStats",
+    "service_name": "Eth_GetTxStats",
+    "service_id": "0x1c",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_GetTxStats ( uint8 CtrlIdx, Eth_TxStatsType* TxStats )",
+    "description": "Returns the list of Transmission Statistics out of IETF RFC1213 defined with Eth_TxStatsType,"
+   },
+   {
+    "name": "Eth_GetTxErrorCounterValues",
+    "service_name": "Eth_GetTxErrorCounterValues",
+    "service_id": "0x1d",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_GetTxErrorCounterValues ( uint8 CtrlIdx, Eth_TxErrorCounterValuesType* TxErrorCounterValues )",
+    "description": "Returns the list of Transmission Error Counters out of IETF RFC1213 and RFC1643 defined"
+   },
+   {
+    "name": "Eth_GetSpiStatus",
+    "service_name": "Eth_GetSpiStatus (draft)",
+    "service_id": "0x1E",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_GetSpiStatus ( uint8 CtrlIdx, Eth_SpiStatusType* SpiStatusType )",
+    "description": "Returns the status defined by OA TC6 to identify if an error can occured at the SPI interface."
+   },
+   {
+    "name": "Eth_GetCurrentTimeTuple",
+    "service_name": "Eth_GetCurrentTimeTuple (draft)",
+    "service_id": "0x21",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_GetCurrentTimeTuple ( uint8 CtrlIdx, uint8 ClkUnitIdx, TimeTupleType* currentTimeTuplePtr )",
+    "description": "Reads the time tuple of the current time of the timestamp clock and the current time of the PHC"
+   },
+   {
+    "name": "Eth_SetPhcTime",
+    "service_name": "Eth_SetPhcTime (draft)",
+    "service_id": "0x22",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_SetPhcTime ( uint8 CtrlIdx, uint8 ClkUnitIdx, const TimeStampType* timeStampPtr )",
+    "description": "Sets the absolute time of the PHC."
+   },
+   {
+    "name": "Eth_SetPhcCorrection",
+    "service_name": "Eth_SetPhcCorrection (draft)",
+    "service_id": "0x23",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_SetPhcCorrection ( uint8 CtrlIdx, uint8 ClkUnitIdx, sint32 rateDeviation, sint32 offset )",
+    "description": "Sets PHC parameters to adapt rate and offset of the PHC."
+   },
+   {
+    "name": "Eth_GetPhcTime",
+    "service_name": "Eth_GetPhcTime (draft)",
+    "service_id": "0x24",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_GetPhcTime ( uint8 CtrlIdx, uint8 ClkUnitIdx, TimeStampQualType* timeQualPtr, TimeStampType* timeStampPtr )",
+    "description": "Returns the current time value out of the HW registers of the PHC."
+   },
+   {
+    "name": "Eth_SetPpsSignalMode",
+    "service_name": "Eth_SetPpsSignalMode (draft)",
+    "service_id": "0x25",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_SetPpsSignalMode ( uint8 CtrlIdx, uint8 ClkUnitIdx, boolean signalMode )",
+    "description": "Enables/disables the generation of a PPS signal"
+   },
+   {
+    "name": "Eth_EnableEgressTimeStamp",
+    "service_name": "Eth_EnableEgressTimeStamp",
+    "service_id": "0x17",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Eth.h",
+    "syntax": "void Eth_EnableEgressTimeStamp ( uint8 CtrlIdx, Eth_BufIdxType BufIdx )",
+    "description": "Activates egress time stamping on a dedicated message object. Some HW does store once the"
+   },
+   {
+    "name": "Eth_GetEgressTimeStamp",
+    "service_name": "Eth_GetEgressTimeStamp",
+    "service_id": "0x18",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_GetEgressTimeStamp ( uint8 CtrlIdx, Eth_BufIdxType BufIdx, TimeStampQualType* timeQualPtr, TimeStampType* timeStampPtr )",
+    "description": "Reads back the egress time stamp on a dedicated message object. It must be called within the"
+   },
+   {
+    "name": "Eth_GetIngressTimeStamp",
+    "service_name": "Eth_GetIngressTimeStamp (obsolete)",
+    "service_id": "0x19",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_GetIngressTimeStamp ( uint8 CtrlIdx, const Eth_DataType* DataPtr, TimeStampQualType* timeQualPtr, TimeStampType* timeStampPtr )",
+    "description": "Reads back the ingress time stamp on a dedicated message object. It must be called within the"
+   },
+   {
+    "name": "Eth_ProvideTxBuffer",
+    "service_name": "Eth_ProvideTxBuffer",
+    "service_id": "0x09",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Eth.h",
+    "syntax": "BufReq_ReturnType Eth_ProvideTxBuffer ( uint8 CtrlIdx, uint8 Priority, Eth_BufIdxType* BufIdxPtr, uint8** BufPtr, uint16* LenBytePtr )",
+    "description": "Provides access to a transmit buffer of the queue related to the specified priority"
+   },
+   {
+    "name": "Eth_Transmit",
+    "service_name": "Eth_Transmit",
+    "service_id": "0x0A",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different buffer indexes and Ctrl indexes",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_Transmit ( uint8 CtrlIdx, Eth_BufIdxType BufIdx, Eth_FrameType FrameType , boolean TxConfirmation, uint16 LenByte, const uint8* PhysAddrPtr )",
+    "description": "Triggers transmission of a previously filled transmit buffer"
+   },
+   {
+    "name": "Eth_Receive",
+    "service_name": "Eth_Receive",
+    "service_id": "0x0B",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different queues. Non Reentrant for the same queue.",
+    "available_via": "Eth.h",
+    "syntax": "void Eth_Receive ( uint8 CtrlIdx, uint8 QueueIdx, Eth_RxStatusType* RxStatusPtr )",
+    "description": "Receive a frame from the related queue."
+   },
+   {
+    "name": "Eth_ImmediateTransmit",
+    "service_name": "Eth_ImmediateTransmit (draft)",
+    "service_id": "0x26",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different Tx handle ids and Ctrl indexes",
+    "available_via": "EthIf.h",
+    "syntax": "Std_ReturnType Eth_ImmediateTransmit ( uint8 CtrlIdx, Eth_BufIdxType TxHandleId, uint8 Priority, ListElemStructType* HeaderListPtr, uint8* PayloadPtr, uint16 PayloadLength )",
+    "description": "Request transmission of an Ethernet frame, where each upper layer a header part as element"
+   },
+   {
+    "name": "Eth_ReleaseRxBuffer",
+    "service_name": "Eth_ReleaseRxBuffer (draft)",
+    "service_id": "0x27",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different Rx handle ids and Ctrl indexes",
+    "available_via": "EthIf.h",
+    "syntax": "void Eth_ReleaseRxBuffer ( uint8 CtrlIdx, Eth_BufIdxType RxHandleId ) AUTOSAR CP R25-11",
+    "description": "Indication from the upper layer to release the reception buffer (ingress queue element) of the"
+   },
+   {
+    "name": "Eth_TxConfirmation",
+    "service_name": "Eth_TxConfirmation",
+    "service_id": "0x0C",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "Eth.h",
+    "syntax": "void Eth_TxConfirmation ( uint8 CtrlIdx )",
+    "description": "Triggers frame transmission confirmation"
+   },
+   {
+    "name": "Eth_GetVersionInfo",
+    "service_name": "Eth_GetVersionInfo",
+    "service_id": "0x0D",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "Eth.h",
+    "syntax": "void Eth_GetVersionInfo ( Std_VersionInfoType* VersionInfoPtr )",
+    "description": "Returns the version information of this module"
+   },
+   {
+    "name": "Eth_ReadMmd",
+    "service_name": "Eth_ReadMmd",
+    "service_id": "0xa3",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different CtrlIdx, non reentrant for same CtrlIdx",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_ReadMmd ( uint8 CtrlIdx, uint8 TrcvIdx, uint8 Mmd, uint16 RegIdx, uint16* RegValPtr )",
+    "description": "Reads a transceiver register using Clause45 access if supported by hardware or implements a"
+   },
+   {
+    "name": "Eth_WriteMmd",
+    "service_name": "Eth_WriteMmd",
+    "service_id": "0xa2",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different CtrlIdx, non reentrant for same CtrlIdx",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_WriteMmd ( uint8 CtrlIdx, uint8 TrcvIdx, uint8 Mmd, uint16 RegIdx, uint16 RegVal )",
+    "description": "Writes a transceiver register using Clause 45 access or implements a Clause45 access using"
+   },
+   {
+    "name": "Eth_MacSecUpdateSecY",
+    "service_name": "Eth_MacSecUpdateSecY (draft)",
+    "service_id": "0x2a",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant for different CtrlIdx, non reentrant for the same CtrlIdx",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_MacSecUpdateSecY ( uint8 CtrlIdx, const Mka_MacSecConfigType* MACSecCfgPtr, uint64 TxSci )",
+    "description": "Requests the Ethernet controller to update the SecY/PAC at this Ethernet controller with the"
+   },
+   {
+    "name": "Eth_MacSecInitRxSc",
+    "service_name": "Eth_MacSecInitRxSc",
+    "service_id": "0x2b",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different CtrlIdx, non reentrant for the same CtrlIdx",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_MacSecInitRxSc ( uint8 CtrlIdx, uint64 RxSci )",
+    "description": "Requests the Ethernet Controller Driver to configure a Reception Secure Channel for the given"
+   },
+   {
+    "name": "Eth_MacSecResetRxSc",
+    "service_name": "Eth_MacSecResetRxSc (draft)",
+    "service_id": "0x2c",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different CtrlIdx, non reentrant for the same CtrlIdx",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_MacSecResetRxSc ( uint8 CtrlIdx, uint64 RxSci )",
+    "description": "Requests the Ethernet Controller Driver to reset to MACsec default values of the Reception"
+   },
+   {
+    "name": "Eth_MacSecAddTxSa",
+    "service_name": "Eth_MacSecAddTxSa (draft)",
+    "service_id": "0x2d",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant for different CtrlIdx, non reentrant for the same CtrlIdx",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_MacSecAddTxSa ( uint8 CtrlIdx, uint8 An, uint64 NextPn, uint32 Ssci, const Mka_SakKeyPtrType* KeysPtr, boolean Active )",
+    "description": "Requests the Ethernet Controller Driver to create a Transmission Secure Association in the"
+   },
+   {
+    "name": "Eth_MacSecUpdateTxSa",
+    "service_name": "Eth_MacSecUpdateTxSa (draft)",
+    "service_id": "0x2e",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different CtrlIdx, non reentrant for the same CtrlIdx",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_MacSecUpdateTxSa ( uint8 CtrlIdx, uint8 An, uint64 NextPn, boolean Active )",
+    "description": "Requests the Ethernet Controller Driver to update the Transmission Secure Association with"
+   },
+   {
+    "name": "Eth_MacSecDeleteTxSa",
+    "service_name": "Eth_MacSecDeleteTxSa (draft)",
+    "service_id": "0x2f",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different CtrlIdx, non reentrant for the same CtrlIdx",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_MacSecDeleteTxSa ( uint8 CtrlIdx, uint8 An )",
+    "description": "Request the Ethernet Transceiver Driver to remove the Transmission Secure Association"
+   },
+   {
+    "name": "Eth_MacSecAddRxSa",
+    "service_name": "Eth_MacSecAddRxSa (draft)",
+    "service_id": "0x30",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant for different CtrlIdx, non reentrant for the same CtrlIdx",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_MacSecAddRxSa ( uint8 CtrlIdx, uint8 An, uint64 LowestPn, uint32 Ssci, const Mka_SakKeyPtrType* KeysPtr, boolean Active )",
+    "description": "Requests the Ethernet Controller Driver to create a Reception Secure Association in the"
+   },
+   {
+    "name": "Eth_MacSecUpdateRxSa",
+    "service_name": "Eth_MacSecUpdateRxSa (draft)",
+    "service_id": "0x31",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different CtrlIdx, non reentrant for the same CtrlIdx",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_MacSecUpdateRxSa ( uint8 CtrlIdx, uint8 An, uint64 LowestPn, boolean Active )",
+    "description": "Requests the Ethernet Controller Driver to update the Reception Secure Association with the"
+   },
+   {
+    "name": "Eth_MacSecDeleteRxSa",
+    "service_name": "Eth_MacSecDeleteRxSa (draft)",
+    "service_id": "0x32",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different CtrlIdx, non reentrant for the same CtrlIdx",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_MacSecDeleteRxSa ( uint8 CtrlIdx, uint8 An )",
+    "description": "Request the Ethernet Transceiver Driver to remove the Reception Secure Association identified"
+   },
+   {
+    "name": "Eth_MacSecGetTxSaNextPn",
+    "service_name": "Eth_MacSecGetTxSaNextPn (draft)",
+    "service_id": "0x33",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different CtrlIdx, non reentrant for the same CtrlIdx",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_MacSecGetTxSaNextPn ( uint8 CtrlIdx, uint8 An, uint64* NextPnPtr )",
+    "description": "Request the Ethernet Transceiver Driver to return the Packet Number that is used for the next"
+   },
+   {
+    "name": "Eth_MacSecSetControlledPortEn",
+    "service_name": "Eth_MacSecSetControlledPortEnabled (draft)",
+    "service_id": "0x34",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different CtrlIdx, non reentrant for the same CtrlIdx",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_MacSecSetControlledPortEnabled ( uint8 CtrlIdx, boolean ControlledPortEnabled )",
+    "description": "Requests to set the Controlled Port enabled parameter of a PAE."
+   },
+   {
+    "name": "Eth_MacSecGetMacSecStatistics",
+    "service_name": "Eth_MacSecGetMacSecStatistics (draft)",
+    "service_id": "0x35",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different CtrlIdx, non reentrant for the same CtrlIdx",
+    "available_via": "Eth.h",
+    "syntax": "Std_ReturnType Eth_MacSecGetMacSecStatistics ( uint8 CtrlIdx, Mka_Stats_SecYType* MacSecStatsPtr )",
+    "description": "Request the Ethernet Driver to provide MACsec statistics."
+   }
+  ],
+  "dev_errors": [],
+  "types": [],
+  "containers": [],
+  "published": [],
+  "callbacks": [],
+  "callback_section_head": "",
+  "scheduled": [],
+  "expected_interfaces": ""
+ },
+ "EthTrcv": {
+  "module": "EthTrcv",
+  "sws_file": "AUTOSAR_CP_SWS_EthernetTransceiverDriver.txt",
+  "sws_release": "R25-11",
+  "apis": [
+   {
+    "name": "EthTrcv_Init",
+    "service_name": "EthTrcv_Init",
+    "service_id": "0x01",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "EthTrcv.h",
+    "syntax": "void EthTrcv_Init ( const EthTrcv_ConfigType* CfgPtr )",
+    "description": "Initializes the Ethernet Transceiver Driver"
+   },
+   {
+    "name": "EthTrcv_SetTransceiverMode",
+    "service_name": "EthTrcv_SetTransceiverMode",
+    "service_id": "0xa8",
+    "sync": "Asynchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_SetTransceiverMode ( uint8 TrcvIdx, Eth_ModeType TrcvMode )",
+    "description": "Enables / disables the indexed transceiver"
+   },
+   {
+    "name": "EthTrcv_GetTransceiverMode",
+    "service_name": "EthTrcv_GetTransceiverMode",
+    "service_id": "0x04",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_GetTransceiverMode ( uint8 TrcvIdx, Eth_ModeType* TrcvModePtr )",
+    "description": "Obtains the state of the indexed transceiver"
+   },
+   {
+    "name": "EthTrcv_GetBusWuReason",
+    "service_name": "EthTrcv_GetBusWuReason",
+    "service_id": "0x17",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_GetBusWuReason ( uint8 TrcvIdx, EthTrcv_WakeupReasonType* WakeupReasonPtr )",
+    "description": "This function returns the least recent wakeup reasons."
+   },
+   {
+    "name": "EthTrcv_CheckWakeup",
+    "service_name": "EthTrcv_CheckWakeup",
+    "service_id": "0x0f",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_CheckWakeup ( uint8 TrcvIdx )",
+    "description": "Service is called by EthIf in case a wake-up interrupt is detected."
+   },
+   {
+    "name": "EthTrcv_StartAutoNegotiation",
+    "service_name": "EthTrcv_StartAutoNegotiation",
+    "service_id": "0xa9",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_StartAutoNegotiation ( uint8 TrcvIdx )",
+    "description": "Restarts the negotiation of the transmission parameters used by the indexed transceiver"
+   },
+   {
+    "name": "EthTrcv_TransceiverLinkState",
+    "service_name": "EthTrcv_TransceiverLinkStateRequest",
+    "service_id": "0x02",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant for different TrcvIdx. Non reentrant for the same TrcvIdx.",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_TransceiverLinkStateRequest ( uint8 TrcvIdx, EthTrcv_LinkStateType LinkState )",
+    "description": "Request the given link state for the given transceiver"
+   },
+   {
+    "name": "EthTrcv_GetLinkState",
+    "service_name": "EthTrcv_GetLinkState",
+    "service_id": "0x06",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_GetLinkState ( uint8 TrcvIdx, EthTrcv_LinkStateType* LinkStatePtr )",
+    "description": "Obtains the link state of the indexed transceiver"
+   },
+   {
+    "name": "EthTrcv_GetBaudRate",
+    "service_name": "EthTrcv_GetBaudRate",
+    "service_id": "0x07",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_GetBaudRate ( uint8 TrcvIdx, EthTrcv_BaudRateType* BaudRatePtr )",
+    "description": "Obtains the baud rate of the indexed transceiver"
+   },
+   {
+    "name": "EthTrcv_GetDuplexMode",
+    "service_name": "EthTrcv_GetDuplexMode",
+    "service_id": "0x08",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_GetDuplexMode ( uint8 TrcvIdx, EthTrcv_DuplexModeType* DuplexModePtr )",
+    "description": "Obtains the duplex mode of the indexed transceiver"
+   },
+   {
+    "name": "EthTrcv_SetPhyTestMode",
+    "service_name": "EthTrcv_SetPhyTestMode",
+    "service_id": "0x11",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different TrcvIdx. Non reentrant for the same TrcvIdx.",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_SetPhyTestMode ( uint8 TrcvIdx, EthTrcv_PhyTestModeType Mode )",
+    "description": "Activates a given test mode."
+   },
+   {
+    "name": "EthTrcv_SetPhyLoopbackMode",
+    "service_name": "EthTrcv_SetPhyLoopbackMode",
+    "service_id": "0x12",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different TrcvIdx. Non reentrant for the same TrcvIdx.",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_SetPhyLoopbackMode ( uint8 TrcvIdx, EthTrcv_PhyLoopbackModeType Mode )",
+    "description": "Activates a given loopback mode."
+   },
+   {
+    "name": "EthTrcv_GetPhySignalQuality",
+    "service_name": "EthTrcv_GetPhySignalQuality",
+    "service_id": "0x10",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different TrcvIdx. Non reentrant for the same TrcvIdx.",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_GetPhySignalQuality ( uint8 TrcvIdx, uint32* SignalQualityPtr )",
+    "description": "Obtains the current signal quality of the link of the indexed transceiver"
+   },
+   {
+    "name": "EthTrcv_SetPhyTxMode",
+    "service_name": "EthTrcv_SetPhyTxMode",
+    "service_id": "0x13",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different TrcvIdx. Non reentrant for the same TrcvIdx.",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_SetPhyTxMode ( uint8 TrcvIdx, EthTrcv_PhyTxModeType Mode )",
+    "description": "Activates a given transmission mode."
+   },
+   {
+    "name": "EthTrcv_RunCableDiagnostic",
+    "service_name": "EthTrcv_RunCableDiagnostic",
+    "service_id": "0x16",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant for different TrcvIdx. Non reentrant for the same TrcvIdx.",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_RunCableDiagnostic ( uint8 TrcvIdx )",
+    "description": "Trigger the cable diagnostics for the given Ethernet transceiver."
+   },
+   {
+    "name": "EthTrcv_GetCableDiagnostics",
+    "service_name": "EthTrcv_GetCableDiagnosticsResult",
+    "service_id": "0x14",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different TrcvIdx. Non reentrant for the same TrcvIdx.",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_GetCableDiagnosticsResult ( uint8 TrcvIdx, EthTrcv_CableDiagResultType* ResultPtr )",
+    "description": "Retrieves the cable diagnostics result of a given transceiver."
+   },
+   {
+    "name": "EthTrcv_GetPhyIdentifier",
+    "service_name": "EthTrcv_GetPhyIdentifier",
+    "service_id": "0x15",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different TrcvIdx. Non reentrant for the same TrcvIdx.",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_GetPhyIdentifier ( uint8 TrcvIdx, uint32* OrgUniqueIdPtr, uint8* ModelNrPtr, uint8* RevisionNrPtr )",
+    "description": "Obtains the PHY identifier of the Ethernet Transceiver according to IEEE 802.3-2015 chapter"
+   },
+   {
+    "name": "EthTrcv_GetMacMethod",
+    "service_name": "EthTrcv_GetMacMethod",
+    "service_id": "0x18",
+    "sync": "Synchronous",
+    "reentrancy": "Non Reentrant",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_GetMacMethod ( uint8* TrcvIdx, EthTrcv_MacMethodType* MacModePtr )",
+    "description": "Obtains the media access mode of the transceiver when EthTrcvDuplexMode is configured as"
+   },
+   {
+    "name": "EthTrcv_GetVersionInfo",
+    "service_name": "EthTrcv_GetVersionInfo",
+    "service_id": "0x0b",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant",
+    "available_via": "EthTrcv.h",
+    "syntax": "void EthTrcv_GetVersionInfo ( Std_VersionInfoType* VersionInfoPtr )",
+    "description": "Returns the version information of this module"
+   },
+   {
+    "name": "EthTrcv_MacSecUpdateSecY",
+    "service_name": "EthTrcv_MacSecUpdateSecY (draft)",
+    "service_id": "0x19",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant for different TrcvIdx, non reentrant for the same TrcvIdx",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_MacSecUpdateSecY ( uint8 TrcvIdx, const Mka_MacSecConfigType* MACSecCfgPtr, uint64 TxSci )",
+    "description": "Requests the Ethernet Transceiver to update the SecY/PAC of the PHY with the provided"
+   },
+   {
+    "name": "EthTrcv_MacSecInitRxSc",
+    "service_name": "EthTrcv_MacSecInitRxSc (draft)",
+    "service_id": "0x1a",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different TrcvIdx, non reentrant for the same TrcvIdx",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_MacSecInitRxSc ( uint8 TrcvIdx, uint64 RxSci )",
+    "description": "Requests the Ethernet Transceiver Driver to configure a Reception Secure Channel for the"
+   },
+   {
+    "name": "EthTrcv_MacSecResetRxSc",
+    "service_name": "EthTrcv_MacSecResetRxSc (draft)",
+    "service_id": "0x1b",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different TrcvIdx, non reentrant for the same TrcvIdx",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_MacSecResetRxSc ( uint8 TrcvIdx, uint64 RxSci )",
+    "description": "Requests the Ethernet Transceiver Driver to reset to default the MACsec values of the"
+   },
+   {
+    "name": "EthTrcv_MacSecAddTxSa",
+    "service_name": "EthTrcv_MacSecAddTxSa (draft)",
+    "service_id": "0x1c",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant for different TrcvIdx, non reentrant for the same TrcvIdx",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_MacSecAddTxSa ( uint8 TrcvIdx, uint8 An, uint64 NextPn, uint32 Ssci, const Mka_SakKeyPtrType* KeysPtr, boolean Active )",
+    "description": "Requests the Ethernet Transceiver Driver to create a Transmission Secure Association in the"
+   },
+   {
+    "name": "EthTrcv_MacSecUpdateTxSa",
+    "service_name": "EthTrcv_MacSecUpdateTxSa (draft)",
+    "service_id": "0x1d",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different TrcvIdx, non reentrant for the same TrcvIdx",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_MacSecUpdateTxSa ( uint8 TrcvIdx, uint8 An, uint64 NextPn, boolean Active )",
+    "description": "Requests the Ethernet Transceiver Driver to update the Transmission Secure Association with"
+   },
+   {
+    "name": "EthTrcv_MacSecDeleteTxSa",
+    "service_name": "EthTrcv_MacSecDeleteTxSa (draft)",
+    "service_id": "0x1e",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different TrcvIdx, non reentrant for the same TrcvIdx",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_MacSecDeleteTxSa ( uint8 TrcvIdx, uint8 An )",
+    "description": "Request the Ethernet Transceiver Driver to remove the Transmission Secure Association"
+   },
+   {
+    "name": "EthTrcv_MacSecAddRxSa",
+    "service_name": "EthTrcv_MacSecAddRxSa (draft)",
+    "service_id": "0x1f",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant for different TrcvIdx, non reentrant for the same TrcvIdx",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_MacSecAddRxSa ( uint8 TrcvIdx, uint8 An, uint64 LowestPn, uint32 Ssci, const Mka_SakKeyPtrType* KeysPtr, boolean Active )",
+    "description": "Request the Ethernet Transceiver Driver to create a Reception Secure Association in the"
+   },
+   {
+    "name": "EthTrcv_MacSecUpdateRxSa",
+    "service_name": "EthTrcv_MacSecUpdateRxSa (draft)",
+    "service_id": "0x20",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different TrcvIdx, non reentrant for the same TrcvIdx",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_MacSecUpdateRxSa ( uint8 TrcvIdx, uint8 An, uint64 LowestPn, boolean Active )",
+    "description": "Request the Ethernet Transceiver Driver to update the Reception Secure Association with the"
+   },
+   {
+    "name": "EthTrcv_MacSecDeleteRxSa",
+    "service_name": "EthTrcv_MacSecDeleteRxSa (draft)",
+    "service_id": "0x21",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different TrcvIdx, non reentrant for the same TrcvIdx",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_MacSecDeleteRxSa ( uint8 TrcvIdx, uint8 An )",
+    "description": "Request the Ethernet Transceiver Driver to remove the Reception Secure Association identified"
+   },
+   {
+    "name": "EthTrcv_MacSecGetTxSaNext",
+    "service_name": "EthTrcv_MacSecGetTxSaNextPn (draft)",
+    "service_id": "0x22",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different TrcvIdx, non reentrant for the same TrcvIdx",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_MacSecGetTxSaNextPn ( uint8 TrcvIdx, uint8 An, uint64* NextPnPtr )",
+    "description": "Request the Ethernet Transceiver Driver to return the Packet Number that is used for the next"
+   },
+   {
+    "name": "EthTrcv_MacSecGetMacSec",
+    "service_name": "EthTrcv_MacSecGetMacSecStatistics (draft)",
+    "service_id": "0x23",
+    "sync": "Asynchronous",
+    "reentrancy": "Reentrant for different TrcvIdx, non reentrant for the same TrcvIdx",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_MacSecGetMacSecStatistics ( uint8 TrcvIdx, Mka_Stats_SecYType* MacSecStatsPtr )",
+    "description": "Request the Ethernet Transceiver Driver to provide MACsec statistics."
+   },
+   {
+    "name": "EthTrcv_MacSecSetControlled",
+    "service_name": "EthTrcv_MacSecSetControlledPortEnabled (draft)",
+    "service_id": "0x24",
+    "sync": "Synchronous",
+    "reentrancy": "Reentrant for different TrcvIdx, non reentrant for the same TrcvIdx",
+    "available_via": "EthTrcv.h",
+    "syntax": "Std_ReturnType EthTrcv_MacSecSetControlledPortEnabled ( uint8 TrcvIdx, boolean ControlledPortEnabled )",
+    "description": "Requests to set the Controlled Port enabled parameter of a PAE."
+   }
+  ],
+  "dev_errors": [],
+  "types": [],
+  "containers": [],
+  "published": [],
+  "callbacks": [],
+  "callback_section_head": "",
+  "scheduled": [],
+  "expected_interfaces": ""
+ }
+}

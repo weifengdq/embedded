@@ -1,0 +1,32 @@
+b= 500k sp=75.0% dat=2000k sp=75.0% tdc=1 n=300 rx=300 bad=0 t=10 tdcv=25
+a500-d4m-sp80    arb= 500k sp=80.0% dat=4000k sp=80.0% tdc=1 n=300 rx=300 bad=0 t=65711 us fps=4565 payload=2.34Mbps lec=7 tec=0 rec=0 tdcv=26
+a500-d4m-sp85    arb= 500k sp=87.5% dat=4000k sp=85.0% tdc=1 n=300 rx=300 bad=0 t=65713 us fps=4565 payload=2.34Mbps lec=7 tec=0 rec=0 tdcv=27
+a500-d5m-sp75    arb= 500k sp=75.0% dat=5000k sp=75.0% tdc=1 n=300 rx=300 bad=0 t=56050 us fps=5352 payload=2.74Mbps lec=7 tec=0 rec=0 tdcv=22
+a500-d5m-sp80    arb= 500k sp=80.0% dat=5000k sp=81.2% tdc=1 n=300 rx=300 bad=0 t=56054 us fps=5352 payload=2.74Mbps lec=7 tec=0 rec=0 tdcv=23
+a500-d5m-sp875   arb= 500k sp=87.5% dat=5000k sp=87.5% tdc=1 n=300 rx=300 bad=0 t=56052 us fps=5352 payload=2.74Mbps lec=7 tec=0 rec=0 tdcv=24
+a500-d8m-sp70    arb= 500k sp=75.0% dat=8000k sp=70.0% tdc=1 n=300 rx=300 bad=0 t=41559 us fps=7219 payload=3.70Mbps lec=7 tec=0 rec=0 tdcv=17
+a500-d8m-sp80    arb= 500k sp=80.0% dat=8000k sp=80.0% tdc=1 n=300 rx=300 bad=0 t=41563 us fps=7218 payload=3.70Mbps lec=7 tec=0 rec=0 tdcv=18
+a500-d8m-sp60    arb= 500k sp=87.5% dat=8000k sp=60.0% tdc=1 n=300 rx=300 bad=0 t=41561 us fps=7218 payload=3.70Mbps lec=7 tec=0 rec=0 tdcv=16
+a1m-d2m-sp75     arb=1000k sp=75.0% dat=2000k sp=75.0% tdc=1 n=300 rx=300 bad=0 t=105551 us fps=2842 payload=1.46Mbps lec=7 tec=0 rec=0 tdcv=40
+a1m-d2m-sp80     arb=1000k sp=80.0% dat=2000k sp=80.0% tdc=1 n=300 rx=300 bad=0 t=105559 us fps=2842 payload=1.46Mbps lec=7 tec=0 rec=0 tdcv=42
+a1m-d2m-sp825: TX init failed st=26014
+a1m-d4m-sp75     arb=1000k sp=75.0% dat=4000k sp=75.0% tdc=1 n=300 rx=300 bad=0 t=57263 us fps=5239 payload=2.68Mbps lec=7 tec=0 rec=0 tdcv=25
+a1m-d4m-sp80     arb=1000k sp=80.0% dat=4000k sp=80.0% tdc=1 n=300 rx=300 bad=0 t=57255 us fps=5240 payload=2.68Mbps lec=7 tec=0 rec=0 tdcv=26
+a1m-d4m-sp85     arb=1000k sp=87.5% dat=4000k sp=85.0% tdc=1 n=300 rx=300 bad=0 t=57256 us fps=5240 payload=2.68Mbps lec=7 tec=0 rec=0 tdcv=27
+a1m-d5m-sp75     arb=1000k sp=75.0% dat=5000k sp=75.0% tdc=1 n=300 rx=300 bad=0 t=47595 us fps=6303 payload=3.23Mbps lec=7 tec=0 rec=0 tdcv=22
+a1m-d5m-sp80     arb=1000k sp=80.0% dat=5000k sp=81.2% tdc=1 n=300 rx=300 bad=0 t=47594 us fps=6303 payload=3.23Mbps lec=7 tec=0 rec=0 tdcv=23
+a1m-d5m-sp875    arb=1000k sp=87.5% dat=5000k sp=87.5% tdc=1 n=300 rx=300 bad=0 t=47593 us fps=6303 payload=3.23Mbps lec=7 tec=0 rec=0 tdcv=24
+a1m-d8m-sp70     arb=1000k sp=75.0% dat=8000k sp=70.0% tdc=1 n=300 rx=300 bad=0 t=33118 us fps=9059 payload=4.64Mbps lec=7 tec=0 rec=0 tdcv=17
+a1m-d8m-sp80     arb=1000k sp=80.0% dat=8000k sp=80.0% tdc=1 n=300 rx=300 bad=0 t=33116 us fps=9059 payload=4.64Mbps lec=7 tec=0 rec=0 tdcv=18
+a1m-d8m-sp60     arb=1000k sp=87.5% dat=8000k sp=60.0% tdc=1 n=300 rx=300 bad=0 t=33112 us fps=9060 payload=4.64Mbps lec=7 tec=0 rec=0 tdcv=16
+MATRIX SUMMARY: cases=24 frames_ok=6600 frames_bad=0
+
+=== TDC on/off @ data 2M/5M/8M (arb 1M, SP80) ===
+tdc-off          arb=1000k sp=80.0% dat=2000k sp=80.0% tdc=0 n=300 rx=300 bad=0 t=105550 us fps=2842 payload=1.46Mbps lec=7 tec=0 rec=0 tdcv=0
+  -> tdc-off data=2000k: ok=300 bad=0 us=105550
+tdc-on           arb=1000k sp=80.0% dat=2000k sp=80.0% tdc=1 n=300 rx=300 bad=0 t=105550 us fps=2842 payload=1.46Mbps lec=7 tec=0 rec=0 tdcv=42
+  -> tdc-on data=2000k: ok=300 bad=0 us=105550
+tdc-off          arb=1000k sp=80.0% dat=5000k sp=81.2% tdc=0 n=300 rx=300 bad=0 t=47598 us fps=6303 payload=3.23Mbps lec=7 tec=0 rec=0 tdcv=0
+  -> tdc-off data=5000k: ok=300 bad=0 us=47598
+tdc-on           arb=1000k sp=80.0% dat=5000k sp=81.2% tdc=1 n=300 rx=300 bad=0 t=47589 us fps=6304 payload=3.23Mbps lec=7 tec=0 rec=0 tdcv=23
+  -> tdc-on data=5000k: ok=300 bad=0 us=47589

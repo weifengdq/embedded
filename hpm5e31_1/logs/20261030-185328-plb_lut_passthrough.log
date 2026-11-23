@@ -1,0 +1,7 @@
+ands: lstat | linj
+lstat
+[plb] cap_n=0  PLB_OUT00 上升沿 (还没捕到, 检查 TRGM/PLB 路由)
+      PLB LUT0=0x0000aaaa  OUT=100000 Hz  GPTMR=100000000 Hz
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,43 @@
+bang SCLK 1400820 Hz
+[init] PLCA off (CSMA/CD), node_cnt=8 to_: send [n] | poll | stats | plca <on|off> [..] | probe
+plca on 1 8 32 0 128
+PLCA: en=1 node_id=1 node_cnt=8 to_tmr=32 burst_cnt=0 burst_tmr=128 status=0x8000 (PST=1)
+
+letter:/$ 
+letter:/$ multiread
+Command not Found
+
+letter:/$ 
+letter:/$ stats
+[stats] ctrl xfers=89 err=1 | data xfers=0 | tx_frames=0 tx_bytes=0 | rx_frames=0 rx_bytes=0 dropped=0
+[stats] ext_status=0 hdr_bad=0 cfg_sync_lost=0 last_STATUS0=0x00000040 replies=0
+
+letter:/$ 
+letter:/$ send 2
+[tx] #0 len=58 ret=ok tx_credits=31
+[rx] len=64 dst=ff:ff:ff:ff:ff:ff src=00:1e:c0:d1:c3:37 type=0x88b5
+      payload: 11 22 1e 33 00 01 02 03 04 05 06 07 08 09 0a 0b 
+0c 0d 0e 0f 10 11 12 13 14 15 16 17 18 19 1a 1b 
+      replied with 58 bytes (total replies 1)
+[rx] len=64 dst=ff:ff:ff:ff:ff:ff src=00:1e:c0:d1:c3:37 type=0x88b5
+      payload: 11 22 1f 33 00 01 02 03 04 05 06 07 08 09 0a 0b 
+0c 0d 0e 0f 10 11 12 13 14 15 16 17 18 19 1a 1b 
+      replied with 58 bytes (total replies 2)
+[rx] len=64 dst=ff:ff:ff:ff:ff:ff src=00:1e:c0:d1:c3:37 type=0x88b5
+      payload: 11 22 20 33 00 01 02 03 04 05 06 07 08 09 0a 0b 
+0c 0d 0e 0f 10 11 12 13 14 15 16 17 18 19 1a 1b 
+      replied with 58 bytes (total replies 3)
+[tx] #1 len=58 ret=ok tx_credits=31
+
+letter:/$ 
+letter:/$ poll
+[poll] rx_chunks=0 tx_credits=31
+
+letter:/$ 
+letter:/$ stats
+[stats] ctrl xfers=89 err=1 | data xfers=5 | tx_frames=5 tx_bytes=290 | rx_frames=3 rx_bytes=192 dropped=1
+[stats] ext_status=0 hdr_bad=0 cfg_sync_lost=0 last_STATUS0=0x00000040 replies=3
+[stats] peer MAC 00:1e:c0:d1:c3:37
+
+letter:/$ 
+letter:/$ 

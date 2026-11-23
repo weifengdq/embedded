@@ -1,0 +1,180 @@
+ SLAVE
+Enet phy init passed !
+[net] ENET + YT8011AN init doneink
+sleep 2000
+Command not Found
+
+letter:/$ 
+letter:/$ ptpbench 40
+[ptpbench] sampling 40 s (keep-alive polling on)
+(D 1651074122.007681560) event MASTER_CLOCK_CHANGED
+(D 1651074122.008319240) state PTP_UNCALIBRATED
+(D 1793351449.259395649) setTime: resetting system clock to 1793351449s 259395449ns
+(D 1793351449.260414769) initClock
+(D 1793351449.260839689) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351449.261967849) updateClock: offset from master:      -142277326s  -252574849ns
+(D 1793351449.263027009) updateClock: observed drift:                   0
+(D 1793351450.259399209) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351450.260724709) updateClock: offset from master:               0s      -19388ns
+(D 1793351450.261779709) updateClock: observed drift:               -1292
+(D 1793351451.259445869) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351451.260574649) updateClock: offset from master:               0s      -23286ns
+(D 1793351451.261630509) updateClock: observed drift:               -2844
+[ptpstats] n=1 mean=0.0 ns std=0.0 ns min=0 ns max=0 ns last=0 ns
+[ptpstats] PASS/FAIL 判据：|mean|<1000 ns 且 std<500 ns 视为锁定
+(D 1793351452.259748969) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351452.261082869) updateClock: offset from master:               0s      -27379ns
+(D 1793351452.262137649) updateClock: observed drift:               -4669
+(D 1793351453.259942209) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351453.261073109) updateClock: offset from master:               0s      -29644ns
+(D 1793351453.262127769) updateClock: observed drift:               -6645
+(D 1793351454.260096229) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351454.261220789) updateClock: offset from master:               0s      -29444ns
+(D 1793351454.262275289) updateClock: observed drift:               -8607
+(D 1793351455.259814289) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351455.260946389) updateClock: offset from master:               0s      -27080ns
+(D 1793351455.262000769) updateClock: observed drift:              -10412
+(D 1793351456.260174289) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351456.261299269) updateClock: offset from master:               0s      -23304ns
+(D 1793351456.262354769) updateClock: observed drift:              -11965
+[ptpstats] n=1 mean=0.0 ns std=0.0 ns min=0 ns max=0 ns last=0 ns
+[ptpstats] PASS/FAIL 判据：|mean|<1000 ns 且 std<500 ns 视为锁定
+(D 1793351457.260193929) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351457.261323089) updateClock: offset from master:               0s      -19004ns
+(D 1793351457.262378549) updateClock: observed drift:              -13231
+(D 1793351458.260207589) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351458.261333969) updateClock: offset from master:               0s      -14876ns
+(D 1793351458.262389269) updateClock: observed drift:              -14222
+(D 1793351459.260276969) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351459.261406309) updateClock: offset from master:               0s      -11386ns
+(D 1793351459.262460249) updateClock: observed drift:              -14981
+(D 1793351460.260454409) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351460.261579429) updateClock: offset from master:               0s       -8721ns
+(D 1793351460.262636089) updateClock: observed drift:              -15562
+(D 1793351460.263519389) event MASTER_CLOCK_SELECTED
+(D 1793351460.264154449) state PTP_SLAVE
+(D 1793351461.260504449) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351461.261633149) updateClock: offset from master:               0s       -6834ns
+(D 1793351461.262687929) updateClock: observed drift:              -16017
+[ptpstats] n=3 mean=-5185.0 ns std=3746.4 ns min=-8721 ns max=0 ns last=-6834 ns
+[ptpstats] PASS/FAIL 判据：|mean|<1000 ns 且 std<500 ns 视为锁定
+(D 1793351462.260674129) updateClock: one-way delay averaged (E2E):           0s       13831ns
+(D 1793351462.261804989) updateClock: offset from master:               0s      -12495ns
+(D 1793351462.262860909) updateClock: observed drift:              -16850
+(D 1793351463.260731909) updateClock: one-way delay averaged (E2E):           0s       13831ns
+(D 1793351463.261864689) updateClock: offset from master:               0s      -13189ns
+(D 1793351463.262920409) updateClock: observed drift:              -17729
+(D 1793351464.260694469) updateClock: one-way delay averaged (E2E):           0s       13836ns
+(D 1793351464.261841769) updateClock: offset from master:               0s      -10800ns
+(D 1793351464.262897409) updateClock: observed drift:              -18449
+(D 1793351465.260610389) updateClock: one-way delay averaged (E2E):           0s       13832ns
+(D 1793351465.261755909) updateClock: offset from master:               0s       -7100ns
+(D 1793351465.262811369) updateClock: observed drift:              -18922
+(D 1793351466.260853509) updateClock: one-way delay averaged (E2E):           0s       13832ns
+(D 1793351466.261979209) updateClock: offset from master:               0s       -3438ns
+(D 1793351466.263035529) updateClock: observed drift:              -19151
+[ptpstats] n=8 mean=-7822.1 ns std=4216.3 ns min=-13189 ns max=0 ns last=-3438 ns
+[ptpstats] PASS/FAIL 判据：|mean|<1000 ns 且 std<500 ns 视为锁定
+(D 1793351467.261136749) updateClock: one-way delay averaged (E2E):           0s       13832ns
+(D 1793351467.262270769) updateClock: offset from master:               0s        -589ns
+(D 1793351467.263325429) updateClock: observed drift:              -19190
+(D 1793351468.261099669) updateClock: one-way delay averaged (E2E):           0s       13832ns
+(D 1793351468.262226129) updateClock: offset from master:               0s        1147ns
+(D 1793351468.263282549) updateClock: observed drift:              -19114
+(D 1793351469.261143409) updateClock: one-way delay averaged (E2E):           0s       13832ns
+(D 1793351469.262294269) updateClock: offset from master:               0s        1874ns
+(D 1793351469.263350049) updateClock: observed drift:              -18990
+(D 1793351470.261226349) updateClock: one-way delay averaged (E2E):           0s       13832ns
+(D 1793351470.262352169) updateClock: offset from master:               0s        1829ns
+(D 1793351470.263407909) updateClock: observed drift:              -18869
+(D 1793351471.261388149) updateClock: one-way delay averaged (E2E):           0s       13833ns
+(D 1793351471.262535409) updateClock: offset from master:               0s        1350ns
+(D 1793351471.263591269) updateClock: observed drift:              -18779
+[ptpstats] n=13 mean=-4382.0 ns std=5494.2 ns min=-13189 ns max=1874 ns last=1350 ns
+[ptpstats] PASS/FAIL 判据：|mean|<1000 ns 且 std<500 ns 视为锁定
+(D 1793351472.261552249) updateClock: one-way delay averaged (E2E):           0s       13833ns
+(D 1793351472.262679949) updateClock: offset from master:               0s         732ns
+(D 1793351472.263736489) updateClock: observed drift:              -18731
+(D 1793351473.261542049) updateClock: one-way delay averaged (E2E):           0s       13834ns
+(D 1793351473.262692869) updateClock: offset from master:               0s         185ns
+(D 1793351473.263751609) updateClock: observed drift:              -18719
+(D 1793351474.261841289) updateClock: one-way delay averaged (E2E):           0s       13834ns
+(D 1793351474.262971069) updateClock: offset from master:               0s        -202ns
+(D 1793351474.264025889) updateClock: observed drift:              -18732
+(D 1793351475.261968569) updateClock: one-way delay averaged (E2E):           0s       13834ns
+(D 1793351475.263116949) updateClock: offset from master:               0s        -404ns
+(D 1793351475.264171329) updateClock: observed drift:              -18758
+(D 1793351476.262150209) updateClock: one-way delay averaged (E2E):           0s       13834ns
+(D 1793351476.263280949) updateClock: offset from master:               0s        -463ns
+(D 1793351476.264336649) updateClock: observed drift:              -18788
+[ptpstats] n=18 mean=-3173.2 ns std=5065.1 ns min=-13189 ns max=1874 ns last=-463 ns
+[ptpstats] PASS/FAIL 判据：|mean|<1000 ns 且 std<500 ns 视为锁定
+(D 1793351477.262185669) updateClock: one-way delay averaged (E2E):           0s       13835ns
+(D 1793351477.263316449) updateClock: offset from master:               0s        -421ns
+(D 1793351477.264373949) updateClock: observed drift:              -18816
+(D 1793351478.262417809) updateClock: one-way delay averaged (E2E):           0s       13836ns
+(D 1793351478.263564209) updateClock: offset from master:               0s        -319ns
+(D 1793351478.264618989) updateClock: observed drift:              -18837
+(D 1793351479.262341809) updateClock: one-way delay averaged (E2E):           0s       13836ns
+(D 1793351479.263474269) updateClock: offset from master:               0s        -197ns
+(D 1793351479.264528089) updateClock: observed drift:              -18850
+(D 1793351480.262426809) updateClock: one-way delay averaged (E2E):           0s       13837ns
+(D 1793351480.263578309) updateClock: offset from master:               0s        -103ns
+(D 1793351480.264633649) updateClock: observed drift:              -18856
+(D 1793351481.262604429) updateClock: one-way delay averaged (E2E):           0s       13837ns
+(D 1793351481.263749929) updateClock: offset from master:               0s         -46ns
+(D 1793351481.264804149) updateClock: observed drift:              -18859
+[ptpstats] n=23 mean=-2530.6 ns std=4644.2 ns min=-13189 ns max=1874 ns last=-46 ns
+[ptpstats] PASS/FAIL 判据：|mean|<1000 ns 且 std<500 ns 视为锁定
+(D 1793351482.262893069) updateClock: one-way delay averaged (E2E):           0s       13838ns
+(D 1793351482.264020549) updateClock: offset from master:               0s         -12ns
+(D 1793351482.265075169) updateClock: observed drift:              -18859
+(D 1793351483.262900389) updateClock: one-way delay averaged (E2E):           0s       13838ns
+(D 1793351483.264049849) updateClock: offset from master:               0s           1ns
+(D 1793351483.265106229) updateClock: observed drift:              -18859
+(D 1793351484.263032169) updateClock: one-way delay averaged (E2E):           0s       13838ns
+(D 1793351484.264182949) updateClock: offset from master:               0s          11ns
+(D 1793351484.265238729) updateClock: observed drift:              -18859
+(D 1793351485.263035629) updateClock: one-way delay averaged (E2E):           0s       13839ns
+(D 1793351485.264183569) updateClock: offset from master:               0s          -8ns
+(D 1793351485.265239669) updateClock: observed drift:              -18859
+(D 1793351486.263241729) updateClock: one-way delay averaged (E2E):           0s       13838ns
+(D 1793351486.264380509) updateClock: offset from master:               0s         -17ns
+(D 1793351486.265435369) updateClock: observed drift:              -18860
+[ptpstats] n=28 mean=-2079.6 ns std=4318.9 ns min=-13189 ns max=1874 ns last=-17 ns
+[ptpstats] PASS/FAIL 判据：|mean|<1000 ns 且 std<500 ns 视为锁定
+[ptpstats] n=28 mean=-2079.6 ns std=4318.9 ns min=-13189 ns max=1874 ns last=-17 ns
+[ptpstats] PASS/FAIL 判据：|mean|<1000 ns 且 std<500 ns 视为锁定
+[ptpbench] done (40 s)
+
+letter:/$ 
+letter:/$ ptp
+[ptp] state=SLAVE domain=0 mech=E2E slaveOnly=true
+[ptp] hwclock=1793351486.936101949 s  offset=-17 ns  pathdelay=13838 ns  drift=-18860 (ppb*2^-16)
+[ptp] stepsRemoved=1 gm=C0A2B6..A92C prio1=128 class=248 link=UP
+
+letter:/$ 
+letter:/$ (D 1793351487.263173589) updateClock: one-way delay averaged (E2E):           0s       13838ns
+(D 1793351487.264312929) updateClock: offset from master:               0s         -41ns
+(D 1793351487.265369789) updateClock: observed drift:              -18862
+(D 1793351488.263460249) updateClock: one-way delay averaged (E2E):           0s       13838ns
+(D 1793351488.264616109) updateClock: offset from master:               0s         -50ns
+(D 1793351488.265672409) updateClock: observed drift:              -18865
+(D 1793351489.263458809) updateClock: one-way delay averaged (E2E):           0s       13838ns
+(D 1793351489.264606229) updateClock: offset from master:               0s         -56ns
+(D 1793351489.265663049) updateClock: observed drift:              -18868
+(D 1793351490.263792749) updateClock: one-way delay averaged (E2E):           0s       13838ns
+(D 1793351490.264917849) updateClock: offset from master:               0s         -55ns
+(D 1793351490.265972709) updateClock: observed drift:              -18871
+(D 1793351491.263898969) updateClock: one-way delay averaged (E2E):           0s       13838ns
+(D 1793351491.265050549) updateClock: offset from master:               0s         -66ns
+(D 1793351491.266106409) updateClock: observed drift:              -18875
+(D 1793351492.264047409) updateClock: one-way delay averaged (E2E):           0s       13838ns
+(D 1793351492.265192229) updateClock: offset from master:               0s         -68ns
+(D 1793351492.266249649) updateClock: observed drift:              -18879
+(D 1793351493.264057669) updateClock: one-way delay averaged (E2E):           0s       13838ns
+(D 1793351493.265189209) updateClock: offset from master:               0s         -63ns
+(D 1793351493.266247709) updateClock: observed drift:              -18883
+(D 1793351494.264134429) updateClock: one-way delay averaged (E2E):           0s       13838ns
+(D 1793351494.265277729) updateClock: offset from master:               0s         -61ns
+(D 1793351494.266332069) updateClock: observed drift:              -18887

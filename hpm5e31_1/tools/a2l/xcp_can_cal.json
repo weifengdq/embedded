@@ -1,0 +1,234 @@
+{
+  "generated_by": "tools/gen_a2l.py",
+  "project": {
+    "name": "HPM5E31_XCP",
+    "comment": "hpm5e31_1 第二阶段 XCP 标定测量工程",
+    "version": "1.0",
+    "project_no": "PRJ1"
+  },
+  "module": {
+    "name": "xcp_can_cal",
+    "comment": "XCP 在线标定 + 扫参（CAN0 0x555/0x556）"
+  },
+  "memory_segments": [
+    {
+      "name": "RAM",
+      "comment": "AXI SRAM .data/.bss",
+      "prg_type": "DATA",
+      "memory_type": "RAM",
+      "attribute": "INTERN",
+      "address_type": 0,
+      "start": "0x01200000",
+      "size": "0x40000"
+    }
+  ],
+  "xcp": {
+    "can_cmd_id": 1365,
+    "can_res_id": 1366,
+    "baudrate": 500000,
+    "sample_point": 87,
+    "max_cto": 8,
+    "max_dto": 8,
+    "version": 256,
+    "timestamp": {
+      "ticks": 1,
+      "size": "SIZE_DWORD",
+      "unit": "UNIT_1US"
+    },
+    "optional_cmds": [
+      "GET_COMM_MODE_INFO",
+      "GET_ID",
+      "GET_SEED",
+      "UNLOCK",
+      "SET_MTA",
+      "UPLOAD",
+      "SHORT_UPLOAD",
+      "DOWNLOAD",
+      "MODIFY_BITS",
+      "SET_CAL_PAGE",
+      "GET_CAL_PAGE",
+      "GET_PAG_PROCESSOR_INFO",
+      "GET_PAGE_INFO",
+      "GET_DAQ_PROCESSOR_INFO",
+      "GET_DAQ_RESOLUTION_INFO",
+      "FREE_DAQ",
+      "ALLOC_DAQ",
+      "ALLOC_ODT",
+      "ALLOC_ODT_ENTRY"
+    ]
+  },
+  "daq": {
+    "config": "DYNAMIC",
+    "max_daq": 2,
+    "min_daq": 0,
+    "max_odt_entry_size": 7,
+    "prescaler_supported": true
+  },
+  "events": [
+    {
+      "name": "EVT_1ms",
+      "comment": "1 kHz 控制环事件",
+      "number": 0,
+      "direction": "DAQ",
+      "max_daq_list": 2,
+      "cycle": 1,
+      "unit": "1MS",
+      "priority": 0
+    }
+  ],
+  "measurements": [
+    {
+      "name": "g_ctrl_y",
+      "symbol": "g_ctrl_y",
+      "type": "FLOAT32_IEEE",
+      "conv": "cm_ident",
+      "min": -3000,
+      "max": 3000,
+      "format": "%8.3",
+      "comment": "被控量（阶跃响应）",
+      "event": 0
+    },
+    {
+      "name": "g_ctrl_u",
+      "symbol": "g_ctrl_u",
+      "type": "FLOAT32_IEEE",
+      "conv": "cm_ident",
+      "min": -10000,
+      "max": 10000,
+      "format": "%8.3",
+      "comment": "控制量",
+      "event": 0
+    },
+    {
+      "name": "g_ctrl_y_pm",
+      "symbol": "g_ctrl_y_pm",
+      "type": "UWORD",
+      "conv": "cm_permille",
+      "unit": "%",
+      "min": 0,
+      "max": 3000,
+      "format": "%6.1",
+      "comment": "被控量/参考值 千分比",
+      "event": 0
+    },
+    {
+      "name": "g_ctrl_max_pm",
+      "symbol": "g_ctrl_max_pm",
+      "type": "UWORD",
+      "conv": "cm_permille",
+      "unit": "%",
+      "min": 0,
+      "max": 3000,
+      "format": "%6.1",
+      "comment": "阶跃峰值 千分比",
+      "event": 0
+    },
+    {
+      "name": "g_settle_ms",
+      "symbol": "g_settle_ms",
+      "type": "UWORD",
+      "conv": "cm_ident",
+      "unit": "ms",
+      "min": 0,
+      "max": 9999,
+      "format": "%5.0",
+      "comment": "调节时间（进入 ±5% 并保持 20 ms）",
+      "event": 0
+    },
+    {
+      "name": "g_tick_cnt",
+      "symbol": "g_tick_cnt",
+      "type": "ULONG",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 4294967295,
+      "format": "%10.0",
+      "comment": "1 kHz 计数",
+      "event": 0
+    }
+  ],
+  "characteristics": [
+    {
+      "name": "g_kp",
+      "symbol": "g_kp",
+      "type": "FLOAT32_IEEE",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 10,
+      "format": "%6.3",
+      "comment": "PID 比例增益",
+      "unit": "-"
+    },
+    {
+      "name": "g_ki",
+      "symbol": "g_ki",
+      "type": "FLOAT32_IEEE",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 50,
+      "format": "%6.3",
+      "comment": "PID 积分增益",
+      "unit": "1/s"
+    },
+    {
+      "name": "g_led_period_ms",
+      "symbol": "g_led_period_ms",
+      "type": "UWORD",
+      "conv": "cm_ident",
+      "unit": "ms",
+      "min": 10,
+      "max": 5000,
+      "format": "%5.0",
+      "comment": "LED 呼吸周期"
+    },
+    {
+      "name": "g_pwm_duty_pm",
+      "symbol": "g_pwm_duty_pm",
+      "type": "UWORD",
+      "conv": "cm_permille",
+      "unit": "%",
+      "min": 0,
+      "max": 1000,
+      "format": "%5.0",
+      "comment": "LED PWM 占空比（千分比）"
+    },
+    {
+      "name": "g_ctrl_enable",
+      "symbol": "g_ctrl_enable",
+      "type": "UBYTE",
+      "conv": "cm_ident",
+      "min": 0,
+      "max": 1,
+      "format": "%3.0",
+      "comment": "控制环使能"
+    },
+    {
+      "name": "g_gain_curve",
+      "symbol": "g_gain_curve",
+      "type": "UWORD",
+      "conv": "cm_permille",
+      "min": 0,
+      "max": 1000,
+      "kind": "CURVE",
+      "axis_ref": "g_gain_axis",
+      "axis_conv": "cm_ident",
+      "points": 8,
+      "format": "%5.0",
+      "comment": "增益调度表（千分比）"
+    }
+  ],
+  "axes": [
+    {
+      "name": "g_gain_axis",
+      "symbol": "g_gain_axis",
+      "type": "UWORD",
+      "input_quantity": "NO_INPUT_QUANTITY",
+      "points": 8,
+      "min": 0,
+      "max": 1000,
+      "format": "%5.0",
+      "comment": "增益调度 X 轴"
+    }
+  ],
+  "enumerations": {}
+}

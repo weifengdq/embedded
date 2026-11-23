@@ -1,0 +1,19 @@
+��）
+
+[uds_flash] 镜像 32768 B @0x800F0000，安全窗口t: SYNC 10 ms x 5 s -> 500 帧
+  统计: SYNC=500 TPDO=500 丢帧=0
+  TPDO1 每 SYNC 一帧（0 丢帧）    PASS  SYNC=500 TPDO=500 丢帧=0 总时长=5006579 us
+  指标                    数值
+  ----------------------- --------------------------
+  SYNC 帧数               500
+  TPDO1 帧数              500
+  丢帧                    0 (0.00 %)
+  端到端延迟 min/avg/p99/max  318 / 341 / 375 / 379 us
+  TPDO 周期 min/avg/max   10000 / 10012 / 10040 us
+  周期抖动 sigma / maxdev  7.962 / 40 us
+  TPDO1 平均延迟 < 10 ms             PASS  avg=341 us p99=375 us
+  TPDO1 周期抖动 sigma < 1000 us     PASS  sigma=7.962 us maxdev=40 us
+  TPDO2 事件型 1000 ms                FAIL  5 s 收到 0 帧（事件型 1000 ms，期望 3~7）
+  RPDO1(0x201) -> 0x2100 回环          PASS  写 0x0001 -> 0x2100=0x0001
+=== RESULT: 4 PASS / 1 FAIL ===
+  ADC16 IN01 raw=37265 (0=悬空/0V，PF26 排针可接 0~3.3V)

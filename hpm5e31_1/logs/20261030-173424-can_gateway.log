@@ -1,0 +1,18 @@
+                  _          _ _ 
+| |    ___| |_| |_ ___ _ __   ___| 
+letter:/$ 
+[boot] can_gateway: cannelloni v2 CAN<->UDPUP hb=1 rx0=0 echo=0
+quiet
+[app] verbose OFF (no per-frame print)
+
+letter:/$ 
+letter:/$ gw on
+[gw] forwarding ON
+
+letter:/$ 
+letter:/$ pass
+[pass] CAN0=OK CAN3-loop=PASS lwip=OK link=UP gw=CAN1/UDP4000 rc=0
+
+letter:/$ 
+letter:/$ [alive] t=5076 ms link=UP hb=50 rx0=0 echo=0
+[alive] t=10076 ms link=UP hb=100 rx0=0 echo=0

@@ -1,0 +1,20 @@
+ Mcu_PerformReset worked
+RESET: bit4 debug reset (J-Link)
+BOorts MCU_SW_RESET
+mclear
+PPOR RESET_FLAG cleared (W1C)
+RESET: reason=MCU_RESET_UNDEFINED(3) raw=0x00000000
+
+letter:/$ 
+letter:/$ mmode 2
+Mcu_SetMode(MCU_MODE_RESET): software reset ...
+[2J[1H
+ _         _   _                  _          _ _ 
+| |    ___| |_| |_ ___ _ __   ___| 
+letter:/$ 
+=== mcu_reset_mode: AUTOSAR Mcu reset source / software reset ===
+RESET: reason=MCU_SW_RESET(2) raw=0x80000000
+RESET: bit31 software reset <- Mcu_PerformReset worked
+BOOT: reason=MCU_SW_RESET
+type: minfo / mclear / mreset / mmode 0|2 / mver / merr
+try: mclear;mreset  -> board reboots and reports MCU_SW_RESET

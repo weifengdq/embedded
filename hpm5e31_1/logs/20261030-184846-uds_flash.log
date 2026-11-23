@@ -1,0 +1,14 @@
+��会话
+[2J[1H
+ _         _   _                  _        
+[uds_flash] post-reset: 下载区无有效镜像（尚未刷写或被擦除）
+
+[uds_flash] 镜像 32768 B @0x800F0000，安全窗口 0x800F0000~0x80100000，块 256 B
+  session=default(01) security=0 dl_active=0
+run
+
+[uds_flash] run: 下载 32768 B 到 0x800F0000（最后 64 KB 安全区）
+  10 02 编程会话       PASS 
+  27 01 取种子          PASS seed=0xD2E3FB68 key=0x2B589DBE
+  27 02 解锁             PASS 
+  34 请求下载(擦除)  PASS rtt=16115 us maxBlock=258 pending=1

@@ -1,0 +1,19 @@
+x -> CAN1 rx)
+[adc] ADC0 IN1 oneshot, clk 50000000 Hz
+[tsns]tatus published (retained)
+mqtt match
+  match(hpm5e31/cmd/#, hpm5e31/cmd/led) = 1
+  match(hpm5e31/+/led, hpm5e31/cmd/led) = 1
+  match(hpm5e31/+/led, hpm5e31/cmd/x/led) = 0
+  match(hpm5e31/#, hpm5e31) = 1
+  match(#, $SYS/broker/uptime) = 0
+  match(a/+/c, a/b/c) = 1
+
+letter:/$ 
+letter:/$ mstat
+[mqtt] STAT st=CONNECTED up=0s sub=OK conn=1 ok=1 pub_tx=1 pub_rx=0 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=1 can_tx=1 can_rx=0 adc=34763 temp=35000mC loop_max=3043us evt=1 => PASS
+
+letter:/$ 
+letter:/$ [mqtt] STAT st=CONNECTED up=5s sub=OK conn=1 ok=1 pub_tx=6 pub_rx=0 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=6 can_tx=6 can_rx=5 adc=34779 temp=36000mC loop_max=3043us evt=1 => PASS

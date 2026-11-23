@@ -1,0 +1,13 @@
+)
+---- MII(clause22) registers ----
+  0x00 BMCR  = 0x0140
+ <reg> [val] | poll [secs] | restore
+restore
+[phy] restore board default: 1000BASE-T1 slave, RXC delay on, tx_delay_sel=1
+[phy] waiting link up (<= 3000 ms) ...
+[phy] LINK UP after poll: speed=1000M role=SLAVE
+[phy] link=UP speed=1000M duplex=FULL role=SLAVE local_rx_ok=1 remote_rx_ok=1
+[phy] BMCR=0140 BMSR=000D GBCR=0000 GBSR=3000 PHYSR=8400 an_cmplt=0
+
+letter:/$ 
+letter:/$ 

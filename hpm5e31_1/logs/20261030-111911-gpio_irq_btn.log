@@ -1,0 +1,20 @@
+      _ _ 
+| |    ___| |_| |_ ___ _ __   ___| 
+letter:/$ 
+=== gpio_irq_btn (PA03 irq + debounce) ===
+mchtmr=24000000 Hz, irq=1, debounce=20 ms, idle level=0
+[selftest] loop_back=OK cyc[   283 ms] BTN release #5
+btn_info
+gpio_irq_btn @ hpm5e31_1
+  button : PA03 (GPIO0 port A pin 3), pressed=1, internal pull-down
+  led    : PA02 (GPIO0 port A pin 2), active high
+  irq    : 1 (GPIO0_A), priority 1
+  trigger: both_edges, debounce: 20 ms, mchtmr: 24000 ticks/ms
+  irq_on : 1, loopback: yes, uptime: 670 ms
+
+letter:/$ 
+letter:/$ btn_stat
+isr=10  press=5  release=5  bounce_rejected=0  level=0
+
+letter:/$ 
+letter:/$ [  5000 ms] heartbeat: isr=10 press=5 bounce_rejected=0

@@ -1,0 +1,54 @@
+
+digraph datapath {
+  rankdir=TB;
+  newrank=true;
+  graph [fontname="Noto Sans CJK SC", fontsize=11, nodesep=0.26, ranksep=0.30, bgcolor="white"];
+  node  [fontname="Noto Sans CJK SC", fontsize=10, shape=box, style="rounded,filled", fillcolor="#F6F8FA", color="#6E7781"];
+  edge  [fontname="Noto Sans CJK SC", fontsize=9, color="#24292F"];
+
+  subgraph cluster_sdk {
+    label="基线：SDK enet 驱动（第 13 章，935 Mbit/s 下行）";
+    fontname="Noto Sans CJK SC"; fontsize=10; color="#1F6FEB";
+    s_lwip  [label="lwIP 协议栈\npbuf (PBUF_RAM)", fillcolor="#DDEBFF"];
+    s_desc  [label="DMA 描述符\nbuffer1 = pbuf->payload\n（零拷贝 TX）", fillcolor="#DDEBFF"];
+    s_dma   [label="ENET0 DMA"];
+    s_phy   [label="YT8011AN\n1000BASE-T1"];
+    s_lwip -> s_desc [label="只改描述符"];
+    s_desc -> s_dma;
+    s_dma -> s_phy;
+  }
+
+  subgraph cluster_mcal {
+    label="本例：AUTOSAR MCAL Eth（只经 Eth.h 公共 API）";
+    fontname="Noto Sans CJK SC"; fontsize=10; color="#D29922";
+    m_lwip  [label="lwIP 协议栈\npbuf", fillcolor="#FFF1CC"];
+    m_netif [label="app_lwip_eth.c\nnetif->linkoutput", fillcolor="#FFF1CC"];
+    m_prov  [label="Eth_ProvideTxBuffer()\n返回驱动内 1536 B 缓冲", fillcolor="#FFF1CC"];
+    m_copy  [label="pbuf_copy_partial()\n整帧 memcpy（多一次拷贝）", fillcolor="#FFE3B3"];
+    m_dma   [label="ENET0 DMA"];
+    m_phy   [label="YT8011AN\n1000BASE-T1"];
+    m_lwip -> m_netif;
+    m_netif -> m_prov;
+    m_prov -> m_copy;
+    m_copy -> m_dma [label="Eth_Transmit()\nPhysAddrPtr=NULL"];
+    m_dma -> m_phy;
+  }
+
+  subgraph cluster_rx {
+    label="接收方向：两种后端都零拷贝，差别只在 pbuf 释放时把缓冲还给谁";
+    fontname="Noto Sans CJK SC"; fontsize=10; color="#2EA043";
+    r_phy  [label="PHY → DMA 环\n16 × 1536 B"];
+    r_get  [label="Eth_GetRxBuffer()\n返回环内缓冲指针"];
+    r_pbuf [label="custom pbuf\n(pbuf_alloced_custom)", fillcolor="#DDF4E0"];
+    r_stk  [label="lwIP 处理\n（不搬数据）", fillcolor="#DDF4E0"];
+    r_free [label="custom_free_function\n→ Eth_ReleaseRxBuffer()"];
+    r_phy -> r_get -> r_pbuf -> r_stk;
+    r_stk -> r_free [style=dashed, label="pbuf_free()"];
+  }
+
+  {rank=same; s_lwip; s_desc; s_dma; s_phy;}
+  {rank=same; m_lwip; m_netif; m_prov; m_copy; m_dma; m_phy;}
+  {rank=same; r_phy; r_get; r_pbuf; r_stk; r_free;}
+  s_lwip -> m_lwip [style=invis];
+  m_lwip -> r_phy [style=invis];
+}

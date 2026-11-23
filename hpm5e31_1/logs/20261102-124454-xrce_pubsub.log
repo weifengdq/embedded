@@ -1,0 +1,49 @@
+irq on
+[irq] enabled=1 nINT level=1
+
+letter:/$ mode 1000 master
+[phy] apply mode: speed=1000M role=MASTER an=0 ...
+---- MMD registers (via mii 0x0D/0x0E) ----
+  MMD1 0x0834 = 0xC001 (force_config=MASTER, phy_type=1000BASE-T1)
+  MMD7 0x0200 = 0x0000 (an_en=0)
+[phy] waiting link up (<= 3000 ms) ...
+[phy] LINK DOWN (timeout)
+[phy] link=DOWN speed=1000M duplex=FULL role=MASTER local_rx_ok=0 remote_rx_ok=0
+[phy] BMCR=0140 BMSR=0009 GBCR=0000 GBSR=0000 PHYSR=2000 an_cmplt=0
+
+letter:/$ irq
+[irq] on=1 isr=0 events=0 INTST=0x0000/0x0000 INTST2=0x0000/0x0000
+
+letter:/$ mode 1000 slave
+[phy] apply mode: speed=1000M role=SLAVE an=0 ...
+---- MMD registers (via mii 0x0D/0x0E) ----
+  MMD1 0x0834 = 0x8001 (force_config=SLAVE, phy_type=1000BASE-T1)
+  MMD7 0x0200 = 0x0000 (an_en=0)
+[phy] waiting link up (<= 3000 ms) ...
+[phy] LINK UP after poll: speed=1000M role=SLAVE
+[phy] link=UP speed=1000M duplex=FULL role=SLAVE local_rx_ok=1 remote_rx_ok=1
+[phy] BMCR=0140 BMSR=000D GBCR=0000 GBSR=3000 PHYSR=8400 an_cmplt=0
+
+letter:/$ irq
+[irq] on=1 isr=0 events=0 INTST=0x0000/0x0000 INTST2=0x0000/0x0000
+
+letter:/$ ints
+[irq] INTMSK(0x12)=0x0000 INTST(0x13)=0x4C00 INTST2(0x17)=0x00E0 nINT=1
+
+letter:/$ scan
+[mdio] scanning PHY addresses 0..31:
+  pa= 0 ID1=0x4F51 ID2=0xEB01 OUI=0xEB004F
+  pa= 1 ID1=0x4F51 ID2=0xEB01 OUI=0xEB004F
+
+letter:/$ bcast
+[bcast] ext 0x0000 read = 0x0000
+[bcast] write 0x003F -> readback 0x0000
+[mdio] scanning PHY addresses 0..31:
+  pa= 0 ID1=0x4F51 ID2=0xEB01 OUI=0xEB004F
+  pa= 1 ID1=0x4F51 ID2=0xEB01 OUI=0xEB004F
+[bcast] restored 0x0000 -> readback 0x0000
+
+letter:/$ irq
+[irq] on=1 isr=0 events=0 INTST=0x0000/0x0000 INTST2=0x0000/0x0000
+
+letter:/$ 

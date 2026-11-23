@@ -1,0 +1,14 @@
+~50 ms 后复位
+TRIAL auto_early delay=50 ms timeout=1000 ms eset was caused by EWDG0 timeout/window violation ***
+AUTO phase=hold : 上一次是 WDG0 复位(窗口外喂狗被复位, 符合预期)
+TRIAL hold timeout=1000 ms feed_every=50 ms hold=2500 ms window=1
+EWDG0 armed: req=1000 ms actual=999981 us ticks=32768 window=1 ctrl0=0x21007001
+TRIAL hold RESULT=SURVIVED feeds=41 hold=2500 ms (窗口内持续喂狗)
+shell: wdinfo | wdw <delay_ms> [T_ms] | wdn <delay_ms> [T_ms]
+alive uptime=5810 ms
+alive uptime=8810 ms
+alive uptime=11810 ms
+alive uptime=14810 ms
+alive uptime=17810 ms
+alive uptime=20810 ms
+alive uptime=23810 ms

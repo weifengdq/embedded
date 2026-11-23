@@ -1,0 +1,33 @@
+
+  app image: 0x80000000 .. 0x80013708 (etext), used 77 KB of 
+flashinfo
+Flash @0x80000000 size=1024 KB (internal SIP NOR behind XPI0)
+  sector=4096 B  page=256 B
+  app image: 0x80000000 .. 0x80013708 (etext), used 77 KB of 1024 KB
+  boot_header: tag=0xbf ver=0x10 len=144 fw_count=1
+  fw[0]: offset=0x2000 size=0x10808(=67592 B) entry=0x80003000
+  safe test window: 0x800f0000 .. 0x80100000 (last 64KB)
+  nor_cfg_option @0x80000400: 80000400: 02 00 f9 fc 05 00 00 00 00 10 00 00 00 00 00 00
+  boot header  @0x80001000: 80001000: bf 10 90 00 00 00 00 00 00 00 00 01 00 00 00 00
+80001010: 00 20 00 00 08 08 01 00 00 00 00 00 00 00 00 00
+
+letter:/$ 
+letter:/$ flashrw
+rw test @0x800f0000 size=4096 B (safe window, app image untouched)
+  erase  1.872 ms -> 2137.0 KB/s, blank check: 0xFF ok
+  write  14.279 ms -> 280.1 KB/s
+  read   0.133 ms -> 30018.8 KB/s
+  verify crc32 write=0x06beafd4 read=0x06beafd4 -> MATCH
+  XIP direct read 0x800f0000 (after dcache invalidate): 800f0000: 00 1f 3e 5d 7c 9b ba d9 f8 17 36 55 74 93 b2 d1
+
+letter:/$ 
+letter:/$ flashrw 0x800f1000 4096
+rw test @0x800f1000 size=4096 B (safe window, app image untouched)
+  erase  1.878 ms -> 2130.2 KB/s, blank check: 0xFF ok
+  write  14.278 ms -> 280.1 KB/s
+  read   0.133 ms -> 30037.5 KB/s
+  verify crc32 write=0x06beafd4 read=0x06beafd4 -> MATCH
+  XIP direct read 0x800f1000 (after dcache invalidate): 800f1000: 00 1f 3e 5d 7c 9b ba d9 f8 17 36 55 74 93 b2 d1
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,36 @@
+during run)
+[sweep] duty 0/25/50/75/100%, f=10000 Hz, ICU clk=100000000 Hz
+[pwm] sweep ch0(set 0/0x8000): constant LOW, no edges -> ICU holds last captured value (unmeasurable)
+[pwm] sweep ch1(phase 25%):        period=10001 tick, freq=9999 Hz, duty=49.155%
+[pwm] sweep ch0(set 8192/0x8000): period=10001 tick, freq=9999 Hz, duty=24.168%
+[pwm] sweep ch1(phase 25%):        period=10000 tick, freq=10000 Hz, duty=49.000%
+[pwm] sweep ch0(set 16384/0x8000): period=10000 tick, freq=10000 Hz, duty=49.160%
+[pwm] sweep ch1(phase 25%):        period=10001 tick, freq=9999 Hz, duty=49.185%
+[pwm] sweep ch0(set 24576/0x8000): period=10000 tick, freq=10000 Hz, duty=74.160%
+[pwm] sweep ch1(phase 25%):        period=10000 tick, freq=10000 Hz, duty=49.190%
+[pwm] sweep ch0(set 32768/0x8000): period=9999 tick, freq=10001 Hz, duty=99.860%
+[pwm] sweep ch1(phase 25%):        period=10000 tick, freq=10000 Hz, duty=49.190%
+[fsweep] target=1000 Hz reload=200000
+[pwm] fsweep ch0(set 16384/0x8000): period=100001 tick, freq=1000 Hz, duty=49.917%
+[pwm] fsweep ch1(phase 25%):        period=100000 tick, freq=1000 Hz, duty=49.919%
+[fsweep] target=10000 Hz reload=20000
+[pwm] fsweep ch0(set 16384/0x8000): period=10000 tick, freq=10000 Hz, duty=49.170%
+[pwm] fsweep ch1(phase 25%):        period=10001 tick, freq=9999 Hz, duty=49.195%
+[fsweep] target=50000 Hz reload=4000
+[pwm] fsweep ch0(set 16384/0x8000): period=2002 tick, freq=49950 Hz, duty=45.804%
+[pwm] fsweep ch1(phase 25%):        period=1999 tick, freq=50025 Hz, duty=45.973%
+[phase] ch0 edge=2995720, ch1 edge=2997930, diff=2210 tick = 22.100% of period (expect 25.0%)
+[phase] phase error = -2.900% of period
+[det] before=0 after=4 delta=4
+[det] last: mod=121 inst=0 api=0x08 err=0x15
+[idle] ch0 output state = LOW
+[pwm] Pwm v1.0.0 moduleID=121; f_pwm0=200000000 Hz, f_gptmr2=100000000 Hz
+[pwm] ch0=PD02(P2,cnt1,CMP4/5) ch1=PD03(P3,cnt1,CMP6/7); icu ch1<-PD07, icu ch0<-PD06
+[pwm] state: ch0 LOW, ch1 LOW, period=20000 ticks
+[pwm_basic] auto sweep done. cmds: pwm_set/pwm_freq/pwm_meas/pwm_phase/pwm_idle/pwm_err/pwm_info
+[pwm] hb ch0(set 16384/0x8000): period=10000 tick, freq=10000 Hz, duty=49.170%
+[pwm] hb ch1(phase 25%):        period=10000 tick, freq=10000 Hz, duty=49.190%
+[pwm] hb ch0(set 16384/0x8000): period=10001 tick, freq=9999 Hz, duty=49.165%
+[pwm] hb ch1(phase 25%):        period=10000 tick, freq=10000 Hz, duty=49.190%
+[pwm] hb ch0(set 16384/0x8000): period=10001 tick, freq=9999 Hz, duty=49.165%
+[pwm] hb ch1(phase 25%):        period=10001 tick, freq=9999 Hz, duty=49.195%

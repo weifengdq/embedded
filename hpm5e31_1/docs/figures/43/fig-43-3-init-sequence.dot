@@ -1,0 +1,18 @@
+digraph G {
+  rankdir=LR; nodesep=0.18; ranksep=0.22; pad=0.10;
+  graph [fontname="Noto Sans CJK SC", bgcolor="white"];
+  node [shape=box, style="rounded,filled", fontname="Noto Sans CJK SC", fontsize=9,
+        color="#57606A", fillcolor="#F6F8FA"];
+  edge [color="#57606A", arrowsize=0.7];
+  a [label="bsp_init()\nBSP 时钟/串口"];
+  b [label="Det_Init()"];
+  c [label="Mcu_Init()\nMcu_InitClock()\nMcu_DistributePllClock()", fillcolor="#EAF2FF"];
+  d [label="Port_Init()"];
+  e [label="Gpt/Pwm/Adc/Spi\nI2c/Can/Mem 各自 Init()", fillcolor="#E6F4EA"];
+  f [label="Wdg_Init()\n+ 周期 trigger"];
+  g [label="主循环\nletter-shell / 1 ms 任务"];
+  h [label="Wdg_SetTriggerCondition()\n喂狗", fillcolor="#FFF4E5"];
+  a -> b -> c -> d -> e -> f -> g;
+  g -> h [style=dashed, label="每轮", fontsize=8];
+  h -> g [style=dashed];
+}

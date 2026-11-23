@@ -1,0 +1,12 @@
+入) SDM0_CLK_0=PF17
+  本板无外部 ΣΔ 调制器 -> MDAT 
+commands: sinfo | sdata
+sinfo
+SDM0 clk=200000000 Hz  ch0: Sinc3 OSR=256 (数据率 = 调制器时钟/256)
+  引脚: SDM0_DAT_0=PF16(输入) SDM0_CLK_0=PF17
+  本板无外部 ΣΔ 调制器 -> MDAT 无有效位流, 读回数据无意义
+  状态: data_ready=0  data_error=0  filter_status=0x00000000
+  说明: 想验证真实数据请接 AD7401/AMC1306 等调制器(见第 17 章 §12)
+
+letter:/$ 
+letter:/$ 

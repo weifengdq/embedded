@@ -1,0 +1,14 @@
+
+digraph spi_modes {
+  graph [rankdir=TB, fontname="Noto Sans CJK SC", fontsize=12, nodesep=0.25, ranksep=0.30, bgcolor="white", pad=0.2];
+  node  [shape=box, style="rounded,filled", fontname="Noto Sans CJK SC", fontsize=10.5, color="#57606A", fillcolor="#F6F8FA"];
+  edge  [fontname="Noto Sans CJK SC", fontsize=9, color="#57606A"];
+
+  m0 [label="Mode 0: CPOL=0 CPHA=0\nSCLK 空闲低, 第 1 个(上升)沿采样", fillcolor="#DBEAFE"];
+  m1 [label="Mode 1: CPOL=0 CPHA=1\nSCLK 空闲低, 第 2 个(下降)沿采样", fillcolor="#BBF7D0"];
+  m2 [label="Mode 2: CPOL=1 CPHA=0\nSCLK 空闲高, 第 1 个(下降)沿采样", fillcolor="#FDE68A"];
+  m3 [label="Mode 3: CPOL=1 CPHA=1\nSCLK 空闲高, 第 2 个(上升)沿采样", fillcolor="#FCA5A5"];
+  note [label="实测: 4 种模式传输同一组数据耗时相同\n(1024 B @20 MHz: 411~412 us, 见日志)", fillcolor="#F6F8FA"];
+
+  m0 -> note; m1 -> note; m2 -> note; m3 -> note;
+}

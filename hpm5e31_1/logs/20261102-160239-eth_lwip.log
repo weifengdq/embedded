@@ -1,0 +1,21 @@
+
+[lwip-eth] backend=mcal-eth ctrl=0 max_frame=1518 tx_buf=8 rx_buf=16
+[lwip-eth] netif=e0 idx=1 MAC=02:00:00:00:01:00
+[lwip-eth] IP=192.168.2.100
+[lwip-eth] MASK=255.255.255.0
+[lwip-eth] GW=192.168.2.1  link=DOWN
+[lwip-eth] phy: link=DOWN known=0 speed=0 Mbps duplex=full role=SLAVE
+[mcal-eth] PHY BMCR=0000 BMSR=0000 GBSR=0000 PHYSR=0000
+[mcal-eth] ETH counter: rx_pkts=0 tx_pkts=0 drop_ovr=0 crc=0 undersize=0 oversize=0
+[lwip-eth] link=DOWN after 3004 ms
+[init] app_lwip_eth_init rc=1 (0=link up, 1=link down)
+[run] commands: eth | eth ping <ip> [n] [ms] | eth iserver [tcp|udp] | eth iclient <ip>
+[lwip-eth] sw : rx_frames=18 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=0 tx_err=0 tx_drop_len=0
+[lwip-eth] rx pbuf pool: in_use=0 peak=1/32
+[lwip-eth] hw : rx_frames=18 rx_bytes=13388 rx_empty=11182007 rx_err=0 | tx_frames=0 tx_bytes=0 tx_busy=0 tx_err=0
+[lwip-eth] sw : rx_frames=32 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=0 tx_err=0 tx_drop_len=0
+[lwip-eth] rx pbuf pool: in_use=0 peak=1/32
+[lwip-eth] hw : rx_frames=32 rx_bytes=23808 rx_empty=22363236 rx_err=0 | tx_frames=0 tx_bytes=0 tx_busy=0 tx_err=0
+[lwip-eth] sw : rx_frames=44 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=0 tx_err=0 tx_drop_len=0
+[lwip-eth] rx pbuf pool: in_use=0 peak=1/32
+[lwip-eth] hw : rx_frames=44 rx_bytes=32736 rx_empty=33545250 rx_err=0 | tx_frames=0 tx_bytes=0 tx_busy=0 tx_err=0

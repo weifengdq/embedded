@@ -1,0 +1,20 @@
+
+CASE_START name=c1_ret3F retention=0x3f axis_force=0
+[2J[1H
+ _         _   _                  _          _ _ 
+| |    ___| |_| |_ ___ _ __   ___| 
+letter:/$ 
+=== stop_wake: STOP mode + Errata E00042 ===
+BOOT_RESET flag=0x00010000 WDG0=1
+*** last reset was caused by EWDG0 timeout (previous stop-wake test hung?) ***
+shell: stopinfo | stopwake [iters]
+AUTO: 上一次 stopwake 卡死并被 EWDG 复位, 跳过自动重跑(避免复位死循环)
+alive uptime=3307 ms
+alive uptime=6307 ms
+alive uptime=9307 ms
+alive uptime=12307 ms
+alive uptime=15307 ms
+alive uptime=18307 ms
+alive uptime=21307 ms
+alive uptime=24307 ms
+alive uptime=27307 ms

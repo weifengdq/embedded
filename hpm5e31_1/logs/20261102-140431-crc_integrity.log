@@ -1,0 +1,45 @@
+2 crc16=0x9ab8, blank crc32=0xf154670a
+--- image: CRC over app image 0x80000000..0x80016718 (91928 B) ---
+image crc32 sw=0x3b03af1b hw=0x3b03af1b MATCH
+image crc16 sw=0x5e9c hw=0x5e9c MATCH
+image crc8  sw=0xfc hw=0xfc MATCH
+image hw_active: crc32=1 crc16=1 crc8=1
+--- flash: write pattern to 0x800f0000, read back, CRC ---
+flash crc32=0x489b7fd2 golden=0x489b7fd2 MATCH
+flash crc16=0x9ab8 golden=0x9ab8 MATCH
+crcint flash: PASS
+--- tamper: rewrite sector with 1 bit flipped (byte 100) ---
+tamper crc32=0x1cd5ce95 golden=0x489b7fd2 expected_corrupt=0x1cd5ce95
+crcint tamper: TAMPER DETECTED (crc32 != golden)
+--- blank: erase sector, CRC over 4096 x 0xFF ---
+blank crc32=0xf154670a golden=0xf154670a MATCH
+crcint blank: PASS
+shell: crcimage | crcflash | crctamper | crcblank
+crcimage
+--- image: CRC over app image 0x80000000..0x80016718 (91928 B) ---
+image crc32 sw=0x3b03af1b hw=0x3b03af1b MATCH
+image crc16 sw=0x5e9c hw=0x5e9c MATCH
+image crc8  sw=0xfc hw=0xfc MATCH
+image hw_active: crc32=1 crc16=1 crc8=1
+
+letter:/$ 
+letter:/$ crcflash
+--- flash: write pattern to 0x800f0000, read back, CRC ---
+flash crc32=0x489b7fd2 golden=0x489b7fd2 MATCH
+flash crc16=0x9ab8 golden=0x9ab8 MATCH
+crcint flash: PASS
+
+letter:/$ 
+letter:/$ crctamper
+--- tamper: rewrite sector with 1 bit flipped (byte 100) ---
+tamper crc32=0x1cd5ce95 golden=0x489b7fd2 expected_corrupt=0x1cd5ce95
+crcint tamper: TAMPER DETECTED (crc32 != golden)
+
+letter:/$ 
+letter:/$ crcblank
+--- blank: erase sector, CRC over 4096 x 0xFF ---
+blank crc32=0xf154670a golden=0xf154670a MATCH
+crcint blank: PASS
+
+letter:/$ 
+letter:/$ 

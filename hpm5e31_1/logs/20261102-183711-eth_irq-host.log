@@ -1,0 +1,121 @@
+===== FLASH try 1 =====
+J-Link Commander will now exit on Error
+Connecting to J-Link ...O.K.
+Downloading file [build/eth_irq-debug/output/demo.elf]...
+Programming flash [000%]000%]000%]000%]005%]005%]010%]010%]015%]015%]020%]020%]025%]025%]030%]030%]035%]035%]040%]040%]045%]045%]050%]050%]050%]050%]055%]055%]060%]060%]065%]065%]070%]070%]075%]075%]080%]080%]085%]085%]090%]090%]095%]095%]100%] Done.
+Verifying flash   [000%]000%]005%]005%]100%] Done.
+J-Link: Flash download: Bank 0 @ 0x80000000: 2 ranges affected (90112 bytes)
+J-Link: Flash download: Total: 1.927s (Prepare: 0.546s, Compare: 0.089s, Erase: 0.081s, Program: 1.029s, Verify: 0.054s, Restore: 0.126s)
+J-Link: Flash download: Program & Verify speed: 81 KB/s
+O.K.
+===== BANNER try 1 =====
+z, tx=8 x 1536B, rx=16 x 1536B
+
+IRQ mode=interrupt isr=0 det=0 rx_status=1 drop=0 err=0 crc=0 ovf=0
+
+===== [idle] BOARD =====
+irq off
+REINIT begin old_irq=1 target=0
+
+IRQ mode=polling det=0
+
+
+letter:/$ 
+letter:/$ irq rx 3
+IRQ mode=polling secs=3 frames=0 bytes=0 isr=0 isr_per_frame=0 lat_avg=0us lat_max=0us
+
+IRQX mode=polling win_us=2999538 fps=0 isr_pf_x1000=0 lat_mode=na lat_avg_us=0 lat_min_us=0 lat_max_us=0 lat_n=0 lat_bad=0 lb_lt5=0 lb_5_20=0 lb_20_100=0 lb_100_1m=0 lb_1_10m=0 wake_avg_us=0 wake_max_us=0 wake_n=0 isr_dmax=0 frames_isr=0 frames_fb=0 fb_polls=0 polls=705765 poll_per_s=235291 poll_ns_avg=4250 poll_ns_max=27427 rx_cpu_x100=806 idle_cpu_x100=806 loops=705765 drop=0 err=0 crc=0 ovf=0
+
+
+letter:/$ 
+letter:/$ irq on
+REINIT begin old_irq=0 target=1
+
+IRQ mode=interrupt det=0
+
+
+letter:/$ 
+letter:/$ irq rx 3
+IRQ mode=interrupt secs=3 frames=0 bytes=0 isr=4 isr_per_frame=0 lat_avg=0us lat_max=0us
+
+IRQX mode=interrupt win_us=2999679 fps=0 isr_pf_x1000=0 lat_mode=isr lat_avg_us=0 lat_min_us=0 lat_max_us=0 lat_n=0 lat_bad=0 lb_lt5=0 lb_5_20=0 lb_20_100=0 lb_100_1m=0 lb_1_10m=0 wake_avg_us=2 wake_max_us=4 wake_n=2 isr_dmax=2 frames_isr=0 frames_fb=0 fb_polls=2999 polls=2 poll_per_s=0 poll_ns_avg=0 poll_ns_max=0 rx_cpu_x100=3 idle_cpu_x100=0 loops=497210 drop=0 err=0 crc=0 ovf=0
+
+
+letter:/$ 
+letter:/$ ===== [idle] HOST =====
+===== [low] BOARD =====
+irq off
+REINIT begin old_irq=1 target=0
+
+IRQ mode=polling det=0
+
+
+letter:/$ 
+letter:/$ irq rx 4
+IRQ mode=polling secs=4 frames=4000 bytes=1080000 isr=0 isr_per_frame=0 lat_avg=0us lat_max=0us
+
+IRQX mode=polling win_us=3999374 fps=1000 isr_pf_x1000=0 lat_mode=na lat_avg_us=0 lat_min_us=0 lat_max_us=0 lat_n=0 lat_bad=0 lb_lt5=0 lb_5_20=0 lb_20_100=0 lb_100_1m=0 lb_1_10m=0 wake_avg_us=0 wake_max_us=0 wake_n=0 isr_dmax=0 frames_isr=0 frames_fb=0 fb_polls=0 polls=939209 poll_per_s=234839 poll_ns_avg=4249 poll_ns_max=6360 rx_cpu_x100=828 idle_cpu_x100=803 loops=939209 drop=0 err=0 crc=0 ovf=0
+
+
+letter:/$ 
+letter:/$ irq on
+REINIT begin old_irq=0 target=1
+
+IRQ mode=interrupt det=0
+
+
+letter:/$ 
+letter:/$ irq rx 4
+IRQ mode=interrupt secs=4 frames=4000 bytes=1080000 isr=4006 isr_per_frame=100 lat_avg=8us lat_max=11us
+
+IRQX mode=interrupt win_us=3999257 fps=1000 isr_pf_x1000=1001 lat_mode=isr lat_avg_us=8 lat_min_us=5 lat_max_us=11 lat_n=3934 lat_bad=0 lb_lt5=0 lb_5_20=3934 lb_20_100=0 lb_100_1m=0 lb_1_10m=0 wake_avg_us=3 wake_max_us=11 wake_n=4006 isr_dmax=1 frames_isr=3934 frames_fb=66 fb_polls=3999 polls=7940 poll_per_s=1985 poll_ns_avg=0 poll_ns_max=0 rx_cpu_x100=32 idle_cpu_x100=3 loops=655308 drop=0 err=0 crc=0 ovf=0
+
+
+letter:/$ 
+letter:/$ ===== [low] HOST =====
+===== [mid] BOARD =====
+irq on
+REINIT begin old_irq=1 target=1
+
+IRQ mode=interrupt det=0
+
+
+letter:/$ 
+letter:/$ irq rx 4
+IRQ mode=interrupt secs=4 frames=80040 bytes=21610800 isr=80048 isr_per_frame=100 lat_avg=9us lat_max=19us
+
+IRQX mode=interrupt win_us=3999735 fps=20011 isr_pf_x1000=1000 lat_mode=isr lat_avg_us=9 lat_min_us=0 lat_max_us=19 lat_n=79758 lat_bad=3 lb_lt5=4560 lb_5_20=75198 lb_20_100=0 lb_100_1m=0 lb_1_10m=0 wake_avg_us=4 wake_max_us=25 wake_n=50258 isr_dmax=3 frames_isr=79761 frames_fb=279 fb_polls=3999 polls=130019 poll_per_s=32506 poll_ns_avg=0 poll_ns_max=0 rx_cpu_x100=551 idle_cpu_x100=51 loops=551823 drop=0 err=0 crc=0 ovf=0
+
+
+letter:/$ 
+letter:/$ ===== [mid] HOST =====
+===== [high] BOARD =====
+irq off
+REINIT begin old_irq=1 target=0
+
+IRQ mode=polling det=0
+
+
+letter:/$ 
+letter:/$ irq rx 4
+IRQ mode=polling secs=4 frames=619204 bytes=167185080 isr=0 isr_per_frame=0 lat_avg=0us lat_max=0us
+
+IRQX mode=polling win_us=3999041 fps=154838 isr_pf_x1000=0 lat_mode=na lat_avg_us=0 lat_min_us=0 lat_max_us=0 lat_n=0 lat_bad=0 lb_lt5=0 lb_5_20=0 lb_20_100=0 lb_100_1m=0 lb_1_10m=0 wake_avg_us=0 wake_max_us=0 wake_n=0 isr_dmax=0 frames_isr=0 frames_fb=0 fb_polls=0 polls=619317 poll_per_s=154866 poll_ns_avg=4248 poll_ns_max=4289 rx_cpu_x100=4025 idle_cpu_x100=0 loops=619317 drop=0 err=0 crc=0 ovf=0
+
+
+letter:/$ 
+letter:/$ irq on
+REINIT begin old_irq=0 target=1
+
+IRQ mode=interrupt det=0
+
+
+letter:/$ 
+letter:/$ irq rx 4
+IRQ mode=interrupt secs=4 frames=628067 bytes=169578090 isr=628089 isr_per_frame=100 lat_avg=3us lat_max=82us
+
+IRQX mode=interrupt win_us=3999614 fps=157031 isr_pf_x1000=1000 lat_mode=isr lat_avg_us=3 lat_min_us=0 lat_max_us=82 lat_n=623058 lat_bad=5008 lb_lt5=490854 lb_5_20=131207 lb_20_100=997 lb_100_1m=0 lb_1_10m=0 wake_avg_us=39 wake_max_us=96 wake_n=5 isr_dmax=313031 frames_isr=628066 frames_fb=1 fb_polls=3 polls=628070 poll_per_s=157032 poll_ns_avg=0 poll_ns_max=0 rx_cpu_x100=4633 idle_cpu_x100=0 loops=84 drop=0 err=0 crc=0 ovf=0
+
+
+letter:/$ 
+letter:/$ ===== [high] HOST =====

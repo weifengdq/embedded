@@ -1,0 +1,178 @@
+# Eth DMA 缓冲 .noncacheable -> .noncacheable.bss：改前/改后 Flash 镜像 A/B 实测（R8 T4）
+
+- 日期：2026-11-02 18:1x（Asia/Shanghai）
+- 仓库：.，分支 autosar，HEAD 69d6ea9 + 本地改动（mcal/Eth/src/Eth.c）
+- SDK：sdk_env_v1.13.0/hpm_sdk（v1.13.0）；链接脚本 soc/HPM5E00/HPM5E31/toolchains/gcc/flash_xip.ld
+- 工具链：toolchains/riscv32-unknown-elf-newlib-multilib
+- 例程：samples/mcal/eth_raw_echo（-DHPM_BUILD_TYPE=flash_xip）
+
+## 0. 一句话结论
+
+改前（ATTR_PLACE_AT_NONCACHEABLE_WITH_ALIGNMENT -> .noncacheable）与改后（ATTR_PLACE_AT_NONCACHEABLE_BSS_WITH_ALIGNMENT -> .noncacheable.bss）的 Flash 镜像完全相同：
+demo.bin = 97 264 B、__fw_size__ = 0x14E50 (85 584 B)、LOAD 段 FileSiz 之和 = 89 216 B，J-Link 实烧 94 208 B。
+原因：SDK flash_xip.ld 第 263 行起 .noncacheable (NOLOAD) 同时收纳 legacy .noncacheable 与 .noncacheable.bss，两者都是 NOBITS、FileSiz=0。
+Eth 的 37 632 B 缓冲一直是 RAM-only；R7 表格里的 Flash 135.8 KiB 是 .obj 的 size 口径（GCC 对自定义段也发 PROGBITS），不是镜像口径。
+
+> 快照说明：本 log 的 A/B 构建取于 2026-11-02 18:09–18:12（HEAD 69d6ea9 + 本任务的 4 个 section 属性改动）。
+> 同日 18:14 另一位成员在同一文件加了 fence w,w / fence w,o / fence r,r 内存屏障（与段放置无关），
+> 因此今天重建的 after 固件 text/.bin 会略大于本 log 的 85 584/97 264 B；但 ".noncacheable 段 NOBITS、
+> FileSiz=0、Flash 差值为 0" 的结论与屏障代码无关，复跑时以 readelf 的段类型/FileSiz 为准。
+
+## 1. ELF 段表（readelf -S）：两版 .noncacheable 均无 CONTENTS 标志
+
+改前 before.elf：
+```
+  [ 8] .data             PROGBITS        01200000 018000 000240 00  WA  0   0  8
+  [12] .noncacheable.init PROGBITS        01230000 018240 000000 00   W  0   0  8
+  [14] .bss              NOBITS          01200240 018240 001a00 00  WA  0   0  4
+  [16] .noncacheable     NOBITS          01230000 001000 009300 00  WA  0   0 64
+```
+改后 after.elf：
+```
+  [ 8] .data             PROGBITS        01200000 018000 000240 00  WA  0   0  8
+  [12] .noncacheable.init PROGBITS        01230000 018240 000000 00   W  0   0  8
+  [14] .bss              NOBITS          01200240 018240 001a00 00  WA  0   0  4
+  [16] .noncacheable     NOBITS          01230000 001000 009300 00  WA  0   0 64
+```
+（objdump -h 更直观：两版 `.noncacheable` 都只有 ALLOC，无 CONTENTS/LOAD，即 NOBITS。）
+
+## 2. LOAD 段（readelf -l）：.noncacheable 段 FileSiz 均为 0
+
+改前（FileSiz 之和 89216 B）：
+```
+  LOAD vaddr=0x00200000   FileSiz=0        MemSiz=32768
+  LOAD vaddr=0x01230000   FileSiz=0        MemSiz=37632
+  LOAD vaddr=0x80000400   FileSiz=3216     MemSiz=3216
+  LOAD vaddr=0x80003000   FileSiz=80       MemSiz=80
+  LOAD vaddr=0x00000000   FileSiz=2136     MemSiz=2136
+  LOAD vaddr=0x800038a8   FileSiz=83208    MemSiz=83208
+  LOAD vaddr=0x01200000   FileSiz=576      MemSiz=7232
+```
+改后（FileSiz 之和 89216 B）：
+```
+  LOAD vaddr=0x00200000   FileSiz=0        MemSiz=32768
+  LOAD vaddr=0x01230000   FileSiz=0        MemSiz=37632
+  LOAD vaddr=0x80000400   FileSiz=3216     MemSiz=3216
+  LOAD vaddr=0x80003000   FileSiz=80       MemSiz=80
+  LOAD vaddr=0x00000000   FileSiz=2136     MemSiz=2136
+  LOAD vaddr=0x800038a8   FileSiz=83208    MemSiz=83208
+  LOAD vaddr=0x01200000   FileSiz=576      MemSiz=7232
+```
+
+注意 0x01230000 段：FileSiz=0，MemSiz=37 632（0x9300）——Eth 的 4 个数组占的 AXI SRAM(非缓存) 区，从不进镜像。
+
+## 3. size / .bin / __fw_size__
+
+改前：
+```
+text	   data	    bss	    dec	    hex	filename
+  85584	    576	  77056	 163216	  27d90	temp2/eth-buf/ab/before.elf
+```
+改后：
+```
+text	   data	    bss	    dec	    hex	filename
+  85584	    576	  77056	 163216	  27d90	temp2/eth-buf/ab/after.elf
+```
+bin：before=97264 B，after=97264 B
+
+改前 map：
+```
+5314:                0x0000000001239300                __noncacheable_bss_start__ = .
+5318:                0x0000000001239300                __noncacheable_bss_end__ = .
+5354:                0x0000000000014e50                __fw_size__ = ((((((((((SIZEOF (.start) + SIZEOF (.vectors)) + SIZEOF (.rel)) + SIZEOF (.text)) + SIZEOF (.data)) + SIZEOF (.fast)) + SIZEOF (.tdata)) + SIZEOF (.noncacheable.init)) + SIZEOF (.fast_ram.init)) + SIZEOF (.eh_frame)) + SIZEOF (.eh_frame_hdr))
+5356:                0x0000000000000001                ASSERT (((__fw_size__ <= LENGTH (FLASH)) && (__last_addr__ <= (ORIGIN (FLASH) + LENGTH (FLASH)))), ******  FAILED! FLASH does not have enough space!  ******)
+```
+改后 map：
+```
+5313:                0x0000000001230000                __noncacheable_bss_start__ = .
+5319:                0x0000000001239300                __noncacheable_bss_end__ = .
+5355:                0x0000000000014e50                __fw_size__ = ((((((((((SIZEOF (.start) + SIZEOF (.vectors)) + SIZEOF (.rel)) + SIZEOF (.text)) + SIZEOF (.data)) + SIZEOF (.fast)) + SIZEOF (.tdata)) + SIZEOF (.noncacheable.init)) + SIZEOF (.fast_ram.init)) + SIZEOF (.eh_frame)) + SIZEOF (.eh_frame_hdr))
+5357:                0x0000000000000001                ASSERT (((__fw_size__ <= LENGTH (FLASH)) && (__last_addr__ <= (ORIGIN (FLASH) + LENGTH (FLASH)))), ******  FAILED! FLASH does not have enough space!  ******)
+```
+
+改前输出段：
+```
+5307:.noncacheable   0x0000000001230000     0x9300
+5308-                0x0000000001230000                . = ALIGN (0x8)
+5309- *(.noncacheable)
+5310- .noncacheable  0x0000000001230000     0x9300 CMakeFiles/app.dirmcal/Eth/src/Eth.c.obj
+5311- *(.noncacheable.non_init)
+5312- *(.noncacheable.non_init.*)
+5313-                0x0000000001239300                . = ALIGN (0x8)
+5314-                0x0000000001239300                __noncacheable_bss_start__ = .
+5315- *(.noncacheable.bss)
+5316- *(.noncacheable.bss.*)
+5317-                0x0000000001239300                . = ALIGN (0x8)
+```
+改后输出段：
+```
+5307:.noncacheable   0x0000000001230000     0x9300
+5308-                0x0000000001230000                . = ALIGN (0x8)
+5309- *(.noncacheable)
+5310- *(.noncacheable.non_init)
+5311- *(.noncacheable.non_init.*)
+5312-                0x0000000001230000                . = ALIGN (0x8)
+5313-                0x0000000001230000                __noncacheable_bss_start__ = .
+5314- *(.noncacheable.bss)
+5315- .noncacheable.bss
+5316-                0x0000000001230000     0x9300 CMakeFiles/app.dirmcal/Eth/src/Eth.c.obj
+5317- *(.noncacheable.bss.*)
+```
+
+唯一变化：__noncacheable_bss_start__ 从 0x01239300 前移到 0x01230000，即整段 37 632 B 落进 __noncacheable_bss_start__..__noncacheable_bss_end__，startup 会清零它（见 §5）。输出段地址/大小/镜像都不变。
+
+## 4. Eth.c.obj 段属性（解释 R7 的 135.8 KiB 从哪来）
+
+改前 .obj：
+```
+  5 .noncacheable 00009300  00000000  00000000  000000c0  2**6
+                  CONTENTS, ALLOC, LOAD, DATA
+```
+改后 .obj：
+```
+  5 .noncacheable.bss 00009300  00000000  00000000  000000c0  2**6
+                  CONTENTS, ALLOC, LOAD, DATA
+```
+GCC 对带 section 属性的未初始化数组仍发 PROGBITS（CONTENTS/LOAD），所以 riscv32-unknown-elf-size Eth.c.obj 的 data 一直是 37 632；
+但链接脚本把该输入段放进 NOLOAD 输出段，最终 ELF 里没有内容。R7 用 .obj 的 text+data 当 Flash 是口径错误。
+
+## 5. startup 清零证据（.noncacheable.bss 在清零范围内）
+
+```
+35:static void section_clear(uint8_t *dst_start, uint8_t *dst_end)
+103:    extern uint8_t __noncacheable_bss_start__[], __noncacheable_bss_end__[];
+116:    section_clear(__bss_start__, __bss_end__);
+119:    section_clear(__noncacheable_bss_start__, __noncacheable_bss_end__);
+122:    section_clear(__fast_ram_bss_start__, __fast_ram_bss_end__);
+```
+
+reset.c:119 section_clear(__noncacheable_bss_start__, __noncacheable_bss_end__) 覆盖整段；描述符另由 Eth_Init memset（mcal/Eth/src/Eth.c 第 321-322 行）。
+
+## 6. 上板回归（同一份改后固件）
+
+- eth_raw_echo：logs/20261102-180340-eth_raw_echo.log（eth tx 64 2000 -> ok=2000 fps=223964 146.9 Mbit/s；trcv link=UP 1000M）
+- eth_raw_echo：logs/20261102-180820-eth_raw_echo.log（eth regs：RD[0].buf=0x01233300、RD[3].buf=0x01234500，缓冲落在 0x0123_xxxx AXI SRAM 非缓存区）
+- eth_lwip：logs/20261102-180444-eth_lwip.log（板 ping 主机 2/5 rtt 378/381/385 us；主机 ping 板 2/5；丢包为 R7 已记录的 lwIP 已知未闭环项，非本次改动引入）
+- J-Link 实际编程：eth_raw_echo 94 208 B、eth_lwip 131 072 B（见上述 hwrun 日志）
+
+## 7. 复跑命令
+
+```
+cd .
+T=toolchains/riscv32-unknown-elf-newlib-multilib/bin
+# 改前：还原 HEAD 版 Eth.c 后构建
+cp mcal/Eth/src/Eth.c /tmp/Eth.c.new && git checkout -- mcal/Eth/src/Eth.c
+bash scripts/build.sh samples/mcal/eth_raw_echo
+cp build/eth_raw_echo-debug/output/demo.elf /tmp/before.elf && cp build/eth_raw_echo-debug/output/demo.bin /tmp/before.bin
+# 改后：换回新版本再构建
+cp /tmp/Eth.c.new mcal/Eth/src/Eth.c && bash scripts/build.sh samples/mcal/eth_raw_echo
+cp build/eth_raw_echo-debug/output/demo.elf /tmp/after.elf && cp build/eth_raw_echo-debug/output/demo.bin /tmp/after.bin
+# 对比
+$T/riscv32-unknown-elf-size /tmp/before.elf /tmp/after.elf
+$T/riscv32-unknown-elf-readelf -SW /tmp/before.elf | grep noncacheable
+$T/riscv32-unknown-elf-readelf -lW /tmp/before.elf | grep -E "LOAD.*0x01230000"
+$T/riscv32-unknown-elf-readelf -lW /tmp/after.elf  | grep -E "LOAD.*0x01230000"
+stat -c "%n %s" /tmp/before.bin /tmp/after.bin
+grep -n "__fw_size__" build/eth_raw_echo-debug/output/demo.map
+```
+

@@ -1,0 +1,63 @@
+
+digraph ecosystem {
+  graph [rankdir=LR, fontname="Noto Sans CJK JP", fontsize=11, nodesep=0.26, ranksep=0.42,
+         bgcolor="white", pad=0.15, compound=true];
+  node  [shape=box, style="rounded,filled", fontname="Noto Sans CJK JP", fontsize=10,
+         color="#8C959F", fillcolor="#F6F8FA", penwidth=0.8, margin="0.10,0.06"];
+  edge  [color="#57606A", arrowsize=0.7, penwidth=0.9];
+
+  subgraph cluster_hw {
+    label="硬件"; fontname="Noto Sans CJK JP"; fontsize=10; color="#D0D7DE"; style="rounded,dashed";
+    soc  [label="HPM5E31\n480MHz RISC-V\n1MB Flash / 256KB SRAM", fillcolor="#DDF4FF", color="#1F6FEB"];
+    board[label="hpm5e31_1\n最小系统板\n4x CAN FD / 10BASE-T1S / GbE", fillcolor="#DDF4FF", color="#1F6FEB"];
+    soc -> board;
+  }
+
+  subgraph cluster_sdk {
+    label="HPM SDK v1.13.0（BSD-3-Clause）"; fontname="Noto Sans CJK JP"; fontsize=10;
+    color="#D0D7DE"; style="rounded,dashed";
+    drivers [label="drivers/\n外设驱动（UART/SPI/CAN/ADC…）"];
+    soc     [label="soc/HPM5E00\n寄存器头文件/时钟/启动"];
+    mid     [label="middleware/\nlwIP / CherryUSB / FreeRTOS / TinyUSB 等"];
+    samples [label="samples/\n官方外设例程（按 IP 组织）"];
+  }
+
+  subgraph cluster_tools {
+    label="官方工具"; fontname="Noto Sans CJK JP"; fontsize=10; color="#D0D7DE"; style="rounded,dashed";
+    pinmux [label="Pinmux Tool\n引脚复用/生成 C 代码"];
+    monitor[label="HPM Monitor Studio\n在线调试/寄存器查看"];
+    mfg    [label="Manufacturing Tool /\nOBox 离线烧录"];
+    adc    [label="ADC Evaluation Studio\n高精度 ADC 评估"];
+  }
+
+  subgraph cluster_repo {
+    label="本仓库 hpm5e31_1"; fontname="Noto Sans CJK JP"; fontsize=10; color="#D0D7DE"; style="rounded,dashed";
+    samples2[label="samples/\n每个外设 2~8 个可上板例程"];
+    docs   [label="docs/\n书稿 + 图表脚本 + PDF 合成"];
+    scripts[label="scripts/\nbuild/flash/hwrun/serial_cap"];
+  }
+
+  subgraph cluster_app {
+    label="应用方案（参考设计）"; fontname="Noto Sans CJK JP"; fontsize=10; color="#D0D7DE"; style="rounded,dashed";
+    ecat [label="EtherCAT 伺服/从站", fillcolor="#DAFBE1", color="#2EA043"];
+    cang [label="CAN FD 网关", fillcolor="#DAFBE1", color="#2EA043"];
+    t1s  [label="10BASE-T1S 车载/工业末端", fillcolor="#DAFBE1", color="#2EA043"];
+    daq  [label="高精度数据采集\n（2x16bit ADC + SDM）", fillcolor="#DAFBE1", color="#2EA043"];
+  }
+
+  board -> drivers [lhead=cluster_sdk, label="同一份 SDK"];
+  drivers -> mid;
+  drivers -> samples;
+  soc -> drivers [style=dashed, arrowhead=none];
+  samples -> samples2 [style=dashed, label="例程范式"];
+  board -> scripts [style=dashed];
+  scripts -> docs [style=dashed];
+  drivers -> ecat; mid -> ecat;
+  drivers -> cang;
+  drivers -> t1s;
+  drivers -> daq;
+  pinmux -> board [style=dashed, arrowhead=none];
+  monitor -> board [style=dashed, arrowhead=none];
+  mfg -> board [style=dashed, arrowhead=none];
+  adc -> daq [style=dashed, arrowhead=none];
+}

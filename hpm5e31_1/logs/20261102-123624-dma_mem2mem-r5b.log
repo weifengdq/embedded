@@ -1,0 +1,59 @@
+et phy init passed !
+IPv4 Address: 192.168.2.100
+IPv4 Netmask:awidth | dmachain | dmamem | dmaburst | dmacpu
+== AXI_SRAM / ILM / DLM DMA 带宽 (size=8192 B, burst=512 B, XDMA 除非注明) ==
+   addr: s_src=0x01230000 s_dst=0x01234000 s_src_ilm=0x00000858 s_src_dlm=0x00200000
+   映射: core_local_mem_to_sys_address()=恒等函数; ILM sys=0x011c0000 DLM sys=0x011e0000
+BENCH_BW name=AXI_SCC->AXI_SCC         mbps=   147.2 burst=512 src=0x01230000 dst=0x01234000
+BENCH_BW name=AXI_SCC->ILM(local)      mbps=   333.8 burst=512 src=0x01230000 dst=0x00002858
+BENCH_BW name=AXI_SCC->ILM(alias)      mbps=   333.8 burst=512 src=0x01230000 dst=0x011c2858
+BENCH_BW name=ILM(local)->AXI_SCC      mbps=    47.9 burst=512 src=0x00000858 dst=0x01234000
+BENCH_BW name=ILM(local)->ILM(local)   mbps=    39.3 burst=512 src=0x00000858 dst=0x00002858
+BENCH_BW name=ILM(alias)->ILM(alias)   mbps=    39.3 burst=512 src=0x011c0858 dst=0x011c2858
+BENCH_BW name=AXI_SCC->DLM(local)      mbps=   334.4 burst=512 src=0x01230000 dst=0x00202000
+  dma error status=0x2
+BENCH_BW name=AXI_SCC->DLM(alias)      result=FAIL status=0xffffffff src=0x01230000 dst=0x013e2000
+  dma error status=0x2
+BENCH_BW name=DLM(alias)->AXI_SCC      result=FAIL status=0xffffffff src=0x013e0000 dst=0x01234000
+  dma error status=0x2
+BENCH_BW name=DLM(alias)->DLM(alias)   result=FAIL status=0xffffffff src=0x013e0000 dst=0x013e2000
+BENCH_BW name=HDMA AXI->ILM(local)     mbps=    21.1 burst=512 src=0x01230000 dst=0x00002858
+   verify: ILM=MISMATCH DLM=MISMATCH
+== 非 2^n 突发 (size=16384 B) ==
+   HDMA burst=   48 B -> REJECT status=0x2
+   HDMA burst=   96 B -> REJECT status=0x2
+   HDMA burst=  192 B -> REJECT status=0x2
+   HDMA burst=  384 B -> REJECT status=0x2
+   HDMA burst=  768 B -> REJECT status=0x2
+   HDMA burst= 1536 B -> REJECT status=0x2
+== 有效突发: HDMA / XDMA (size=16384 B) ==
+BENCH_BW name=HDMA                     mbps=    24.1 burst=8 src=0x01230000 dst=0x01234000
+BENCH_BW name=HDMA                     mbps=    58.6 burst=16 src=0x01230000 dst=0x01234000
+BENCH_BW name=HDMA                     mbps=    88.4 burst=32 src=0x01230000 dst=0x01234000
+BENCH_BW name=HDMA                     mbps=   117.7 burst=64 src=0x01230000 dst=0x01234000
+BENCH_BW name=HDMA                     mbps=    25.9 burst=128 src=0x01230000 dst=0x01234000
+BENCH_BW name=HDMA                     mbps=    26.0 burst=256 src=0x01230000 dst=0x01234000
+BENCH_BW name=HDMA                     mbps=    26.0 burst=512 src=0x01230000 dst=0x01234000
+BENCH_BW name=XDMA                     mbps=    57.5 burst=8 src=0x01230000 dst=0x01234000
+BENCH_BW name=XDMA                     mbps=   102.8 burst=16 src=0x01230000 dst=0x01234000
+BENCH_BW name=XDMA                     mbps=   168.9 burst=32 src=0x01230000 dst=0x01234000
+BENCH_BW name=XDMA                     mbps=   271.0 burst=64 src=0x01230000 dst=0x01234000
+BENCH_BW name=XDMA                     mbps=   385.9 burst=128 src=0x01230000 dst=0x01234000
+BENCH_BW name=XDMA                     mbps=   396.0 burst=256 src=0x01230000 dst=0x01234000
+BENCH_BW name=XDMA                     mbps=   401.7 burst=512 src=0x01230000 dst=0x01234000
+BENCH_BW name=XDMA                     mbps=   401.7 burst=1024 src=0x01230000 dst=0x01234000
+BENCH_BW name=XDMA                     mbps=   407.1 burst=2048 src=0x01230000 dst=0x01234000
+BENCH_BW name=XDMA                     mbps=   406.6 burst=4096 src=0x01230000 dst=0x01234000
+BENCH_BW name=XDMA                     mbps=   406.6 burst=8192 src=0x01230000 dst=0x01234000
+   verify: match
+== CPU 与 DMA 并发 (XDMA 16384 B 拷贝, burst=1024 B) ==
+BENCH_CONC solo_mbps=406.6 alu_mbps=204.0 mem_mbps=204.8 alu_drop=49.8% mem_drop=49.6%
+   note: alu=CPU 纯寄存器运算(不占总线), mem=CPU 连续读 AHB SRAM(占总线)
+  burst= 1024 B     396.0 MB/s  ( 41.38 us, 395.99 MB/s per copy)
+auto: 16KB copy OK
+  burst= 1024 B     405.8 MB/s  ( 40.38 us, 405.80 MB/s per copy)
+auto: 16KB copy OK
+  burst= 1024 B     401.2 MB/s  ( 40.83 us, 401.24 MB/s per copy)
+auto: 16KB copy OK
+  burst= 1024 B     400.4 MB/s  ( 40.92 us, 400.42 MB/s per copy)
+auto: 16KB copy OK

@@ -1,0 +1,11 @@
+ne (Dhrystone 2.1) ===
+board=hpm5e31_1 cpu=480 MHz opt=-O3 LOOP_COUNT=5000000 runs=2
+commands: dh <n> | dhstat | dhinfo
+BENCH_RUN idx=1 secs=4.208354 dhrystones_per_s=1188112.85 dmips=676.22 dmips_per_mhz=1.4088 verify=PASS
+BENCH_RUN idx=2 secs=4.208334 dhrystones_per_s=1188118.58 dmips=676.22 dmips_per_mhz=1.4088 verify=PASS
+
+===== Dhrystone summary (n=2, LOOP_COUNT=5000000) =====
+cpu=480 MHz  opt=-O3  -fno-inline
+DMIPS     mean=676.22
+DMIPS/MHz mean=1.4088 sd=0.0000 min=1.4088 max=1.4088
+BENCH_STAT metric=dhrystone n=2 mean_dmips=676.22 dmips_per_mhz=1.4088 sd=0.0000 min=1.4088 max=1.4088

@@ -1,0 +1,29 @@
+N link up: 1000M SLAVE
+Enet phy init passed !
+IPv4 Address: 1cle 20
+[xrce] init rc=0 state=connected
+[xrce] entities: hello=0 adc=1 cmd=0
+[xrce] shell: xrce | stat | pub [text] | rst
+[xrce] state=connected up=2059 ms hello=0 adc=0 cmd=0 led=0
+[xrce] tx: samples=0 dg=14 bytes=585 drop=0 err=2 | rx: dg=13 bytes=184 samples=0 ovr=0
+[xrce] cpu0=480 MHz bsp_up=2115 ms loop=0/s adc_cost=0 us poll_cost=0 us
+[xrce] reliable: acked=0 retrans=0 reconnects=0 pub_err=0
+[xrce] STAT hello=0/s adc=0/s acked=0 => FAIL
+stat
+[xrce] state=connected up=2067 ms hello=0 adc=0 cmd=0 led=0
+[xrce] tx: samples=0 dg=15 bytes=609 drop=0 err=2 | rx: dg=15 bytes=210 samples=0 ovr=0
+[xrce] cpu0=480 MHz bsp_up=2122 ms loop=1/s adc_cost=0 us poll_cost=948 us
+[xrce] reliable: acked=5 retrans=0 reconnects=0 pub_err=0
+[xrce] STAT hello=0/s adc=0/s acked=5 => FAIL
+
+letter:/$ 
+letter:/$ [xrce] state=connected up=7059 ms hello=50 adc=499 cmd=0 led=0
+[xrce] tx: samples=549 dg=563 bytes=17913 drop=0 err=2 | rx: dg=64 bytes=847 samples=0 ovr=0
+[xrce] cpu0=480 MHz bsp_up=7114 ms loop=706/s adc_cost=0 us poll_cost=1000 us
+[xrce] reliable: acked=54 retrans=0 reconnects=0 pub_err=0
+[xrce] STAT hello=7/s adc=70/s acked=54 => PASS
+[xrce] state=connected up=12059 ms hello=100 adc=999 cmd=0 led=0
+[xrce] tx: samples=1099 dg=1113 bytes=35313 drop=0 err=2 | rx: dg=114 bytes=1497 samples=0 ovr=0
+[xrce] cpu0=480 MHz bsp_up=12114 ms loop=828/s adc_cost=0 us poll_cost=999 us
+[xrce] reliable: acked=104 retrans=0 reconnects=0 pub_err=0
+[xrce] STAT hello=8/s adc=82/s acked=104 => PASS

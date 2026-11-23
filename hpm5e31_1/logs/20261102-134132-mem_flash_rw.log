@@ -1,0 +1,39 @@
+sw=1.0.0 instances=1
+Mem: instance0 base=0x80000000 size=1024   : after=7 (delta=7)
+meminfo
+Mem: module=91 vendor=0xffff sw=1.0.0 instances=1
+Mem: instance0 base=0x80000000 size=1024 KB sector=4096 B page=256 B
+Mem: safe window 0x800f0000..0x80100000, app etext=0x80014428 -> no overlap (OK)
+
+letter:/$ 
+letter:/$ memrw
+--- mem rw @0x800f0000 (4096 B) ---
+erase : OK, 1.910 ms, result=0
+blank : blank OK (result=0)
+write : OK, 15.288 ms, 261.6 KB/s, result=0
+read  : OK, 0.101 ms, 39801.0 KB/s, result=0
+cmp   : MATCH (first mismatch idx=4096)
+blank : non-blank detected=YES (result=3)
+sum   : 0x0007f800 (pattern seed 0x5A)
+MEMRW: PASS
+
+letter:/$ 
+letter:/$ memdet
+--- mem det: error paths ---
+det   : before=7
+read NULL ptr        : r=1 det=8
+  last: mod=91 inst=0 api=0x05 err=0x02
+erase outside window : r=1 det=9 (REFUSED, app safe)
+write unaligned addr : r=1 det=10
+read zero length     : r=1 det=11
+get result bad inst  : det=12
+read while pending   : r=1 det=13
+suspend              : r=2 (expect 2 = E_MEM_SERVICE_NOT_AVAIL)
+resume               : r=2 (expect 2)
+read after DeInit    : r=1 det=14
+re-init              : ok, jobResult=0
+propagate ECC error  : result=4 (expect 4 = MEM_ECC_UNCORRECTED)
+det   : after=14 (delta=7)
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,14 @@
+CAN1 master)
+[app] canopen_pdo ready (shell: run [period_ms] [-> 500 帧
+  统计: SYNC=500 TPDO=500 丢帧=0
+  TPDO1 每 SYNC 一帧（0 丢帧）    PASS  SYNC=500 TPDO=500 丢帧=0 总时长=5006885 us
+  指标                    数值
+  ----------------------- --------------------------
+  SYNC 帧数               500
+  TPDO1 帧数              500
+  丢帧                    0 (0.00 %)
+  端到端延迟 min/avg/p99/max  320 / 350 / 389 / 398 us
+  TPDO 周期 min/avg/max   10000 / 10013 / 10043 us
+  周期抖动 sigma / maxdev  8.785 / 43 us
+  TPDO1 平均延迟 < 10 ms             PASS  avg=350 us p99=389 us
+  TPDO1 周期抖动 sigma < 1000 us     PASS  sigma=8.785 us maxdev=43 us

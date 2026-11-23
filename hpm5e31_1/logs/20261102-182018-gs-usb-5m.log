@@ -1,0 +1,37 @@
+
+==================================================================
+gs_usb 测试: 5m（20261102-182018）
+==================================================================
+主机: Linux 7.0.0-38-generic x86_64  脚本: test_5m.sh
+日志: logs/20261102-182018-gs-usb-5m.log
+工件: /tmp/gs_usb_artifacts
+内核 7.0.x —— 与开发约定 §1 一致
+  [PASS] 权限 OK（sudo -n）
+dmesg 基线时间戳: 1793614818（之后用 --since 只扫描新增行）
+  [PASS] 依赖命令齐全: dmesg ip ethtool cansend candump cangen canplayer
+  [PASS] 发现 4 个接口: 0 1 2 3
+
+---- ==== soak：满速长测 ====
+
+---- [20261102-182018 soak-1000000-5000000]: 满速 cangen -g 0，250000 帧，can0 -> can1（长测）
+  长测前 固件: [gs] rx_frames=0 tx_frames=0 echo=0 tx_drop=0 tx_retry=0 err_frames=0 berr_mask=0x0 [gs] usb: configured=1 in_sent=0 in_drop=0 out_drop=0
+  长测前 can0 ip -s: 127: can0: <NOARP,UP,LOWER_UP,ECHO> mtu 72 qdisc pfifo_fast state UP mode DEFAULT group default qlen 10  link/can promiscuity 0 allmulti 0 minmtu 72 maxmtu 72   can <FD> state ERROR-ACTIVE (berr-counter tx 0 rx 0) restart-ms 0  	 bitrate 1000000 sample-point 0.750 	 tq 12 prop-seg 29 phase-seg1 30 phase-seg2 20 sjw 10 brp 1 	 gs_usb: tseg1 1..256 tseg2 1..128 sjw 1..128 brp 1..512 brp_inc 1 	 dbitrate 5000000 dsample-point 0.750 	 dtq 12 dprop-seg 5 dphase-seg1 6 dphase-seg2 4 dsjw 2 dbrp 1 	 gs_usb: dtseg1 1..32 dtseg2 1..16 dsjw 1..16 dbrp 1..256 dbrp_inc 1 	 clock 80000000  	 re-started bus-errors arbit-lost error-warn error-pass bus-off 	 0 0 0 0 0 0 numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535 tso_max_size 65536 tso_max_segs 65535 gro_max_size 65536 gso_ipv4_max_size 65536 gro_ipv4_max_size 65536 parentbus usb parentdev 1-8:1.0   RX: bytes packets errors dropped missed mcast   0 0 0 0 0 0   TX: bytes packets errors dropped carrier collsns   0 0 0 0 0 0  
+  长测后 固件: [gs] rx_frames=250000 tx_frames=250000 echo=250000 tx_drop=0 tx_retry=1872531 err_frames=0 berr_mask=0x0 [gs] usb: configured=1 in_sent=500000 in_drop=0 out_drop=0
+  长测后 can0 ip -s: 127: can0: <NOARP,UP,LOWER_UP,ECHO> mtu 72 qdisc pfifo_fast state UP mode DEFAULT group default qlen 10  link/can promiscuity 0 allmulti 0 minmtu 72 maxmtu 72   can <FD> state ERROR-ACTIVE (berr-counter tx 0 rx 0) restart-ms 0  	 bitrate 1000000 sample-point 0.750 	 tq 12 prop-seg 29 phase-seg1 30 phase-seg2 20 sjw 10 brp 1 	 gs_usb: tseg1 1..256 tseg2 1..128 sjw 1..128 brp 1..512 brp_inc 1 	 dbitrate 5000000 dsample-point 0.750 	 dtq 12 dprop-seg 5 dphase-seg1 6 dphase-seg2 4 dsjw 2 dbrp 1 	 gs_usb: dtseg1 1..32 dtseg2 1..16 dsjw 1..16 dbrp 1..256 dbrp_inc 1 	 clock 80000000  	 re-started bus-errors arbit-lost error-warn error-pass bus-off 	 0 0 0 0 0 0 numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535 tso_max_size 65536 tso_max_segs 65535 gro_max_size 65536 gso_ipv4_max_size 65536 gro_ipv4_max_size 65536 parentbus usb parentdev 1-8:1.0   RX: bytes packets errors dropped missed mcast   16000000 250000 0 0 0 0   TX: bytes packets errors dropped carrier collsns   16000000 250000 0 0 0 0  
+  rc=0 用时=35.88s tx_delta=250000 rx_delta=250000 丢帧=0.0% 帧率=6967.7 fps tx_err=0 rx_err=0 固件tx_retry增量=1872531
+  can0: state ERROR-ACTIVE berr-counter tx 0 rx 0 / can1: state ERROR-ACTIVE berr-counter tx 0 rx 0
+  [PASS] soak-1000000-5000000: 250000 帧满速发完，tx_delta=250000 rx_delta=250000，固件 tx_retry 增量=1872531（背压生效、URB 未泄漏、队列未停）
+{"tag":"soak-1000000-5000000","status":"soak","nom":1000000,"dbit":5000000,"n":250000,"secs":35.88,"tx_delta":250000,"rx_delta":250000,"loss_pct":0.0,"fps":6967.7,"tx_err":0,"rx_err":0,"tx_retry_delta":1872531,"verdict":"PASS"}
+  dmesg 安全检查: 无 oops/WARN（新增 0 行）
+
+  ==== soak 汇总 ====
+  soak-1000000-5000000 PASS
+  [PASS] 全部档位达判据（丢帧<1%、tx_err/rx_err=0、双向 ERROR-ACTIVE）
+  [PASS] 测试后设备仍在线（sysfs: 1-8）
+  dmesg 安全检查: 无 oops/WARN（新增 0 行）
+
+==================================================================
+汇总: 5m
+==================================================================
+PASS=5  FAIL=0  内核异常=0
+结论: PASS

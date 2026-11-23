@@ -1,0 +1,23 @@
+=== USB CDC ACM 主机侧证据 ===
+时间: Fri Oct 30 11:43:35 AM CST 2026
+board 端测试脚本: scripts/hwrun.sh usb/usb_cdc_acm_echo --secs 22 --send usbinfo
+枚举到的端口: 
+
+--- /sys/bus/usb/devices (idVendor=34b7 部分) ---
+
+--- ls -l /dev/ttyACM* ---
+crw-rw----  1 root dialout 166, 0 Oct 30 11:42 /dev/ttyACM0
+crw-rw-rw-+ 1 root dialout 166, 1 Oct 30 11:39 /dev/ttyACM1
+
+--- journalctl -k (枚举日志) ---
+Oct 30 11:41:52 ubuntu kernel: usb 1-8: new high-speed USB device number 22 using xhci_hcd
+Oct 30 11:41:52 ubuntu kernel: usb 1-8: New USB device found, idVendor=34b7, idProduct=ffff, bcdDevice= 1.00
+Oct 30 11:41:52 ubuntu kernel: usb 1-8: New USB device strings: Mfr=1, Product=2, SerialNumber=3
+Oct 30 11:41:52 ubuntu kernel: usb 1-8: Product: HPMicro CDC DEMO
+Oct 30 11:41:52 ubuntu kernel: usb 1-8: Manufacturer: HPMicro
+Oct 30 11:41:52 ubuntu kernel: usb 1-8: SerialNumber: 2024051702
+Oct 30 11:41:52 ubuntu kernel: cdc_acm 1-8:1.0: ttyACM2: USB ACM device
+Oct 30 11:42:03 ubuntu kernel: usb 1-8: USB disconnect, device number 22
+
+--- 回显测试 (pyserial) ---
+未找到 HPMicro(34b7) 的 ttyACM 端口, 回显测试跳过

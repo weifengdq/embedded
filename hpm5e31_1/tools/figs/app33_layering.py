@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+"""tools/figs/app33_layering.py —— 图 33-1：CANopen 分层与对象字典/通信对象关系
+
+输出：docs/figures/33/fig-33-1-layering.png
+"""
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+from _common import render_dot  # noqa: E402
+
+DOT = r'''
+digraph canopen_layers {
+  rankdir=TB;
+  graph [fontname="Noto Sans CJK SC", fontsize=11, nodesep=0.28, ranksep=0.34, bgcolor="white"];
+  node  [shape=box, style="rounded,filled", fontname="Noto Sans CJK SC", fontsize=10,
+         fillcolor="#F6F8FA", color="#6E7781", penwidth=1.0];
+  edge  [fontname="Noto Sans CJK SC", fontsize=9, color="#57606A", arrowsize=0.7];
+
+  subgraph cluster_app {
+    label="应用层（本仓库 samples/app/canopen_*）"; color="#1F6FEB"; style="rounded,dashed";
+    app  [label="应用代码\nco_node_poll() / OD_RAM.x2101 ...", fillcolor="#DDF4FF"];
+    od   [label="对象字典 OD（0x1000-0x1FFF 标准 + 0x2000 厂商）\nDS-301 参数 / 应用数据 / PDO 映射表", fillcolor="#DDF4FF"];
+  }
+
+  subgraph cluster_comm {
+    label="通信对象（CiA 301，CANopenNode 301/ 目录）"; color="#2EA043"; style="rounded,dashed";
+    nmt  [label="NMT + 心跳\n0x000 / 0x700+ID", fillcolor="#DAFBE1"];
+    sdo  [label="SDO server\n0x600+ID / 0x580+ID", fillcolor="#DAFBE1"];
+    pdo  [label="PDO\nRPDO 0x200+ID / TPDO 0x180+ID", fillcolor="#DAFBE1"];
+    sync [label="SYNC\n0x080", fillcolor="#DAFBE1"];
+    emcy [label="EMCY\n0x080+ID", fillcolor="#DAFBE1"];
+    time [label="TIME\n0x100", fillcolor="#DAFBE1"];
+  }
+
+  drv [label="CO_driver 移植层（port/）\nCO_CANsend / CO_CANpoll_rx / CO_CANpoll_tx", fillcolor="#FFF8C5"];
+  mcan[label="HPM MCAN 控制器（500 kbit/s，经典帧，RX FIFO0 + TX FIFO）", fillcolor="#FFEFF7"];
+  bus [label="CAN 总线（CAN0 <-> CAN1，120 Ω 终端）", shape=box3d, fillcolor="#FFFFFF"];
+
+  app  -> od   [label="读写变量"];
+  od   -> pdo  [label="映射（0x1600/0x1A00）"];
+  od   -> sdo  [label="读写（0x1200）"];
+  nmt  -> pdo  [label="状态门控\nOperational 才收发 PDO", style=dashed];
+  sync -> pdo  [label="同步触发", style=dashed];
+  pdo  -> drv;
+  sdo  -> drv;
+  nmt  -> drv;
+  emcy -> drv;
+  sync -> drv;
+  time -> drv;
+  drv  -> mcan [label="mcan_transmit_via_txfifo_nonblocking / mcan_read_rxfifo"];
+  mcan -> bus;
+}
+'''
+
+
+def main():
+    render_dot(DOT, 34, "fig-33-1-layering")
+    print("generated docs/figures/33/fig-33-1-layering.png")
+
+
+if __name__ == "__main__":
+    main()

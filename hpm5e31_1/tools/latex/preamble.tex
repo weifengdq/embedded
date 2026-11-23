@@ -1,0 +1,79 @@
+% =============================================================================
+% tools/latex/preamble.tex —— 《HPM5E31 实战手册》PDF 导言区
+% 由 tools/build_pdf.sh 读取并替换 @TITLE@ / @VERSION@ / @DATE@ 后传给 pandoc。
+% 不要直接编译本文件；改这里后重新运行 tools/build_pdf.sh。
+% =============================================================================
+
+% ---- 中文字体（XeLaTeX + xeCJK；字体来自 fonts-noto-cjk） ----
+\usepackage{xeCJK}
+\setCJKmainfont{Noto Serif CJK SC}
+\setCJKsansfont{Noto Sans CJK SC}
+\setCJKmonofont{Noto Sans Mono CJK SC}
+\usepackage{lmodern}
+\renewcommand{\familydefault}{\rmdefault}
+\usepackage{indentfirst}
+\setlength{\parindent}{2em}
+\linespread{1.16}
+
+% ---- 标题样式：去掉 book 类自带的 "Chapter N"，章号由 Markdown 标题给出 ----
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\sffamily\huge\bfseries\color{black}}{}{0pt}{}
+\titlespacing*{\chapter}{0pt}{-28pt}{26pt}
+\titleformat{\section}{\normalfont\sffamily\Large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalfont\sffamily\large\bfseries}{\thesubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{12pt}{6pt}
+\titlespacing*{\subsection}{0pt}{10pt}{4pt}
+
+% ---- 图表标题：中文"图/表"，编号由 Markdown 图题自带，故 labelformat=empty ----
+\usepackage{caption}
+\captionsetup{font=small,labelformat=empty,justification=centering,skip=4pt}
+\renewcommand{\figurename}{图}
+\renewcommand{\listfigurename}{插图目录}
+\renewcommand{\thefigure}{}
+\renewcommand{\tablename}{表}
+
+% ---- 代码块：灰色底纹（pandoc 的 Highlighting/Verbatim 环境） ----
+\usepackage{etoolbox}
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{244,244,246}
+\BeforeBeginEnvironment{Highlighting}{\begin{shaded}}
+\AfterEndEnvironment{Highlighting}{\end{shaded}}
+
+% ---- 表格：统一用小一号字，减少超宽 ----
+\usepackage{longtable}
+\usepackage{booktabs}
+\AtBeginEnvironment{longtable}{\small}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\LTpre}{3pt}
+\setlength{\LTpost}{3pt}
+
+% ---- 页眉页脚：书名 + 版本 + 页码 ----
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\sffamily @TITLE@}
+\fancyhead[R]{\small\sffamily @VERSION@}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyhead[L]{\small\sffamily @TITLE@}%
+  \fancyhead[R]{\small\sffamily @VERSION@}%
+  \fancyfoot[C]{\small\thepage}%
+  \renewcommand{\headrulewidth}{0.4pt}%
+}
+
+% ---- 目录与超链接 ----
+\renewcommand{\contentsname}{目\hspace{1.5em}录}
+\setcounter{tocdepth}{2}
+\usepackage{hyperref}
+\hypersetup{bookmarksnumbered=true,bookmarksopen=true,bookmarksopenlevel=1,bookmarksdepth=3,pdftitle={@TITLE@ v@VERSION@},pdfauthor={hpm5e31_1 项目组},pdfcreator={pandoc + XeLaTeX}}
+
+% ---- 其它 ----
+\usepackage{enumitem}
+\setlist{itemsep=2pt,topsep=3pt,parsep=0pt}
+\setlength{\emergencystretch}{3em}
+\widowpenalty=10000
+\clubpenalty=10000

@@ -1,0 +1,21 @@
+z, tx=8 x 1536B, rx=16 x 1536B
+IRQ mode=interrupt isr=0 det=0 rx_status=1 drop=0 err=0 crc=0 ovf=0
+irq off
+REINIT begin old_irq=1 target=0
+IRQ mode=polling det=0
+
+letter:/$ 
+letter:/$ irq info
+IRQ mode=polling isr=0 det=0 rx_status=1 drop=0 err=0 crc=0 ovf=0
+
+letter:/$ 
+letter:/$ irq on
+REINIT begin old_irq=0 target=1
+IRQ mode=interrupt det=0
+
+letter:/$ 
+letter:/$ irq info
+IRQ mode=interrupt isr=0 det=0 rx_status=1 drop=0 err=0 crc=0 ovf=0
+
+letter:/$ 
+letter:/$ 

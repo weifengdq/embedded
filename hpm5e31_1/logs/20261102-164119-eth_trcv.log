@@ -1,0 +1,55 @@
+IVE PHYSR=0x8000
+  _   _                  _          _ _ 
+| |    ___| |_| |_ ___ _ __   ___| 
+letter:/$ 
+=== eth_trcv: AUTOSAR EthTrcv + YT8011AN 1000BASE-T1 link/speed/master test ===
+[boot] cpu=480 MHz, det=0
+TRCV link=DOWN baud=1000M duplex=FULL master=SLAVE oui=0x13D47A model=48 rev=1 sqi=0x0000 tmode=ACTIVE PHYSR=0x8000
+trcv info
+TRCV link=UP baud=1000M duplex=FULL master=SLAVE oui=0x13D47A model=48 rev=1 sqi=0x0007 tmode=ACTIVE PHYSR=0x8400
+
+letter:/$ 
+letter:/$ trcv regs
+REG BMCR    (0x00) = 0x0140
+REG BMSR    (0x01) = 0x0009
+REG PHYID1  (0x02) = 0x4F51
+REG PHYID2  (0x03) = 0xEB01
+REG ANAR    (0x04) = 0x0000
+REG ANLPAR  (0x05) = 0x0000
+REG ANER    (0x06) = 0x0000
+REG ANNPTR  (0x07) = 0x0000
+REG ANNPRR  (0x08) = 0x0000
+REG GBCR    (0x09) = 0x0000
+REG GBSR    (0x0A) = 0x3000
+REG PHYSR   (0x11) = 0x8400
+EXT 0x9001 (RGMII cfg1) = 0x0110 (RXC_DLY_EN=1 TX_DLY=1 TX_CLK_SEL=0)
+MMD1 0x0834 (force mode) = 0x8001 (master=0 phy_type=1)
+
+letter:/$ 
+letter:/$ trcv s100
+TRCV wait_link timeout (UP)
+SWITCH speed=100M master=SLAVE link=DOWN t_reset=5002ms t_link=4294967295ms baud=100M PHYSR=0x4000 det=0
+
+letter:/$ 
+letter:/$ trcv s1000
+SWITCH speed=1000M master=SLAVE link=UP t_reset=13ms t_link=11ms baud=1000M PHYSR=0x8400 det=0
+
+letter:/$ 
+letter:/$ trcv master
+TRCV wait_link timeout (UP)
+SWITCH speed=1000M master=MASTER link=DOWN t_reset=5002ms t_link=4294967295ms baud=1000M PHYSR=0x2000 det=0
+
+letter:/$ 
+letter:/$ trcv slave
+SWITCH speed=1000M master=SLAVE link=UP t_reset=20ms t_link=19ms baud=1000M PHYSR=0x8400 det=0
+
+letter:/$ 
+letter:/$ trcv info
+TRCV link=UP baud=1000M duplex=FULL master=SLAVE oui=0x13D47A model=48 rev=1 sqi=0x0007 tmode=ACTIVE PHYSR=0x8400
+
+letter:/$ 
+letter:/$ trcv poll 3
+TRCV poll secs=3 flips=0
+
+letter:/$ 
+letter:/$ 

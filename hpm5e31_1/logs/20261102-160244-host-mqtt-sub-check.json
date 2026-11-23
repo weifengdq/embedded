@@ -1,0 +1,36 @@
+{
+ "broker": "192.168.2.1:1883",
+ "seconds": 10.0,
+ "telemetry_count": 11,
+ "status": [
+  {
+   "dev": "hpm5e31",
+   "online": true,
+   "up_ms": 5,
+   "fw": "1.0.0"
+  }
+ ],
+ "checks": {
+  "samples>=5": true,
+  "fields": true,
+  "seq_continuous": true,
+  "rate_1hz": true,
+  "status_retained_online": true
+ },
+ "rate_hz": 1.0,
+ "gaps": 0,
+ "last": {
+  "dev": "hpm5e31",
+  "seq": 24,
+  "up_ms": 24002,
+  "can_tx": 25,
+  "can_rx": 24,
+  "adc": 34849,
+  "temp_mc": 37000,
+  "loop_us": 0,
+  "loop_max_us": 2421,
+  "mqtt_rx": 0,
+  "mqtt_tx": 24
+ },
+ "verdict": "PASS"
+}

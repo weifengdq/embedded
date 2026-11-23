@@ -1,0 +1,7 @@
+[interop] timeout 6 j1939cat -i /tmp/tmpqtk35504.bin vcan0:0x20 vcan0:0x30,0x0EF00
+  j1939cat rc=131 err=TX ABT: 1793352958 s 660339 us (seq=000, send=0000000)
+j1939cat: serr: tx error: 131, State not recoverable
+  frames_rx=2 cts_sent=1 eoma_sent=0 reassembled=0
+  [PASS] 内核 RTS/CM 帧可被本解码器解析
+  [KNOWN-ISSUE] 完整 TP 互操作（内核 CTS 字段布局与 J1939-21 不同，见文件头注释）
+RESULT: PARTIAL (帧格式兼容 / TP CTS 布局差异)

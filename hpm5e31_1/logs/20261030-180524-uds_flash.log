@@ -1,0 +1,35 @@
+|_| |_ ___ _ __   ___| 
+letter:/$ 
+[app] uds_flash ready (UDS 0x34/0x36/0x37 -> 片内 Flash 0x800F0000)
+[uds_flash] PASS post-reset: 0x800F0000 存在有效镜像 magic=HPMIMG01 len=32768 crc=0x791B3AB8
+
+[uds_flash] 镜像 32768 B @0x800F0000，安全窗口 0x800F0000~0x80100000，块 256 B
+  session=default(01) security=0 dl_active=0
+run
+
+[uds_flash] run: 下载 32768 B 到 0x800F0000（最后 64 KB 安全区）
+  10 02 编程会话       PASS 
+  27 01 取种子          PASS seed=0xD2E3FB68 key=0x2B589DBE
+  27 02 解锁             PASS 
+  34 请求下载(擦除)  PASS rtt=16137 us maxBlock=258 pending=1
+  36 传输数据          PASS 128 块/24.2 KB/s 总耗时 1324486 us blk_rtt_avg=10203 max=10856
+  37 退出传输          PASS 
+  31 01 FF00 校验 CRC32  PASS ECU=0x791B3AB8 本地=0x791B3AB8
+  31 01 FF01 依赖检查  PASS magic/len/crc 一致
+  XIP 直读全镜像      PASS XIP crc=0x791B3AB8 memcmp=identical
+  flash: erase=14664 us write=118941 us programmed=32768 B (269.0 KB/s)
+  region@0x800F0000: magic=HPMIMG01 len=32768 crc=0x791B3AB8
+  11 01 复位             PASS 
+[uds_flash] PASS pass=10 fail=0（23.7 KB/s，镜像 32768 B）
+
+letter:/$ 
+letter:/$ [uds_flash] 0x11 01 -> 执行 MCU 复位（PPOR 软复位）
+[2J[1H
+ _         _   _                  _          _ _ 
+| |    ___| |_| |_ ___ _ __   ___| 
+letter:/$ 
+[app] uds_flash ready (UDS 0x34/0x36/0x37 -> 片内 Flash 0x800F0000)
+[uds_flash] PASS post-reset: 0x800F0000 存在有效镜像 magic=HPMIMG01 len=32768 crc=0x791B3AB8
+
+[uds_flash] 镜像 32768 B @0x800F0000，安全窗口 0x800F0000~0x80100000，块 256 B
+  session=default(01) security=0 dl_active=0

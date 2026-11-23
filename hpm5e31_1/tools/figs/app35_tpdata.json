@@ -1,0 +1,14 @@
+{
+  "_comment": "第 34 章 U-35-10 主机侧 4096 B TP 响应分段到达情况。来源：logs/20261102-121620-host-r5-someip-all.log 与 logs/20261102-121620-someip-tp.pcap（2026-11-02 12:18，append 模式 + tpgap 100us）",
+  "runs": [
+    {
+      "run": 1,
+      "recv": [
+        false,
+        true,
+        true
+      ]
+    }
+  ],
+  "note": "段 1（offset=0）在线路上完全没有出现；段 2/3 分别为 1412 B、1332 B"
+}

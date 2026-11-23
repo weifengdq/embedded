@@ -1,0 +1,50 @@
+MISO=PC12 MOSI=PC13 CS=PC11
+  src_clk=80000000 Hz, cpu=48000000000000' to re-measure
+spi_info
+spi_loopback_poll @ hpm5e31_1: SPI1 SCLK=PC10 MISO=PC12 MOSI=PC13 CS=PC11
+  src_clk=80000000 Hz, cpu=480000000 Hz, cfg: sclk=20000000 cpol=1 cpha=1 bits=8
+  note: 真正 MOSI->MISO 数据回环需要外部短接 PC12-PC13
+  usage: spi_info / spi_loop / spi_sclk [N] / spi_sweep / spi_modes / spi_bits
+
+letter:/$ 
+letter:/$ spi_loop
+no-loopback rx: 00 00 00 00 00 00 00 00 (MOSI 数据 A0..A7)
+mosi-loopback rx: 00 00 00 00 00 00 00 00 -> MISMATCH(需外部短接 MISO-MOSI)
+
+letter:/$ 
+letter:/$ spi_sclk 1024 20000000
+spi_sclk cfg=20000000 measured=19880780 err=-5961 ppm, n=1024 time=412.05 us
+
+letter:/$ 
+letter:/$ spi_modes
+mode table: SCLK=20MHz, 1024 bytes full-duplex
+mode CPOL  CPHA    time_us measured_SCLK
+   0    0     0        412     19880780
+   1    0     1        411     19884198
+   2    1     0        411     19886210
+   3    1     1        411     19888423
+
+letter:/$ 
+letter:/$ spi_bits
+data width table: SCLK=20MHz, 2048 bytes total
+    bits      words    time_us measured_SCLK
+       8       2048        821     19939554
+      16       1024        821     19938948
+      32        512        821     19933591
+
+letter:/$ 
+letter:/$ spi_sweep
+   request     measured      ratio  err_ppm
+    100000   timing init failed
+   1000000       998565         0.99    -1435
+   5000000      4988854         0.99    -2229
+  10000000      9965860         0.99    -3414
+  20000000     19885103         0.99    -5744
+  25000000   timing init failed
+  40000000     23166328         0.57  -420841
+  50000000   timing init failed
+  60000000   timing init failed
+  80000000     23030104         0.28  -712123
+
+letter:/$ 
+letter:/$ 

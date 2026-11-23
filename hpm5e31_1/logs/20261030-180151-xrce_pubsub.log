@@ -1,0 +1,15 @@
+UPLOAD 读回 0x12345678
+     DOWNLOAD 后 g_sw_flag=0xCAFEB0B
+[xrce] init rc=0 state=connected
+[xrce] entities: hello=0 adc=1 cmd=0
+[xrce] shell: xrce | stat | pub [text] | rst
+[xrce] state=connected up=2015 ms hello=0 adc=0 cmd=0 led=0
+[xrce] tx: samples=0 dg=14 bytes=585 drop=0 err=2 | rx: dg=13 bytes=184 samples=0 ovr=0
+[xrce] cpu0=480 MHz bsp_up=2070 ms loop=0/s adc_cost=0 us poll_cost=0 us
+[xrce] reliable: acked=0 retrans=0 reconnects=0 pub_err=0
+[xrce] STAT hello=0.0/s adc=0.0/s acked=0 => FAIL
+[xrce] state=connected up=7015 ms hello=50 adc=500 cmd=0 led=0
+[xrce] tx: samples=550 dg=563 bytes=17913 drop=0 err=2 | rx: dg=64 bytes=847 samples=0 ovr=0
+[xrce] cpu0=480 MHz bsp_up=7070 ms loop=710/s adc_cost=3 us poll_cost=1000 us
+[xrce] reliable: acked=54 retrans=0 reconnects=0 pub_err=0
+[xrce] STAT hello=10.1/s adc=101.1/s acked=54 => PASS

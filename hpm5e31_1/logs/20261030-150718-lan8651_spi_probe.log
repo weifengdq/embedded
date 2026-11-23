@@ -1,0 +1,16 @@
+c 80000000 Hz
+board_init_spi_clock(SPI2) = 80000000 Hz
+SPI2          nRST / nINT pin levels
+scan
+[scan] 32 reads of STDCAP per speed
+  request    actual     errors   stdcap       ns/read   
+  1000000    1000000    0        0x000005e5 104054      ok
+  2000000    2000000    0        0x000005e5 55133       ok
+  5000000    5000000    0        0x000005e5 26206       ok
+  10000000   10000000   0        0x000005e5 16541       ok
+  20000000   20000000   0        0x000005e5 11702       ok
+  25000000   0          0        0x000005e5 11002       ok
+[scan] last speed 0 Hz
+
+letter:/$ 
+letter:/$ 

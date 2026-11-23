@@ -1,0 +1,9 @@
+ <hz> | gclr | ginfo
+gstat
+[gptmr irq] f_clk=100000000 Hz rate=1000 Hz cnt=667
+  period : mean=1000.000 us  min=999.760 us  max=1000.230 us  (expect 1000.000 us)
+  jitter : peak-peak=0.470 us  stddev=0.107 us  (=10.7 ticks)
+  error  : +0.24 ppm
+
+letter:/$ 
+letter:/$ 

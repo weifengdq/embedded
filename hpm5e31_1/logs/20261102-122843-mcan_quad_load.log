@@ -1,0 +1,79 @@
+e-way (links=2) case=fd-1M-2M-64B n=2000 ===
+  link0 can0->can1 fd-1M-2M-64B    n=2000 ok=2000 bad=0 fps=1425 payload=0.73Mbps tx_full=288305
+  link1 can1->can0 fd-1M-2M-64B    n=2000 ok=2000 bad=0 fps=1425 payload=0.73Mbps tx_full=653996
+  QUAD_SUM links=2 case=fd-1M-2M-64B    n=2000 ok=4000 bad=0 t=1403597 us cpu_busy=68.5% cyc/frame=115377 lec=0 tec=0 rec=0 rxfifo_lost=0 timeout=0
+
+=== 4CH concurrent one-way (links=2) case=fd-1M-5M-64B n=2000 ===
+  link0 can0->can1 fd-1M-5M-64B    n=2000 ok=2000 bad=0 fps=3169 payload=1.62Mbps tx_full=126612
+  link1 can1->can0 fd-1M-5M-64B    n=2000 ok=2000 bad=0 fps=3169 payload=1.62Mbps tx_full=288575
+  QUAD_SUM links=2 case=fd-1M-5M-64B    n=2000 ok=4000 bad=0 t=631096 us cpu_busy=69.3% cyc/frame=52506 lec=0 tec=0 rec=0 rxfifo_lost=0 timeout=0
+
+=== 4CH bidirectional (links=4) case=fd-1M-2M-64B n=2000 ===
+  link0 can0->can1 fd-1M-2M-64B    n=2000 ok=2000 bad=0 fps=1425 payload=0.73Mbps tx_full=167778
+  link1 can1->can0 fd-1M-2M-64B    n=2000 ok=2000 bad=0 fps=1425 payload=0.73Mbps tx_full=393226
+  link2 can2->can3 fd-1M-2M-64B    n=2000 ok=2000 bad=0 fps=1425 payload=0.73Mbps tx_full=167783
+  link3 can3->can2 fd-1M-2M-64B    n=2000 ok=2000 bad=0 fps=1425 payload=0.73Mbps tx_full=393232
+  QUAD_SUM links=4 case=fd-1M-2M-64B    n=2000 ok=8000 bad=0 t=1403597 us cpu_busy=81.3% cyc/frame=68492 lec=0 tec=0 rec=0 rxfifo_lost=0 timeout=0
+done. commands: info | quad [n] [case] [links] | bi [n] [case] | one [n] [case] | tsu [n] | ptp [n] | matrix [n] | dma
+info
+sample: mcan_quad_load (4x MCAN concurrent / 5M / TSU / timing matrix)
+boards: CAN0<->CAN1, CAN2<->CAN3 两两同一总线 + 120 ohm，TCAN1044AV 上限 5 Mbit/s
+clock : cpu=480 MHz ahb=200 MHz can=80 MHz ; msg_ram 4x2560 B / 32768 B
+  case[0] fd-1M-2M-64B    fd=1 dlc=15
+  case[1] fd-1M-5M-64B    fd=1 dlc=15
+  case[2] fd-1M-8M-64B    fd=1 dlc=15
+  case[3] fd-500k-2M-64B  fd=1 dlc=15
+  case[4] can20-500k-8B   fd=0 dlc=8
+  case[5] can20-1M-8B     fd=0 dlc=8
+
+letter:/$ 
+letter:/$ quad 120 1 2
+
+=== 4CH concurrent one-way (links=2) case=fd-1M-5M-64B n=120 ===
+  link0 can0->can1 fd-1M-5M-64B    n=120 ok=120 bad=0 fps=3168 payload=1.62Mbps tx_full=7348
+  link1 can1->can0 fd-1M-5M-64B    n=120 ok=120 bad=0 fps=3168 payload=1.62Mbps tx_full=17075
+  QUAD_SUM links=2 case=fd-1M-5M-64B    n=120 ok=240 bad=0 t=37883 us cpu_busy=68.9% cyc/frame=52278 lec=0 tec=0 rec=0 rxfifo_lost=0 timeout=0
+
+letter:/$ 
+letter:/$ quad 120 1 4
+
+=== 4CH concurrent one-way (links=4) case=fd-1M-5M-64B n=120 ===
+  link0 can0->can1 fd-1M-5M-64B    n=120 ok=120 bad=0 fps=3166 payload=1.62Mbps tx_full=4243
+  link1 can1->can0 fd-1M-5M-64B    n=120 ok=120 bad=0 fps=3166 payload=1.62Mbps tx_full=10146
+  link2 can2->can3 fd-1M-5M-64B    n=120 ok=120 bad=0 fps=3166 payload=1.62Mbps tx_full=4248
+  link3 can3->can2 fd-1M-5M-64B    n=120 ok=120 bad=0 fps=3166 payload=1.62Mbps tx_full=10153
+  QUAD_SUM links=4 case=fd-1M-5M-64B    n=120 ok=480 bad=0 t=37903 us cpu_busy=82.0% cyc/frame=31117 lec=0 tec=0 rec=0 rxfifo_lost=0 timeout=0
+
+letter:/$ 
+letter:/$ tsu 200
+
+=== TSU internal AHB timebase (TX Event vs RX, 32-bit) ===
+[tsu] CAN0 init failed st=2
+
+letter:/$ 
+letter:/$ ptp 200
+
+=== TSU + PTPC0 external timebase (64-bit, common timebase) ===
+[ptp] ptpc_init st=0 src=200000000 Hz
+[ptp] ptpc0->MCAN0 st=0
+[ptp] ptpc0->MCAN1 st=0
+[ptp] CAN0 tsu init st=2
+
+letter:/$ 
+letter:/$ dma
+
+=== MCAN DMA 评估（当前实现：RX FIFO0 轮询）===
+  SDK 驱动 hpm_mcan_drv.h 无 DMA 接口（无 dma 字段/函数），MCAN 的 DMA 要应用层自己接
+  实测轮询成本：上一次并发测试 cyc/frame=31117，4 路满载主循环忙闲比 = 82.0%
+  方案A（RX）：RXFIFO0 水位=1 -> 中断里只置标志，主循环把 FIFO 元素(72B/64B 帧)
+    用 HDMA 链式搬运到环形缓冲；DMA 每帧 1 次 72B 传输，CPU 只处理指针
+  方案B（TX）：CPU 写 TX FIFO，DMA 仅做数据搬运（收益小，瓶颈在总线）
+  限制：MCAN 消息 RAM 在 AHB SRAM，DMA 源地址固定、需要 4 字节对齐与 32 位宽度；
+        4 路各 1 条 DMA 通道，HPM5E31 的 HDMA 通道数与 TRGM 触发需按 RM §51 核对
+
+letter:/$ 
+letter:/$ stat
+Command not Found
+
+letter:/$ 
+letter:/$ 

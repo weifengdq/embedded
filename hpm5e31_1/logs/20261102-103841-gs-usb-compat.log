@@ -1,0 +1,49 @@
+
+==================================================================
+gs_usb 测试: compat（20261102-103841）
+==================================================================
+主机: Linux 7.0.0-38-generic x86_64  脚本: test_compat.sh
+日志: logs/20261102-103841-gs-usb-compat.log
+工件: /tmp/gs_usb_artifacts
+内核 7.0.x —— 与开发约定 §1 一致
+  [PASS] 权限 OK（sudo -n）
+dmesg 基线时间戳: 1793587121（之后用 --since 只扫描新增行）
+  [PASS] 依赖命令齐全: dmesg ip ethtool cansend candump cangen canplayer
+  [PASS] 发现 4 个接口: 0 1 2 3
+
+---- 1. 起两个通道
+> sudo -n ip link set can0 type can bitrate 500000 fd off
+> sudo -n ip link set can0 up
+> sudo -n ip link set can1 type can bitrate 500000 fd off
+> sudo -n ip link set can1 up
+
+---- 2. candump + cansend（can-utils 基础链路）
+> sudo -n cansend can0 111#0102030405060708
+  [PASS] cansend -> candump 通
+
+---- 3. python-can 4.x 收发
+OK: python-can 收到 id=0x222 data=DEADBEEF dlc=4
+  [PASS] python-can 收发通（socketcan backend）
+
+---- 4. cangen 突发（2 s，约 1000 帧）
+cangen 期间 can1 捕获到 0
+0 帧
+  [FAIL] cangen 帧太少（0
+0）
+
+---- 5. canplayer 回放（先用 sudo -n candump -L 录一段，再回放）
+> sudo -n cansend can1 333#C0FFEE
+录制到 1 行:
+(1793587133.081036) can0 333#C0FFEE
+  [PASS] canplayer 回放成功（can1 收到回放帧 0x333）
+
+---- 6. 内核安全检查
+  dmesg 安全检查: 无 oops/WARN（新增 0 行）
+  [PASS] 测试后设备仍在线（sysfs: 1-8）
+  dmesg 安全检查: 无 oops/WARN（新增 0 行）
+
+==================================================================
+汇总: compat
+==================================================================
+PASS=7  FAIL=1  内核异常=0
+结论: FAIL

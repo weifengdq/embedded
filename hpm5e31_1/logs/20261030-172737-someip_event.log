@@ -1,0 +1,21 @@
+eip/1.0.0
+[phy] link up: 1000M SLAVE
+Enet phy init passed !C0 ch1 ready (PF26 悬空=噪声底)
+[someip] OfferService -> 224.244.224.245:30490, endpoint 192.168.2.100:30501, ttl=3 s
+[someip] 无订阅者时事件不计流量；收到 SubscribeEventgroup 后按 100/10/500 ms 发 NOTIFICATION
+[someip] shell: stat | evstat | run | selftest | offer | stopoffer | sub | ip
+run
+[run] ---- 订阅 + 事件通路自测（模拟上位机 192.168.2.1:30600）----
+[run] subscribe -> ack      : PASS
+[run] 1 s 内事件条数         : counter=10 adc=100 temp=2
+[run] 事件周期 100/10/500ms  : PASS
+[run] unsubscribe(TTL=0)     : PASS
+[run] PASS (0 failed)
+
+letter:/$ 
+letter:/$ evstat
+[ev] 事件生成次数（fill 调用）：counter(0x8001,100ms)=10 adc(0x8002,10ms)=100 temp(0x8004,500ms)=2
+[ev] 实际发出 NOTIFICATION=112 条，活跃订阅者=0
+
+letter:/$ 
+letter:/$ 

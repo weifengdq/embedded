@@ -1,0 +1,15 @@
+2 src 80000000 Hz
+SPI2 SCLK = 1000000 Hz
+
+[diag] SPI2 <-> <reg> <val> | levels
+rsttest
+LAN8651 alive test: drive RESET_N (PA19) and observe IRQ_N (PA24) and SDO (PA22)
+  state                  nINT       SDO@CS=0   SDO@CS=1  
+  RESET_N = 0 (in reset) 1          1          1         
+  RESET_N = 1 (+20 ms)   0          0          1         
+  RESET_N = 1 (+220 ms)  0         
+  bitbang rx: 00 00 00 00 00 00 00 00 00 00 00 00
+  STDCAP = 0x00000000
+
+letter:/$ 
+letter:/$ 

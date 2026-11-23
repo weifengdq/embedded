@@ -1,0 +1,10 @@
+{
+ "mode": "keepalive",
+ "broker": "192.168.2.1:1883",
+ "telemetry": 0,
+ "unexpected_lwt": 0,
+ "pingreq": 3,
+ "pingresp": 3,
+ "keepalive_s": 10,
+ "verdict": "PASS"
+}

@@ -1,0 +1,5 @@
+samples/enet/enet_lwip_iperf	FAIL	9s	logs/20261030-185455-enet_lwip_iperf.log	6s 内未匹配 /Enet phy init passed/；最后一行: usb: 1000|100>
+samples/lan8651/lan8651_plca_master	PASS	4s	logs/20261030-185504-lan8651_plca_master.log	[status] PLCA en=1 node_id=0 node_cnt=8 to_tmr=32 burst_cnt=0 burst_tmr=128 status=0x8000 (PST=1)
+samples/lan8651/lan8651_plca_slave	PASS	3s	logs/20261030-185508-lan8651_plca_slave.log	[status] PLCA en=1 node_id=1 node_cnt=8 to_tmr=32 burst_cnt=0 burst_tmr=128 status=0x0000 (PST=0)
+samples/spi/spi1_spi3_master_slave	PASS	3s	logs/20261030-185511-spi1_spi3_master_slave.log	  hz=10000000  bench        n=128  PASS errors=0   time=107.34 us bw=1192 KB/s
+samples/spi/spi_dma_bw	FAIL	2s		hwrun 失败(退出码 139): Connecting to J-Link ...O.K.

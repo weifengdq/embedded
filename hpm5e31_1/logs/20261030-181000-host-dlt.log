@@ -1,0 +1,31 @@
+[hwrun] board lock acquired (dlt_log) pid=505845
+J-Link Commander will now exit on Error
+Connecting to J-Link ...O.K.
+Downloading file [build/dlt_log-debug/output/demo.elf]...
+Programming flash [000%]000%]000%]000%]005%]005%]010%]010%]010%]010%]015%]015%]020%]020%]020%]020%]025%]025%]030%]030%]030%]030%]035%]035%]040%]040%]040%]040%]045%]045%]050%]050%]055%]055%]055%]055%]060%]060%]065%]065%]065%]065%]070%]070%]075%]075%]075%]075%]080%]080%]085%]085%]085%]085%]090%]090%]095%]095%]100%] Done.
+Verifying flash   [000%]000%]005%]005%]100%] Done.
+J-Link: Flash download: Bank 0 @ 0x80000000: 2 ranges affected (118784 bytes)
+J-Link: Flash download: Total: 2.275s (Prepare: 0.547s, Compare: 0.110s, Erase: 0.093s, Program: 1.337s, Verify: 0.059s, Restore: 0.126s)
+J-Link: Flash download: Program & Verify speed: 83 KB/s
+O.K.
+5.255.0 gw=192.168.2.1
+
+[lwip] aton+set: ip=6402A8C0 mask=00FFF ms
+
+[auto] 1.2 s 发送完成: dlt: ON sent=121 rate=10 ms mcnt=121 uptime=1271 ms
+
+[hwrun] post (持锁运行上位机测试): timeout 40 bash host/dlt/run_dlt.sh
+=== DLT 接收：UDP 0.0.0.0:3490，6.0 s ===
+包数           : 599（解析错误 0）
+实测速率       : 99.8 包/s（标称 100）
+MCNT 丢包      : 2 / 601（0.33 %）
+APID 直方图    : NET :150, MAIN:150, CAN :150, ADC :149
+CTID 直方图    : NET :150, MAIN:150, CAN :150, ADC :149
+level 直方图   : fatal:98, error:100, warn:100, info:100, debug:101, verbose:100
+.dlt 文件      : /tmp/dlt/board.dlt（34143 字节）
+样例报文       : APID=ADC  CTID=ADC  msin=0x01 noar=2 tmsp=13491.0 ms args=[4, 'seq=1342 ctx=ADC  level=4']
+期望 LEN       : 57 = 4 + 14 + payload(39)
+=== RESULT: PASS ===
+[hwrun] post rc=0
+---- LOG: logs/20261030-180754-dlt_log.log (rc=0) ----
+RC=0

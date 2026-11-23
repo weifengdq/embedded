@@ -1,0 +1,9 @@
+# tools/numbering_allow.txt —— check_numbering.py 的人工判定豁免清单
+# 每行一个正则，匹配 "相对路径:行号: 消息"；只用于"已人工判定为外部文档引用/非本书节号"的条目。
+# 新增条目必须同时写清判定理由（谁判的、为什么），并在 docs/drafts/renumber-report.md 的判定清单里有对应记录。
+#
+# §6：ch44 (mcal-core) 指 docs/MCAL开发约定.md §6（例程结构约定），不是本书节号 —— 判定人：docnum，R8
+docs/chapters/44-mcal-core\.md:224: § 引用缺节号：§6
+# §0：ch50 (mcal-compliance) 指 docs/mcal/MCAL_API_TRACEABILITY.md §0（判定口径），不是本书节号 —— 判定人：docnum，R8
+docs/chapters/50-mcal-compliance\.md:46: § 引用缺节号：§0
+

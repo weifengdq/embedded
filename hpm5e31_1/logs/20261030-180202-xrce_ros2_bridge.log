@@ -1,0 +1,5 @@
+Enet phy init passed !
+IPv4 Address: 192.168.2.100
+IPv4 Netmask: 255.255.255.0
+IPv4 Gateway: 192.168.2.1
+[bridge] xrce init rc=0 state=connected\r\n[bridge] entities adc=0 status=1 cmd=0 ; shell: brstat | brrst\r\n[bridge] up=2067 ms state=connected adc=0 (0.0 Hz) cmd=0 ack_tx=0 status=0\r\n[bridge] tx dg=15 bytes=594 drop=0 err=2 | rx dg=14 samples=0 retrans=0\r\n[bridge] STAT adc_hz=0.0 cmd=0 => FAIL\r\n[bridge] up=7067 ms state=connected adc=500 (101.1 Hz) cmd=0 ack_tx=9 status=5\r\n[bridge] tx dg=520 bytes=16775 drop=0 err=2 | rx dg=21 samples=0 retrans=0\r\n[bridge] STAT adc_hz=101.1 cmd=0 => PASS\r\n

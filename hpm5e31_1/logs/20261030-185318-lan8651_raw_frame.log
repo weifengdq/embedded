@@ -1,0 +1,8 @@
+A off (CSMA/CD), node_cnt=8 to_tmr=32
+[init] local MAC 02:00:0<on|off> [..] | probe
+stats
+[stats] ctrl xfers=78 err=0 | data xfers=0 | tx_frames=0 tx_bytes=0 | rx_frames=0 rx_bytes=0 dropped=0
+[stats] ext_status=0 hdr_bad=0 cfg_sync_lost=0 last_STATUS0=0x00000040 replies=0
+
+letter:/$ 
+letter:/$ 

@@ -1,0 +1,19 @@
+[dm1_decode] if=vcan0 duration=2.0s
+
+[DM1] PGN=0x0FECA SA=0x00 lamp=0x00 [off] flash=0 t=0.000s
+   (无 DTC：仅灯状态)
+   >> lamp change @ t=0.000s: 0x00 [off]
+
+[DM1] PGN=0x0FECA SA=0x00 lamp=0x10 [AWL] flash=0 t=0.210s
+   SPN=100     FMI=4  OC=1   | 电压低于正常
+   >> lamp change @ t=0.210s: 0x10 [AWL]
+
+[DM1] PGN=0x0FECA SA=0x00 lamp=0x11 [MIL+AWL] flash=0 t=0.421s
+   SPN=100     FMI=4  OC=1   | 电压低于正常
+   >> lamp change @ t=0.421s: 0x11 [MIL+AWL]
+
+---- 汇总 ----
+DM1+DM2 frames=3 (DM2=0) distinct DTC=1
+  SPN=100     FMI=4  出现 2 次
+
+RESULT: PASS

@@ -1,0 +1,36 @@
+p start (shell idle during run)
+[sweep] one-shot accuracy, 20 shots each, f_gptmr1=100000000 Hz, f_cpu=480000000 Hz
+target   api_ns     err_mean_ns  err_sd_ns    err_min_ns   err_ppm     
+10       3833.3     1534.5       1776.4       956.3        153447.92   
+50       2975.0     983.0        36.0         935.4        19660.42    
+100      2950.4     983.1        32.4         956.3        9831.25     
+500      2949.1     980.0        34.6         943.8        1960.00     
+1000     2952.8     988.9        30.8         954.2        988.85      
+5000     2963.2     985.1        34.3         956.3        197.02      
+[gpt] Gpt v1.0.0 moduleID=100; ch1 = GPTMR1 CH0 ONESHOT
+[gpt] f_gptmr1=100000000 Hz (1 tick=10.0 ns), f_cpu=480000000 Hz
+[gpt] one-shot 精度下限 = 1 tick = 10.0 ns；API 开销见 sweep 表 api_ns 列
+[det] before=0 after=4 delta=4
+[det] last: mod=100 inst=0 api=0x00 err=0x16
+[one] target=1000 us -> ticks=100000
+[one] api=3125.0 ns, err=+1066.7 ns (+1066.67 ppm), isr_lat=100000 ticks (1000000.0 ns)
+[one] remaining after start=0, state elapsed=100000
+[gpt_oneshot] auto sweep done. cmds: one <us> | sweep | info | err
+[one] target=1000 us -> ticks=100000
+[one] api=3222.9 ns, err=+1075.0 ns (+1075.00 ppm), isr_lat=100000 ticks (1000000.0 ns)
+[one] remaining after start=0, state elapsed=100000
+[one] target=1000 us -> ticks=100000
+[one] api=3200.0 ns, err=+1077.1 ns (+1077.08 ppm), isr_lat=100000 ticks (1000000.0 ns)
+[one] remaining after start=0, state elapsed=100000
+[one] target=1000 us -> ticks=100000
+[one] api=3216.7 ns, err=+1068.8 ns (+1068.75 ppm), isr_lat=100000 ticks (1000000.0 ns)
+[one] remaining after start=0, state elapsed=100000
+[one] target=1000 us -> ticks=100000
+[one] api=4689.6 ns, err=+1075.0 ns (+1075.00 ppm), isr_lat=100000 ticks (1000000.0 ns)
+[one] remaining after start=0, state elapsed=100000
+[one] target=1000 us -> ticks=100000
+[one] api=4695.8 ns, err=+1066.7 ns (+1066.67 ppm), isr_lat=100000 ticks (1000000.0 ns)
+[one] remaining after start=0, state elapsed=100000
+[one] target=1000 us -> ticks=100000
+[one] api=4672.9 ns, err=+1066.7 ns (+1066.67 ppm), isr_lat=100000 ticks (1000000.0 ns)
+[one] remaining after start=0, state elapsed=100000

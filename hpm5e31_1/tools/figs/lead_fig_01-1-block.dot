@@ -1,0 +1,51 @@
+digraph G {
+  graph [rankdir=LR, fontname="Noto Sans CJK SC", fontsize=12, nodesep=0.35, ranksep=0.55, bgcolor="white", pad=0.2];
+  node  [shape=box, style="rounded,filled", fontname="Noto Sans CJK SC", fontsize=11, fillcolor="#e8f1fb", color="#2b6cb0"];
+  edge  [color="#4a5568", arrowsize=0.7, fontname="Noto Sans CJK SC", fontsize=9];
+
+  cpu [label=<<table border="0" cellborder="0" cellspacing="3">
+      <tr><td><b>CPU 子系统</b></td></tr>
+      <tr><td>RV32-IMAFDCBP @ 480 MHz</td></tr>
+      <tr><td>DSP + SIMD + FPU（单精度）</td></tr>
+      <tr><td>L1 I-Cache / D-Cache 各 32 KB</td></tr>
+      <tr><td>ILM 128 KB @0x0000_0000</td></tr>
+      <tr><td>DLM 128 KB @0x0020_0000</td></tr>
+      <tr><td>机器定时器 MCHTMR 24 MHz</td></tr>
+    </table>>, fillcolor="#fde8e8", color="#c53030"];
+
+  bus [label=<<table border="0" cellborder="0" cellspacing="3">
+      <tr><td><b>片上总线与存储</b></td></tr>
+      <tr><td>AXI 200 MHz / AHB 200 MHz / APB</td></tr>
+      <tr><td>AXI SRAM 256 KB（+64 KB 非 cache）</td></tr>
+      <tr><td>AHB SRAM 32 KB（低延迟，DMA）</td></tr>
+      <tr><td>片内 Flash 1 MB @0x8000_0000</td></tr>
+      <tr><td>BootROM 128 KB / OTP 4 Kbit</td></tr>
+      <tr><td>XDMA + HDMA（各 16 通道）</td></tr>
+      <tr><td>PLIC @0xE400_0000 / MBX ×2</td></tr>
+    </table>>, fillcolor="#e6fffa", color="#2f855a"];
+
+  io [label=<<table border="0" cellborder="0" cellspacing="3">
+      <tr><td><b>通讯与运动控制外设</b></td></tr>
+      <tr><td>MCAN ×4（CAN FD）</td></tr>
+      <tr><td>UART ×8 / SPI ×4 / I2C ×4</td></tr>
+      <tr><td>PWMv2 ×2（16 通道，HRPWM 100 ps）</td></tr>
+      <tr><td>QEIv2 ×2 / QEOv2 ×2 / SDM ×4 / PLB</td></tr>
+      <tr><td>ADC16 ×2（16 bit 2 MSPS）+ ACMP</td></tr>
+      <tr><td>GPTMR ×4 / WDG ×3 / OWR ×2 / EUI ×2</td></tr>
+      <tr><td>TSNS / CRC / LOBS / USB 2.0 HS OTG</td></tr>
+      <tr><td>GPIO 148 个（3.3 V / 1.8 V）</td></tr>
+    </table>>, fillcolor="#fffaf0", color="#975a16"];
+
+  eth [label=<<table border="0" cellborder="0" cellspacing="3">
+      <tr><td><b>实时以太网</b></td></tr>
+      <tr><td>千兆以太网 MAC</td></tr>
+      <tr><td>RGMII / RMII / MII + MDIO</td></tr>
+      <tr><td>EtherCAT 从站 ESC（3 端口）</td></tr>
+      <tr><td>PTPC 时间戳 / PPS</td></tr>
+    </table>>, fillcolor="#faf5ff", color="#6b46c1"];
+
+  cpu -> bus [label=" AXI", dir=both];
+  bus -> io [label=" APB/AHB", dir=both];
+  bus -> eth [label=" AXI", dir=both];
+  io -> eth [style=dashed, label=" ESC 端口", arrowhead=none];
+}

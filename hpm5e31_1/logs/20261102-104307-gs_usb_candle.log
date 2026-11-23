@@ -1,0 +1,159 @@
+ initialized (default 500k classic)
+[gs] usb device initialized, waiting for host enumeration...
+usbinfo
+[usb] pm: suspend=0 resume=0 reset=2 sdis=1
+[usb] configured=1 ep_in_mps=512 ep_out_mps=512 in_sent=0 in_drop=0 out_drop=0
+[usb] VID:PID=1209:2323 ch=4 icount=3 feature=0x351B
+
+letter:/$ 
+letter:/$ ctrllog
+[ctrl] total=22 (last 22)
+[ctrl] req=0 OUT idx=1 len=4 arg=00000000/00000000
+[ctrl] req=5 IN  idx=1 len=12 arg=00000000/00000000
+[ctrl] req=4 IN  idx=0 len=40 arg=00000000/00000000
+[ctrl] req=11 IN  idx=0 len=72 arg=00000000/00000000
+[ctrl] req=14 IN  idx=0 len=12 arg=00000000/00000000
+[ctrl] req=4 IN  idx=1 len=40 arg=00000000/00000000
+[ctrl] req=11 IN  idx=1 len=72 arg=00000000/00000000
+[ctrl] req=14 IN  idx=1 len=12 arg=00000000/00000000
+[ctrl] req=4 IN  idx=2 len=40 arg=00000000/00000000
+[ctrl] req=11 IN  idx=2 len=72 arg=00000000/00000000
+[ctrl] req=14 IN  idx=2 len=12 arg=00000000/00000000
+[ctrl] req=4 IN  idx=3 len=40 arg=00000000/00000000
+[ctrl] req=11 IN  idx=3 len=72 arg=00000000/00000000
+[ctrl] req=14 IN  idx=3 len=12 arg=00000000/00000000
+[ctrl] req=14 IN  idx=0 len=12 arg=00000000/00000000
+[ctrl] req=14 IN  idx=3 len=12 arg=00000000/00000000
+[ctrl] req=14 IN  idx=1 len=12 arg=00000000/00000000
+[ctrl] req=14 IN  idx=2 len=12 arg=00000000/00000000
+[ctrl] req=14 IN  idx=0 len=12 arg=00000000/00000000
+[ctrl] req=14 IN  idx=1 len=12 arg=00000000/00000000
+[ctrl] req=14 IN  idx=2 len=12 arg=00000000/00000000
+[ctrl] req=14 IN  idx=3 len=12 arg=00000000/00000000
+
+letter:/$ 
+letter:/$ gsstat
+[gs] rx_frames=0 tx_frames=0 echo=0 tx_drop=0 berr_mask=0x0
+[gs] usb: configured=1 in_sent=0 in_drop=0 out_drop=0
+[gs] ch0 started=1 state=0 tec=0 rec=0
+[gs] ch1 started=1 state=0 tec=0 rec=0
+[gs] ch2 started=1 state=0 tec=0 rec=0
+[gs] ch3 started=1 state=0 tec=0 rec=0
+
+letter:/$ 
+letter:/$ [gs] usb=1 rx=0 tx=0 echo=0 in_sent=0 in_drop=0 out_drop=0
+[gs] MODE ch=0 mode=1 flags=0x110
+[gs] CAN0 START fd=1 loop=0 listen=0 one_shot=0
+[gs] usb=1 rx=0 tx=0 echo=0 in_sent=0 in_drop=0 out_drop=0
+[gs] MODE ch=1 mode=1 flags=0x110
+[gs] CAN1 START fd=1 loop=0 listen=0 one_shot=0
+[gs] usb=1 rx=101 tx=101 echo=101 in_sent=202 in_drop=0 out_drop=0
+[gs] MODE ch=0 mode=0 flags=0x0
+[gs] MODE ch=0 mode=1 flags=0x110
+[gs] CAN0 START fd=1 loop=0 listen=0 one_shot=0
+[gs] MODE ch=1 mode=0 flags=0x0
+[gs] MODE ch=1 mode=1 flags=0x110
+[gs] CAN1 START fd=1 loop=0 listen=0 one_shot=0
+[gs] usb=1 rx=101 tx=101 echo=101 in_sent=202 in_drop=0 out_drop=0
+[gs] MODE ch=0 mode=0 flags=0x0
+[gs] MODE ch=0 mode=1 flags=0x110
+[gs] CAN0 START fd=1 loop=0 listen=0 one_shot=0
+[gs] MODE ch=1 mode=0 flags=0x0
+[gs] MODE ch=1 mode=1 flags=0x110
+[gs] CAN1 START fd=1 loop=0 listen=0 one_shot=0
+[gs] MODE ch=0 mode=0 flags=0x0
+[gs] MODE ch=0 mode=1 flags=0x110
+[gs] CAN0 START fd=1 loop=0 listen=0 one_shot=0
+[gs] MODE ch=1 mode=0 flags=0x0
+[gs] MODE ch=1 mode=1 flags=0x110
+[gs] CAN1 START fd=1 loop=0 listen=0 one_shot=0
+[gs] usb=1 rx=107 tx=107 echo=107 in_sent=214 in_drop=0 out_drop=0
+[gs] usb=1 rx=122 tx=122 echo=122 in_sent=244 in_drop=0 out_drop=0
+[gs] usb=1 rx=122 tx=122 echo=122 in_sent=244 in_drop=0 out_drop=0
+[gs] usb=1 rx=122 tx=122 echo=122 in_sent=244 in_drop=0 out_drop=0
+[gs] usb=1 rx=122 tx=122 echo=122 in_sent=244 in_drop=0 out_drop=0
+[gs] usb=1 rx=122 tx=122 echo=122 in_sent=244 in_drop=0 out_drop=0
+[gs] usb=1 rx=122 tx=122 echo=122 in_sent=244 in_drop=0 out_drop=0
+[gs] MODE ch=0 mode=0 flags=0x0
+[gs] MODE ch=0 mode=1 flags=0x10
+[gs] CAN0 START fd=0 loop=0 listen=0 one_shot=0
+[gs] MODE ch=1 mode=0 flags=0x0
+[gs] MODE ch=1 mode=1 flags=0x10
+[gs] CAN1 START fd=0 loop=0 listen=0 one_shot=0
+[gs] usb=1 rx=122 tx=122 echo=122 in_sent=244 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] usb=1 rx=142 tx=142 echo=142 in_sent=284 in_drop=0 out_drop=0
+[gs] MODE ch=0 mode=0 flags=0x0
+[gs] MODE ch=0 mode=1 flags=0x110
+[gs] CAN0 START fd=1 loop=0 listen=0 one_shot=0
+[gs] MODE ch=1 mode=0 flags=0x0
+[gs] MODE ch=1 mode=1 flags=0x110
+[gs] CAN1 START fd=1 loop=0 listen=0 one_shot=0
+[gs] MODE ch=0 mode=0 flags=0x0
+[gs] MODE ch=0 mode=1 flags=0x10
+[gs] CAN0 START fd=0 loop=0 listen=0 one_shot=0
+[gs] MODE ch=1 mode=0 flags=0x0
+[gs] MODE ch=1 mode=1 flags=0x10
+[gs] CAN1 START fd=0 loop=0 listen=0 one_shot=0
+[gs] usb=1 rx=152 tx=152 echo=152 in_sent=304 in_drop=0 out_drop=0
+[gs] usb=1 rx=172 tx=172 echo=172 in_sent=344 in_drop=0 out_drop=0
+[gs] usb=1 rx=172 tx=172 echo=172 in_sent=344 in_drop=0 out_drop=0
+[gs] usb=1 rx=172 tx=172 echo=172 in_sent=344 in_drop=0 out_drop=0
+[gs] usb=1 rx=172 tx=172 echo=172 in_sent=344 in_drop=0 out_drop=0
+[gs] usb=1 rx=172 tx=172 echo=172 in_sent=344 in_drop=0 out_drop=0
+[gs] usb=1 rx=172 tx=172 echo=172 in_sent=344 in_drop=0 out_drop=0
+[gs] usb=1 rx=172 tx=172 echo=172 in_sent=344 in_drop=0 out_drop=0

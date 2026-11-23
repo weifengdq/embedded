@@ -1,0 +1,27 @@
+[monitor] if=vcan0 duration=6.0s filter=all
+ 0.511158  TP.CM            CM ctrl=0x20 SA=0x00 [8] 20 64 00 0F FF 00 EF 00
+ 0.561632  TP.DT            DT seq=1 SA=0x00 [8] 01 07 26 45 64 83 A2 C1
+ 0.612116  TP.DT            DT seq=2 SA=0x00 [8] 02 E0 FF 1E 3D 5C 7B 9A
+ 0.662505  TP.DT            DT seq=3 SA=0x00 [8] 03 B9 D8 F7 16 35 54 73
+ 0.712848  TP.DT            DT seq=4 SA=0x00 [8] 04 92 B1 D0 EF 0E 2D 4C
+ 0.763288  TP.DT            DT seq=5 SA=0x00 [8] 05 6B 8A A9 C8 E7 06 25
+ 0.813721  TP.DT            DT seq=6 SA=0x00 [8] 06 44 63 82 A1 C0 DF FE
+ 0.864163  TP.DT            DT seq=7 SA=0x00 [8] 07 1D 3C 5B 7A 99 B8 D7
+ 0.914358  TP.DT            DT seq=8 SA=0x00 [8] 08 F6 15 34 53 72 91 B0
+ 0.964667  TP.DT            DT seq=9 SA=0x00 [8] 09 CF EE 0D 2C 4B 6A 89
+ 1.015131  TP.DT            DT seq=10 SA=0x00 [8] 0A A8 C7 E6 05 24 43 62
+ 1.065608  TP.DT            DT seq=11 SA=0x00 [8] 0B 81 A0 BF DE FD 1C 3B
+ 1.116051  TP.DT            DT seq=12 SA=0x00 [8] 0C 5A 79 98 B7 D6 F5 14
+ 1.166493  TP.DT            DT seq=13 SA=0x00 [8] 0D 33 52 71 90 AF CE ED
+ 1.216712  TP.DT            DT seq=14 SA=0x00 [8] 0E 0C 2B 4A 69 88 A7 C6
+ 1.266853  TP.DT            DT seq=15 SA=0x00 [3] 0F E5 04
+ 1.266853  [TP-DONE] PGN=0x0EF00 (PGN_0x0EF00) SA=0x00 len=100 CRC32=0xB5A935FC
+
+---- PGN 周期统计 ----
+       PGN name                count  period avg(ms)   min(ms)   max(ms)
+
+frames=16
+
+TP: bam=1 rts=0 done=1 bytes=100 errors=0 gap avg=50.373ms min=50.141ms max=50.484ms
+
+RESULT: PASS

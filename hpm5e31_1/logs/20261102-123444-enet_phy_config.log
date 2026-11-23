@@ -1,0 +1,17 @@
+ idle level=1
+[phy] PHY ID OK: YT8011 (0x4F51 / OUI 0x3A)
+-- [val] | poll [secs] | restore
+ints
+[irq] INTMSK(0x12)=0x0000 INTST(0x13)=0x0000 INTST2(0x17)=0x0000 nINT=1
+
+letter:/$ 
+letter:/$ irq on
+[irq] enabled=1 nINT level=1
+
+letter:/$ 
+letter:/$ status
+[phy] link=UP speed=1000M duplex=FULL role=SLAVE local_rx_ok=1 remote_rx_ok=1
+[phy] BMCR=0140 BMSR=000D GBCR=0000 GBSR=3000 PHYSR=8400 an_cmplt=0
+
+letter:/$ 
+letter:/$ 

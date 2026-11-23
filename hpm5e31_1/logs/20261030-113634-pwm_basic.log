@@ -1,0 +1,63 @@
+/T = 10000.000 Hz   duty = (b-a)/T = 50.00%
+  pins: P6=PD06  P
+commands: pwm <hz> <permille> | pinfo | pmeas
+pmeas
+[meas] reload=6738 cmp=6740  period=100.005 us (9999.5 Hz)  high=50.017 us  duty=50.01%
+       period jitter: min=99.200 max=100.860 pp=1.660 us
+       high  jitter: pp=47.480 us (=4748.0 tick)
+       target: 10000 Hz / 500 permille -> freq err -50.0 ppm, duty err +0.015%
+
+letter:/$ 
+letter:/$ pwm 1000 250
+PWM0: clk=200000000 Hz counter3 reload(T)=200000 cmp a(CMP12)=0 cmp b(CMP13)=50000
+  freq = clk/T = 1000.000 Hz   duty = (b-a)/T = 25.00%
+  pins: P6=PD06  P7=PD07(PAIR_MODE=1 互补)   timebase: GPTMR0 CH3 100000000 Hz
+
+letter:/$ 
+letter:/$ pmeas
+[meas] reload=554 cmp=555  period=181.232 us (5517.8 Hz)  high=68.392 us  duty=37.74%
+       period jitter: min=98.100 max=1000.250 pp=902.150 us
+       high  jitter: pp=202.150 us (=20215.0 tick)
+       target: 1000 Hz / 250 permille -> freq err +4517793.6 ppm, duty err +12.737%
+
+letter:/$ 
+letter:/$ pwm 20000 750
+PWM0: clk=200000000 Hz counter3 reload(T)=10000 cmp a(CMP12)=0 cmp b(CMP13)=7500
+  freq = clk/T = 20000.000 Hz   duty = (b-a)/T = 75.00%
+  pins: P6=PD06  P7=PD07(PAIR_MODE=1 互补)   timebase: GPTMR0 CH3 100000000 Hz
+
+letter:/$ 
+letter:/$ pmeas
+[meas] reload=1058 cmp=1058  period=94.713 us (10558.2 Hz)  high=47.548 us  duty=50.20%
+       period jitter: min=49.750 max=1000.180 pp=950.430 us
+       high  jitter: pp=212.980 us (=21298.0 tick)
+       target: 20000 Hz / 750 permille -> freq err -472090.0 ppm, duty err -24.798%
+
+letter:/$ 
+letter:/$ pwm 50000 500
+PWM0: clk=200000000 Hz counter3 reload(T)=4000 cmp a(CMP12)=0 cmp b(CMP13)=2000
+  freq = clk/T = 50000.000 Hz   duty = (b-a)/T = 50.00%
+  pins: P6=PD06  P7=PD07(PAIR_MODE=1 互补)   timebase: GPTMR0 CH3 100000000 Hz
+
+letter:/$ 
+letter:/$ pmeas
+[meas] reload=3527 cmp=3528  period=28.595 us (34971.6 Hz)  high=17.920 us  duty=62.67%
+       period jitter: min=19.740 max=50.740 pp=31.000 us
+       high  jitter: pp=28.030 us (=2803.0 tick)
+       target: 50000 Hz / 500 permille -> freq err -300568.4 ppm, duty err +12.670%
+
+letter:/$ 
+letter:/$ pwm 100000 100
+PWM0: clk=200000000 Hz counter3 reload(T)=2000 cmp a(CMP12)=0 cmp b(CMP13)=200
+  freq = clk/T = 100000.000 Hz   duty = (b-a)/T = 10.00%
+  pins: P6=PD06  P7=PD07(PAIR_MODE=1 互补)   timebase: GPTMR0 CH3 100000000 Hz
+
+letter:/$ 
+letter:/$ pmeas
+[meas] reload=7555 cmp=7557  period=13.347 us (74925.3 Hz)  high=3.978 us  duty=29.81%
+       period jitter: min=9.250 max=20.260 pp=11.010 us
+       high  jitter: pp=10.220 us (=1022.0 tick)
+       target: 100000 Hz / 100 permille -> freq err -250746.7 ppm, duty err +19.806%
+
+letter:/$ 
+letter:/$ 

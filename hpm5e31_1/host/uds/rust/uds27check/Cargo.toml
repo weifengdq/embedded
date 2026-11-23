@@ -1,0 +1,7 @@
+[package]
+name = "uds27check"
+version = "0.1.0"
+edition = "2021"
+description = "UDS 0x27 seed-key algorithm offline checker (matches app_uds_calc_key / common.security_key)"
+
+[dependencies]

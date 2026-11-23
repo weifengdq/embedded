@@ -1,0 +1,23 @@
+01
+[init] PLCA FOLLOWER (node 1): node_id=1 node_cnt=8 to_tmr=cnt] [to] [bc] [bt] | trans <bb|hw> | levels
+status
+[status] PLCA en=1 node_id=1 node_cnt=8 to_tmr=32 burst_cnt=0 burst_tmr=128 status=0x8000 (PST=1)
+[status] PHY STS1=0x0180 (bit11 PLCA change, bit13 link change)
+[status] TC6 ctrl=90 err=0 | data=0 | tx_frames=0 tx_bytes=0 | rx_frames=0 rx_bytes=0 dropped=0 replies=0
+
+letter:/$ 
+letter:/$ send 2
+[tx] #0 len=58 ret=ok tx_credits=31
+[tx] #1 len=58 ret=ok tx_credits=31
+[rx] len=64 src=00:1e:c0:d1:c3:37 type=0x88b5
+[rx] len=64 src=00:1e:c0:d1:c3:37 type=0x88b5
+
+letter:/$ 
+letter:/$ status
+[status] PLCA en=1 node_id=1 node_cnt=8 to_tmr=32 burst_cnt=0 burst_tmr=128 status=0x8000 (PST=1)
+[status] PHY STS1=0x0180 (bit11 PLCA change, bit13 link change)
+[status] TC6 ctrl=96 err=0 | data=4 | tx_frames=4 tx_bytes=232 | rx_frames=2 rx_bytes=128 dropped=2 replies=2
+[status] peer MAC 00:1e:c0:d1:c3:37
+
+letter:/$ 
+letter:/$ 

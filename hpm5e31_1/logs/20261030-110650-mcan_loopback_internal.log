@@ -1,0 +1,44 @@
+ tec=0 rec=0
+  CAN0 round1 PASS id=0x12345678 dlc=8 len=8 lec=r config, 'stat' for PSR/ECR
+info
+sample   : mcan_loopback_internal
+chip     : HPM5E31IPB1, MCAN0..3 @0xF0300000/4000/8000/C000, IRQ 46..49
+clock    : CAN clock = 80000000 Hz (pll1_clk0 / 5)
+mode     : internal loopback, 4 rounds each (std/ext + classic/FD)
+msg ram  : .ahb_sram @0xF0200000, 640 words/instance
+
+letter:/$ 
+letter:/$ test
+
+=== mcan_loopback_internal: 4 x MCAN 内部环回 ===
+[CAN0]
+  CAN0 round0 PASS id=0x123 dlc=8 len=8 lec=0 tec=0 rec=0
+  CAN0 round1 PASS id=0x12345678 dlc=8 len=8 lec=0 tec=0 rec=0
+  CAN0 round2 PASS id=0x1AB dlc=15 len=64 lec=0 tec=0 rec=0
+  CAN0 round3 PASS id=0x1ABCDEF0 dlc=15 len=64 lec=0 tec=0 rec=0
+[CAN1]
+  CAN1 round0 PASS id=0x123 dlc=8 len=8 lec=0 tec=0 rec=0
+  CAN1 round1 PASS id=0x12345678 dlc=8 len=8 lec=0 tec=0 rec=0
+  CAN1 round2 PASS id=0x1AB dlc=15 len=64 lec=0 tec=0 rec=0
+  CAN1 round3 PASS id=0x1ABCDEF0 dlc=15 len=64 lec=0 tec=0 rec=0
+[CAN2]
+  CAN2 round0 PASS id=0x123 dlc=8 len=8 lec=0 tec=0 rec=0
+  CAN2 round1 PASS id=0x12345678 dlc=8 len=8 lec=0 tec=0 rec=0
+  CAN2 round2 PASS id=0x1AB dlc=15 len=64 lec=0 tec=0 rec=0
+  CAN2 round3 PASS id=0x1ABCDEF0 dlc=15 len=64 lec=0 tec=0 rec=0
+[CAN3]
+  CAN3 round0 PASS id=0x123 dlc=8 len=8 lec=0 tec=0 rec=0
+  CAN3 round1 PASS id=0x12345678 dlc=8 len=8 lec=0 tec=0 rec=0
+  CAN3 round2 PASS id=0x1AB dlc=15 len=64 lec=0 tec=0 rec=0
+  CAN3 round3 PASS id=0x1ABCDEF0 dlc=15 len=64 lec=0 tec=0 rec=0
+SUMMARY: pass=16 fail=0 ALL PASS src_clk=80000000 Hz
+
+letter:/$ 
+letter:/$ stat
+CAN0: act=0 lec=0 bo=0 ep=0 ew=0 tec=0 rec=0
+CAN1: act=0 lec=0 bo=0 ep=0 ew=0 tec=0 rec=0
+CAN2: act=0 lec=0 bo=0 ep=0 ew=0 tec=0 rec=0
+CAN3: act=0 lec=0 bo=0 ep=0 ew=0 tec=0 rec=0
+
+letter:/$ 
+letter:/$ 

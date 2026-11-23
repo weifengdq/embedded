@@ -1,0 +1,34 @@
+
+digraph gptmr {
+  rankdir=LR;
+  graph [fontname="Noto Sans CJK SC", fontsize=11, nodesep=0.3, ranksep=0.5, bgcolor="white"];
+  node  [fontname="Noto Sans CJK SC", fontsize=10, shape=box, style="rounded,filled",
+         fillcolor="#F6F8FA", color="#57606A", penwidth=0.9];
+  edge  [fontname="Noto Sans CJK SC", fontsize=9, color="#57606A", arrowsize=0.7];
+
+  clk [label="模块时钟\nf_gptmr = 100 MHz", fillcolor="#E8F0FE"];
+  subgraph cluster_ch {
+    label="4 个通道（每通道 1 路计数器 + 2 个比较器）";
+    fontname="Noto Sans CJK SC"; fontsize=10; color="#D0D7DE"; style="rounded";
+    cnt  [label="32 位向上计数器\nCNT", fillcolor="#E6F4EA"];
+    rld  [label="重载值\nRLD", fillcolor="#F6F8FA"];
+    cmp0 [label="CMP0\n比较器 0"];
+    cmp1 [label="CMP1\n比较器 1"];
+    cap  [label="捕获单元\nCAPPOS / CAPNEG\nCAPPRD / CAPDTY"];
+    syn  [label="SYNCI\n同步输入"];
+  }
+  mon  [label="输入监测\nMONITOR\n(周期/高电平越界)"];
+  irq  [label="中断 / DMA\nRLD / CMP / CAP"];
+  pin  [label="比较输出 -> 引脚", shape=box3d, fillcolor="#D2E3FC"];
+  trgm [label="TRGM 捕获输入\nGPTMR0_CAPT_2/3", fillcolor="#FFF8E1"];
+
+  clk -> cnt; rld -> cnt;
+  cnt -> cmp0; cnt -> cmp1;
+  cmp0 -> pin; cmp1 -> pin;
+  cmp0 -> irq; cmp1 -> irq;
+  cnt -> cap;
+  trgm -> cap;
+  cap -> irq;
+  cap -> mon;
+  syn -> cnt;
+}

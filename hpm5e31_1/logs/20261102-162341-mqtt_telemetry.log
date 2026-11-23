@@ -1,0 +1,12 @@
+x -> CAN1 rx)
+[adc] ADC0 IN1 oneshot, clk 50000000 Hz
+[tsns] | mstat
+mstat
+[mqtt] STAT st=TCP_CONNECTING up=0s sub=NO conn=0 ok=0 pub_tx=0 pub_rx=0 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=1 can_tx=1 can_rx=0 adc=34620 temp=35000mC loop_max=245us evt=0 => FAIL
+
+letter:/$ 
+letter:/$ [mqtt] subscribe hpm5e31/cmd/# rc=0
+[mqtt] online status published (retained)
+[mqtt] STAT st=CONNECTED up=5s sub=OK conn=1 ok=1 pub_tx=4 pub_rx=0 retx=0 ping=0/0 rtt=0ms
+[mqtt] STAT seq=6 can_tx=6 can_rx=5 adc=34753 temp=36000mC loop_max=2420us evt=1 => PASS

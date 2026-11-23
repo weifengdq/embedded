@@ -1,0 +1,15 @@
+
+  app image: 0x80000000 .. 0x80013a40 (etext), used 78 KB of | xipbw [bytes]
+xipbw 16384
+XIP read: memcpy(0x80020000 -> RAM 0x01202330), 16384 B, dcache on
+  cold: 341.79 us ->    45.7 MB/s
+  warm: 177.17 us ->    88.2 MB/s
+
+letter:/$ 
+letter:/$ xipbw 32768
+XIP read: memcpy(0x80020000 -> RAM 0x01202330), 32768 B, dcache on
+  cold: 678.83 us ->    46.0 MB/s
+  warm: 664.29 us ->    47.0 MB/s
+
+letter:/$ 
+letter:/$ 

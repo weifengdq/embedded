@@ -1,0 +1,42 @@
+hy] link up: 1000M SLAVE
+Enet phy init passed !
+IPv4 Address:PF26, 悬空=噪声底)
+[someip] OfferService -> 224.244.224.245:30490, endpoint 192.168.2.100:30501, ttl=3 s
+[someip] shell: stat | run | selftest | offer | stopoffer | sub | ip
+selftest
+[selftest] someip hpm5e31-someip/1.0.0, service 0x1234 instance 0x0001
+[selftest] T1 header codec      : PASS
+[selftest] T2 malformed reject  : PASS
+[selftest]   offer 56 bytes, ttl 3s, endpoint 192.168.2.100:30501/udp
+[selftest] T3 SD offer encode  : PASS
+[selftest]   tp 3 segs -> 4096 bytes, crc 0x5D1C4EE3 verified
+[selftest] T4 SOMEIP TP 4KB    : PASS
+[selftest] T5 unknown method   : PASS
+[selftest] T6 unknown service  : PASS
+[selftest] T7 find to offer    : PASS
+[selftest] PASS (0 failed)
+
+letter:/$ 
+letter:/$ run
+[run] ---- 方法级回环自测 ----
+[run] add(2,3)            : PASS (5)
+[run] add(0xFFFFFFFF,1)   : PASS
+[run] get_version         : PASS (hpm5e31-someip/1.0.0)
+[run] set_led(1)->(0)     : PASS
+[run] temp get (31.5 C)   : PASS
+[run] temp set 42.25 C    : PASS (readback 42250 mc)
+[run] unknown method      : PASS (rc=0x03)
+[run] request_no_return   : PASS
+[run] PASS (0 failed)
+
+letter:/$ 
+letter:/$ stat
+[someip] link=UP uptime=70 ms offer_state=1
+[someip] rx total=12 req=10 req_nr=1 sd=1 malformed=0 wrong_type=0
+[someip] tx rsp=7 offer=3 ack=0 notif=0 | err svc=1 method=2
+[someip] tp seg_rx=0 msg_rx=0 seg_tx=3 drop=0 | max_rx=44 B
+[someip] subs added=0 removed=0 expired=0 active=0 | last client=0x00A5 session=4660
+[someip] led=0 temp=42.250 C counter=0 adc=0(uptime 73 ms)
+
+letter:/$ 
+letter:/$ 

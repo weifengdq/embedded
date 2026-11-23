@@ -1,0 +1,34 @@
+
+==================================================================
+gs_usb 测试: tx-urb-leak（20261102-182303）
+==================================================================
+主机: Linux 7.0.0-38-generic x86_64  脚本: repro_tx_urb_leak.sh
+日志: logs/20261102-182303-gs-usb-tx-urb-leak.log
+工件: /tmp/gs_usb_artifacts
+内核 7.0.x —— 与开发约定 §1 一致
+  [PASS] 权限 OK（sudo -n）
+dmesg 基线时间戳: 1793614983（之后用 --since 只扫描新增行）
+  [PASS] 依赖命令齐全: dmesg ip ethtool cansend candump cangen canplayer
+  [PASS] 发现 4 个接口: 0 1 2 3
+
+---- 1. 配置 1M/2M FD 64B（can0 -> can1），先用小批量确认链路通
+  can0: bitrate 1000000 dbitrate 2000000 dsample-point 0.750 
+  预热收到 3 帧（期望 3）
+
+---- 2. 满速发送 N=3000 帧（cangen -g 0 -f -b -L 64）
+  cangen rc=0（137=被 SIGKILL，说明卡在满速发送里）tx_delta=3000 rx_delta=3000（期望 3000）
+
+---- 3. 关键判据：队列是否永久停 —— 再单独 cansend 一帧
+  cansend rc=0 msg=
+  单帧后 can0 tx_packets: 3003 -> 3004（增长 1 = 队列活着）
+  can0: state ERROR-ACTIVE berr-counter tx 0 rx 0 / can1: state ERROR-ACTIVE berr-counter tx 0 rx 0
+  can0 ip -s: 135: can0: <NOARP,UP,LOWER_UP,ECHO> mtu 72 qdisc pfifo_fast state UP mode DEFAULT group default qlen 10  link/can promiscuity 0 allmulti 0 minmtu 72 maxmtu 72   can <FD> state ERROR-ACTIVE (berr-counter tx 0 rx 0) restart-ms 0  	 bitrate 1000000 sample-point 0.750 	 tq 12 prop-seg 29 phase-seg1 30 phase-seg2 20 sjw 10 brp 1 	 gs_usb: tseg1 1..256 tseg2 1..128 sjw 1..128 brp 1..512 brp_inc 1 	 dbitrate 2000000 dsample-point 0.750 	 dtq 12 dprop-seg 14 dphase-seg1 15 dphase-seg2 10 dsjw 5 dbrp 1 	 gs_usb: dtseg1 1..32 dtseg2 1..16 dsjw 1..16 dbrp 1..256 dbrp_inc 1 	 clock 80000000  	 re-started bus-errors arbit-lost error-warn error-pass bus-off 	 0 0 0 0 0 0 numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535 tso_max_size 65536 tso_max_segs 65535 gro_max_size 65536 gso_ipv4_max_size 65536 gro_ipv4_max_size 65536 parentbus usb parentdev 1-8:1.0   RX: bytes packets errors dropped missed mcast   192256 3004 0 0 0 0   TX: bytes packets errors dropped carrier collsns   192256 3004 0 0 0 0  
+  [PASS] --expect-ok：3000 帧满速全部发出、cansend 正常（rc=0），TX 队列未停
+  [PASS] 测试后设备仍在线（sysfs: 1-8）
+  dmesg 安全检查: 无 oops/WARN（新增 1 行）
+
+==================================================================
+汇总: tx-urb-leak
+==================================================================
+PASS=5  FAIL=0  内核异常=0
+结论: PASS

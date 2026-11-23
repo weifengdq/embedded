@@ -1,0 +1,55 @@
+digraph G {
+  rankdir=TB; nodesep=0.22; ranksep=0.38; pad=0.12; newrank=true;
+  graph [fontname="Noto Sans CJK SC", bgcolor="white"];
+  node [shape=box, style="rounded,filled", fontname="Noto Sans CJK SC", fontsize=11,
+        color="#57606A", fillcolor="#F6F8FA", penwidth=1.0];
+  edge [color="#57606A", arrowsize=0.7];
+
+  subgraph cluster_app {
+    label="应用层（本书第 29~42 章：UDS/ISO-TP/J1939/CANopen/XCP/SOME-IP…）";
+    fontname="Noto Sans CJK SC"; fontsize=10; color="#D0D7DE"; style="rounded";
+    app [label="Application SWC / 例程主循环", fillcolor="#EAF2FF"];
+  }
+  subgraph cluster_rte {
+    label="RTE（运行时环境）";
+    fontname="Noto Sans CJK SC"; fontsize=10; color="#D0D7DE"; style="rounded";
+    rte [label="RTE / OS（本仓库无 OS，用裸机 + shell 轮询代替）", fillcolor="#F6F8FA"];
+  }
+  subgraph cluster_bsw {
+    label="BSW 服务层 & ECU 抽象层";
+    fontname="Noto Sans CJK SC"; fontsize=10; color="#D0D7DE"; style="rounded";
+    bsw1 [label="CanIf / Com / Dcm / Dem / Det(桩)", fillcolor="#FFF4E5"];
+    bsw2 [label="IoHwAb / MemIf / Fee / EthIf（未实现，仅对比）", fillcolor="#FFF4E5"];
+  }
+  subgraph cluster_mcal {
+    label="MCAL —— 本书第 43~51 章实现的部分（15 个模块）";
+    fontname="Noto Sans CJK SC"; fontsize=10; color="#1F6FEB"; style="rounded"; penwidth=1.6;
+    m1 [label="Mcu", fillcolor="#E6F4EA"];
+    m2 [label="Port", fillcolor="#E6F4EA"];
+    m3 [label="Dio", fillcolor="#E6F4EA"];
+    m4 [label="Gpt", fillcolor="#E6F4EA"];
+    m5 [label="Pwm", fillcolor="#E6F4EA"];
+    m6 [label="Icu", fillcolor="#E6F4EA"];
+    m7 [label="Adc", fillcolor="#E6F4EA"];
+    m8 [label="Spi", fillcolor="#E6F4EA"];
+    m9 [label="I2c", fillcolor="#E6F4EA"];
+    m10 [label="Can", fillcolor="#E6F4EA"];
+    m11 [label="Wdg", fillcolor="#E6F4EA"];
+    m12 [label="Mem", fillcolor="#E6F4EA"];
+    m13 [label="Crc", fillcolor="#E6F4EA"];
+    m14 [label="Eth", fillcolor="#DDF4E4"];
+    m15 [label="EthTrcv", fillcolor="#DDF4E4"];
+    {rank=same; m1; m2; m3; m4; m5; m6; m7; m8; m9; m10; m11; m12; m13; m14; m15;}
+    m1 -> m2 -> m3 -> m4 -> m5 -> m6 -> m7 -> m8 -> m9 -> m10 -> m11 -> m12 -> m13 -> m14 -> m15
+      [style=invis, weight=20];
+  }
+  hw [label="HPM5E31 硬件（480 MHz RV32 / 1 MB Flash / 544 KB SRAM）\nSYSCTL / IOC / GPIO / GPTMR / PWM / ADC16 / SPI / I2C / MCAN / ENET0+YT8011AN / EWDG / XPI",
+      fillcolor="#F6F8FA", width=7.2];
+  app -> rte [style=dashed];
+  rte -> bsw1; rte -> bsw2;
+  bsw2 -> m14 [style=dashed, constraint=false];
+  m3 -> hw [style=invis, weight=10];
+  m1 -> hw [color="#2EA043", constraint=false, penwidth=1.2];
+  m8 -> hw [color="#2EA043", constraint=false, penwidth=1.2];
+  m15 -> hw [color="#2EA043", constraint=false, penwidth=1.2];
+}

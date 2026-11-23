@@ -1,0 +1,22 @@
+00M SLAVE
+Enet phy init passed !
+[net] Enet controller + PHY  mode <1000|100>
+cacheinfo
+[cache] MCACHE_CTL=0x00007f03 dc_en=1 ic_en=1 writearound=3
+
+letter:/$ 
+letter:/$ link
+[phy] link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D thread=0
+
+letter:/$ 
+letter:/$ sleep 12000
+[sys] sleep 12000 ms
+
+letter:/$ [phy] link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D thread=1
+
+letter:/$ iclient 192.168.2.1 tcp
+[iperf] TCP client to 192.168.2.1 started
+
+letter:/$ [cpu] busy=95.5% (cpu=480000000 Hz, window=12.73 s)
+
+letter:/$ [iperf] type=1 remote=192.168.2.1:5001 bytes=582905024 ms=10000 => 466320 kbit/s (466.32 Mbit/s)

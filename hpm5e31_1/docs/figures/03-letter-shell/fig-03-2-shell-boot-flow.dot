@@ -1,0 +1,19 @@
+
+digraph cmd_register {
+  graph [rankdir=TB, fontname="Noto Sans CJK SC", fontsize=12, nodesep=0.30, ranksep=0.40, bgcolor="white", pad=0.2];
+  node  [shape=box, style="rounded,filled", fontname="Noto Sans CJK SC", fontsize=11, color="#57606A", fillcolor="#F6F8FA"];
+  edge  [fontname="Noto Sans CJK SC", fontsize=9, color="#57606A"];
+
+  src  [label="SHELL_EXPORT_CMD(...)\n放在任意 .c 文件里", fillcolor="#DBEAFE"];
+  sec  [label="链接段 shellCommand\n(每条命令一个 ShellCommand 结构体)", fillcolor="#FDE68A"];
+  sym  [label="链接器生成符号\n__start_shellCommand / __stop_shellCommand", fillcolor="#BBF7D0"];
+  init [label="shellInit()\ncount = (stop-start)/sizeof"];
+  help [label="help / 命令查找\n线性比较命令名"];
+  run  [label="调用命令函数\nmain 型: f(argc, argv)"];
+
+  src -> sec [label="编译"];
+  sec -> sym [label="链接"];
+  sym -> init [label="启动时"];
+  init -> help;
+  help -> run [label="匹配成功"];
+}

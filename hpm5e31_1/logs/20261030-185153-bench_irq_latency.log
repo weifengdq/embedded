@@ -1,0 +1,6 @@
+ - CMP), mcycle cross-check
+gptmr_hz=100000000 CMP=2000 ticks  isr_addr=0x186 ilm_body=0xa08
+IRQ_STAT mode=xip      n=10000 min=21 avg=21.00 max=21 sd=nan p50=21 p90=21 p99=21 tick_ns=10.00
+IRQ_TIME mode=xip      min_ns=210 avg_ns=210 max_ns=210 p99_ns=210
+IRQ_CLK  gptmr_hz_cfg=100000000 gptmr_hz_derived=98455731 period_cycles=9988.8 (CMP=2000 ticks)
+IRQ_ISR  mode=xip      isr_active_cycles=238.2 isr_active_ns=496

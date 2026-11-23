@@ -1,0 +1,104 @@
+ink
+p] ready: ptp | ptpstats [reset] | ptpreset <sec> | ip | l    ___| |_| |_ ___ _ __   ___| 
+letter:/$ 
+=== ptp_slave: 板作 PTP 从钟（E2E，two-step）（PTP slave (E2E two-step, hw timestamp)） ===
+lwIP 2.1.2
+[phy] YT8011AN link up: 1000M SLAVE
+Enet phy init passed !
+[net] ENET + YT8011AN init doneink
+sleep 1200
+Command not Found
+
+letter:/$ 
+letter:/$ ptpbench 25
+[ptpbench] sampling 25 s (ntp keep-alive polling on)
+(D 1651074122.007582780) event MASTER_CLOCK_CHANGED
+(D 1651074122.008219140) state PTP_UNCALIBRATED
+(D 1793351001.350072457) setTime: resetting system clock to 1793351001s 350072257ns
+(D 1793351001.351094897) initClock
+(D 1793351001.351519857) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351001.352644257) updateClock: offset from master:      -142276878s  -585068997ns
+(D 1793351001.353700017) updateClock: observed drift:                   0
+(D 1793351002.350391657) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351002.351525097) updateClock: offset from master:               0s      -21708ns
+(D 1793351002.352579437) updateClock: observed drift:               -1447
+(D 1793351003.350693237) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351003.351823257) updateClock: offset from master:               0s      -24998ns
+(D 1793351003.352876937) updateClock: observed drift:               -3113
+(D 1793351004.351031297) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351004.352160397) updateClock: offset from master:               0s      -28273ns
+(D 1793351004.353213297) updateClock: observed drift:               -4997
+(D 1793351005.351000337) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351005.352128357) updateClock: offset from master:               0s      -29771ns
+(D 1793351005.353181397) updateClock: observed drift:               -6981
+(D 1793351006.351218817) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351006.352346397) updateClock: offset from master:               0s      -29017ns
+(D 1793351006.353400377) updateClock: observed drift:               -8915
+(D 1793351007.351442597) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351007.352570297) updateClock: offset from master:               0s      -26349ns
+(D 1793351007.353622497) updateClock: observed drift:              -10671
+(D 1793351008.351763217) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351008.352890437) updateClock: offset from master:               0s      -22514ns
+(D 1793351008.353944217) updateClock: observed drift:              -12171
+(D 1793351009.351755557) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351009.352883657) updateClock: offset from master:               0s      -18307ns
+(D 1793351009.353938617) updateClock: observed drift:              -13391
+(D 1793351010.352135077) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351010.353258737) updateClock: offset from master:               0s      -14364ns
+(D 1793351010.354312677) updateClock: observed drift:              -14348
+(D 1793351011.352120757) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351011.353248737) updateClock: offset from master:               0s      -11064ns
+(D 1793351011.354301717) updateClock: observed drift:              -15085
+(D 1793351012.352548617) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351012.353676857) updateClock: offset from master:               0s       -8526ns
+(D 1793351012.354729317) updateClock: observed drift:              -15653
+(D 1793351012.355617577) event MASTER_CLOCK_SELECTED
+(D 1793351012.356250377) state PTP_SLAVE
+(D 1793351013.352580777) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351013.353708837) updateClock: offset from master:               0s       -6743ns
+(D 1793351013.354761817) updateClock: observed drift:              -16102
+(D 1793351014.352832497) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351014.353965237) updateClock: offset from master:               0s       -5545ns
+(D 1793351014.355019617) updateClock: observed drift:              -16471
+(D 1793351015.352816617) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351015.353946317) updateClock: offset from master:               0s       -4753ns
+(D 1793351015.354999937) updateClock: observed drift:              -16787
+(D 1793351016.353157397) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351016.354283537) updateClock: offset from master:               0s       -4202ns
+(D 1793351016.355337357) updateClock: observed drift:              -17067
+(D 1793351017.353130637) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351017.354266777) updateClock: offset from master:               0s       -3777ns
+(D 1793351017.355320837) updateClock: observed drift:              -17318
+(D 1793351018.353578417) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351018.354706397) updateClock: offset from master:               0s       -3399ns
+(D 1793351018.355760057) updateClock: observed drift:              -17544
+(D 1793351019.353661017) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351019.354790517) updateClock: offset from master:               0s       -3015ns
+(D 1793351019.355844897) updateClock: observed drift:              -17745
+(D 1793351020.354057917) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351020.355183577) updateClock: offset from master:               0s       -2636ns
+(D 1793351020.356237157) updateClock: observed drift:              -17920
+(D 1793351021.354043637) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351021.355171857) updateClock: offset from master:               0s       -2254ns
+(D 1793351021.356225117) updateClock: observed drift:              -18070
+(D 1793351022.354480957) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351022.355603897) updateClock: offset from master:               0s       -1913ns
+(D 1793351022.356657757) updateClock: observed drift:              -18197
+(D 1793351023.354464077) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351023.355592097) updateClock: offset from master:               0s       -1600ns
+(D 1793351023.356644997) updateClock: observed drift:              -18303
+(D 1793351024.354702097) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351024.355825277) updateClock: offset from master:               0s       -1328ns
+(D 1793351024.356878777) updateClock: observed drift:              -18391
+(D 1793351025.354819117) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351025.355955577) updateClock: offset from master:               0s       -1104ns
+(D 1793351025.357009477) updateClock: observed drift:              -18464
+(D 1793351026.355168977) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351026.356292317) updateClock: offset from master:               0s        -912ns
+(D 1793351026.357345017) updateClock: observed drift:              -18524
+(D 1793351027.355137037) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351027.356267257) updateClock: offset from master:               0s        -758ns
+(D 1793351027.357321157) updateClock: observed drift:              -18574
+(D 1793351028.355727677) updateClock: one-way delay averaged (E2E):           0s           0ns
+(D 1793351028.356856177) updateClock: offset from master:               0s        -643ns
+(D 1793351028.357909317) updateClock: observed drift:              -18616

@@ -1,0 +1,4 @@
+h] rx pbuf pool: in_use=0 peak=1/32
+[lwip-eth] hw : rx_frames=UP
+[app] dlt -> 192.168.2.1:3490, 4 ctx x 5 level, 10 ms
+[auto] 1.2 s 发送完成: dlt: ON sent=121 rate=10 ms mcnt=121 uptime=1270 ms

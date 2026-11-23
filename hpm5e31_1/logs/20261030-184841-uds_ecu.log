@@ -1,0 +1,25 @@
+dy (ISO 14229-1, CAN0 ECU 0x7E0/0x7E8, CAN1 tester)
+
+[uds_ecu] CAN0=ECU 0x7E0/0x7E8  CAN1=tester（经典 500 kbit/s）
+  P2=50 ms P2*=5000 ms S3=5000 ms DIDs=6 routines=2
+  27 算法：key=ROL8(seed ^ 0x3A5C9E17/if-odd-add 0x5A5A5A5A)^(level*0x01020304)，ROL7
+
+[uds_ecu] run: 0x7E0/0x7E8 服务序列，板内 tester（经典 500k，ISO-TP BS=0 STmin=0）
+  步骤                 请求                       响应
+  10 03 扩展会话     10 03                        -> 50 03 00 32 01 F4  PASS rtt=565 us
+  22 4x DID              22 F1 90 F1 95 F1 87 F1 8C   -> 62 F1 90 48 50 4D 35 45 33 31 ... (62 B) PASS rtt=3086 us
+  2E F190 未解锁      2E F1 90 48 50 4D 35 45 33 31 4E 45 57 56 49 4E 30 30 30 32  -> 7F 2E 33  PASS rtt=1174 us
+  27 01 取种子        27 01                        -> seed=D2E3FB68 key=2B589DBE rtt=478 us
+  27 02 发密钥        27 02 2B 58 9D BE            -> 67 02  PASS rtt=474 us
+  2E F190 已解锁      2E F1 90 48 50 4D 35 45 33 31 4E 45 57 56 49 4E 30 30 30 32  -> 6E F1 90  PASS rtt=1171 us
+  22 F190 回读         22 F190                      -> 62 F1 90 HPM5E31NEWVIN0002 rtt=1168 us PASS
+  31 01 0203 自检      31 01 02 03                  -> 71 01 02 03 00 01  PASS rtt=499 us
+  19 02 读 DTC          19 02 FF                     -> 59 02 09 C1 00 87 5F C1 01 87 ... (15 B) PASS rtt=1190 us
+  14 FFFFFF 清码       14 FF FF FF                  -> 54  PASS rtt=472 us
+  19 02 清码后        19 02 FF                     -> 59 02 09 (0 个 DTC) rtt=469 us PASS
+  3E 00 会话保持     3E 00                        -> 7E 00  PASS rtt=469 us
+  10 01 默认会话     10 01                        -> 50 01 00 32 01 F4  PASS rtt=481 us
+[uds_ecu] PASS steps=13/13 pass=13 fail=0 (服务端 req=13 pos=12 nrc=1)
+
+[uds_ecu] pend: 31 01 0301（150 ms 慢例程，应先回 7F 31 78）
+  10 03 前置           10 03                        -> 50 03 00 32 01 F4  PASS rtt=476 us

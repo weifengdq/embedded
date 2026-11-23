@@ -1,0 +1,32 @@
+ho_latency: avg=1 us max=1 us  roundtrip_rate=2148 /s
+THROUGHPUT classic 500k/SP87.5: n=2000 rx=2000 bad=0 total=464542 us => 4305 frame/s
+  payload: 0.28 Mbit/s (8B/frame @4305 fps), bus 500 kbit/s
+FD pingpong arb1M/data2M 64B: n=500 ok=500 err=0 total=316558 us => 1579 roundtrip/s lec=0
+type 'run|thr|fd [n]' to rerun, 'info'/'stat' for details
+info
+sample: mcan_two_node  CAN0(PD00/PD01) <-> CAN1(PD05/PD04) via TCAN1044AV
+classic: 500 kbit/s, presc=1 seg1=139 seg2=20 sjw=4, SP=87.5%
+fd     : arb 1 Mbit/s (75.0%) / data 2 Mbit/s (75.0%), TDC ssp=15, 64B
+cpu    : 480 MHz, 1 us = 480 cycles
+
+letter:/$ 
+letter:/$ run 500
+PINGPONG classic 500k/SP87.5: n=500 ok=500 bad_req=0 bad_echo=0 total=232772 us
+  echo_latency: avg=1 us max=1 us  roundtrip_rate=2148 /s
+
+letter:/$ 
+letter:/$ thr 2000
+THROUGHPUT classic 500k/SP87.5: n=2000 rx=2000 bad=0 total=464546 us => 4305 frame/s
+  payload: 0.28 Mbit/s (8B/frame @4305 fps), bus 500 kbit/s
+
+letter:/$ 
+letter:/$ fd 500
+FD pingpong arb1M/data2M 64B: n=500 ok=500 err=0 total=316547 us => 1580 roundtrip/s lec=0
+
+letter:/$ 
+letter:/$ stat
+CAN0: act=1 lec=0 bo=0 ep=0 ew=0 tec=0 rec=0 tdcv=25
+CAN1: act=1 lec=0 bo=0 ep=0 ew=0 tec=0 rec=0 tdcv=25
+
+letter:/$ 
+letter:/$ 

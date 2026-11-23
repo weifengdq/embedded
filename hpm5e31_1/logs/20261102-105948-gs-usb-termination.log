@@ -1,0 +1,60 @@
+
+==================================================================
+gs_usb 测试: termination（20261102-105948）
+==================================================================
+主机: Linux 7.0.0-38-generic x86_64  脚本: test_termination.sh
+日志: logs/20261102-105948-gs-usb-termination.log
+工件: /tmp/gs_usb_artifacts
+内核 7.0.x —— 与开发约定 §1 一致
+  [PASS] 权限 OK（sudo -n）
+dmesg 基线时间戳: 1793588388（之后用 --since 只扫描新增行）
+  [PASS] 依赖命令齐全: dmesg ip ethtool cansend candump cangen canplayer
+  [PASS] 发现 4 个接口: 0 1 2 3
+
+---- 1. 先以 500k 起来（无关 bitrate，只保证接口可用）
+> sudo -n ip link set can0 type can bitrate 500000 fd off loopback off listen-only off one-shot off
+> sudo -n ip link set can0 up
+can0: state UP state ERROR-ACTIVE berr-counter tx 0 rx 0 
+> ip -details link show can0
+71: can0: <NOARP,UP,LOWER_UP,ECHO> mtu 16 qdisc pfifo_fast state UP mode DEFAULT group default qlen 10
+    link/can  promiscuity 0 allmulti 0 minmtu 16 maxmtu 16 
+    can state ERROR-ACTIVE (berr-counter tx 0 rx 0) restart-ms 0 
+	  bitrate 500000 sample-point 0.875
+	  tq 12 prop-seg 69 phase-seg1 70 phase-seg2 20 sjw 10 brp 1
+	  gs_usb: tseg1 1..256 tseg2 1..128 sjw 1..128 brp 1..512 brp_inc 1
+	  gs_usb: dtseg1 1..32 dtseg2 1..16 dsjw 1..16 dbrp 1..256 dbrp_inc 1
+	  clock 80000000 numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535 tso_max_size 65536 tso_max_segs 65535 gro_max_size 65536 gso_ipv4_max_size 65536 gro_ipv4_max_size 65536 parentbus usb parentdev 1-8:1.0 
+
+---- 2. 请求 120 欧终端电阻（期望失败）
+命令: sudo -n ip link set can0 termination 120
+退出码: 255
+输出  : Error: either "dev" is duplicate, or "termination" is garbage.
+  [PASS] 请求被拒绝（退出码 255）
+提示: 输出里没有典型的 not supported 文案（不同 iproute2 版本文案不同），退出码为准
+
+---- 3. 再试 type can 形式（另一条内核路径）
+命令: sudo -n ip link set can0 type can bitrate 500000 termination 120
+退出码: 2 / 输出: RTNETLINK answers: Device or resource busy
+  [PASS] type can 形式同样被拒绝
+
+---- 4. ip -details 不应出现 termination 属性
+71: can0: <NOARP,UP,LOWER_UP,ECHO> mtu 16 qdisc pfifo_fast state UP mode DEFAULT group default qlen 10
+    link/can  promiscuity 0 allmulti 0 minmtu 16 maxmtu 16 
+    can state ERROR-ACTIVE (berr-counter tx 0 rx 0) restart-ms 0 
+	  bitrate 500000 sample-point 0.875
+	  tq 12 prop-seg 69 phase-seg1 70 phase-seg2 20 sjw 10 brp 1
+	  gs_usb: tseg1 1..256 tseg2 1..128 sjw 1..128 brp 1..512 brp_inc 1
+	  gs_usb: dtseg1 1..32 dtseg2 1..16 dsjw 1..16 dbrp 1..256 dbrp_inc 1
+	  clock 80000000 numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535 tso_max_size 65536 tso_max_segs 65535 gro_max_size 65536 gso_ipv4_max_size 65536 gro_ipv4_max_size 65536 parentbus usb parentdev 1-8:1.0 
+  [PASS] ip -details 无 termination 属性（与不 advertise 一致）
+
+---- 5. 内核安全检查
+  dmesg 安全检查: 无 oops/WARN（新增 0 行）
+  [PASS] 测试后设备仍在线（sysfs: 1-8）
+  dmesg 安全检查: 无 oops/WARN（新增 0 行）
+
+==================================================================
+汇总: termination
+==================================================================
+PASS=7  FAIL=0  内核异常=0
+结论: PASS

@@ -1,0 +1,20 @@
+ploop 1000 / ppull / pod / pdir / prefresh / perr / pver / help
+ploop 2000
+LOOP: n=2000 patterns=2+2000 errors=0 -> PASS
+
+letter:/$ 
+letter:/$ ppull
+PULL: PA27 pull-up read=1 pull-down read=0 PAD_CTL=0x01120075 -> PASS
+PULL: PA26 pull-up read=1 pull-down read=0 PAD_CTL=0x01120075 -> PASS
+PULL: summary PASS
+
+letter:/$ 
+letter:/$ pod
+OD: PC12 released -> PA28=1, PC12 low -> PA28=1 -> PASS
+
+letter:/$ 
+letter:/$ perr
+DET: before=0 after=5 delta=5
+
+letter:/$ 
+letter:/$ 

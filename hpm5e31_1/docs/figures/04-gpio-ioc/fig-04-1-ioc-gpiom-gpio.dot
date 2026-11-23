@@ -1,0 +1,23 @@
+
+digraph ioc_gpiom_gpio {
+  graph [rankdir=LR, fontname="Noto Sans CJK SC", fontsize=12, nodesep=0.30, ranksep=0.50, bgcolor="white", pad=0.2];
+  node  [shape=box, style="rounded,filled", fontname="Noto Sans CJK SC", fontsize=11, color="#57606A", fillcolor="#F6F8FA"];
+  edge  [fontname="Noto Sans CJK SC", fontsize=9, color="#57606A"];
+
+  pad  [label="物理 PAD (如 PA02)\nFUNC_CTL: ALT_SELECT / LOOP_BACK / ANALOG\nPAD_CTL: PE/PS/HYS/OD/SR/SPD/DS", fillcolor="#DBEAFE"];
+  ioc  [label="IOC 控制器\n0xF00D0000 之外的 IOC 基址", fillcolor="#FDE68A"];
+  gm   [label="GPIOM  ASSIGN[port].PIN[pin]\n0 = gpio0 / 2 = core0_fast", fillcolor="#BBF7D0"];
+  g0   [label="GPIO0 (AHB)\n0xF00D0000\nDI/DO/OE/IF/IE", fillcolor="#FCA5A5"];
+  fg   [label="FGPIO (核私有)\n0x300000\n同样的寄存器布局", fillcolor="#FCA5A5"];
+  sw   [label="软件\ngpio_write_pin() / gpiom_set_pin_controller()", fillcolor="#F6F8FA"];
+
+  sw -> ioc [label="配置复用/属性"];
+  ioc -> pad [label="电平/方向"];
+  sw -> g0 [label="普通路径"];
+  sw -> gm [label="切换控制器"];
+  gm -> fg [label="core0_fast 时"];
+  g0 -> gm [label="可见性"];
+  fg -> gm;
+  gm -> ioc [label="DO/OE 作用下"];
+  ioc -> gm [label="DI 回读", style=dashed];
+}

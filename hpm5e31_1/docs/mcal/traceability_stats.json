@@ -1,0 +1,881 @@
+{
+ "modules": {
+  "Mcu": {
+   "sws_total": 11,
+   "implemented": 11,
+   "partial": 0,
+   "missing": 0,
+   "coverage": 1.0,
+   "api_id_defined": 11,
+   "det_codes_defined": 8,
+   "det_checked": 11,
+   "signature": {
+    "proto_count": 15,
+    "cfg_fields": 33,
+    "cfg_switches": 10,
+    "has_cfg": true,
+    "has_pbcfg": true,
+    "loc": 857
+   },
+   "files": {
+    "header": "mcal/Mcu/include/Mcu.h",
+    "source": "mcal/Mcu/src/Mcu.c",
+    "cfg": "mcal/Mcu/cfg/Mcu_Cfg.h",
+    "pbcfg": "mcal/Mcu/cfg/Mcu_PBcfg.c"
+   },
+   "groups": {
+    "初始化/去初始化": {
+     "total": 2,
+     "implemented": 2,
+     "coverage": 1.0
+    },
+    "时钟/复位/模式/低功耗": {
+     "total": 8,
+     "implemented": 8,
+     "coverage": 1.0
+    },
+    "版本信息": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    }
+   },
+   "has_header": true,
+   "missing_apis": [],
+   "partial_apis": []
+  },
+  "Port": {
+   "sws_total": 5,
+   "implemented": 5,
+   "partial": 0,
+   "missing": 0,
+   "coverage": 1.0,
+   "api_id_defined": 5,
+   "det_codes_defined": 8,
+   "det_checked": 5,
+   "signature": {
+    "proto_count": 9,
+    "cfg_fields": 19,
+    "cfg_switches": 6,
+    "has_cfg": true,
+    "has_pbcfg": true,
+    "loc": 568
+   },
+   "files": {
+    "header": "mcal/Port/include/Port.h",
+    "source": "mcal/Port/src/Port.c",
+    "cfg": "mcal/Port/cfg/Port_Cfg.h",
+    "pbcfg": "mcal/Port/cfg/Port_PBcfg.c"
+   },
+   "groups": {
+    "初始化/去初始化": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    },
+    "数据通路/作业": {
+     "total": 3,
+     "implemented": 3,
+     "coverage": 1.0
+    },
+    "版本信息": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    }
+   },
+   "has_header": true,
+   "missing_apis": [],
+   "partial_apis": []
+  },
+  "Dio": {
+   "sws_total": 9,
+   "implemented": 9,
+   "partial": 0,
+   "missing": 0,
+   "coverage": 1.0,
+   "api_id_defined": 9,
+   "det_codes_defined": 4,
+   "det_checked": 9,
+   "signature": {
+    "proto_count": 12,
+    "cfg_fields": 12,
+    "cfg_switches": 8,
+    "has_cfg": true,
+    "has_pbcfg": true,
+    "loc": 470
+   },
+   "files": {
+    "header": "mcal/Dio/include/Dio.h",
+    "source": "mcal/Dio/src/Dio.c",
+    "cfg": "mcal/Dio/cfg/Dio_Cfg.h",
+    "pbcfg": "mcal/Dio/cfg/Dio_PBcfg.c"
+   },
+   "groups": {
+    "数据通路/作业": {
+     "total": 8,
+     "implemented": 8,
+     "coverage": 1.0
+    },
+    "版本信息": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    }
+   },
+   "has_header": true,
+   "missing_apis": [],
+   "partial_apis": []
+  },
+  "Gpt": {
+   "sws_total": 14,
+   "implemented": 11,
+   "partial": 0,
+   "missing": 3,
+   "coverage": 0.786,
+   "api_id_defined": 14,
+   "det_codes_defined": 10,
+   "det_checked": 11,
+   "signature": {
+    "proto_count": 12,
+    "cfg_fields": 15,
+    "cfg_switches": 14,
+    "has_cfg": true,
+    "has_pbcfg": true,
+    "loc": 902
+   },
+   "files": {
+    "header": "mcal/Gpt/include/Gpt.h",
+    "source": "mcal/Gpt/src/Gpt.c",
+    "cfg": "mcal/Gpt/cfg/Gpt_Cfg.h",
+    "pbcfg": "mcal/Gpt/cfg/Gpt_PBcfg.c"
+   },
+   "groups": {
+    "版本信息": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    },
+    "初始化/去初始化": {
+     "total": 2,
+     "implemented": 2,
+     "coverage": 1.0
+    },
+    "状态/查询": {
+     "total": 3,
+     "implemented": 3,
+     "coverage": 1.0
+    },
+    "数据通路/作业": {
+     "total": 2,
+     "implemented": 2,
+     "coverage": 1.0
+    },
+    "通知/中断/唤醒控制": {
+     "total": 8,
+     "implemented": 4,
+     "coverage": 0.5
+    },
+    "时钟/复位/模式/低功耗": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    }
+   },
+   "has_header": true,
+   "missing_apis": [
+    "Gpt_DisableWakeup",
+    "Gpt_EnableWakeup",
+    "Gpt_CheckWakeup"
+   ],
+   "partial_apis": []
+  },
+  "Pwm": {
+   "sws_total": 13,
+   "implemented": 9,
+   "partial": 0,
+   "missing": 4,
+   "coverage": 0.692,
+   "api_id_defined": 10,
+   "det_codes_defined": 10,
+   "det_checked": 9,
+   "signature": {
+    "proto_count": 11,
+    "cfg_fields": 22,
+    "cfg_switches": 9,
+    "has_cfg": true,
+    "has_pbcfg": true,
+    "loc": 806
+   },
+   "files": {
+    "header": "mcal/Pwm/include/Pwm.h",
+    "source": "mcal/Pwm/src/Pwm.c",
+    "cfg": "mcal/Pwm/cfg/Pwm_Cfg.h",
+    "pbcfg": "mcal/Pwm/cfg/Pwm_PBcfg.c"
+   },
+   "groups": {
+    "初始化/去初始化": {
+     "total": 2,
+     "implemented": 2,
+     "coverage": 1.0
+    },
+    "数据通路/作业": {
+     "total": 3,
+     "implemented": 3,
+     "coverage": 1.0
+    },
+    "状态/查询": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    },
+    "通知/中断/唤醒控制": {
+     "total": 5,
+     "implemented": 4,
+     "coverage": 0.8
+    },
+    "时钟/复位/模式/低功耗": {
+     "total": 4,
+     "implemented": 0,
+     "coverage": 0.0
+    },
+    "版本信息": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    }
+   },
+   "has_header": true,
+   "missing_apis": [
+    "Pwm_SetPowerState",
+    "Pwm_GetCurrentPowerState",
+    "Pwm_GetTargetPowerState",
+    "Pwm_PreparePowerState"
+   ],
+   "partial_apis": []
+  },
+  "Icu": {
+   "sws_total": 26,
+   "implemented": 17,
+   "partial": 0,
+   "missing": 9,
+   "coverage": 0.654,
+   "api_id_defined": 20,
+   "det_codes_defined": 12,
+   "det_checked": 17,
+   "signature": {
+    "proto_count": 19,
+    "cfg_fields": 23,
+    "cfg_switches": 12,
+    "has_cfg": true,
+    "has_pbcfg": true,
+    "loc": 960
+   },
+   "files": {
+    "header": "mcal/Icu/include/Icu.h",
+    "source": "mcal/Icu/src/Icu.c",
+    "cfg": "mcal/Icu/cfg/Icu_Cfg.h",
+    "pbcfg": "mcal/Icu/cfg/Icu_PBcfg.c"
+   },
+   "groups": {
+    "初始化/去初始化": {
+     "total": 2,
+     "implemented": 2,
+     "coverage": 1.0
+    },
+    "时钟/复位/模式/低功耗": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    },
+    "通知/中断/唤醒控制": {
+     "total": 18,
+     "implemented": 6,
+     "coverage": 0.333
+    },
+    "数据通路/作业": {
+     "total": 5,
+     "implemented": 5,
+     "coverage": 1.0
+    },
+    "状态/查询": {
+     "total": 5,
+     "implemented": 4,
+     "coverage": 0.8
+    },
+    "版本信息": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    }
+   },
+   "has_header": true,
+   "missing_apis": [
+    "Icu_DisableWakeup",
+    "Icu_EnableWakeup",
+    "Icu_CheckWakeup",
+    "Icu_ResetEdgeCount",
+    "Icu_EnableEdgeCount",
+    "Icu_DisableEdgeCount",
+    "Icu_GetEdgeNumbers",
+    "Icu_DisableNotificationAsync",
+    "Icu_EnableNotificationAsync"
+   ],
+   "partial_apis": []
+  },
+  "Wdg": {
+   "sws_total": 4,
+   "implemented": 4,
+   "partial": 0,
+   "missing": 0,
+   "coverage": 1.0,
+   "api_id_defined": 4,
+   "det_codes_defined": 8,
+   "det_checked": 4,
+   "signature": {
+    "proto_count": 6,
+    "cfg_fields": 11,
+    "cfg_switches": 6,
+    "has_cfg": true,
+    "has_pbcfg": true,
+    "loc": 379
+   },
+   "files": {
+    "header": "mcal/Wdg/include/Wdg.h",
+    "source": "mcal/Wdg/src/Wdg.c",
+    "cfg": "mcal/Wdg/cfg/Wdg_Cfg.h",
+    "pbcfg": "mcal/Wdg/cfg/Wdg_PBcfg.c"
+   },
+   "groups": {
+    "初始化/去初始化": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    },
+    "时钟/复位/模式/低功耗": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    },
+    "数据通路/作业": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    },
+    "版本信息": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    }
+   },
+   "has_header": true,
+   "missing_apis": [],
+   "partial_apis": []
+  },
+  "Adc": {
+   "sws_total": 17,
+   "implemented": 13,
+   "partial": 0,
+   "missing": 4,
+   "coverage": 0.765,
+   "api_id_defined": 13,
+   "det_codes_defined": 11,
+   "det_checked": 13,
+   "signature": {
+    "proto_count": 16,
+    "cfg_fields": 23,
+    "cfg_switches": 12,
+    "has_cfg": true,
+    "has_pbcfg": true,
+    "loc": 990
+   },
+   "files": {
+    "header": "mcal/Adc/include/Adc.h",
+    "source": "mcal/Adc/src/Adc.c",
+    "cfg": "mcal/Adc/cfg/Adc_Cfg.h",
+    "pbcfg": "mcal/Adc/cfg/Adc_PBcfg.c"
+   },
+   "groups": {
+    "初始化/去初始化": {
+     "total": 2,
+     "implemented": 2,
+     "coverage": 1.0
+    },
+    "数据通路/作业": {
+     "total": 4,
+     "implemented": 4,
+     "coverage": 1.0
+    },
+    "通知/中断/唤醒控制": {
+     "total": 7,
+     "implemented": 6,
+     "coverage": 0.857
+    },
+    "状态/查询": {
+     "total": 2,
+     "implemented": 2,
+     "coverage": 1.0
+    },
+    "版本信息": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    },
+    "时钟/复位/模式/低功耗": {
+     "total": 4,
+     "implemented": 0,
+     "coverage": 0.0
+    }
+   },
+   "has_header": true,
+   "missing_apis": [
+    "Adc_SetPowerState",
+    "Adc_GetCurrentPowerState",
+    "Adc_GetTargetPowerState",
+    "Adc_PreparePowerState"
+   ],
+   "partial_apis": []
+  },
+  "Spi": {
+   "sws_total": 14,
+   "implemented": 14,
+   "partial": 0,
+   "missing": 0,
+   "coverage": 1.0,
+   "api_id_defined": 15,
+   "det_codes_defined": 10,
+   "det_checked": 13,
+   "signature": {
+    "proto_count": 16,
+    "cfg_fields": 38,
+    "cfg_switches": 18,
+    "has_cfg": true,
+    "has_pbcfg": true,
+    "loc": 1367
+   },
+   "files": {
+    "header": "mcal/Spi/include/Spi.h",
+    "source": "mcal/Spi/src/Spi.c",
+    "cfg": "mcal/Spi/cfg/Spi_Cfg.h",
+    "pbcfg": "mcal/Spi/cfg/Spi_PBcfg.c"
+   },
+   "groups": {
+    "初始化/去初始化": {
+     "total": 2,
+     "implemented": 2,
+     "coverage": 1.0
+    },
+    "数据通路/作业": {
+     "total": 7,
+     "implemented": 7,
+     "coverage": 1.0
+    },
+    "状态/查询": {
+     "total": 4,
+     "implemented": 4,
+     "coverage": 1.0
+    },
+    "版本信息": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    },
+    "调度函数": {
+     "total": 2,
+     "implemented": 2,
+     "coverage": 1.0
+    }
+   },
+   "has_header": true,
+   "missing_apis": [],
+   "partial_apis": []
+  },
+  "I2c": {
+   "sws_total": 8,
+   "implemented": 8,
+   "partial": 0,
+   "missing": 0,
+   "coverage": 1.0,
+   "api_id_defined": 9,
+   "det_codes_defined": 9,
+   "det_checked": 8,
+   "signature": {
+    "proto_count": 11,
+    "cfg_fields": 0,
+    "cfg_switches": 9,
+    "has_cfg": true,
+    "has_pbcfg": true,
+    "loc": 735
+   },
+   "files": {
+    "header": "mcal/I2c/include/I2c.h",
+    "source": "mcal/I2c/src/I2c.c",
+    "cfg": "mcal/I2c/cfg/I2c_Cfg.h",
+    "pbcfg": "mcal/I2c/cfg/I2c_PBcfg.c"
+   },
+   "groups": {
+    "初始化/去初始化": {
+     "total": 2,
+     "implemented": 2,
+     "coverage": 1.0
+    },
+    "数据通路/作业": {
+     "total": 3,
+     "implemented": 3,
+     "coverage": 1.0
+    },
+    "版本信息": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    },
+    "状态/查询": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    },
+    "其他": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    },
+    "调度函数": {
+     "total": 2,
+     "implemented": 2,
+     "coverage": 1.0
+    }
+   },
+   "has_header": true,
+   "missing_apis": [],
+   "partial_apis": []
+  },
+  "Can": {
+   "sws_total": 18,
+   "implemented": 13,
+   "partial": 0,
+   "missing": 5,
+   "coverage": 0.722,
+   "api_id_defined": 18,
+   "det_codes_defined": 10,
+   "det_checked": 13,
+   "signature": {
+    "proto_count": 25,
+    "cfg_fields": 68,
+    "cfg_switches": 24,
+    "has_cfg": true,
+    "has_pbcfg": true,
+    "loc": 2205
+   },
+   "files": {
+    "header": "mcal/Can/include/Can.h",
+    "source": "mcal/Can/src/Can.c",
+    "cfg": "mcal/Can/cfg/Can_Cfg.h",
+    "pbcfg": "mcal/Can/cfg/Can_PBcfg.c"
+   },
+   "groups": {
+    "初始化/去初始化": {
+     "total": 2,
+     "implemented": 2,
+     "coverage": 1.0
+    },
+    "版本信息": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    },
+    "时钟/复位/模式/低功耗": {
+     "total": 2,
+     "implemented": 2,
+     "coverage": 1.0
+    },
+    "数据通路/作业": {
+     "total": 4,
+     "implemented": 3,
+     "coverage": 0.75
+    },
+    "通知/中断/唤醒控制": {
+     "total": 4,
+     "implemented": 1,
+     "coverage": 0.25
+    },
+    "状态/查询": {
+     "total": 5,
+     "implemented": 4,
+     "coverage": 0.8
+    },
+    "调度函数": {
+     "total": 10,
+     "implemented": 10,
+     "coverage": 1.0
+    }
+   },
+   "has_header": true,
+   "missing_apis": [
+    "Can_GetCurrentTime",
+    "Can_EnableEgressTimeStamp",
+    "Can_GetEgressTimeStamp",
+    "Can_GetIngressTimeStamp",
+    "Can_SetCanPnFrameDataMask"
+   ],
+   "partial_apis": []
+  },
+  "Mem": {
+   "sws_total": 12,
+   "implemented": 12,
+   "partial": 0,
+   "missing": 0,
+   "coverage": 1.0,
+   "api_id_defined": 13,
+   "det_codes_defined": 7,
+   "det_checked": 0,
+   "signature": {
+    "proto_count": 15,
+    "cfg_fields": 15,
+    "cfg_switches": 7,
+    "has_cfg": true,
+    "has_pbcfg": true,
+    "loc": 821
+   },
+   "files": {
+    "header": "mcal/Mem/include/Mem.h",
+    "source": "mcal/Mem/src/Mem.c",
+    "cfg": "mcal/Mem/cfg/Mem_Cfg.h",
+    "pbcfg": "mcal/Mem/cfg/Mem_PBcfg.c"
+   },
+   "groups": {
+    "初始化/去初始化": {
+     "total": 2,
+     "implemented": 2,
+     "coverage": 1.0
+    },
+    "版本信息": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    },
+    "状态/查询": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    },
+    "时钟/复位/模式/低功耗": {
+     "total": 3,
+     "implemented": 3,
+     "coverage": 1.0
+    },
+    "数据通路/作业": {
+     "total": 5,
+     "implemented": 5,
+     "coverage": 1.0
+    },
+    "调度函数": {
+     "total": 2,
+     "implemented": 2,
+     "coverage": 1.0
+    }
+   },
+   "has_header": true,
+   "missing_apis": [],
+   "partial_apis": []
+  },
+  "Crc": {
+   "sws_total": 9,
+   "implemented": 9,
+   "partial": 0,
+   "missing": 0,
+   "coverage": 1.0,
+   "api_id_defined": 9,
+   "det_codes_defined": 0,
+   "det_checked": 0,
+   "signature": {
+    "proto_count": 17,
+    "cfg_fields": 4,
+    "cfg_switches": 6,
+    "has_cfg": true,
+    "has_pbcfg": true,
+    "loc": 1005
+   },
+   "files": {
+    "header": "mcal/Crc/include/Crc.h",
+    "source": "mcal/Crc/src/Crc.c",
+    "cfg": "mcal/Crc/cfg/Crc_Cfg.h",
+    "pbcfg": "mcal/Crc/cfg/Crc_PBcfg.c"
+   },
+   "groups": {
+    "其他": {
+     "total": 8,
+     "implemented": 8,
+     "coverage": 1.0
+    },
+    "版本信息": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    }
+   },
+   "has_header": true,
+   "missing_apis": [],
+   "partial_apis": []
+  },
+  "Eth": {
+   "sws_total": 42,
+   "implemented": 20,
+   "partial": 0,
+   "missing": 22,
+   "coverage": 0.476,
+   "api_id_defined": 25,
+   "det_codes_defined": 15,
+   "det_checked": 19,
+   "signature": {
+    "proto_count": 29,
+    "cfg_fields": 18,
+    "cfg_switches": 20,
+    "has_cfg": true,
+    "has_pbcfg": true,
+    "loc": 1941
+   },
+   "files": {
+    "header": "mcal/Eth/include/Eth.h",
+    "source": "mcal/Eth/src/Eth.c",
+    "cfg": "mcal/Eth/cfg/Eth_Cfg.h",
+    "pbcfg": "mcal/Eth/cfg/Eth_PBcfg.c"
+   },
+   "groups": {
+    "初始化/去初始化": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    },
+    "时钟/复位/模式/低功耗": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    },
+    "状态/查询": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    },
+    "其他": {
+     "total": 35,
+     "implemented": 16,
+     "coverage": 0.457
+    },
+    "通知/中断/唤醒控制": {
+     "total": 3,
+     "implemented": 0,
+     "coverage": 0.0
+    },
+    "版本信息": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    }
+   },
+   "has_header": true,
+   "missing_apis": [
+    "Eth_GetSpiStatus",
+    "Eth_GetCurrentTimeTuple",
+    "Eth_SetPhcTime",
+    "Eth_SetPhcCorrection",
+    "Eth_GetPhcTime",
+    "Eth_SetPpsSignalMode",
+    "Eth_EnableEgressTimeStamp",
+    "Eth_GetEgressTimeStamp",
+    "Eth_GetIngressTimeStamp",
+    "Eth_ImmediateTransmit",
+    "Eth_MacSecUpdateSecY",
+    "Eth_MacSecInitRxSc",
+    "Eth_MacSecResetRxSc",
+    "Eth_MacSecAddTxSa",
+    "Eth_MacSecUpdateTxSa",
+    "Eth_MacSecDeleteTxSa",
+    "Eth_MacSecAddRxSa",
+    "Eth_MacSecUpdateRxSa",
+    "Eth_MacSecDeleteRxSa",
+    "Eth_MacSecGetTxSaNextPn",
+    "Eth_MacSecSetControlledPortEn",
+    "Eth_MacSecGetMacSecStatistics"
+   ],
+   "partial_apis": []
+  },
+  "EthTrcv": {
+   "sws_total": 31,
+   "implemented": 17,
+   "partial": 0,
+   "missing": 14,
+   "coverage": 0.548,
+   "api_id_defined": 21,
+   "det_codes_defined": 5,
+   "det_checked": 15,
+   "signature": {
+    "proto_count": 22,
+    "cfg_fields": 14,
+    "cfg_switches": 9,
+    "has_cfg": true,
+    "has_pbcfg": true,
+    "loc": 953
+   },
+   "files": {
+    "header": "mcal/EthTrcv/include/EthTrcv.h",
+    "source": "mcal/EthTrcv/src/EthTrcv.c",
+    "cfg": "mcal/EthTrcv/cfg/EthTrcv_Cfg.h",
+    "pbcfg": "mcal/EthTrcv/cfg/EthTrcv_PBcfg.c"
+   },
+   "groups": {
+    "初始化/去初始化": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    },
+    "其他": {
+     "total": 28,
+     "implemented": 14,
+     "coverage": 0.5
+    },
+    "通知/中断/唤醒控制": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    },
+    "版本信息": {
+     "total": 1,
+     "implemented": 1,
+     "coverage": 1.0
+    }
+   },
+   "has_header": true,
+   "missing_apis": [
+    "EthTrcv_TransceiverLinkState",
+    "EthTrcv_GetCableDiagnostics",
+    "EthTrcv_MacSecUpdateSecY",
+    "EthTrcv_MacSecInitRxSc",
+    "EthTrcv_MacSecResetRxSc",
+    "EthTrcv_MacSecAddTxSa",
+    "EthTrcv_MacSecUpdateTxSa",
+    "EthTrcv_MacSecDeleteTxSa",
+    "EthTrcv_MacSecAddRxSa",
+    "EthTrcv_MacSecUpdateRxSa",
+    "EthTrcv_MacSecDeleteRxSa",
+    "EthTrcv_MacSecGetTxSaNext",
+    "EthTrcv_MacSecGetMacSec",
+    "EthTrcv_MacSecSetControlled"
+   ],
+   "partial_apis": []
+  }
+ },
+ "totals": {
+  "sws_total": 233,
+  "implemented": 172,
+  "partial": 0,
+  "missing": 61,
+  "coverage": 0.738,
+  "det_checked": 147,
+  "loc": 14959
+ },
+ "source": {
+  "sws": "AUTOSAR CP SWS R25-11 抽取文本（autosar_txt/）",
+  "impl": "本仓库 mcal/<Mod>/",
+  "date": "2026-11-02"
+ }
+}

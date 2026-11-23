@@ -1,0 +1,47 @@
+ - CMP), mcycle cross-check
+gptmr_hz=100000000 CMP=2000 ticks  isr_addr=0x186 ilm_body=0xa08
+IRQ_STAT mode=xip      n=10000 min=21 avg=21.01 max=22 sd=0.10 p50=21 p90=21 p99=22 tick_ns=10.00
+IRQ_TIME mode=xip      min_ns=210 avg_ns=210 max_ns=220 p99_ns=220
+IRQ_CLK  gptmr_hz_cfg=100000000 gptmr_hz_derived=98455276 period_cycles=9988.9 (CMP=2000 ticks)
+IRQ_ISR  mode=xip      isr_active_cycles=238.3 isr_active_ns=496
+IRQ_HIST mode=xip lo=21 step=1
+IRQ_BIN mode=xip bin=0 from=21 to=21 count=9899 |###########################################################
+IRQ_BIN mode=xip bin=1 from=22 to=22 count=101 |
+IRQ_BIN mode=xip bin=2 from=23 to=23 count=0 |
+IRQ_BIN mode=xip bin=3 from=24 to=24 count=0 |
+IRQ_BIN mode=xip bin=4 from=25 to=25 count=0 |
+IRQ_BIN mode=xip bin=5 from=26 to=26 count=0 |
+IRQ_BIN mode=xip bin=6 from=27 to=27 count=0 |
+IRQ_BIN mode=xip bin=7 from=28 to=28 count=0 |
+IRQ_BIN mode=xip bin=8 from=29 to=29 count=0 |
+IRQ_BIN mode=xip bin=9 from=30 to=30 count=0 |
+IRQ_BIN mode=xip bin=10 from=31 to=31 count=0 |
+IRQ_BIN mode=xip bin=11 from=32 to=32 count=0 |
+IRQ_BIN mode=xip bin=12 from=33 to=33 count=0 |
+IRQ_BIN mode=xip bin=13 from=34 to=34 count=0 |
+IRQ_BIN mode=xip bin=14 from=35 to=35 count=0 |
+IRQ_BIN mode=xip bin=15 from=36 to=36 count=0 |
+IRQ_STAT mode=ilm      n=10000 min=22 avg=22.00 max=25 sd=0.03 p50=22 p90=22 p99=22 tick_ns=10.00
+IRQ_TIME mode=ilm      min_ns=220 avg_ns=220 max_ns=250 p99_ns=220
+IRQ_CLK  gptmr_hz_cfg=100000000 gptmr_hz_derived=98407135 period_cycles=9993.7 (CMP=2000 ticks)
+IRQ_ISR  mode=ilm      isr_active_cycles=238.3 isr_active_ns=496
+IRQ_HIST mode=ilm lo=22 step=1
+IRQ_BIN mode=ilm bin=0 from=22 to=22 count=9999 |###########################################################
+IRQ_BIN mode=ilm bin=1 from=23 to=23 count=0 |
+IRQ_BIN mode=ilm bin=2 from=24 to=24 count=0 |
+IRQ_BIN mode=ilm bin=3 from=25 to=25 count=1 |
+IRQ_BIN mode=ilm bin=4 from=26 to=26 count=0 |
+IRQ_BIN mode=ilm bin=5 from=27 to=27 count=0 |
+IRQ_BIN mode=ilm bin=6 from=28 to=28 count=0 |
+IRQ_BIN mode=ilm bin=7 from=29 to=29 count=0 |
+IRQ_BIN mode=ilm bin=8 from=30 to=30 count=0 |
+IRQ_BIN mode=ilm bin=9 from=31 to=31 count=0 |
+IRQ_BIN mode=ilm bin=10 from=32 to=32 count=0 |
+IRQ_BIN mode=ilm bin=11 from=33 to=33 count=0 |
+IRQ_BIN mode=ilm bin=12 from=34 to=34 count=0 |
+IRQ_BIN mode=ilm bin=13 from=35 to=35 count=0 |
+IRQ_BIN mode=ilm bin=14 from=36 to=36 count=0 |
+IRQ_BIN mode=ilm bin=15 from=37 to=37 count=0 |
+GPIO_LOOPBACK result=FAIL n=0 (写 DO 后 DI 无变化：同一 pad 自环回不成立)
+GPIO_TODO 需外部飞线（PA02 -> 任一 GPIO 输入）后重测
+IRQ_SWEEP_DONE

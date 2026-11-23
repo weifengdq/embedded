@@ -1,0 +1,21 @@
+ 'spd_dump' for DO/DI, 'spd_info' for help
+spd 20000
+
+gpio_speed: cpu=480000000 Hz, N=20000, 1 cycle=2.08 ns
+---- 基准 ----
+empty_loop         N=20000   cyc/op=5.00  ns/op=10.42  f=95919 kHz
+---- 单脚(PA02) 翻转 ----
+api_toggle         N=20000   cyc/op=31.20  ns/op=65.00  f=15382 kHz
+reg_toggle         N=20000   cyc/op=31.20  ns/op=65.00  f=15383 kHz
+reg_set_clear      N=20000   cyc/op=62.40  ns/op=130.00  f=7692 kHz
+---- 端口级整字写(PF16..PF26) ----
+port_word_write    N=20000   cyc/op=31.20  ns/op=65.00  f=15382 kHz
+---- 读 ----
+read_pin           N=20000   cyc/op=55.20  ns/op=115.01  f=8694 kHz
+read_port          N=20000   cyc/op=36.00  ns/op=75.00  f=13331 kHz
+---- FGPIO(核心私有快速总线) ----
+fgpio_toggle       N=20000   cyc/op=7.00  ns/op=14.59  f=68521 kHz
+---- 结论: 单脚翻转上限约 7691 MHz(软件, 不含 PAD 边沿/示波器限制) ----
+
+letter:/$ 
+letter:/$ 

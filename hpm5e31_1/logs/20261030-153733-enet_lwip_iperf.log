@@ -1,0 +1,21 @@
+00M SLAVE
+Enet phy init passed !
+[net] Enet controller + PHY  mode <1000|100>
+link
+[phy] link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D thread=0
+
+letter:/$ 
+letter:/$ sleep 15000
+[sys] sleep 15000 ms
+
+letter:/$ [phy] link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D thread=1
+
+letter:/$ iclient 192.168.2.1 udp
+Ideal frame delay: 11 us
+Send 90 frame(s) once per 1000 us
+[iperf] UDP client to 192.168.2.1 started
+
+letter:/$ [cpu] busy=96.6% (cpu=480000000 Hz, window=15.68 s)
+
+letter:/$ [cpu] busy=99.7% (cpu=480000000 Hz, window=8.47 s)
+[iperf] type=7 remote=192.168.2.1:5001 bytes=802464012 ms=10007 => 641522 kbit/s (641.52 Mbit/s)

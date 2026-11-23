@@ -1,0 +1,20 @@
+mer ok), stack base=0x00204000 top=0x00208000 size=16384 B
+
+[soak] start: buf=8 KB, heartbeat=60 s
+soak
+soak: cycle=198 uptime=0.704 s irq=699 err=0 beat=0
+soak: mchtmr=16888297  crc_ref=0xb65ef7bf
+soak: stack peak=952 B / total=16384 B (5.8%)
+
+letter:/$ 
+letter:/$ heap
+heap: 8x1KB alloc/free OK
+
+letter:/$ 
+letter:/$ soak
+soak: cycle=226 uptime=0.806 s irq=802 err=0 beat=0
+soak: mchtmr=19337529  crc_ref=0xb65ef7bf
+soak: stack peak=1172 B / total=16384 B (7.2%)
+
+letter:/$ 
+letter:/$ [soak] beat=1 uptime=60.002 s irq=59998 cycles=17067 err=0 stack=1172B

@@ -1,0 +1,30 @@
+adcast PGN 0xEF00)
+bench
+
+=== j1939_tp bench (250 kbit/s, CAN0 SA=0x00 <-> CAN1 SA=0xF9) ===
+[1] BAM 100 B (broadcast PGN 0xEF00)
+
+  BAM  100B: 15 pkts, time=700364 us, 142.8 B/s, gap min/avg/max=49361/49943/50012 us, err=0 timeout=0
+[PASS] BAM 100B reassembled + CRC32 OK
+[2] BAM 500 B
+  BAM  500B: 72 pkts, time=3550256 us, 140.8 B/s, gap min/avg/max=49200/49986/50020 us, err=0 timeout=0
+[PASS] BAM 500B reassembled + CRC32 OK
+[3] RTS/CTS 100 B (PGN 0xEF01, DA=0xF9)
+  RTS/CTS 100B: 15 pkts, time=15922 us, 6280.6 B/s, gap min/avg/max=792/973/1012 us, err=0 timeout=0
+[PASS] RTS/CTS 100B reassembled + CRC32 OK
+[4] RTS/CTS 500 B
+  RTS/CTS 500B: 72 pkts, time=72805 us, 6867.7 B/s, gap min/avg/max=668/993/1120 us, err=0 timeout=0
+[PASS] RTS/CTS 500B reassembled + CRC32 OK
+[5] reverse RTS/CTS 500 B (SA=0xF9 -> SA=0x00)
+  RTS/CTS 500B: 72 pkts, time=72801 us, 6868.0 B/s, gap min/avg/max=660/993/1113 us, err=0 timeout=0
+[PASS] reverse RTS/CTS 500B reassembled + CRC32 OK
+[6] drop/timeout: receiver stalled 2.6 s during BAM 300B (> total BAM duration)
+[PASS] stalled receiver: not reassembled (done_rx=0), timeout/err seen=1
+  BAM  100B: 15 pkts, time=700352 us, 142.8 B/s, gap min/avg/max=49361/49942/50016 us, err=0 timeout=0
+[PASS] recovery after drop: BAM 100B OK
+
+=== RESULT: PASS (7 PASS / 0 FAIL) ===
+
+letter:/$   BAM  100B: 15 pkts, time=10419345 us, 9.6 B/s, gap min/avg/max=49361/49942/50016 us, err=0 timeout=0
+[PASS] BAM 100B reassembled + CRC32 OK
+[2] BAM 500 B

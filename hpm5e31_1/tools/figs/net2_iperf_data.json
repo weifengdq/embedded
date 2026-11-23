@@ -1,0 +1,56 @@
+{
+  "_note": "由实测日志人工核对生成（见 source 字段）。iperf2 2.2.1；MTU 1500；未用 -R。tx_opt 为 2026-10-30 第二轮上行优化实测（最终配置）。",
+  "source_host_log": "logs/20261030-113501-enet_lwip_iperf-host.log",
+  "source_serial_log": "logs/20261030-113501-enet_lwip_iperf.log",
+  "source_udp_log": "logs/20261030-113919-enet_lwip_iperf.log",
+  "source_uplink_host_log": "logs/20261030-114622-enet_lwip_iperf-uplink-host.log",
+  "source_uplink_serial_log": "logs/20261030-114622-enet_lwip_iperf.log",
+  "source_final_down_log": "logs/20261030-153556-enet_lwip_iperf.log",
+  "source_final_up_log": "logs/20261030-153645-enet_lwip_iperf.log",
+  "source_final_udp_log": "logs/20261030-153733-enet_lwip_iperf.log",
+  "tcp_down_mbps": 902.34,
+  "tcp_up_mbps": 466.32,
+  "udp_down_mbps": 942.67,
+  "udp_series": [
+    {
+      "offered_mbps": 105,
+      "received_mbps": 104.75,
+      "loss_pct": 0,
+      "jitter_ms": null
+    },
+    {
+      "offered_mbps": 315,
+      "received_mbps": 314.23,
+      "loss_pct": 0.25,
+      "jitter_ms": null
+    },
+    {
+      "offered_mbps": 629,
+      "received_mbps": 628.4,
+      "loss_pct": 0.01,
+      "jitter_ms": null
+    },
+    {
+      "offered_mbps": 944,
+      "received_mbps": 942.67,
+      "loss_pct": 0.13,
+      "jitter_ms": null
+    }
+  ],
+  "cpu_busy_pct": 24.7,
+  "cpu_idle_pct": 20.3,
+  "cpu_up_pct": 99.7,
+  "tx_opt": {
+    "tcp_up_before": 415.3,
+    "tcp_up_after": 466.3,
+    "udp_up_before": 493,
+    "udp_up_after": 641.5,
+    "tcp_down_before": 935,
+    "tcp_down_after": 902.3,
+    "driver_ceiling_mbps": 869.7,
+    "driver_cyc_64b": 756,
+    "driver_cyc_512b": 2496,
+    "driver_cyc_1460b": 6446,
+    "dcache_writearound": 3
+  }
+}

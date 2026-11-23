@@ -1,0 +1,16 @@
+HITE PF18
+  [2] CAN1.RED   PF20
+  [3] CAN1.WHITE PF16
+  [400
+  bit4 -> CAN2.RED   DO[F]=0x00400000
+  bit5 -> CAN2.WHITE DO[F]=0x00200000
+  bit6 -> CAN3.RED   DO[F]=0x00800000
+  bit7 -> CAN3.WHITE DO[F]=0x00080000
+type 'ledbank_marquee 120 16' or 'ledbank_breath 1'
+ledbank_mask 55
+mask=0x37, DO[F]=0x04740000
+
+letter:/$ 
+letter:/$ ledbank_marquee 20 2
+marquee: period=20 ms, steps=2
+  t=974 ms step=2 -> CAN0.RED   (PF26) mask=0x01

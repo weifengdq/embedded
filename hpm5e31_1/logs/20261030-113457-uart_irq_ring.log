@@ -1,0 +1,22 @@
+lk=80000000 Hz
+  baud=921600, FIFO=32 bytes, RX trigger=not_em128 ring_level=0 ring_drop=0 fifo_overrun=0
+uart_ring_info
+uart_irq_ring @ hpm5e31_1
+  UART4 TX=PC16 RX=PC17, internal MCR loopback, src_clk=80000000 Hz
+  baud=921600, FIFO=32 bytes, RX trigger=not_empty, ring=256 bytes
+  irq=23 priority=2, isr=128 rx_bytes=128 ring_drop=0 fifo_overrun=0
+
+letter:/$ 
+letter:/$ uart_ring_burst 128 16
+burst n=128 pass=16: isr+128 rx+128 drop+0 verified=128 errors=0, 1.42 ms, 89 KB/s
+
+letter:/$ 
+letter:/$ uart_ring_burst 512 32
+burst n=512 pass=32: isr+512 rx+512 drop+0 verified=512 errors=0, 5.68 ms, 90 KB/s
+
+letter:/$ 
+letter:/$ uart_ring_stats
+isr=768 rx_bytes=768 ring_level=0 ring_drop=0 fifo_overrun=0
+
+letter:/$ 
+letter:/$ 

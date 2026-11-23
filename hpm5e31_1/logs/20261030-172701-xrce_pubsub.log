@@ -1,0 +1,39 @@
+N link up: 1000M SLAVE
+Enet phy init passed !
+IPv4 Address: 1cle 20
+[xrce] init rc=0 state=connected
+[xrce] entities: hello=0 adc=1 cmd=0
+[xrce] shell: xrce | stat | pub [text] | rst
+[xrce] state=connected up=2074 ms hello=0 adc=0 cmd=0 led=0
+[xrce] tx: samples=0 dg=15 bytes=598 drop=0 err=2 | rx: dg=14 bytes=197 samples=0 ovr=0
+[xrce] cpu0=480 MHz bsp_up=2130 ms loop=0/s adc_cost=0 us poll_cost=0 us
+[xrce] reliable: acked=0 retrans=0 reconnects=0 pub_err=0
+[xrce] STAT hello=0/s adc=0/s acked=0 => FAIL
+stat
+[xrce] state=connected up=2082 ms hello=0 adc=0 cmd=0 led=0
+[xrce] tx: samples=0 dg=16 bytes=622 drop=0 err=2 | rx: dg=16 bytes=223 samples=0 ovr=0
+[xrce] cpu0=480 MHz bsp_up=2137 ms loop=1/s adc_cost=0 us poll_cost=873 us
+[xrce] reliable: acked=5 retrans=0 reconnects=0 pub_err=0
+[xrce] STAT hello=0/s adc=0/s acked=5 => FAIL
+
+letter:/$ 
+letter:/$ [xrce] state=connected up=7074 ms hello=50 adc=500 cmd=0 led=0
+[xrce] tx: samples=550 dg=564 bytes=17926 drop=0 err=2 | rx: dg=65 bytes=860 samples=0 ovr=0
+[xrce] cpu0=480 MHz bsp_up=7129 ms loop=705/s adc_cost=0 us poll_cost=1000 us
+[xrce] reliable: acked=54 retrans=0 reconnects=0 pub_err=0
+[xrce] STAT hello=7/s adc=70/s acked=54 => PASS
+[xrce] state=connected up=12074 ms hello=100 adc=1000 cmd=0 led=0
+[xrce] tx: samples=1100 dg=1114 bytes=35326 drop=0 err=2 | rx: dg=115 bytes=1510 samples=0 ovr=0
+[xrce] cpu0=480 MHz bsp_up=12129 ms loop=826/s adc_cost=0 us poll_cost=1000 us
+[xrce] reliable: acked=104 retrans=0 reconnects=0 pub_err=0
+[xrce] STAT hello=8/s adc=82/s acked=104 => PASS
+[xrce] state=connected up=17074 ms hello=150 adc=1500 cmd=0 led=0
+[xrce] tx: samples=1650 dg=1664 bytes=52726 drop=0 err=2 | rx: dg=165 bytes=2160 samples=0 ovr=0
+[xrce] cpu0=480 MHz bsp_up=17128 ms loop=877/s adc_cost=0 us poll_cost=999 us
+[xrce] reliable: acked=154 retrans=0 reconnects=0 pub_err=0
+[xrce] STAT hello=8/s adc=87/s acked=154 => PASS
+[xrce] state=connected up=22074 ms hello=200 adc=2000 cmd=0 led=0
+[xrce] tx: samples=2200 dg=2214 bytes=70126 drop=0 err=2 | rx: dg=215 bytes=2810 samples=0 ovr=0
+[xrce] cpu0=480 MHz bsp_up=22128 ms loop=904/s adc_cost=0 us poll_cost=999 us
+[xrce] reliable: acked=204 retrans=0 reconnects=0 pub_err=0
+[xrce] STAT hello=9/s adc=90/s acked=204 => PASS

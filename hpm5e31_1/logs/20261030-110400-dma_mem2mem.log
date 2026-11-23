@@ -1,0 +1,80 @@
+
+  HDMA @0xf00c8000: width<=4 B, burst<=128 T
+  test buffer: 1nfo | dmasweep [bytes] | dmawidth [bytes] | dmachain
+dmainfo
+DMAv2 on HPM5E31: 2 controllers, 16 channels each
+  XDMA @0xf3100000: width<=8 B, burst<=1024 T
+  HDMA @0xf00c8000: width<=4 B, burst<=128 T
+  test buffer: 16384 B, non-cacheable AXI SRAM, mchtmr=24000000 Hz
+
+letter:/$ 
+letter:/$ dmasweep
+XDMA sweep (size=16384 B):
+  burst=    8 B      51.0 MB/s  (321.29 us, 50.99 MB/s per copy)
+  burst=   16 B     102.7 MB/s  (159.46 us, 102.75 MB/s per copy)
+  burst=   32 B     168.9 MB/s  ( 97.00 us, 168.91 MB/s per copy)
+  burst=   64 B     271.2 MB/s  ( 60.42 us, 271.18 MB/s per copy)
+  burst=  128 B     385.9 MB/s  ( 42.46 us, 385.88 MB/s per copy)
+  burst=  256 B     395.6 MB/s  ( 41.42 us, 395.59 MB/s per copy)
+  burst=  512 B     402.1 MB/s  ( 40.75 us, 402.06 MB/s per copy)
+  burst= 1024 B     401.7 MB/s  ( 40.79 us, 401.65 MB/s per copy)
+  burst= 2048 B     407.1 MB/s  ( 40.25 us, 407.06 MB/s per copy)
+  burst= 4096 B     406.2 MB/s  ( 40.33 us, 406.21 MB/s per copy)
+  burst= 8192 B     406.2 MB/s  ( 40.33 us, 406.21 MB/s per copy)
+HDMA sweep (size=16384 B):
+  burst=    8 B      24.1 MB/s  (678.92 us, 24.13 MB/s per copy)
+  burst=   16 B      58.6 MB/s  (279.79 us, 58.56 MB/s per copy)
+  burst=   32 B      88.4 MB/s  (185.38 us, 88.38 MB/s per copy)
+  burst=   64 B     117.7 MB/s  (139.21 us, 117.69 MB/s per copy)
+  burst=  128 B      25.9 MB/s  (632.21 us, 25.92 MB/s per copy)
+  burst=  256 B      26.0 MB/s  (631.33 us, 25.95 MB/s per copy)
+  burst=  512 B      26.0 MB/s  (630.88 us, 25.97 MB/s per copy)
+done (all data verified by memcmp)
+
+letter:/$ 
+letter:/$ dmawidth 4096
+XDMA explicit width/burst matrix (size=4096 B):
+  width=1 B burst=1T       7.2 MB/s  (571.54 us)
+  width=1 B burst=2T      13.0 MB/s  (314.96 us)
+  width=1 B burst=4T      21.6 MB/s  (189.50 us)
+  width=1 B burst=8T      35.2 MB/s  (116.38 us)
+  width=1 B burst=16T      51.3 MB/s  ( 79.79 us)
+  width=1 B burst=32T      66.2 MB/s  ( 61.83 us)
+  width=1 B burst=64T      77.5 MB/s  ( 52.83 us)
+  width=1 B burst=128T      84.8 MB/s  ( 48.29 us)
+  width=1 B burst=256T      85.9 MB/s  ( 47.71 us)
+  width=2 B burst=1T      14.4 MB/s  (284.00 us)
+  width=2 B burst=2T      25.8 MB/s  (158.58 us)
+  width=2 B burst=4T      42.6 MB/s  ( 96.08 us)
+  width=2 B burst=8T      68.8 MB/s  ( 59.54 us)
+  width=2 B burst=16T      98.6 MB/s  ( 41.54 us)
+  width=2 B burst=32T     128.2 MB/s  ( 31.96 us)
+  width=2 B burst=64T     149.2 MB/s  ( 27.46 us)
+  width=2 B burst=128T     149.2 MB/s  ( 27.46 us)
+  width=2 B burst=256T     149.2 MB/s  ( 27.46 us)
+  width=4 B burst=1T      28.6 MB/s  (143.38 us)
+  width=4 B burst=2T      50.6 MB/s  ( 80.96 us)
+  width=4 B burst=4T      82.8 MB/s  ( 49.46 us)
+  width=4 B burst=8T     132.7 MB/s  ( 30.88 us)
+  width=4 B burst=16T     187.2 MB/s  ( 21.88 us)
+  width=4 B burst=32T     234.6 MB/s  ( 17.46 us)
+  width=4 B burst=64T     236.3 MB/s  ( 17.33 us)
+  width=4 B burst=128T     243.3 MB/s  ( 16.83 us)
+  width=4 B burst=256T     243.9 MB/s  ( 16.79 us)
+  width=8 B burst=1T      56.0 MB/s  ( 73.08 us)
+  width=8 B burst=2T      98.5 MB/s  ( 41.58 us)
+  width=8 B burst=4T     158.6 MB/s  ( 25.83 us)
+  width=8 B burst=8T     244.5 MB/s  ( 16.75 us)
+  width=8 B burst=16T     333.2 MB/s  ( 12.29 us)
+  width=8 B burst=32T     332.1 MB/s  ( 12.33 us)
+  width=8 B burst=64T     348.6 MB/s  ( 11.75 us)
+  width=8 B burst=128T     348.6 MB/s  ( 11.75 us)
+  width=8 B burst=256T     348.6 MB/s  ( 11.75 us)
+verify: match
+
+letter:/$ 
+letter:/$ dmachain
+linked descriptor 0 config failed
+
+letter:/$ 
+letter:/$ 

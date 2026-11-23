@@ -1,0 +1,10 @@
+-
+  CAN0@500k  TEC=  0 REC=  0 LEC=7 BO=0 EP=0 EW=0 ACT=1 tdcv'run' to rerun, 'info' for details
+run
+
+=== mcan_error_recovery: CAN1 故意错配 250k，CAN0 500k ===
+--- 阶段1: 制造 ACK 错误直到 bus-off ---
+  CAN0@500k  TEC=111 REC=  0 LEC=0 BO=0 EP=0 EW=1 ACT=1 tdcv=0
+  CAN1@500k
+         listen-only TEC=  0 REC=  0 LEC=0 BO=0 EP=0 EW=0 ACT=1 tdcv=0
+[tx] submit st=0 idx=16

@@ -1,0 +1,17 @@
+[alive] t=15076 ms link=UP hb=150 rx0=2 echo=1
+[alive] t=20076 ms link=UP hb=200 rx0=36 echo=35
+[alive] t=25076 ms link=UP hb=250 rx0=86 echo=85
+[alive] t=30076 ms link=UP hb=300 rx0=646 echo=645
+[2J[1H
+ _         _   _                  _       ptpstats [reset] | ptpreset <sec> | ip | link
+sleep 1000
+[sys] sleep 1000 ms (PTP keep-alive)
+
+letter:/$ 
+letter:/$ ptp
+[ptp] state=MASTER domain=0 mech=E2E slaveOnly=false
+[ptp] hwclock=1651074121.636649440 s  offset=0 ns  pathdelay=0 ns  drift=0 (ppb*2^-16)
+[ptp] stepsRemoved=0 gm=000000..D00E prio1=100 class=248 link=DOWN
+
+letter:/$ 
+letter:/$ 

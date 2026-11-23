@@ -1,0 +1,20 @@
+eip/1.0.0
+Enet phy init passed !
+IPv4 Address: 192.168.2.100 | run | selftest | offer | stopoffer | sub | ip
+stat
+[someip] link=UP uptime=671 ms offer_state=1
+[someip] rx total=0 req=0 sd=0 malformed=0 | tx rsp=0 offer=1 ack=0 notif=0
+[someip] subs added=0 removed=0 expired=0 active=0 | fill counter=0 adc=0 temp=0
+[someip] counter=0 adc=0 temp=31.500 C
+
+letter:/$ 
+letter:/$ sub
+[someip] 0 subscriber(s)
+
+letter:/$ 
+letter:/$ evstat
+[ev] 事件生成次数（fill 调用）：counter(0x8001,100ms)=0 adc(0x8002,10ms)=0 temp(0x8004,500ms)=0
+[ev] 实际发出 NOTIFICATION=0 条，活跃订阅者=0
+
+letter:/$ 
+letter:/$ 

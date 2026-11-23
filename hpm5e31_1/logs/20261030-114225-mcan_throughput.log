@@ -1,0 +1,35 @@
+ghput
+[cfg] cpu=480 MHz, cases=6
+
+=== MCAN throughput (CAN0->CAN1 one-way, real bus, polling) ===
+can20-500k-8B    n=2000 rx=2000 bad=0 t=463708 us fps=4313 payload=0.28Mbps cyc/frame=111290 lec=0 tec=0 rec=0
+can20-1M-8B      n=2000 rx=2000 bad=0 t=232141 us fps=8615 payload=0.55Mbps cyc/frame=55714 lec=0 tec=0 rec=0
+fd-500k-2M-64B   n=2000 rx=2000 bad=0 t=759789 us fps=2632 payload=1.35Mbps cyc/frame=182349 lec=0 tec=0 rec=0
+fd-1M-2M-64B     n=2000 rx=2000 bad=0 t=703610 us fps=2842 payload=1.46Mbps cyc/frame=168866 lec=0 tec=0 rec=0
+fd-1M-5M-64B     n=2000 rx=2000 bad=0 t=317390 us fps=6301 payload=3.23Mbps cyc/frame=76174 lec=0 tec=0 rec=0
+fd-1M-8M-64B     n=2000 rx=2000 bad=0 t=220786 us fps=9059 payload=4.64Mbps cyc/frame=52989 lec=0 tec=0 rec=0
+THR SUMMARY done
+done. commands: info | thr [n] | one <idx> [n]
+info
+sample: mcan_throughput  cases=6
+  [0] can20-500k-8B    fd=0 dlc=8
+  [1] can20-1M-8B      fd=0 dlc=8
+  [2] fd-500k-2M-64B   fd=1 dlc=15
+  [3] fd-1M-2M-64B     fd=1 dlc=15
+  [4] fd-1M-5M-64B     fd=1 dlc=15
+  [5] fd-1M-8M-64B     fd=1 dlc=15
+
+letter:/$ 
+letter:/$ thr 2000
+
+=== MCAN throughput (CAN0->CAN1 one-way, real bus, polling) ===
+can20-500k-8B    n=2000 rx=2000 bad=0 t=463688 us fps=4313 payload=0.28Mbps cyc/frame=111285 lec=0 tec=0 rec=0
+can20-1M-8B      n=2000 rx=2000 bad=0 t=232148 us fps=8615 payload=0.55Mbps cyc/frame=55716 lec=0 tec=0 rec=0
+fd-500k-2M-64B   n=2000 rx=2000 bad=0 t=759785 us fps=2632 payload=1.35Mbps cyc/frame=182348 lec=0 tec=0 rec=0
+fd-1M-2M-64B     n=2000 rx=2000 bad=0 t=703581 us fps=2843 payload=1.46Mbps cyc/frame=168859 lec=0 tec=0 rec=0
+fd-1M-5M-64B     n=2000 rx=2000 bad=0 t=317384 us fps=6302 payload=3.23Mbps cyc/frame=76172 lec=0 tec=0 rec=0
+fd-1M-8M-64B     n=2000 rx=2000 bad=0 t=220789 us fps=9058 payload=4.64Mbps cyc/frame=52989 lec=0 tec=0 rec=0
+THR SUMMARY done
+
+letter:/$ 
+letter:/$ 

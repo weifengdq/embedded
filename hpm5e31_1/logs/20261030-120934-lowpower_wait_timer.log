@@ -1,0 +1,16 @@
+mchtmr = 24000000 Hz
+  wake count=0
+shell: lpinfo | lpwait [n]
+lpwait 20
+lpwait: 20 次 WFI, GPTMR1 每 100 ms 唤醒
+  唤醒延迟(中断触发->CPU 恢复): min=208 ns, avg=95 ns, max=250 ns (mchtmr 24000000 Hz, 1 tick=41.7 ns)
+  唤醒周期: avg=99999 us (配置 100 ms, n=9)
+
+letter:/$ 
+letter:/$ lpwait 20
+lpwait: 20 次 WFI, GPTMR1 每 100 ms 唤醒
+  唤醒延迟(中断触发->CPU 恢复): min=208 ns, avg=210 ns, max=250 ns (mchtmr 24000000 Hz, 1 tick=41.7 ns)
+  唤醒周期: avg=100000 us (配置 100 ms, n=19)
+
+letter:/$ 
+letter:/$ 

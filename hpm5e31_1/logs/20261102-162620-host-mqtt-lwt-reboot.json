@@ -1,0 +1,7 @@
+{
+ "mode": "reboot",
+ "broker": "192.168.2.1:1883",
+ "lwt_ms": 304.0,
+ "reboot_back_ms": 0.8,
+ "verdict": "PASS"
+}

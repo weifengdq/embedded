@@ -1,0 +1,21 @@
+ples min=34677 max=35695 -> PASS (有噪声底)
+type: adcinfo / adc / adcstat 1000 / adcver / adcerr / help
+adc
+ADC0.IN01 raw=34761 (1750382 uV) status=0
+
+letter:/$ 
+letter:/$ adcstat 1000
+ADCSTAT: n=1000 mean=35400.78 LSB sd=79.03 LSB min=35257 max=36771 pp=1514 ENOB=7.93 bit
+ADCSTAT: mean=1782597 uV pp=76237 uV ; 2.02 us/sample = 494.9 kHz (含 Start+Read)
+
+letter:/$ 
+letter:/$ adcstat 5000
+ADCSTAT: n=5000 mean=35399.54 LSB sd=59.36 LSB min=35249 max=36997 pp=1748 ENOB=8.50 bit
+ADCSTAT: mean=1782535 uV pp=88020 uV ; 1.97 us/sample = 508.4 kHz (含 Start+Read)
+
+letter:/$ 
+letter:/$ adcerr
+DET: before=0 after=6 delta=6
+
+letter:/$ 
+letter:/$ 

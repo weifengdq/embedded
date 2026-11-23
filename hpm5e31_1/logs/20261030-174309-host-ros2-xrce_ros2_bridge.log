@@ -1,0 +1,78 @@
+# host 侧 ROS 2 验收输出（hwrun --post 阶段）
+# 对应例程      : samples/app/xrce_ros2_bridge
+# 对应串口日志  : logs/20261030-174309-xrce_ros2_bridge.log
+# 采集方式      : bash scripts/hwrun.sh app/xrce_ros2_bridge --secs N --send "stat" \
+#                 --post "timeout 75 bash host/xrce/test_ros2_bridge.sh" --lock-wait 1800
+# 环境          : source /opt/ros/lyrical/setup.bash; 系统 python3 (3.14)
+
+START 17:43:09
+[hwrun] board lock acquired (xrce_ros2_bridge) pid=423055
+|_| |_ ___ _ __   ___| 
+letter:/$ \r\n=== xrce_ros2_bridge: XRC5.255.0
+IPv4 Gateway: 192.168.2.1
+[bridge] xrce init rc=0 state=connected\r\n[bridge] entities adc=0 status=1 cmd=0 ; shell: brstat | brrst\r\n[bridge] up=2015 ms state=connected adc=0 (0.0 Hz) cmd=0 ack_tx=0 status=0\r\n[bridge] tx dg=14 bytes=581 drop=0 err=2 | rx dg=14 samples=0 retrans=0\r\n[bridge] STAT adc_hz=0.0 cmd=0 => FAIL\r\nbrstat
+[bridge] up=2024 ms state=connected adc=0 (0.0 Hz) cmd=0 ack_tx=5 status=0\r\n[bridge] tx dg=15 bytes=605 drop=0 err=2 | rx dg=15 samples=0 retrans=0\r\n[bridge] STAT adc_hz=0.0 cmd=0 => FAIL\r\n
+letter:/$ 
+letter:/$ [bridge] up=7015 ms state=connected adc=500 (101.1 Hz) cmd=0 ack_tx=9 status=5\r\n[bridge] tx dg=518 bytes=16749 drop=0 err=2 | rx dg=19 samples=0 retrans=0\r\n[bridge] STAT adc_hz=101.1 cmd=0 => PASS\r\n[bridge] up=12015 ms state=connected adc=1000 (100.5 Hz) cmd=0 ack_tx=14 status=10\r\n[bridge] tx dg=1023 bytes=32977 drop=0 err=2 | rx dg=24 samples=0 retrans=0\r\n[bridge] STAT adc_hz=100.5 cmd=0 => PASS\r\n[bridge] up=17015 ms state=connected adc=1500 (100.3 Hz) cmd=0 ack_tx=19 status=15\r\n[bridge] tx dg=1528 bytes=49217 drop=0 err=2 | rx dg=29 samples=0 retrans=0\r\n[bridge] STAT adc_hz=100.3 cmd=0 => PASS\r\n[hwrun] post (持锁运行上位机测试): timeout 75 bash host/xrce/test_ros2_bridge.sh
+==================== [1] Agent 监听状态 ====================
+UNCONN 0      0             0.0.0.0:2018       0.0.0.0:*    users:(("MicroXRCEAgent",pid=311811,fd=3)) 
+==================== [2] ROS 2 侧可见的 XRCE 话题 ====================
+/hpm5e31/adc
+/hpm5e31/cmd
+/hpm5e31/hello
+/hpm5e31/status
+==================== [3] ros2 topic hz /hpm5e31/adc（5 s 窗口） ====================
+average rate: 100.069
+	min: 0.010s max: 0.010s std dev: 0.00015s window: 40
+average rate: 99.927
+	min: 0.010s max: 0.010s std dev: 0.00016s window: 40
+average rate: 100.059
+	min: 0.010s max: 0.011s std dev: 0.00018s window: 40
+==================== [4] ros2 topic echo --once ====================
+layout:
+  dim: []
+  data_offset: 0
+data:
+- 34908
+- 28429
+- 20432
+- 4545
+---
+==================== [5] adc 订阅统计（频率/抖动/丢帧） ====================
+====================================================================
+ HPM5E31 XRCE-DDS -> ROS 2 ADC 订阅统计（topic=/hpm5e31/adc, qos=BEST_EFFORT）
+====================================================================
+ 样本数            : 994
+ 测量窗口          : 9.93 s
+ 平均频率          : 100.01 Hz
+ 到达间隔抖动 σ    : 0.29 ms
+ 计数器丢帧        : 0（0.00 %）
+ 最后一帧 4×u16    : [34905, 28404, 20410, 5583]
+ 结论              : PASS
+====================================================================
+==================== [6] cmd -> LED 控制 + 命令往返 RTT ====================
+[cmd] 等待订阅者匹配（Agent 侧的 XRCE DataReader）…
+[cmd] matched_subscriptions = 2
+[cmd] #1 -> UInt8(2)
+[cmd] #2 -> UInt8(2)
+[cmd] #3 -> UInt8(2)
+[cmd] #4 -> UInt8(2)
+[cmd] #5 -> UInt8(2)
+[cmd] #6 -> UInt8(2)
+====================================================================
+ HPM5E31 XRCE cmd -> LED 控制 / 命令往返时延
+====================================================================
+ 发送次数          : 6
+ 收到 ack          : 6
+ RTT 最小/中位/最大: 2.51 / 3.40 / 3.48 ms
+ 单向延迟上界(RTT/2): 1.74 ms
+ 结论              : PASS
+====================================================================
+==================== [7] hello 话题（String，板端 ack 也在这里） ====================
+data: adc=6300 cmd=6 ack=63 up=65067
+---
+BRIDGE_DONE rc=0
+[hwrun] post rc=0
+---- LOG: logs/20261030-174309-xrce_ros2_bridge.log (rc=0) ----
+EXIT=0
+END 17:46:01

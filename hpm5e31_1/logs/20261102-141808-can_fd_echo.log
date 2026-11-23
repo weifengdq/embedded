@@ -1,0 +1,48 @@
+ontrollers=4 hth=16 filters=36
+start failed, check transceiveran stat' / 'can err'
+can probe 50
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD 500k/1M (no TDC) (baud cfg ID4) ---
+  64B pingpong: ok=50/50 avg=846us max=870us | CAN0 errstate=0 REC=0 TEC=0
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD 500k/2M (TDC 15/15) (baud cfg ID2) ---
+  64B pingpong: ok=50/50 avg=704us max=715us | CAN0 errstate=0 REC=0 TEC=0
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD 500k/5M (TDC 20/20) (baud cfg ID3) ---
+  64B pingpong: ok=0/50 avg=0us max=0us | CAN0 errstate=2 REC=0 TEC=248
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+
+letter:/$ 
+letter:/$ can sizes 30
+FD sizes (arb 500k / data 2M, BRS on):
+  len  dlc   ok/total   avg_us   max_us
+    8    8   30/30      254       998
+   12    9   30/30      262       267
+   16   10   30/30      297       303
+   20   11   30/30      335       343
+   24   12   30/30      369       376
+   32   13   30/30      436       442
+   48   14   30/30      572       581
+   64   15   30/30      706       713
+rx_total=680 rx_overflow=0 tx_confirmed=680
+
+letter:/$ 
+letter:/$ can stat
+CAN0: mode=1 errstate=0 REC=0 TEC=0
+CAN1: mode=1 errstate=0 REC=0 TEC=0
+rx_total=680 rx_overflow=0 tx_confirmed=680 busoff=8 det=4
+
+letter:/$ 
+letter:/$ 

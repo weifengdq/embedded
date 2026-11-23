@@ -1,0 +1,14 @@
+
+ _         _   _                  _          _ _ 
+| |    ___| |_| |_ ___ _ __   ___| 
+letter:/$ 
+=== bench_dhrystone (Dhry5000000 runs=2
+commands: dh <n> | dhstat | dhinfo
+BENCH_RUN idx=1 secs=4.421732 dhrystones_per_s=1130778.55 dmips=643.58 dmips_per_mhz=1.3408 verify=FAIL
+BENCH_RUN idx=2 secs=4.421708 dhrystones_per_s=1130784.84 dmips=643.59 dmips_per_mhz=1.3408 verify=FAIL
+
+===== Dhrystone summary (n=2, LOOP_COUNT=5000000) =====
+cpu=480 MHz  opt=-O2  -fno-inline
+DMIPS     mean=643.59
+DMIPS/MHz mean=1.3408 sd=0.0000 min=1.3408 max=1.3408
+BENCH_STAT metric=dhrystone n=2 mean_dmips=643.59 dmips_per_mhz=1.3408 sd=0.0000 min=1.3408 max=1.3408

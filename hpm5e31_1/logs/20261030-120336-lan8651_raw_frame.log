@@ -1,0 +1,40 @@
+39072.63,31.13,180,9.44,45.2
+10,20000000,5,769230,35456.62,58.42,1423,8.52,464.0
+10,20000000,20,487804,36388.94,45.47,580,8.ds: send [n] | poll | stats | plca <on|off> [..] | probe
+plca on 0 8 32 0 128
+PLCA: en=1 node_id=0 node_cnt=8 to_tmr=32 burst_cnt=0 burst_tmr=128 status=0x8000 (PST=1)
+
+letter:/$ 
+letter:/$ stats
+[stats] ctrl xfers=89 err=1 | data xfers=0 | tx_frames=0 tx_bytes=0 | rx_frames=0 rx_bytes=0 dropped=0
+[stats] ext_status=0 hdr_bad=0 cfg_sync_lost=0 last_STATUS0=0x00000040 replies=0
+
+letter:/$ 
+letter:/$ send 2
+[tx] #0 len=58 ret=ok tx_credits=31
+[rx] len=64 dst=ff:ff:ff:ff:ff:ff src=00:1e:c0:d1:c3:37 type=0x88b5
+      payload: 11 22 9a 33 00 01 02 03 04 05 06 07 08 09 0a 0b 
+0c 0d 0e 0f 10 11 12 13 14 15 16 17 18 19 1a 1b 
+      replied with 58 bytes (total replies 1)
+[rx] len=64 dst=ff:ff:ff:ff:ff:ff src=00:1e:c0:d1:c3:37 type=0x88b5
+      payload: 11 22 9b 33 00 01 02 03 04 05 06 07 08 09 0a 0b 
+0c 0d 0e 0f 10 11 12 13 14 15 16 17 18 19 1a 1b 
+      replied with 58 bytes (total replies 2)
+[rx] len=64 dst=ff:ff:ff:ff:ff:ff src=00:1e:c0:d1:c3:37 type=0x88b5
+      payload: 11 22 9c 33 00 01 02 03 04 05 06 07 08 09 0a 0b 
+0c 0d 0e 0f 10 11 12 13 14 15 16 17 18 19 1a 1b 
+      replied with 58 bytes (total replies 3)
+[tx] #1 len=58 ret=ok tx_credits=31
+
+letter:/$ [rx] len=64 dst=ff:ff:ff:ff:ff:ff src=00:1e:c0:d1:c3:37 type=0x88b5
+      payload: 11 22 9d 33 00 01 02 03 04 05 06 07 08 09 0a 0b 
+0c 0d 0e 0f 10 11 12 13 14 15 16 17 18 19 1a 1b 
+      replied with 58 bytes (total replies 4)
+
+letter:/$ stats
+[stats] ctrl xfers=89 err=1 | data xfers=7 | tx_frames=6 tx_bytes=348 | rx_frames=4 rx_bytes=256 dropped=0
+[stats] ext_status=0 hdr_bad=0 cfg_sync_lost=0 last_STATUS0=0x00000040 replies=4
+[stats] peer MAC 00:1e:c0:d1:c3:37
+
+letter:/$ 
+letter:/$ 

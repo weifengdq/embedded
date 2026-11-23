@@ -1,0 +1,34 @@
+=== USB CDC ACM 回显验证（干净流程） ===
+时间: Fri Oct 30 12:13:03 PM CST 2026
+板端: scripts/hwrun.sh usb/usb_cdc_acm_echo --secs 28 --no-build
+枚举端口: /dev/ttyACM2
+
+--- sysfs 设备属性 (idVendor=34b7) ---
+idVendor     34b7
+idProduct    ffff
+manufacturer HPMicro
+product      HPMicro CDC DEMO
+serial       2024051702
+bcdUSB       
+bcdDevice    0100
+speed        480
+
+--- ls -l /dev/ttyACM* ---
+crw-rw----  1 root dialout 166, 0 Oct 30 12:12 /dev/ttyACM0
+crw-rw-rw-+ 1 root dialout 166, 1 Oct 30 11:39 /dev/ttyACM1
+crw-rw----  1 root dialout 166, 2 Oct 30 12:13 /dev/ttyACM2
+
+--- journalctl -k (since -3 min, 含 USB 枚举) ---
+Oct 30 12:13:03 ubuntu kernel: usb 1-8: new high-speed USB device number 25 using xhci_hcd
+Oct 30 12:13:03 ubuntu kernel: usb 1-8: New USB device found, idVendor=34b7, idProduct=ffff, bcdDevice= 1.00
+Oct 30 12:13:03 ubuntu kernel: usb 1-8: New USB device strings: Mfr=1, Product=2, SerialNumber=3
+Oct 30 12:13:03 ubuntu kernel: usb 1-8: Product: HPMicro CDC DEMO
+Oct 30 12:13:03 ubuntu kernel: usb 1-8: Manufacturer: HPMicro
+Oct 30 12:13:03 ubuntu kernel: usb 1-8: SerialNumber: 2024051702
+Oct 30 12:13:03 ubuntu kernel: cdc_acm 1-8:1.0: ttyACM2: USB ACM device
+
+--- 回显测试 (pyserial, 115200) ---
+attempt 1: tx=b'hello-hpm5e31\n' rx=b'hello-hpm5e31\n'
+attempt 2: tx=b'hello-hpm5e31\n' rx=b'hello-hpm5e31\n'
+attempt 3: tx=b'hello-hpm5e31\n' rx=b'hello-hpm5e31\n'
+RESULT: PASS (3 次回显一致)

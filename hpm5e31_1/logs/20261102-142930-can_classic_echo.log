@@ -1,0 +1,16 @@
+] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+[start] CAN0/CAN1 STARTED' / 'mode 0 start' / 'ver' / 'info'
+can echo 200
+ECHO classic 500k: n=200 ok=200 lost_req=0 lost_echo=0 bad=0 total=95544us
+  echo_latency: avg=238us max=245us  roundtrip=2093/s
+  rx_total=400 rx_overflow=0 tx_confirmed=400 busoff=0
+
+letter:/$ 
+letter:/$ can stream 300
+STREAM classic 500k: sent=300 rx=300 bad=0 total=71377us => 4203 frame/s
+  payload=0.27 Mbit/s (8B/frame, 108 bit on wire)  bus=0.5 Mbit/s  wire_eff=53.8%
+  rx_overflow=0 tx_confirmed=700
+
+letter:/$ 
+letter:/$ 

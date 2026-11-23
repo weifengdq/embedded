@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+"""R5: hpm5e31_1 测试连接总图（第 51 章附录）。graphviz。"""
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _common import render_dot
+
+dot = r"""
+digraph setup {
+  graph [rankdir=LR, bgcolor="white", nodesep=0.32, ranksep=0.85, fontname="Noto Sans CJK SC"];
+  node  [shape=box, style="rounded,filled", fillcolor="#F6F8FA", color="#57606A",
+         fontname="Noto Sans CJK SC", fontsize=9.5, margin="0.10,0.05"];
+  edge  [color="#57606A", fontname="Noto Sans CJK SC", fontsize=8, arrowsize=0.7];
+
+  subgraph cluster_host {
+    label="Ubuntu 主机（远程 SSH）"; fontsize=10; color="#1F6FEB"; style="rounded,dashed";
+    jlink  [label="J-Link\nJTAG 调试/烧写"];
+    ch343  [label="CH343\n/dev/ttyACM0 921600"];
+    t1s    [label="10BASE-T1S USB 适配器\nenx001ec0d1c337 192.168.1.1"];
+    ethc   [label="千兆车载以太网转换盒\nenp6s0 192.168.2.1"];
+    host   [label="构建/测试脚本\nbuild_all · hwrun · host/*", fillcolor="#DDF4FF", color="#1F6FEB"];
+  }
+
+  subgraph cluster_board {
+    label="hpm5e31_1 板卡"; fontsize=10; color="#2EA043"; style="rounded,dashed";
+    mcu    [label="HPM5E31\nRV32 480MHz", fillcolor="#DAFBE1", color="#2EA043"];
+    can0   [label="CAN0 PD00/PD01"];
+    can1   [label="CAN1 PD05/PD04"];
+    can2   [label="CAN2 PC08/PA09"];
+    can3   [label="CAN3 PC15/PC14"];
+    spi1   [label="SPI1 PC10~13"];
+    spi3   [label="SPI3 PA26~29"];
+    i2c2   [label="I2C2 PD02/PD03"];
+    i2c3   [label="I2C3 PD07/PD06"];
+    lan    [label="LAN8651\nSPI2 PA20~24"];
+    yt     [label="YT8011AN\nRGMII PF02~13"];
+    usb    [label="USB0 Pin67/68\n(gs_usb / CDC)"];
+    led    [label="8×CAN LED + USR LED/BTN"];
+  }
+
+  jlink -> mcu [label="JTAG"];
+  ch343 -> mcu [label="UART0 PA00/PA01"];
+  host  -> jlink [style=dashed];
+  host  -> ch343 [style=dashed];
+  t1s   -> lan  [label="10BASE-T1S 双绞线"];
+  ethc  -> yt   [label="1000BASE-T1"];
+  mcu -> can0; mcu -> can1; mcu -> can2; mcu -> can3;
+  can0 -> can1 [label="120Ω 两两相连", dir=both, style=bold, color="#DA3633"];
+  can2 -> can3 [label="120Ω 两两相连", dir=both, style=bold, color="#DA3633"];
+  mcu -> spi1; mcu -> spi3;
+  spi1 -> spi3 [label="SCLK/MISO/MOSI/CS 交叉", dir=both, style=bold, color="#8957E5"];
+  mcu -> i2c2; mcu -> i2c3;
+  i2c2 -> i2c3 [label="SCL/SDA 直连", dir=both, style=bold, color="#D29922"];
+  mcu -> lan; mcu -> yt; mcu -> usb; mcu -> led;
+}
+"""
+
+render_dot(dot, 52, "fig-51-1-test-setup")

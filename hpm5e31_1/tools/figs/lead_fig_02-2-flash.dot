@@ -1,0 +1,13 @@
+digraph G {
+  graph [rankdir=LR, fontname="Noto Sans CJK SC", fontsize=12, nodesep=0.12, ranksep=0.5, bgcolor="white"];
+  node [shape=record, fontname="Noto Sans CJK SC", fontsize=11, style="filled", fillcolor="#e8f1fb", color="#2b6cb0"];
+  map [label=<<table border="1" cellborder="1" cellspacing="0" cellpadding="4">
+    <tr><td width="110">偏移</td><td width="120">大小</td><td width="330">内容</td></tr>
+    <tr><td>0x0000_0000</td><td>0x400</td><td>（保留）</td></tr>
+    <tr><td>0x0000_0400</td><td>0x10</td><td>nor_cfg_option（Flash 配置字 option[0..3]）</td></tr>
+    <tr><td>0x0000_1000</td><td>~0x2000</td><td>boot_header（容器头 tag=0xBF、fw_info、签名）</td></tr>
+    <tr><td>0x0000_3000</td><td>剩余</td><td>应用镜像（.start / .text / .rodata / 数据初值）</td></tr>
+  </table>>];
+  hi [label="本次实测：hello_world ~57 KB，letter_shell ~64 KB；\nFlash 总量 1 MB，起始 0x8000_0000\n链接脚本：soc/HPM5E00/HPM5E31/toolchains/gcc/flash_xip.ld", shape=note, fillcolor="#fffaf0", color="#975a16"];
+  map -> hi [style=invis];
+}

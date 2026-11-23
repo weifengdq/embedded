@@ -1,0 +1,8 @@
+ idle level=1
+[phy] PHY ID OK: YT8011 (0x4F51 / OUI 0x3A)
+-- [val] | poll [secs] | restore
+irq on
+[irq] enabled=1 nINT level=1
+
+letter:/$ 
+letter:/$ 

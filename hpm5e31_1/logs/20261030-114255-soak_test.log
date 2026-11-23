@@ -1,0 +1,7 @@
+mer ok)
+
+[soak] start: buf=8 KB, heartbeat=60 s
+[soak] beat=1 uptime=60.000 s irq=70249 cycles=19998 err=0
+[soak] beat=2 uptime=120.001 s irq=140504 cycles=39998 err=0
+[soak] beat=3 uptime=180.002 s irq=210758 cycles=59998 err=0
+[soak] beat=4 uptime=240.000 s irq=281009 cycles=79997 err=0

@@ -1,0 +1,27 @@
+00M SLAVE
+Enet phy init passed !
+[net] Enet controller + PHY  mode <1000|100>
+link
+[phy] link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D thread=0
+
+letter:/$ 
+letter:/$ iserver udp
+[iperf] UDP server started on port 5001
+
+letter:/$ 
+letter:/$ New UDP client (settings flags 0x0)
+Sending report back to client (0x80).
+Jitter 0.000, Lost 1/89165 datagrams, OoO 1
+[iperf] type=6 remote=192.168.2.1:54536 bytes=131072550 ms=10010 => 104753 kbit/s (104.75 Mbit/s)
+New UDP client (settings flags 0x0)
+Sending report back to client (0x80).
+Jitter 0.000, Lost 664/266832 datagrams, OoO 1
+New UDP client (settings flags 0x0)
+[iperf] type=6 remote=192.168.2.1:48198 bytes=392243040 ms=9986 => 314234 kbit/s (314.23 Mbit/s)
+Sending report back to client (0x80).
+Jitter 0.000, Lost 45/534946 datagrams, OoO 3
+[iperf] type=6 remote=192.168.2.1:43344 bytes=786370620 ms=10011 => 628405 kbit/s (628.40 Mbit/s)
+New UDP client (settings flags 0x0)
+Sending report back to client (0x80).
+Jitter 0.000, Lost 7/802473 datagrams, OoO 2
+[iperf] type=6 remote=192.168.2.1:52643 bytes=1179635310 ms=10011 => 942671 kbit/s (942.67 Mbit/s)

@@ -1,0 +1,69 @@
+����0 �e0��0�%.�����>�% �e0��0��B���0���0�% ����0�.��% �z���ztocols, gateway
+[app] co_node_init=0 (CAN2 node 1)
+[app] co_master_init=0 (CAN3 master)
+Enet phy init passed !
+IPv4 Address: 192.168.2.100
+IPv4 Netmask: 255.255.255.0
+IPv4 Gateway: 192.168.2.1
+[lwip] cfg ip=192.168.2.100 mask=255.255.255.0 gw=192.168.2.1
+[lwip] aton+set: ip=6402A8C0 mask=00FFFFFF gw=0102A8C0
+[lwip] netif now: ip=6402A8C0 mask=00FFFFFF gw=0102A8C0 hwlen=6 mac=00:00:00:00:D0:0E
+[lwip] netif=en idx=1 MAC=00:00:00:00:D0:0E
+[lwip] IP=192.168.2.100 link=DOWN
+[lwip] MASK=255.255.255.0
+[lwip] GW=192.168.2.1
+[lwip] PHY link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D
+[lwip] link UP after 11 ms
+[lwip] netif=en idx=1 MAC=00:00:00:00:D0:0E
+[lwip] IP=192.168.2.100 link=UP
+[lwip] MASK=255.255.255.0
+[lwip] GW=192.168.2.1
+[lwip] PHY link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D
+[lwip] ready: IP=192.168.2.100 port 任意 UDP 可直接收
+[app] lwip init rc=0 link=UP
+[gw] ch1: CAN1 <-> UDP 4000 (local 192.168.2.100)
+[gw] cannelloni v2 gateway ready, 1 channel(s), peer=auto-learn
+[app] app_can_gw_init=0 (CAN1 <-> UDP4000) peer=(none)
+[pass] multiproto ready: j1939_sa=0x00 gw=(none) canopen_state=5 loops=110876
+
+=== multiproto MIX(4ch) 15s (J1939+gateway + CANopen node/master) ===
+  [CPU/RAM] loops/s=155575 max_loop=1029 us dur=15000 ms | j1939_stack=9760 B bus=24 B
+  [CANopen] heap=2876 B node_tx(统计不可用)=0 node_rx=0 master_tx=1530 master_rx=1559 hb=14 max_node_cycle=70665 us
+  [J1939 ] EEC1=1500 (期望~1500) gap min/avg/max=9068/9999/10053 us | CCVS1=150 ET1=15 DM1=15 | bus tx=1760 rx=0 dropped=0
+  [SYNC  ] n=1500 period avg/max=10000/12231 us (10 ms 节拍)
+  [SDO   ] n=30 ok=30 avg/min/max=490/487/500 us rc=0 0x2102=0
+  [GW    ] CAN1->UDP frames=1680 udp_tx=0 udp_rx=0 drop_can=0 drop_udp=1680 bad=0
+  [4CH   ]     CAN0 LEC=0 act=1 bo=0 tec=0 rec=0
+    CAN1 LEC=0 act=1 bo=0 tec=0 rec=0
+    CAN2 LEC=0 act=1 bo=0 tec=0 rec=0
+    CAN3 LEC=0 act=1 bo=0 tec=0 rec=0
+            跨通道对账: node_tx-master_rx=-1559 master_tx-node_rx=1530 (期望 0 附近)
+  J1939 EEC1 周期 10ms 计数                  PASS  n=1500 expect>=1350
+  J1939 EEC1 最大间隔 <30ms                  PASS  max=10053 us
+  CANopen SYNC 10ms 节拍计数                 PASS  n=1500 expect>=1350
+  CANopen SYNC 最大间隔 <15ms                PASS  max=12231 us
+  CANopen SDO 读全部成功                    PASS  ok=30/30 avg=490 us
+  CANopen 从站 TPDO/HB 可见(主站侧)       PASS  master_rx=1559 hb=14 sdo_ok=30
+  网关 0 丢弃/0 坏包(无 peer: drop_udp 豁免) PASS  drop_can=0 drop_udp=1680 bad=0 peer=(none)
+  网关确实在搬运 CAN1 帧                 PASS  CAN1->UDP=1680 UDP->CAN=0
+  RESULT: PASS (8 PASS / 0 FAIL)
+
+=== multiproto MIX-J(J1939 only) 8s (J1939+gateway) ===
+  [CPU/RAM] loops/s=277707 max_loop=594 us dur=8000 ms | j1939_stack=9760 B bus=24 B
+  [CANopen] heap=2876 B node_tx(统计不可用)=0 node_rx=0 master_tx=0 master_rx=0 hb=0 max_node_cycle=70665 us
+  [J1939 ] EEC1=800 (期望~800) gap min/avg/max=9409/9999/10004 us | CCVS1=80 ET1=8 DM1=8 | bus tx=2656 rx=0 dropped=0
+  [SYNC  ] n=0 period avg/max=0/0 us (10 ms 节拍)
+  [SDO   ] n=0 ok=0 avg/min/max=0/0/0 us rc=0 0x2102=0
+  [GW    ] CAN1->UDP frames=896 udp_tx=0 udp_rx=0 drop_can=0 drop_udp=896 bad=0
+  [4CH   ]     CAN0 LEC=0 act=1 bo=0 tec=0 rec=0
+    CAN1 LEC=0 act=1 bo=0 tec=0 rec=0
+    CAN2 LEC=0 act=1 bo=0 tec=0 rec=0
+    CAN3 LEC=0 act=1 bo=0 tec=0 rec=0
+            跨通道对账: node_tx-master_rx=0 master_tx-node_rx=0 (期望 0 附近)
+  J1939 EEC1 周期 10ms 计数                  PASS  n=800 expect>=720
+  J1939 EEC1 最大间隔 <30ms                  PASS  max=10004 us
+  网关 0 丢弃/0 坏包(无 peer: drop_udp 豁免) PASS  drop_can=0 drop_udp=896 bad=0 peer=(none)
+  网关确实在搬运 CAN1 帧                 PASS  CAN1->UDP=896 UDP->CAN=0
+  RESULT: PASS (4 PASS / 0 FAIL)
+
+[app] auto sequence done; shell: mix|mixj|quad [secs] / stat / info

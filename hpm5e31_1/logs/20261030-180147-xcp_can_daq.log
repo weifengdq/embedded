@@ -1,0 +1,26 @@
+t] GPTMR events ...
+[init] 事件通道就绪（EVT0=1 kHz, EV_CLOCK = 103945 us
+-- 4) DAQ 采集 600 ms --
+     list0 事件数=601 实测事件率=1000.4 Hz（配置 1000 Hz）
+     list0 ODT 帧数=1803（每事件 3 帧）总帧率=3099 frame/s
+     时间戳抖动：n=601 mean=1000 us min=1000 us max=1000 us sd=0 us
+     事件丢失：lost_events=0（按 g_tick_cnt 连续计数判定）
+  [PASS] DAQ 收到事件采样
+  [PASS] list0 事件率在 900~1100 Hz
+  [PASS] list0 无丢帧
+  [PASS] 时间戳平均间隔 ≈ 1000 us
+  [PASS] 时间戳最大间隔 < 3 ms
+     slave: cto_rx=54 daq_frames=1863 dropped=0 overload=0
+  [PASS] 从站 DAQ 队列无丢弃
+  [PASS] 从站 CAN 发送无 TX FIFO 满
+  [PASS] 停止 DAQ 后命令通道仍正常
+=== 自证结论：PASS（FAIL=0）===
+XCP SELFTEST PASS fail=0
+selftest
+
+=== XCP 板内自证（CAN1 主机 <-> CAN0 从站，0x555/0x556）===
+-- 1) CONNECT / GET_STATUS / GET_ID --
+     CONNECT: resource=0x05 commBasic=0x80 MAX_CTO=8 MAX_DTO=8 proto=1.4 trans=0.1
+  [PASS] CONNECT 报告 DAQ 资源
+  [PASS] MAX_CTO/MAX_DTO = 8
+  

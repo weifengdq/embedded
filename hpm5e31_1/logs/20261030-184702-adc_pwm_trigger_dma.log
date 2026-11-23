@@ -1,0 +1,11 @@
+pped, irq_cnt=0
+shell: adcinfo | adcdma [ms] | adcstop
+adcinfo
+ADC16 ADC0 sequence + PWM trigger + DMA
+  conv clk  : 50000000 Hz, sample_cycle=20, 1 channel (IN1)
+  trigger   : PWM0 TRGO_0 -> TRGM -> ADC0_STRGI @ 20000 Hz
+  dma buffer: 1024 words @0x01230000 (non-cacheable)
+  pwm state : running, irq_cnt=13435
+
+letter:/$ 
+letter:/$ adcdma 500

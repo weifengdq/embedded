@@ -1,0 +1,88 @@
+[r5] 12:16:20 申请板卡租约 300 s
+[r5] 租约已持有: lease:r5-someip
+[r5] 烧写 someip_rpc
+J-Link: Flash download: Bank 0 @ 0x80000000: 2 ranges affected (106496 bytes)
+J-Link: Flash download: Total: 2.149s (Prepare: 0.544s, Compare: 0.125s, Erase: 0.088s, Program: 1.206s, Verify: 0.057s, Restore: 0.125s)
+J-Link: Flash download: Program & Verify speed: 82 KB/s
+[r5] ping 192.168.2.100 OK (第 1 次)
+===== [A1] 自写 Python 客户端 core =====
+someip_client: board=192.168.2.100 local=192.168.2.1 event_port=30502
+== SD 发现 ==
+  PASS 收到组播 OfferService：service 0x1234 instance 0x0001 major 1 ttl 3 s
+       endpoint option: 192.168.2.100:30501 proto 0x11（UDP=0x11）
+  PASS FindService -> OfferService 0.3 ms（单播回 192.168.2.100:30490）
+  PASS 周期 OfferService: 3 条 / 5.0 s，重发间隔 均值 1500.0 ms（min 1499.8 / max 1500.1）
+== SD 发现 PASS ==
+
+== 方法 RPC ==
+  PASS add(2,3)                     rc=E_OK value=5 rtt=0.40 ms
+  PASS add(0xFFFFFFFF,1)            value=0（u32 回绕）
+  PASS get_version                  'hpm5e31-someip/1.0.0'
+  PASS set_led(1)                   
+  PASS set_led(0)                   
+  PASS temp getter                  31.500 C
+  PASS temp setter                  readback 42.250 C
+  PASS get_time(us)                 board_us=9683433
+  PASS unknown method -> ERROR(0x03) rc=E_UNKNOWN_METHOD
+  PASS response session 回显          （见下：RTT 统计）
+Traceback (most recent call last):
+  File "host/someip/someip_client.py", line 804, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "host/someip/someip_client.py", line 768, in main
+    ok, _ = cmd_rpc(c, args)
+            ~~~~~~~^^^^^^^^^
+  File "host/someip/someip_client.py", line 594, in cmd_rpc
+    rc, body, rtt = c.request(M_ADD, struct.pack("!II", 1, 2))
+                    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "host/someip/someip_client.py", line 390, in request
+    data = self._recv_svc(deadline)
+  File "host/someip/someip_client.py", line 378, in _recv_svc
+    raise TimeoutError("等待服务响应超时")
+TimeoutError: 等待服务响应超时
+===== [A2] vsomeip 3.7.6 互操作 =====
+[vsomeip] service 0x1234.0001 GONE
+2026-11-02 12:16:40.968435 someip_client [info] usei::start_unlocked: #1::192.168.2.1:30490:: Join 0 groups
+2026-11-02 12:16:40.968448 someip_client [info] usei::set_multicast_option: #1::192.168.2.1:30490:: Join 224.244.224.245, multicast_lifecycle_idx=1, stopped=0
+[vsomeip] state = REGISTERED
+2026-11-02 12:16:40.968855 someip_client [info] usei::set_multicast_option: #1::192.168.2.1:30490:: Join successful
+2026-11-02 12:16:41.863791 someip_client [info] KPI NET4 First SD multicast message from 192.168.2.100
+2026-11-02 12:17:40.973674 someip_client [warning] le::receive_cbk: Escalating the error: End of file socket > Client: 1200 (0), connection : role: server, own: /tmp/vsomeip-0, peer: , mem: 0x6481144b3020, fd: 12, 0x6481144b3020, send_queue: 0, receive_buffer: {mem_size: 4096, first_used: 0, last_used: 0, shrink: [0, 5]}, is_sending: false, is_flushing: false, state: CONNECTED
+2026-11-02 12:17:40.973697 someip_client [info] le::set_state_unlocked: change state: CONNECTED -> FAILED, Client: 1200 (0), connection : role: server, own: /tmp/vsomeip-0, peer: , mem: 0x6481144b3020, fd: 12, 0x6481144b3020, send_queue: 0, receive_buffer: {mem_size: 4096, first_used: 0, last_used: 0, shrink: [0, 5]}, is_sending: false, is_flushing: false, state: CONNECTED
+2026-11-02 12:17:40.973782 someip_client [info] le::set_state_unlocked: change state: FAILED -> STOPPED, Client: 1200 (0), connection : role: server, own: /tmp/vsomeip-0, peer: , mem: 0x6481144b3020, fd: -1, 0x6481144b3020, send_queue: 0, receive_buffer: {mem_size: 4096, first_used: 0, last_used: 0, shrink: [0, 5]}, is_sending: false, is_flushing: false, state: FAILED
+2026-11-02 12:17:40.974337 someip_client [info] emi::stop: Joined thread m_multicast 7f3f1c70f880
+2026-11-02 12:17:40.974533 someip_client [info] Joined thread m_auxiliary, id 7f3f1aad76c0
+2026-11-02 12:17:40.974558 someip_client [info] app::start: : io_.run() end for app(someip_client, 1200); Join Dispatcher threads for app(someip_client, 1200)
+2026-11-02 12:17:40.974577 someip_client [info] Join IO threads for app(someip_client, 1200)
+FAIL 20 s 内服务未 available（板端 someip_rpc 在跑吗？SD 组播路由/IGMP 通吗？）
+[r5] A 阶段板端串口: logs/20261102-121620-someip_rpc.log
+[r5] 烧写 someip_tp
+J-Link: Flash download: Bank 0 @ 0x80000000: 2 ranges affected (135168 bytes)
+J-Link: Flash download: Total: 2.480s (Prepare: 0.547s, Compare: 0.114s, Erase: 0.102s, Program: 1.528s, Verify: 0.061s, Restore: 0.126s)
+J-Link: Flash download: Program & Verify speed: 83 KB/s
+[r5] ping 192.168.2.100 OK (第 1 次)
+===== [B] 主机侧 SOME/IP-TP 4096 B（tcpdump 抓段） =====
+someip_client: board=192.168.2.100 local=192.168.2.1 event_port=30502
+== SOME/IP-TP ==
+Traceback (most recent call last):
+  File "host/someip/someip_client.py", line 804, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "host/someip/someip_client.py", line 780, in main
+    summary.append(("tp", cmd_tp(c, args)))
+                          ~~~~~~^^^^^^^^^
+  File "host/someip/someip_client.py", line 678, in cmd_tp
+    rc, body, rtt = c.request(M_GET_BULK, struct.pack("!I", size), timeout=3.0)
+                    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "host/someip/someip_client.py", line 409, in request
+    body = self._collect_tp(hdr, deadline)
+  File "host/someip/someip_client.py", line 369, in _collect_tp
+    raise ValueError("TP 分段不连续: offset=%d, expected=%d（收到的段: %s）" %
+                     (off, len(out), order))
+ValueError: TP 分段不连续: offset=1392, expected=0（收到的段: [(1392, 1392, 1), (2784, 1312, 0)]）
+[r5] tcpdump 段统计:
+3
+12:18:09.500474 IP 192.168.2.1.30502 > 192.168.2.100.30501: UDP, length 20
+12:18:09.500853 IP 192.168.2.100.30501 > 192.168.2.1.30502: UDP, length 1412
+12:18:09.500955 IP 192.168.2.100.30501 > 192.168.2.1.30502: UDP, length 1332
+[r5] B 阶段板端串口: logs/20261102-121620-someip_tp.log

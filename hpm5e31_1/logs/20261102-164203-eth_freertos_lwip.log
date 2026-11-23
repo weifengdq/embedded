@@ -1,0 +1,19 @@
+[init] lwIP sys_arch: components/freertos_lwip_port (自写移�rx_buf=16
+[lwip-eth] netif=e0 idx=1 MAC=02:00:00:00:01:00
+[lwip-eth] IP=192.168.2.100
+[lwip-eth] MASK=255.255.255.0
+[lwip-eth] GW=192.168.2.1  link=UP
+[lwip-eth] phy: link=UP known=1 speed=1000 Mbps duplex=full role=SLAVE
+[mcal-eth] PHY BMCR=0140 BMSR=000D GBSR=3000 PHYSR=8400
+[mcal-eth] ETH counter: rx_pkts=0 tx_pkts=1 drop_ovr=0 crc=0 undersize=0 oversize=0
+[lwip-eth] link=UP after 1004 ms
+[init] app_lwip_eth_init rc=0 (0=link up, 1=link down)
+[ping] seq=0 192.168.2.1: timeout
+[ping] seq=1 192.168.2.1: timeout
+[ping] seq=2 192.168.2.1: rtt=1015 us
+[ping] seq=3 192.168.2.1: timeout
+[ping] seq=4 192.168.2.1: rtt=1016 us
+[ping] 2/5 received, rtt min/avg/max = 1015/1015/1016 us, jitter(avg |d|) = 1 us
+[selftest] ping gw: 2/5 rtt min/avg/max=1015/1015/1016 us jitter=1 us
+[run] cmds: eth | eth ping <ip> [n] [ms] | eth iserver [tcp|udp] | eth iclient <ip> |
+            ethprio <0..7> | ethload <prio> <ms> | ethload stop | ethrt

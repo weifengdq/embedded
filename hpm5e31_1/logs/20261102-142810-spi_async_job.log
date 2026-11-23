@@ -1,0 +1,15 @@
+G(主函数上下文), status=IDLE, jobs=8 seqs=5
+  jobEnd=0 sjob hint 64' / 'spi_job det'
+spi_job multi 128 64
+multi: n8=128 n16=64 4 jobs PASS err=0 jobs[0 0 0 0] seqResult=0 jobEnd=4 seqEnd=2 2081 us
+
+letter:/$ 
+letter:/$ spi_job det
+spi_async_job @ hpm5e31_1 | MCAL Spi 1.0.0 moduleID=83
+  asyncMode=POLLING(主函数上下文), status=IDLE, jobs=8 seqs=5
+  jobEnd=4 seqEnd=2 det=0
+  usage: spi_job info|multi [n8] [n16]|cpu [n]|hint [n]|det
+det: +2 (期望 2) 
+
+letter:/$ 
+letter:/$ 

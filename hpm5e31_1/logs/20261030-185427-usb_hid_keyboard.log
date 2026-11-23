@@ -1,0 +1,11 @@
+ard: USB0 HID keyboard device ===
+hid_keyboard_init done, waiting for host enumeration...
+shell: hidinfo | hidkey [n]
+hidinfo
+USB0 HID keyboard @0xf1420000, IRQn=60
+  VID/PID   : 0x34b7/0xffff  Product=HPMicro HID DEMO
+  configured: 1
+  HID tx cnt: 0 (8 字节报告, 端点 0x81, 间隔 10 ms)
+
+letter:/$ 
+letter:/$ hidkey 1

@@ -1,0 +1,22 @@
+it] Eth_Init done: ctrl=1 base=0xf1400000
+[init] EthTrcv_Init 36 B, ethertype=0x88B5
+eth sleep 1200
+SLEEP done 1200ms
+
+letter:/$ 
+letter:/$ eth rtt 64 5
+  RXDBG want=0 got=117835012 len=78
+  RXDBG want=2 got=151521030 len=78
+RTT len=64 n=5 replied=0 lost=5 avg=0us min=0us max=0us span=1000ms\r\n
+letter:/$ 
+letter:/$ eth stat
+[stat] det=0 rx_isr=0
+[stat] tx: frames=5 bytes=390 err=0 drop_busy=0 underflow=0
+[stat] rx: frames=7 octets=3238 crc=0 overflow=0 err=0 drop=0
+[stat] rx buckets: 64=0 65-127=3 128-255=0 256-511=0 512-1023=4 1024-1518=0
+[stat] Eth sw 1.0.0 module=88
+
+letter:/$ 
+letter:/$ ===== HOST SIDE =====
+HOST iface=enp6s0 mac=c0:a2:b6:a6:a9:2c ethertype=0x88B5 mode=echo
+HOST echo secs=25 replied=3

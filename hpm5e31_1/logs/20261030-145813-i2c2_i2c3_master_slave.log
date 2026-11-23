@@ -1,0 +1,26 @@
+I2C3 slave: SCL=PD07 SDA=PD06 addr=0x50
+  clk: i2c2=80000000 H0 / i2c_ms_bench
+i2c_ms_bench
+I2C2<->I2C3 master/slave bench (24 B write+read per mode):
+100k   wr   n=24  PASS errors=0  time=2459.84 us bw=78 kbps
+100k   rd   n=24  PASS errors=0  time=2454.87 us bw=78 kbps
+400k   wr   n=24  PASS errors=0  time=757.03 us bw=253 kbps
+400k   rd   n=24  PASS errors=0  time=749.02 us bw=256 kbps
+1M     wr   n=24  PASS errors=0  time=411.80 us bw=466 kbps
+1M     rd   n=24  PASS errors=0  time=405.71 us bw=473 kbps
+
+letter:/$ 
+letter:/$ i2c_ms_write 64
+100k   wr   n=64  PASS errors=0  time=6351.07 us bw=80 kbps
+
+letter:/$ 
+letter:/$ i2c_ms_test 32 1000
+1M     wr   n=32  PASS errors=0  time=540.88 us bw=473 kbps
+1M     rd   n=32  PASS errors=0  time=533.43 us bw=479 kbps
+
+letter:/$ 
+letter:/$ i2c_ms_write 16
+1M     wr   n=16  PASS errors=0  time=285.20 us bw=448 kbps
+
+letter:/$ 
+letter:/$ 

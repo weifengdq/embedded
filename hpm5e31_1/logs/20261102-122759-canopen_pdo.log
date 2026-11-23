@@ -1,0 +1,106 @@
+[2J[1H
+ _         _   _                  _          _ _ 
+| |    ___| |_| |_ ___ _ __ [2J[1H
+ _         _   _                  _          _ _ 
+| |    ___| |_| |_ ___ _ __   ___| 
+letter:/$ 
+[boot] mcan_quad_load
+[cfg] cpu=480 MHz ahb=200 MHz msg_ram_per_node=2560 B total=10240 B
+[cfg] idle_chunk=326 cyc
+
+=== 4CH concurrent one-way (links=2) case=fd-1M-2M-64B n=2000 ===
+  link0 can0->can1 fd-1M-2M-64B    n=2000 ok=2000 bad=0 fps=1425 payload=0.73Mbps tx_full=288306
+  link1 can1->can0 fd-1M-2M-64B    n=2000 ok=2000 bad=0 fps=1425 payload=0.73Mbps tx_full=654014
+  QUAD_SUM links=2 case=fd-1M-2M-64B    n=2000 ok=4000 bad=0 t=1403597 us cpu_busy=68.5% cyc/frame=115376 lec=0 tec=0 rec=0 rxfifo_lost=0 timeout=0
+
+=== 4CH concurrent one-way (links=2) case=fd-1M-5M-64B n=2000 ===
+  link0 can0->can1 fd-1M-5M-64B    n=2000 ok=2000 bad=0 fps=3169 payload=1.62Mbps tx_full=126607
+  link1 can1->can0 fd-1M-5M-64B    n=2000 ok=2000 bad=0 fps=3169 payload=1.62Mbps tx_full=288571
+  QUAD_SUM links=2 case=fd-1M-5M-64B    n=2000 ok=4000 bad=0 t=631096 us cpu_busy=69.3% cyc/frame=52506 lec=0 tec=0 rec=0 rxfifo_lost=0 timeout=0
+
+=== 4CH bidirectional (links=4) case=fd-1M-2M-64B n=2000 ===
+  link0 can0->can1 fd-1M-2M-64B    n=2000 ok=2000 bad=0 fps=1425 payload=0.73Mbps tx_full=167778
+  link1 can1->can0 fd-1M-2M-64B    n=2000 ok=2000 bad=0 fps=1425 payload=0.73Mbps tx_full=393217
+  link2 can2->can3 fd-1M-2M-64B    n=2000 ok=2000 bad=0 fps=1425 payload=0.73Mbps tx_full=167783
+  link3 can3->can2 fd-1M-2M-64B    n=2000 ok=2000 bad=0 fps=1425 payload=0.73Mbps tx_full=393223
+  QUAD_SUM links=4 case=fd-1M-2M-64B    n=2000 ok=8000 bad=0 t=1403597 us cpu_busy=81.3% cyc/frame=68493 lec=0 tec=0 rec=0 rxfifo_lost=0 timeout=0
+done. commands: info | quad [n] [case] [links] | bi [n] [case] | one [n] [case] | tsu [n] | ptp [n] | matrix [n] | dma
+tsu 200
+
+=== TSU internal AHB timebase (TX Event vs RX, 32-bit) ===
+[tsu] CAN0 init failed st=2
+
+letter:/$ 
+letter:/$ ptp 200
+
+=== TSU + PTPC0 external timebase (64-bit, common timebase) ===
+[ptp] ptpc_init st=0 src=200000000 Hz
+[ptp] ptpc0->MCAN0 st=0
+[ptp] ptpc0->MCAN1 st=0
+[ptp] CAN0 tsu init st=2
+
+letter:/$ 
+letter:/$ matrix 200
+
+=== timing matrix: arb 500k/1M x data 2M/5M x SP x SJW x TDC ===
+[m] note: 5M 数据段用 16 TQ，SP 只能取 75/81.25/87.5%（表中为实际值）
+[m] a500-d2000-sp750-sjw1-tdc0 sp_arb=75.0% sp_dat=75.0% n=200 ok=200 bad=0 fps=2631 lec=0 tec=0 rec=0 t=76026 us timeout=0
+[m] a500-d2000-sp750-sjw1-tdc1 sp_arb=75.0% sp_dat=75.0% n=200 ok=200 bad=0 fps=2631 lec=0 tec=0 rec=0 t=76015 us timeout=0
+[m] a500-d2000-sp750-sjw2-tdc1 sp_arb=75.0% sp_dat=75.0% n=200 ok=200 bad=0 fps=2631 lec=0 tec=0 rec=0 t=76016 us timeout=0
+[m] a500-d2000-sp750-sjw4-tdc1 sp_arb=75.0% sp_dat=75.0% n=200 ok=200 bad=0 fps=2631 lec=0 tec=0 rec=0 t=76021 us timeout=0
+[m] a500-d2000-sp800-sjw1-tdc0 sp_arb=80.0% sp_dat=80.0% n=200 ok=200 bad=0 fps=2631 lec=0 tec=0 rec=0 t=76013 us timeout=0
+[m] a500-d2000-sp800-sjw1-tdc1 sp_arb=80.0% sp_dat=80.0% n=200 ok=200 bad=0 fps=2631 lec=0 tec=0 rec=0 t=76015 us timeout=0
+[m] a500-d2000-sp800-sjw2-tdc1 sp_arb=80.0% sp_dat=80.0% n=200 ok=200 bad=0 fps=2631 lec=0 tec=0 rec=0 t=76016 us timeout=0
+[m] a500-d2000-sp800-sjw4-tdc1 sp_arb=80.0% sp_dat=80.0% n=200 ok=200 bad=0 fps=2631 lec=0 tec=0 rec=0 t=76023 us timeout=0
+[quad] node0 init failed st=26014
+[m] a500-d2000-sp875-sjw1-tdc0 sp_arb=87.5% sp_dat=87.5% n=200 ok=0 bad=0 fps=0 lec=0 tec=0 rec=0 t=0 us timeout=0
+[quad] node0 init failed st=26014
+[m] a500-d2000-sp875-sjw1-tdc1 sp_arb=87.5% sp_dat=87.5% n=200 ok=0 bad=0 fps=0 lec=0 tec=0 rec=0 t=0 us timeout=0
+[quad] node0 init failed st=26014
+[m] a500-d2000-sp875-sjw2-tdc1 sp_arb=87.5% sp_dat=87.5% n=200 ok=0 bad=0 fps=0 lec=0 tec=0 rec=0 t=0 us timeout=0
+[quad] node0 init failed st=26014
+[m] a500-d2000-sp875-sjw4-tdc1 sp_arb=87.5% sp_dat=87.5% n=200 ok=0 bad=0 fps=0 lec=0 tec=0 rec=0 t=0 us timeout=0
+[m] a500-d5000-sp750-sjw1-tdc0 sp_arb=75.0% sp_dat=75.0% n=200 ok=0 bad=0 fps=0 lec=1 tec=0 rec=32 t=5000001 us timeout=1
+[m] a500-d5000-sp750-sjw1-tdc1 sp_arb=75.0% sp_dat=75.0% n=200 ok=200 bad=0 fps=4995 lec=0 tec=0 rec=0 t=40038 us timeout=0
+[m] a500-d5000-sp750-sjw2-tdc1 sp_arb=75.0% sp_dat=75.0% n=200 ok=200 bad=0 fps=5351 lec=0 tec=0 rec=0 t=37374 us timeout=0
+[m] a500-d5000-sp750-sjw4-tdc1 sp_arb=75.0% sp_dat=75.0% n=200 ok=200 bad=0 fps=5350 lec=0 tec=0 rec=0 t=37380 us timeout=0
+[m] a500-d5000-sp800-sjw1-tdc0 sp_arb=80.0% sp_dat=81.2% n=200 ok=200 bad=0 fps=5352 lec=0 tec=0 rec=0 t=37372 us timeout=0
+[m] a500-d5000-sp800-sjw1-tdc1 sp_arb=80.0% sp_dat=81.2% n=200 ok=200 bad=0 fps=5352 lec=0 tec=0 rec=0 t=37372 us timeout=0
+[m] a500-d5000-sp800-sjw2-tdc1 sp_arb=80.0% sp_dat=81.2% n=200 ok=200 bad=0 fps=5351 lec=0 tec=0 rec=0 t=37374 us timeout=0
+[m] a500-d5000-sp800-sjw4-tdc1 sp_arb=80.0% sp_dat=81.2% n=200 ok=200 bad=0 fps=5351 lec=0 tec=0 rec=0 t=37379 us timeout=0
+[2J[1H
+ _         _   _                  _          _ _ 
+| |    ___| |_| |_ ___ _ __   ___| 
+letter:/$ 
+=== spi1_spi3_master_slave (SPI1 master <-> SPI3 slave, user-wired) ===
+spi1_spi3_master_slave @ hpm5e31_1
+  SPI1 master: SCLK PC10 CS PC11 MISO PC12 MOSI PC13 (mode 0, 1000000 Hz)
+  SPI3 slave : SCLK PA26 CS PA27 MISO PA28 MOSI PA29, DMA HDMA ch4/5
+  src_clk: spi1=80000000 Hz spi3=80000000 Hz cpu=480000000 Hz
+  usage: spi_ms_test [bytes] [hz] | spi_ms_bench | spi_ms_read [bytes]
+  NOTE: 若 spi_ms_wires 显示 PC13<->PA28 / PC12<->PA29，请互换 PA28/PA29 两根数据线(SCLK/CS 不动)
+bidir64      n=64   PASS errors=0   time=547.05 us bw=116 KB/s
+spi master/slave bidirectional bench (n=128, mode0):
+  hz=1000000   bench        n=128  PASS errors=0   time=1037.74 us bw=123 KB/s
+  hz=5000000   bench        n=128  PASS errors=0   time=210.61 us bw=607 KB/s
+  hz=10000000  bench        n=128  PASS errors=0   time=107.41 us bw=1191 KB/s
+  dbg m_tx= 31 38 3F 46 4D 54 5B 62 | m_rx= E5 B0 BB C6 D1 DC E7 F2 | s_tx= A5 B0 BB C6 D1 DC E7 F2 | s_rx= 31 38 3F 46 4D 54 5B 62
+  dbg SPI1.STATUS=0x00404000 SPI3.STATUS=0x00014000 SPI3.CTRL=0x11000018
+  hz=20000000  bench        n=128  FAIL errors=1   time=55.68 us bw=2298 KB/s
+type spi_ms_test 128 20000000 / spi_ms_read 32
+spi_ms_test 128 10000000
+bidir        n=128  PASS errors=0   time=107.43 us bw=1191 KB/s
+
+letter:/$ 
+letter:/$ spi_ms_test 128 20000000
+  dbg m_tx= 31 38 3F 46 4D 54 5B 62 | m_rx= E5 B0 BB C6 D1 DC E7 F2 | s_tx= A5 B0 BB C6 D1 DC E7 F2 | s_rx= 31 38 3F 46 4D 54 5B 62
+  dbg SPI1.STATUS=0x00404000 SPI3.STATUS=0x00014000 SPI3.CTRL=0x11000018
+bidir        n=128  FAIL errors=1   time=55.78 us bw=2294 KB/s
+
+letter:/$ 
+letter:/$ spi_ms_poll 64
+poll         n=64   FAIL errors=5   time=71.85 us bw=890 KB/s
+  m_rx[0..3]=E5 B0 BB C6 s_tx[0..3]=A5 B0 BB C6
+
+letter:/$ 
+letter:/$ 

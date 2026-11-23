@@ -1,0 +1,10 @@
+n|off|flip / dbtn / dscan / dleds FF / dport 5 / dgroup / dmasked 0 0xFF / derr / dver
+dperf 1000000
+PERF: n=1000000 write: ticks=3050250 total=127093750ns ns/op=127 ; read: ticks=4440003 total=185000125ns ns/op=185 (acc=0)
+
+letter:/$ 
+letter:/$ dperf 2000000
+PERF: n=2000000 write: ticks=6100007 total=254166958ns ns/op=127 ; read: ticks=8880005 total=370000208ns ns/op=185 (acc=0)
+
+letter:/$ 
+letter:/$ 

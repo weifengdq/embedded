@@ -1,0 +1,986 @@
+[init] lwIP sys_arch: components/freertos_lwip_port (自写移�stop | ethrt
+sleep 3000
+[sys] sleep 3000 ms
+[rtos] cpu: idle=83.1% busyload=16.9% window=6007 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=28(fail 0) fetch=35(empty 0)
+[lwip-port] mutex new=2 lock=61 | protect enter=167 max=1939 cyc avg=95.95 cyc | thread new=1
+[lwip-eth] sw : rx_frames=28 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=7 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=7 last=99 us max=106 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=3/32
+[lwip-eth] hw : rx_frames=28 rx_bytes=10904 rx_empty=320360 rx_err=0 | tx_frames=7 tx_bytes=422 tx_busy=0 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  IDLE         prio=0 state=1 stack_hwm=464
+  shell        prio=1 state=2 stack_hwm=1894
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+
+letter:/$ 
+letter:/$ eth
+[lwip-eth] netif=e0 idx=1 MAC=02:00:00:00:01:00
+[lwip-eth] IP=192.168.2.100
+[lwip-eth] MASK=255.255.255.0
+[lwip-eth] GW=192.168.2.1  link=UP
+[lwip-eth] phy: link=UP known=1 speed=1000 Mbps duplex=full role=SLAVE
+[mcal-eth] PHY BMCR=0140 BMSR=000D GBSR=3000 PHYSR=8400
+[mcal-eth] ETH counter: rx_pkts=30 tx_pkts=7 drop_ovr=0 crc=0 undersize=0 oversize=0
+[lwip-eth] sw : rx_frames=30 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=7 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=7 last=99 us max=106 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=3/32
+[lwip-eth] hw : rx_frames=30 rx_bytes=12388 rx_empty=371241 rx_err=0 | tx_frames=7 tx_bytes=422 tx_busy=0 tx_err=0
+
+letter:/$ 
+letter:/$ eth iclient 192.168.2.1 udp
+Ideal frame delay: 11 us
+Send 90 frame(s) once per 1000 us
+[iperf] UDP client -> 192.168.2.1 started
+
+letter:/$ 
+letter:/$ [rtos] cpu: idle=99.3% busyload=0.7% window=5013 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=47(fail 0) fetch=59(empty 0)
+[lwip-port] mutex new=2 lock=93 | protect enter=294 max=1939 cyc avg=89.60 cyc | thread new=1
+[lwip-eth] sw : rx_frames=47 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=12 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=47 rx_bytes=20194 rx_empty=641225 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5013 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=53(fail 0) fetch=70(empty 0)
+[lwip-port] mutex new=2 lock=104 | protect enter=334 max=1939 cyc avg=88.39 cyc | thread new=1
+[lwip-eth] sw : rx_frames=53 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=17 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=53 rx_bytes=24654 rx_empty=962060 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=59(fail 0) fetch=81(empty 0)
+[lwip-port] mutex new=2 lock=115 | protect enter=374 max=1939 cyc avg=85.33 cyc | thread new=1
+[lwip-eth] sw : rx_frames=59 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=22 last=99 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=59 rx_bytes=29122 rx_empty=1282959 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=67(fail 0) fetch=94(empty 0)
+[lwip-port] mutex new=2 lock=128 | protect enter=424 max=1939 cyc avg=81.75 cyc | thread new=1
+[lwip-eth] sw : rx_frames=67 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=27 last=103 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=67 rx_bytes=35074 rx_empty=1603859 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=73(fail 0) fetch=105(empty 0)
+[lwip-port] mutex new=2 lock=139 | protect enter=464 max=1939 cyc avg=81.78 cyc | thread new=1
+[lwip-eth] sw : rx_frames=73 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=32 last=103 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=73 rx_bytes=39534 rx_empty=1924762 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=79(fail 0) fetch=116(empty 0)
+[lwip-port] mutex new=2 lock=150 | protect enter=504 max=1939 cyc avg=79.99 cyc | thread new=1
+[lwip-eth] sw : rx_frames=79 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=37 last=99 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=79 rx_bytes=44002 rx_empty=2245661 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=87(fail 0) fetch=129(empty 0)
+[lwip-port] mutex new=2 lock=163 | protect enter=554 max=1939 cyc avg=77.75 cyc | thread new=1
+[lwip-eth] sw : rx_frames=87 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=42 last=102 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=87 rx_bytes=49954 rx_empty=2566561 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=93(fail 0) fetch=140(empty 0)
+[lwip-port] mutex new=2 lock=174 | protect enter=594 max=1939 cyc avg=78.04 cyc | thread new=1
+[lwip-eth] sw : rx_frames=93 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=47 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=93 rx_bytes=54414 rx_empty=2887460 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=99(fail 0) fetch=151(empty 0)
+[lwip-port] mutex new=2 lock=185 | protect enter=634 max=1939 cyc avg=76.85 cyc | thread new=1
+[lwip-eth] sw : rx_frames=99 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=52 last=99 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=99 rx_bytes=58882 rx_empty=3208397 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=107(fail 0) fetch=164(empty 0)
+[lwip-port] mutex new=2 lock=198 | protect enter=684 max=1939 cyc avg=75.28 cyc | thread new=1
+[lwip-eth] sw : rx_frames=107 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=57 last=103 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=107 rx_bytes=64834 rx_empty=3529297 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=113(fail 0) fetch=175(empty 0)
+[lwip-port] mutex new=2 lock=209 | protect enter=724 max=1939 cyc avg=75.66 cyc | thread new=1
+[lwip-eth] sw : rx_frames=113 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=62 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=113 rx_bytes=69294 rx_empty=3850196 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=119(fail 0) fetch=186(empty 0)
+[lwip-port] mutex new=2 lock=220 | protect enter=764 max=1939 cyc avg=74.79 cyc | thread new=1
+[lwip-eth] sw : rx_frames=119 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=67 last=99 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=119 rx_bytes=73762 rx_empty=4171118 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=127(fail 0) fetch=199(empty 0)
+[lwip-port] mutex new=2 lock=233 | protect enter=814 max=1939 cyc avg=73.56 cyc | thread new=1
+[lwip-eth] sw : rx_frames=127 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=72 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=127 rx_bytes=79714 rx_empty=4492072 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=133(fail 0) fetch=210(empty 0)
+[lwip-port] mutex new=2 lock=244 | protect enter=854 max=1939 cyc avg=73.97 cyc | thread new=1
+[lwip-eth] sw : rx_frames=133 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=77 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=133 rx_bytes=84174 rx_empty=4812971 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=139(fail 0) fetch=221(empty 0)
+[lwip-port] mutex new=2 lock=255 | protect enter=894 max=1939 cyc avg=73.31 cyc | thread new=1
+[lwip-eth] sw : rx_frames=139 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=82 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=139 rx_bytes=88642 rx_empty=5133930 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=147(fail 0) fetch=234(empty 0)
+[lwip-port] mutex new=2 lock=268 | protect enter=944 max=1939 cyc avg=72.34 cyc | thread new=1
+[lwip-eth] sw : rx_frames=147 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=87 last=102 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=147 rx_bytes=94594 rx_empty=5454830 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=153(fail 0) fetch=245(empty 0)
+[lwip-port] mutex new=2 lock=279 | protect enter=984 max=1939 cyc avg=72.73 cyc | thread new=1
+[lwip-eth] sw : rx_frames=153 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=92 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=153 rx_bytes=99054 rx_empty=5775729 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=159(fail 0) fetch=256(empty 0)
+[lwip-port] mutex new=2 lock=290 | protect enter=1024 max=1939 cyc avg=72.22 cyc | thread new=1
+[lwip-eth] sw : rx_frames=159 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=97 last=99 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=159 rx_bytes=103522 rx_empty=6096657 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=167(fail 0) fetch=269(empty 0)
+[lwip-port] mutex new=2 lock=303 | protect enter=1074 max=1939 cyc avg=71.42 cyc | thread new=1
+[lwip-eth] sw : rx_frames=167 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=102 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=167 rx_bytes=109474 rx_empty=6417644 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=173(fail 0) fetch=280(empty 0)
+[lwip-port] mutex new=2 lock=314 | protect enter=1114 max=1939 cyc avg=71.82 cyc | thread new=1
+[lwip-eth] sw : rx_frames=173 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=107 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=173 rx_bytes=113934 rx_empty=6738543 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=181(fail 0) fetch=293(empty 0)
+[lwip-port] mutex new=2 lock=327 | protect enter=1164 max=1939 cyc avg=71.09 cyc | thread new=1
+[lwip-eth] sw : rx_frames=181 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=112 last=99 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=181 rx_bytes=119886 rx_empty=7059443 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=187(fail 0) fetch=304(empty 0)
+[lwip-port] mutex new=2 lock=338 | protect enter=1204 max=1939 cyc avg=71.47 cyc | thread new=1
+[lwip-eth] sw : rx_frames=187 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=117 last=103 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=187 rx_bytes=124354 rx_empty=7380370 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=193(fail 0) fetch=315(empty 0)
+[lwip-port] mutex new=2 lock=349 | protect enter=1244 max=1939 cyc avg=71.81 cyc | thread new=1
+[lwip-eth] sw : rx_frames=193 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=122 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=193 rx_bytes=128814 rx_empty=7701269 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=201(fail 0) fetch=328(empty 0)
+[lwip-port] mutex new=2 lock=362 | protect enter=1294 max=1939 cyc avg=71.16 cyc | thread new=1
+[lwip-eth] sw : rx_frames=201 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=127 last=99 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=201 rx_bytes=134766 rx_empty=8022264 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=207(fail 0) fetch=339(empty 0)
+[lwip-port] mutex new=2 lock=373 | protect enter=1334 max=1939 cyc avg=71.49 cyc | thread new=1
+[lwip-eth] sw : rx_frames=207 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=132 last=103 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=207 rx_bytes=139234 rx_empty=8343163 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=213(fail 0) fetch=350(empty 0)
+[lwip-port] mutex new=2 lock=384 | protect enter=1374 max=1939 cyc avg=71.81 cyc | thread new=1
+[lwip-eth] sw : rx_frames=213 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=137 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=213 rx_bytes=143694 rx_empty=8664062 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=221(fail 0) fetch=363(empty 0)
+[lwip-port] mutex new=2 lock=397 | protect enter=1424 max=1939 cyc avg=71.22 cyc | thread new=1
+[lwip-eth] sw : rx_frames=221 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=142 last=99 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=221 rx_bytes=149646 rx_empty=8984989 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=227(fail 0) fetch=374(empty 0)
+[lwip-port] mutex new=2 lock=408 | protect enter=1464 max=1939 cyc avg=71.52 cyc | thread new=1
+[lwip-eth] sw : rx_frames=227 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=147 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=227 rx_bytes=154114 rx_empty=9305950 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=233(fail 0) fetch=385(empty 0)
+[lwip-port] mutex new=2 lock=419 | protect enter=1504 max=1939 cyc avg=71.79 cyc | thread new=1
+[lwip-eth] sw : rx_frames=233 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=152 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=233 rx_bytes=158574 rx_empty=9626849 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=241(fail 0) fetch=398(empty 0)
+[lwip-port] mutex new=2 lock=432 | protect enter=1554 max=1939 cyc avg=71.24 cyc | thread new=1
+[lwip-eth] sw : rx_frames=241 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=157 last=99 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=241 rx_bytes=164526 rx_empty=9947749 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=247(fail 0) fetch=409(empty 0)
+[lwip-port] mutex new=2 lock=443 | protect enter=1594 max=1939 cyc avg=71.53 cyc | thread new=1
+[lwip-eth] sw : rx_frames=247 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=162 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=247 rx_bytes=168994 rx_empty=10268648 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=253(fail 0) fetch=420(empty 0)
+[lwip-port] mutex new=2 lock=454 | protect enter=1634 max=1939 cyc avg=71.81 cyc | thread new=1
+[lwip-eth] sw : rx_frames=253 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=167 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=253 rx_bytes=173454 rx_empty=10589547 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=261(fail 0) fetch=433(empty 0)
+[lwip-port] mutex new=2 lock=467 | protect enter=1684 max=1939 cyc avg=71.31 cyc | thread new=1
+[lwip-eth] sw : rx_frames=261 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=172 last=99 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=261 rx_bytes=179406 rx_empty=10910447 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=267(fail 0) fetch=444(empty 0)
+[lwip-port] mutex new=2 lock=478 | protect enter=1724 max=1939 cyc avg=71.58 cyc | thread new=1
+[lwip-eth] sw : rx_frames=267 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=177 last=103 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=267 rx_bytes=183874 rx_empty=11231346 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=273(fail 0) fetch=455(empty 0)
+[lwip-port] mutex new=2 lock=489 | protect enter=1764 max=1939 cyc avg=71.82 cyc | thread new=1
+[lwip-eth] sw : rx_frames=273 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=182 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=273 rx_bytes=188334 rx_empty=11552245 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=281(fail 0) fetch=468(empty 0)
+[lwip-port] mutex new=2 lock=502 | protect enter=1814 max=1939 cyc avg=71.36 cyc | thread new=1
+[lwip-eth] sw : rx_frames=281 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=187 last=99 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=281 rx_bytes=194286 rx_empty=11873145 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=287(fail 0) fetch=479(empty 0)
+[lwip-port] mutex new=2 lock=513 | protect enter=1854 max=1939 cyc avg=71.60 cyc | thread new=1
+[lwip-eth] sw : rx_frames=287 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=192 last=103 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=287 rx_bytes=198754 rx_empty=12194044 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=293(fail 0) fetch=490(empty 0)
+[lwip-port] mutex new=2 lock=524 | protect enter=1894 max=1939 cyc avg=71.83 cyc | thread new=1
+[lwip-eth] sw : rx_frames=293 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=197 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=293 rx_bytes=203214 rx_empty=12514943 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=301(fail 0) fetch=503(empty 0)
+[lwip-port] mutex new=2 lock=537 | protect enter=1944 max=1939 cyc avg=71.40 cyc | thread new=1
+[lwip-eth] sw : rx_frames=301 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=202 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=301 rx_bytes=209166 rx_empty=12835894 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=307(fail 0) fetch=514(empty 0)
+[lwip-port] mutex new=2 lock=548 | protect enter=1984 max=1939 cyc avg=71.63 cyc | thread new=1
+[lwip-eth] sw : rx_frames=307 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=207 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=307 rx_bytes=213634 rx_empty=13156845 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=314(fail 0) fetch=526(empty 0)
+[lwip-port] mutex new=2 lock=560 | protect enter=2029 max=1939 cyc avg=71.76 cyc | thread new=1
+[lwip-eth] sw : rx_frames=314 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=212 last=103 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=314 rx_bytes=218156 rx_empty=13477745 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=322(fail 0) fetch=539(empty 0)
+[lwip-port] mutex new=2 lock=573 | protect enter=2079 max=1939 cyc avg=71.35 cyc | thread new=1
+[lwip-eth] sw : rx_frames=322 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=217 last=99 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=322 rx_bytes=224108 rx_empty=13798645 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=328(fail 0) fetch=550(empty 0)
+[lwip-port] mutex new=2 lock=584 | protect enter=2119 max=1939 cyc avg=71.57 cyc | thread new=1
+[lwip-eth] sw : rx_frames=328 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=222 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=328 rx_bytes=228576 rx_empty=14119544 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=334(fail 0) fetch=561(empty 0)
+[lwip-port] mutex new=2 lock=595 | protect enter=2159 max=1939 cyc avg=71.76 cyc | thread new=1
+[lwip-eth] sw : rx_frames=334 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=227 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=334 rx_bytes=233036 rx_empty=14440443 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=342(fail 0) fetch=574(empty 0)
+[lwip-port] mutex new=2 lock=608 | protect enter=2209 max=1939 cyc avg=71.38 cyc | thread new=1
+[lwip-eth] sw : rx_frames=342 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=232 last=99 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=342 rx_bytes=238988 rx_empty=14761389 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=348(fail 0) fetch=585(empty 0)
+[lwip-port] mutex new=2 lock=619 | protect enter=2249 max=1939 cyc avg=71.58 cyc | thread new=1
+[lwip-eth] sw : rx_frames=348 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=237 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=348 rx_bytes=243456 rx_empty=15082338 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=354(fail 0) fetch=596(empty 0)
+[lwip-port] mutex new=2 lock=630 | protect enter=2289 max=1939 cyc avg=71.76 cyc | thread new=1
+[lwip-eth] sw : rx_frames=354 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=242 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=354 rx_bytes=247916 rx_empty=15403237 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=362(fail 0) fetch=609(empty 0)
+[lwip-port] mutex new=2 lock=643 | protect enter=2339 max=1939 cyc avg=71.39 cyc | thread new=1
+[lwip-eth] sw : rx_frames=362 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=247 last=99 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=362 rx_bytes=253868 rx_empty=15724137 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=368(fail 0) fetch=620(empty 0)
+[lwip-port] mutex new=2 lock=654 | protect enter=2379 max=1939 cyc avg=71.58 cyc | thread new=1
+[lwip-eth] sw : rx_frames=368 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=252 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=368 rx_bytes=258336 rx_empty=16045036 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=374(fail 0) fetch=631(empty 0)
+[lwip-port] mutex new=2 lock=665 | protect enter=2419 max=1939 cyc avg=71.75 cyc | thread new=1
+[lwip-eth] sw : rx_frames=374 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=257 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=374 rx_bytes=262796 rx_empty=16365935 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=382(fail 0) fetch=644(empty 0)
+[lwip-port] mutex new=2 lock=678 | protect enter=2469 max=1939 cyc avg=71.42 cyc | thread new=1
+[lwip-eth] sw : rx_frames=382 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=262 last=99 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=382 rx_bytes=268748 rx_empty=16686835 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=388(fail 0) fetch=655(empty 0)
+[lwip-port] mutex new=2 lock=689 | protect enter=2509 max=1939 cyc avg=71.59 cyc | thread new=1
+[lwip-eth] sw : rx_frames=388 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=267 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=388 rx_bytes=273216 rx_empty=17007734 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=394(fail 0) fetch=666(empty 0)
+[lwip-port] mutex new=2 lock=700 | protect enter=2549 max=1939 cyc avg=71.76 cyc | thread new=1
+[lwip-eth] sw : rx_frames=394 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=272 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=394 rx_bytes=277676 rx_empty=17328633 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=402(fail 0) fetch=679(empty 0)
+[lwip-port] mutex new=2 lock=713 | protect enter=2599 max=1939 cyc avg=71.78 cyc | thread new=1
+[lwip-eth] sw : rx_frames=402 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=277 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=402 rx_bytes=283628 rx_empty=17649533 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=408(fail 0) fetch=690(empty 0)
+[lwip-port] mutex new=2 lock=724 | protect enter=2639 max=1939 cyc avg=71.94 cyc | thread new=1
+[lwip-eth] sw : rx_frames=408 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=282 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=408 rx_bytes=288096 rx_empty=17970432 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=416(fail 0) fetch=703(empty 0)
+[lwip-port] mutex new=2 lock=737 | protect enter=2689 max=1939 cyc avg=71.97 cyc | thread new=1
+[lwip-eth] sw : rx_frames=416 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=287 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=416 rx_bytes=294048 rx_empty=18291332 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=422(fail 0) fetch=714(empty 0)
+[lwip-port] mutex new=2 lock=748 | protect enter=2729 max=1939 cyc avg=72.11 cyc | thread new=1
+[lwip-eth] sw : rx_frames=422 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=292 last=99 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=422 rx_bytes=298508 rx_empty=18612245 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=428(fail 0) fetch=725(empty 0)
+[lwip-port] mutex new=2 lock=759 | protect enter=2769 max=1939 cyc avg=72.26 cyc | thread new=1
+[lwip-eth] sw : rx_frames=428 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=297 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=428 rx_bytes=302976 rx_empty=18933207 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=436(fail 0) fetch=738(empty 0)
+[lwip-port] mutex new=2 lock=772 | protect enter=2819 max=1939 cyc avg=72.28 cyc | thread new=1
+[lwip-eth] sw : rx_frames=436 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=302 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=436 rx_bytes=308928 rx_empty=19254228 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=442(fail 0) fetch=749(empty 0)
+[lwip-port] mutex new=2 lock=783 | protect enter=2859 max=1939 cyc avg=72.42 cyc | thread new=1
+[lwip-eth] sw : rx_frames=442 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=307 last=99 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=442 rx_bytes=313388 rx_empty=19575149 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=448(fail 0) fetch=760(empty 0)
+[lwip-port] mutex new=2 lock=794 | protect enter=2899 max=1939 cyc avg=72.55 cyc | thread new=1
+[lwip-eth] sw : rx_frames=448 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=312 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=448 rx_bytes=317856 rx_empty=19896143 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=456(fail 0) fetch=773(empty 0)
+[lwip-port] mutex new=2 lock=807 | protect enter=2949 max=1939 cyc avg=72.56 cyc | thread new=1
+[lwip-eth] sw : rx_frames=456 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=317 last=101 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=456 rx_bytes=323808 rx_empty=20217043 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968
+[rtos] cpu: idle=99.7% busyload=0.3% window=5014 ticks | heap_free=61984
+[lwip-port] sem new=0 wait=0(timeout 0) signal=0 | mbox new=1 post=462(fail 0) fetch=784(empty 0)
+[lwip-port] mutex new=2 lock=818 | protect enter=2989 max=1939 cyc avg=72.69 cyc | thread new=1
+[lwip-eth] sw : rx_frames=462 rx_input_err=0 rx_pbuf_fail=0 | tx_frames=15 tx_err=0 tx_drop_len=0
+[lwip-eth] loop: gap_max=0 us tx_max=39 us rx_drain_max=0 us
+[lwip-eth] link poll: n=322 last=99 us max=109 us (MDIO 阻塞会直接掉包)
+[lwip-eth] rx pbuf pool: in_use=0 peak=8/32
+[lwip-eth] hw : rx_frames=462 rx_bytes=328268 rx_empty=20537942 rx_err=0 | tx_frames=15 tx_bytes=8108 tx_busy=1 tx_err=0
+[lwip-port] 6 tasks (stack high-water mark, unit=word, larger=safer):
+  ethmon       prio=2 state=0 stack_hwm=1868
+  shell        prio=1 state=1 stack_hwm=1776
+  IDLE         prio=0 state=1 stack_hwm=464
+  tcpip        prio=5 state=2 stack_hwm=925
+  ethrx        prio=6 state=2 stack_hwm=1948
+  Tmr Svc      prio=7 state=2 stack_hwm=968

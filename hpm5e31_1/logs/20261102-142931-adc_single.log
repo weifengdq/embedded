@@ -1,0 +1,27 @@
+ples min=34627 max=64653 -> PASS (有噪声底)
+type: adcinfo / adc / adcstat 1000 / adcver / adcerr / help
+adcinfo
+Adc: moduleID=123 initialized=yes
+ADC0.IN01 (PF26) 16 bit, conv_clk=50000000 Hz, sampling=20 cycles
+theory fs = conv/(res+sampling) = 50000000/(16+20) = 1388888 Hz
+commands: adc | adcstat [n] | adcsr | adcver | adcerr
+
+letter:/$ 
+letter:/$ adc
+ADC0.IN01 raw=35552 (1790212 uV) status=0
+
+letter:/$ 
+letter:/$ adcstat 1000
+ADCSTAT: n=1000 mean=51465.53 LSB sd=13137.39 LSB min=38209 max=64653 pp=26444 ENOB=0.67 bit
+ADCSTAT: mean=2591535 uV pp=1331581 uV ; 2.09 us/sample = 478.7 kHz (含 Start+Read)
+
+letter:/$ 
+letter:/$ adcver
+Adc_GetVersionInfo: vendor=0xFFFF module=123 sw=1.0.0
+
+letter:/$ 
+letter:/$ adcerr
+DET: before=0 after=6 delta=6
+
+letter:/$ 
+letter:/$ 

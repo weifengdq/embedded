@@ -1,0 +1,12 @@
+cho: USB0 CDC ACM device ===
+cdc_acm_init done, waiting for host enumeration...
+shell: usbinfo | usbsend [n]
+usbinfo
+USB0 device @0xf1420000, IRQn=60
+  class     : CDC ACM (CherryUSB), VID=0x34b7 PID=0xffff
+  DTR       : 0 (host opened the virtual COM port)
+  ep mps    : in=512 out=512
+  echo tick : 0 (每回显一包 +1)
+
+letter:/$ 
+letter:/$ 

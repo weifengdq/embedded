@@ -1,0 +1,3 @@
+sb: configured=1 hid_tx=16
+usb: configured=1 hid_tx=18
+usb: 1000|100>

@@ -1,0 +1,54 @@
+
+==================================================================
+gs_usb 测试: timestamp（20261102-105931）
+==================================================================
+主机: Linux 7.0.0-38-generic x86_64  脚本: test_timestamp.sh
+日志: logs/20261102-105931-gs-usb-timestamp.log
+工件: /tmp/gs_usb_artifacts
+内核 7.0.x —— 与开发约定 §1 一致
+  [PASS] 权限 OK（sudo -n）
+dmesg 基线时间戳: 1793588372（之后用 --since 只扫描新增行）
+  [PASS] 依赖命令齐全: dmesg ip ethtool cansend candump cangen canplayer
+
+---- 1. ethtool -T（能力查询）
+> ethtool -T can0
+Time stamping parameters for can0:
+Capabilities:
+	hardware-transmit
+	software-transmit
+	hardware-receive
+	software-receive
+	software-system-clock
+	hardware-raw-clock
+PTP Hardware Clock: none
+Hardware Transmit Timestamp Modes:
+	on
+Hardware Receive Filter Modes:
+	all
+> ethtool -T can1
+Time stamping parameters for can1:
+Capabilities:
+	hardware-transmit
+	software-transmit
+	hardware-receive
+	software-receive
+	software-system-clock
+	hardware-raw-clock
+PTP Hardware Clock: none
+Hardware Transmit Timestamp Modes:
+	on
+Hardware Receive Filter Modes:
+	all
+
+---- 2. SO_TIMESTAMPING 采集
+{"test": "timestamp", "tx": "can0", "rx": "can1", "count_sent": 50, "count_recv": 50, "hw_ts": 50, "sw_ts": 50, "offset_ns": {"min": 62731, "median": 81105, "max": 191805, "mean": 84580, "stdev": 21670}, "interval_us": {"min": 4312.0, "median": 4339.0, "max": 4566.0, "stdev": 46.719, "expected": 4000.0}, "monotonic_violations": 0, "quantum_ns": 1000, "ethtool_T": "Time stamping parameters for can1:\nCapabilities:\n\thardware-transmit\n\tsoftware-transmit\n\thardware-receive\n\tsoftware-receive\n\tsoftware-system-clock\n\thardware-raw-clock\nPTP Hardware Clock: none\nHardware Transmit Timestamp Modes:\n\ton\nHardware Receive Filter Modes:\n\tall", "verdict": "PASS", "reason": "", "log": "", "cmsg_seen": {"lvl1_type37_len48": 50}, "sw_minus_hw_ns": {"min": 55067, "median": 67188, "mean": 66740, "max": 76135, "stdev": 5863}, "ts_domain": "REALTIME", "offset_vs_mono_median_ns": -1793237207987114240, "offset_vs_real_median_ns": 81105, "hw_sw_interval_ratio": 0.999959, "hw_sw_interval_ppm": -40.7}
+  [PASS] 硬件时间戳: 收到 50 帧, 其中硬件戳 50 个
+  dmesg 安全检查: 无 oops/WARN（新增 0 行）
+  [PASS] 测试后设备仍在线（sysfs: 1-8）
+  dmesg 安全检查: 无 oops/WARN（新增 0 行）
+
+==================================================================
+汇总: timestamp
+==================================================================
+PASS=4  FAIL=0  内核异常=0
+结论: PASS

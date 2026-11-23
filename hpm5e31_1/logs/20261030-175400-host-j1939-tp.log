@@ -1,0 +1,7 @@
+[selftest] two sockets on vcan0
+  BAM 100B: PASS len=100 time=760.7ms goodput=131.5 B/s
+  BAM 500B: PASS len=500 time=3628.5ms goodput=137.8 B/s
+  RTS/CTS 100B: PASS len=100 time=18.4ms goodput=5433.7 B/s
+  RTS/CTS 500B: PASS len=500 time=78.3ms goodput=6384.7 B/s
+
+RESULT: PASS (4 PASS / 0 FAIL), peer: rx=178 cts=6 eoma=2 err=0

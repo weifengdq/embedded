@@ -1,0 +1,77 @@
+ontrollers=4 hth=16 filters=36
+  [mode] ctrl=0 -> 2
+  [mode]714
+rx_total=1040 rx_overflow=0 tx_confirmed=1040
+FD stream 64B: sent=500 rx_driver=500 rx_app=500 bad=0 total=177490us => 2817 frame/s
+  payload=1.44 Mbit/s (uid=64 B), 仲裁 500 kbit/s / 数据 2000 kbit/s
+  rx_overflow=0 tx_confirmed=1539
+type 'can probe' / 'can sizes' / 'can stream 500' / 'can stat' / 'can err'
+can sizes 100 3
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+FD sizes (arb 500 kbit/s / data 5000 kbit/s, BRS on):
+  len  dlc   ok/total   avg_us   max_us
+    8    8   100/100      166       185
+   12    9   100/100      180       184
+   16   10   100/100      194       199
+   20   11   100/100      210       214
+   24   12   100/100      224       231
+   32   13   100/100      252       258
+   48   14   100/100      308       314
+   64   15   100/100      364       370
+rx_total=2100 rx_overflow=0 tx_confirmed=3140
+
+letter:/$ 
+letter:/$ can at 2000 3
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+--- FD probe (baud cfg ID3) ---
+  [regs] CAN0 CCCR=0x00000300 NBTP=0x06008A13 DBTP=0x00800A31 TDCR=0x00000C0C PSR=0x0016300F ECR=0x00000000
+         LEC=7 TDCV=22 mtq (PSR[22:16]), DLEC=0
+  64B pingpong: ok=2000/2000 avg=366us max=380us | CAN0 errstate=0 REC=0 TEC=0
+
+letter:/$ 
+letter:/$ can stream 3000 3
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+stream @ baud cfg ID3
+FD stream 64B: sent=3000 rx_driver=3000 rx_app=3000 bad=0 total=550242us => 5452 frame/s
+  payload=2.79 Mbit/s (uid=64 B), 仲裁 500 kbit/s / 数据 5000 kbit/s
+  rx_overflow=0 tx_confirmed=10139
+
+letter:/$ 
+letter:/$ can stream 3000 4
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+stream @ baud cfg ID4
+FD stream 64B: sent=3000 rx_driver=3000 rx_app=3000 bad=0 total=1278266us => 2347 frame/s
+  payload=1.20 Mbit/s (uid=64 B), 仲裁 500 kbit/s / 数据 1000 kbit/s
+  rx_overflow=0 tx_confirmed=13139
+
+letter:/$ 
+letter:/$ can stream 3000 13
+  [mode] ctrl=0 -> 2
+  [mode] ctrl=1 -> 2
+  [mode] ctrl=0 -> 1
+  [mode] ctrl=1 -> 1
+stream @ baud cfg ID13
+FD stream 64B: sent=3000 rx_driver=3000 rx_app=3000 bad=0 total=471690us => 6360 frame/s
+  payload=3.26 Mbit/s (uid=64 B), 仲裁 1000 kbit/s / 数据 5000 kbit/s
+  rx_overflow=0 tx_confirmed=16139
+
+letter:/$ 
+letter:/$ can stat
+CAN0: mode=1 errstate=0 REC=0 TEC=0
+CAN1: mode=1 errstate=0 REC=0 TEC=0
+rx_total=3000 rx_overflow=0 tx_confirmed=16140 busoff=0 det=0
+
+letter:/$ 
+letter:/$ 

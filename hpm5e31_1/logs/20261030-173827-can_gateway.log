@@ -1,0 +1,12 @@
+|_| |_ ___ _ __   ___| 
+letter:/$ 
+[boot] can_gateway: cannelve] t=76 ms link=UP hb=1 rx0=0 echo=0
+quiet
+[app] verbose OFF (no per-frame print)
+
+letter:/$ 
+letter:/$ gw on
+[gw] forwarding ON
+
+letter:/$ 
+letter:/$ [alive] t=5076 ms link=UP hb=50 rx0=0 echo=0

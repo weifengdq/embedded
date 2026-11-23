@@ -1,0 +1,28 @@
+y | stat | gw on
+gw on
+Enet phy init passed !
+IPv4 Address: 192.168.2.100
+IPv4 Netmask: 255.255.255.0
+IPv4 Gateway: 192.168.2.1
+[lwip] cfg ip=192.168.2.100 mask=255.255.255.0 gw=192.168.2.1
+[lwip] aton+set: ip=6402A8C0 mask=00FFFFFF gw=0102A8C0
+[lwip] netif now: ip=6402A8C0 mask=00FFFFFF gw=0102A8C0 hwlen=6 mac=00:00:00:00:D0:0E
+[lwip] netif=en idx=1 MAC=00:00:00:00:D0:0E
+[lwip] IP=192.168.2.100 link=DOWN
+[lwip] MASK=255.255.255.0
+[lwip] GW=192.168.2.1
+[lwip] PHY link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D
+[lwip] link UP after 11 ms
+[lwip] netif=en idx=1 MAC=00:00:00:00:D0:0E
+[lwip] IP=192.168.2.100 link=UP
+[lwip] MASK=255.255.255.0
+[lwip] GW=192.168.2.1
+[lwip] PHY link=UP speed=1000M role=SLAVE PHYSR=8400 GBSR=3000 BMSR=000D
+[lwip] ready: IP=192.168.2.100 port 任意 UDP 可直接收
+[gw] ch1: CAN1 <-> UDP 4000 (local 192.168.2.100)
+[gw] cannelloni v2 gateway ready, 1 channel(s), peer=configured
+[gw] CAN1 <-> UDP4000 rc=0
+[gw] forwarding ON, CAN0 记录中（ring 已清空，等待主机 canplayer 回放）
+
+letter:/$ 
+letter:/$ [auto] 1.5 s 采集完成: stat: log=RUN count=0 dropped=0 gen_on=0 gen_seq=67 uptime=1506 ms

@@ -1,0 +1,69 @@
+/T = 10000.000 Hz   duty = (b-a)/T = 50.00%
+  pins: P6=PD06  P
+commands: pwm <hz> <permille> | pinfo | pmeas
+perr 20 0
+[perr] 模式=0(踩中勘误: TRIG_SEL 同为0 + UPDATE_TIME=trigmux), CMP0/CMP4 交替更新 20 次, 期望值 5000/15000 tick 交替
+[perr] 结果: CMP0 异常 20/20, CMP4 异常 20/20, 无中断 0/40
+       tol=3000 tick (15.00 us @ 200000000 Hz), 最后 v0=1303552 v4=1731072
+
+letter:/$ 
+letter:/$ perr 20 1
+[perr] 模式=1(规避: UPDATE_TIME=影子锁(软件强制)), CMP0/CMP4 交替更新 20 次, 期望值 5000/15000 tick 交替
+[perr] 结果: CMP0 异常 20/20, CMP4 异常 20/20, 无中断 0/40
+       tol=3000 tick (15.00 us @ 200000000 Hz), 最后 v0=1303552 v4=1730304
+
+letter:/$ 
+letter:/$ perr 20 2
+[perr] 模式=2(对照: CMP4 的 TRIG_SEL 写 1, CMP0 写 0), CMP0/CMP4 交替更新 20 次, 期望值 5000/15000 tick 交替
+[perr] 结果: CMP0 异常 20/20, CMP4 异常 20/20, 无中断 0/40
+       tol=3000 tick (15.00 us @ 200000000 Hz), 最后 v0=1303552 v4=1731328
+
+letter:/$ 
+letter:/$ [meas] reload=20030 cmp=20034  period=100.015 us (9998.5 Hz)  high=50.037 us  duty=50.03%
+       period jitter: min=96.690 max=209.460 pp=112.770 us
+       high  jitter: pp=113.780 us (=11378.0 tick)
+       target: 10000 Hz / 500 permille -> freq err -146.1 ppm, duty err +0.030%
+[meas] reload=19998 cmp=19999  period=100.005 us (9999.5 Hz)  high=50.034 us  duty=50.03%
+       period jitter: min=99.730 max=100.280 pp=0.550 us
+       high  jitter: pp=0.570 us (=57.0 tick)
+       target: 10000 Hz / 500 permille -> freq err -50.1 ppm, duty err +0.031%
+[meas] reload=19998 cmp=19999  period=100.005 us (9999.5 Hz)  high=50.029 us  duty=50.03%
+       period jitter: min=99.720 max=100.290 pp=0.570 us
+       high  jitter: pp=0.580 us (=58.0 tick)
+       target: 10000 Hz / 500 permille -> freq err -50.0 ppm, duty err +0.027%
+[meas] reload=19998 cmp=19999  period=100.005 us (9999.5 Hz)  high=50.033 us  duty=50.03%
+       period jitter: min=99.720 max=100.290 pp=0.570 us
+       high  jitter: pp=0.570 us (=57.0 tick)
+       target: 10000 Hz / 500 permille -> freq err -50.1 ppm, duty err +0.031%
+[meas] reload=19998 cmp=19999  period=100.005 us (9999.5 Hz)  high=50.035 us  duty=50.03%
+       period jitter: min=99.720 max=100.290 pp=0.570 us
+       high  jitter: pp=0.580 us (=58.0 tick)
+       target: 10000 Hz / 500 permille -> freq err -50.0 ppm, duty err +0.032%
+[meas] reload=19998 cmp=19999  period=100.005 us (9999.5 Hz)  high=50.037 us  duty=50.03%
+       period jitter: min=99.730 max=100.290 pp=0.560 us
+       high  jitter: pp=0.570 us (=57.0 tick)
+       target: 10000 Hz / 500 permille -> freq err -50.0 ppm, duty err +0.035%
+[meas] reload=19998 cmp=19999  period=100.005 us (9999.5 Hz)  high=50.035 us  duty=50.03%
+       period jitter: min=99.730 max=100.290 pp=0.560 us
+       high  jitter: pp=0.570 us (=57.0 tick)
+       target: 10000 Hz / 500 permille -> freq err -50.0 ppm, duty err +0.033%
+[meas] reload=19998 cmp=19999  period=100.005 us (9999.5 Hz)  high=50.031 us  duty=50.03%
+       period jitter: min=99.720 max=100.280 pp=0.560 us
+       high  jitter: pp=0.570 us (=57.0 tick)
+       target: 10000 Hz / 500 permille -> freq err -50.1 ppm, duty err +0.028%
+[meas] reload=19998 cmp=19999  period=100.005 us (9999.5 Hz)  high=50.038 us  duty=50.04%
+       period jitter: min=99.720 max=100.290 pp=0.570 us
+       high  jitter: pp=0.570 us (=57.0 tick)
+       target: 10000 Hz / 500 permille -> freq err -50.0 ppm, duty err +0.035%
+[meas] reload=19998 cmp=19999  period=100.005 us (9999.5 Hz)  high=50.034 us  duty=50.03%
+       period jitter: min=99.720 max=100.290 pp=0.570 us
+       high  jitter: pp=0.570 us (=57.0 tick)
+       target: 10000 Hz / 500 permille -> freq err -50.0 ppm, duty err +0.032%
+[meas] reload=19998 cmp=19999  period=100.005 us (9999.5 Hz)  high=50.032 us  duty=50.03%
+       period jitter: min=99.730 max=100.290 pp=0.560 us
+       high  jitter: pp=0.580 us (=58.0 tick)
+       target: 10000 Hz / 500 permille -> freq err -50.1 ppm, duty err +0.030%
+[meas] reload=19998 cmp=19999  period=100.005 us (9999.5 Hz)  high=50.030 us  duty=50.03%
+       period jitter: min=99.730 max=100.290 pp=0.560 us
+       high  jitter: pp=0.570 us (=57.0 tick)
+       target: 10000 Hz / 500 permille -> freq err -49.9 ppm, duty err +0.027%

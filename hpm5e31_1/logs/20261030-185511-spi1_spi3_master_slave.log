@@ -1,0 +1,9 @@
+ISO PC12 MOSI PC13 (mode 0, 1000000 Hz)
+  SPI3 slave : SCLK PAms_test 128 20000000 / spi_ms_read 32
+spi_ms_bench
+spi master/slave bidirectional bench (n=128, mode0):
+  hz=1000000   bench        n=128  PASS errors=0   time=1037.97 us bw=123 KB/s
+  hz=5000000   bench        n=128  PASS errors=0   time=210.58 us bw=607 KB/s
+  hz=10000000  bench        n=128  PASS errors=0   time=107.34 us bw=1192 KB/s
+  dbg m_tx= 31 38 3F 46 4D 54 5B 62 | m_rx= E5 B0 BB C6 D1 DC E7 F2 | s_tx= A5 B0 BB C6 D1 DC E7 F2 | s_rx= 31 38 3F 46 4D 54 5B 62
+  dbg SPI1.STATUS=0x00404000 SPI3.STATUS=0x00014000 SPI3.CTRL=0x110

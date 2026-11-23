@@ -1,0 +1,20 @@
+ ch0 (DMAMUX ch0), idle threshold=10 bit
+  internal loopback: OK
+  idle irq total: 1
+shell: uartinfo | uarttest [n]
+uartinfo
+UART4 @0xf0050000 baud=115200, TX=PC16 RX=PC17
+  RX DMA: HDMA ch0 (DMAMUX ch0), idle threshold=10 bit
+  internal loopback: OK
+  idle irq total: 1
+
+letter:/$ 
+letter:/$ uarttest 20
+uarttest: 20 帧, 长度 1..64 变化, 帧间 1 ms 空闲
+  result: frames=20 idle_frame=20 timeout=0
+  data: poll_rx_ok=3/20, dma_rx_ok=0/20 (DMA RX 异常见 README 坑 1)
+  loss=0 ppm (按 idle 帧界计), tx->idle latency min=166 us avg=2388 us max=5038 us
+  tx_dma: avg=470 us max=2085 us, idle irq total=21
+
+letter:/$ 
+letter:/$ 

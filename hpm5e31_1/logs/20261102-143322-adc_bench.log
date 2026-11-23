@@ -1,0 +1,16 @@
+TOSAR Adc continuous group throughput (ADC0.IN01/PF26) ===
+Adc_Init done, conv_clk=50000000 Hz, theory fs=1388888 Hz (16 bit / 20 cycles)
+SELFTEST: first sample raw=34467 (1735577 uV), groer / adcerr / help
+adcbinfo
+Adc bench: ADC0.IN01 (PF26), conv_clk=50000000 Hz, theory fs=1388888 Hz
+group1 status=0, total conversions=2
+commands: adcbench [n] | adcstream | adcver | adcerr
+
+letter:/$ 
+letter:/$ adcbench 20000
+ADCBENCH: n=20000 ticks=636034 us=26501.4 -> 1325.07 us/sample, throughput=754.7 kHz
+ADCBENCH: theory fs=1388888 Hz, measured/theory=0.1%, last raw=35249 (1774955 uV)
+ADCBENCH: group1 total conversions=20003, det count=0
+
+letter:/$ 
+letter:/$ 

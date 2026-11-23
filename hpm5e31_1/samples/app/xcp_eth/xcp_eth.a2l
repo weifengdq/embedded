@@ -1,0 +1,241 @@
+/* ------------------------------------------------------------------
+ * 本文件由 samples/app/xcp_eth/gen_a2l_eth.py 自动生成：
+ *   地址来自 ELF 符号表（复用 tools/gen_a2l.py），不要手工修改。
+ *   工程：HPM5E31_XCP_ETH
+ *   传输：XCP on Ethernet (UDP)  192.168.2.100:5555
+ * ------------------------------------------------------------------ */
+ASAP2_VERSION 1 71
+/begin PROJECT HPM5E31_XCP_ETH "hpm5e31_1 XCP on UDP（XCPonEth）标定测量工程"
+  /begin HEADER "hpm5e31_1 XCP on UDP（XCPonEth）标定测量工程" VERSION "1.0" PROJECT_NO PRJ2
+  /end HEADER
+  /begin MODULE xcp_eth "XCP on Ethernet(UDP 5555) 从站 + DAQ 测量（板 192.168.2.100，主机 192.168.2.1）"
+    /begin MOD_COMMON ""
+      BYTE_ORDER MSB_LAST            /* RISC-V 小端：低字节在前 */
+      ALIGNMENT_BYTE 1
+      ALIGNMENT_WORD 2
+      ALIGNMENT_LONG 4
+      ALIGNMENT_FLOAT32_IEEE 4
+      ALIGNMENT_FLOAT64_IEEE 8
+      ALIGNMENT_INT64 8
+    /end MOD_COMMON
+    /begin MOD_PAR ""
+      /begin MEMORY_SEGMENT RAM "AXI SRAM .data/.bss" DATA RAM INTERN 0x01200000 0x40000 0 0 0 0 0
+      /end MEMORY_SEGMENT
+      /begin MEMORY_SEGMENT FLASH "XIP NOR（只读）" DATA FLASH EXTERN 0x80000000 0x100000 0 0 0 0 0
+      /end MEMORY_SEGMENT
+    /end MOD_PAR
+    /begin RECORD_LAYOUT RL_FLOAT32
+      FNC_VALUES 1 FLOAT32_IEEE COLUMN_DIR DIRECT
+    /end RECORD_LAYOUT
+    /begin RECORD_LAYOUT RL_SLONG
+      FNC_VALUES 1 SLONG COLUMN_DIR DIRECT
+    /end RECORD_LAYOUT
+    /begin RECORD_LAYOUT RL_UBYTE
+      FNC_VALUES 1 UBYTE COLUMN_DIR DIRECT
+    /end RECORD_LAYOUT
+    /begin RECORD_LAYOUT RL_ULONG
+      FNC_VALUES 1 ULONG COLUMN_DIR DIRECT
+    /end RECORD_LAYOUT
+    /begin RECORD_LAYOUT RL_UWORD
+      FNC_VALUES 1 UWORD COLUMN_DIR DIRECT
+    /end RECORD_LAYOUT
+    /begin COMPU_METHOD cm_ident "raw value" RAT_FUNC "%8.0" "" COEFFS 0 1 0 0 0 1 /end COMPU_METHOD   /* 恒等换算 */
+    /begin COMPU_METHOD cm_adc_volt "linear" RAT_FUNC "%8.1" "mV" COEFFS 0 0.0503548 0 0 0 1 /end COMPU_METHOD
+    /begin COMPU_METHOD cm_permille "linear" RAT_FUNC "%6.1" "%" COEFFS 0 0.1 0 0 0 1 /end COMPU_METHOD
+    /begin MEASUREMENT g_adc_raw "ADC0.IN1 原始值（PF26）"
+      UWORD cm_ident 0 0 0 65535
+      ECU_ADDRESS 0x0120A920
+      FORMAT "%6.0"
+      UNIT "LSB"
+      /* 建议采集事件：EVT(0) */
+    /end MEASUREMENT
+    /begin MEASUREMENT g_tick_cnt "EVT0 1 kHz 事件计数（丢帧判定）"
+      ULONG cm_ident 0 0 0 4.29497e+09
+      ECU_ADDRESS 0x0120A958
+      FORMAT "%10.0"
+      /* 建议采集事件：EVT(0) */
+    /end MEASUREMENT
+    /begin MEASUREMENT g_tick_10k "EVT1 10 kHz 事件计数（压力测试丢帧判定）"
+      ULONG cm_ident 0 0 0 4.29497e+09
+      ECU_ADDRESS 0x0120A954
+      FORMAT "%10.0"
+      /* 建议采集事件：EVT(1) */
+    /end MEASUREMENT
+    /begin MEASUREMENT g_tick_100 "EVT2 100 Hz 事件计数"
+      ULONG cm_ident 0 0 0 4.29497e+09
+      ECU_ADDRESS 0x0120A950
+      FORMAT "%8.0"
+      /* 建议采集事件：EVT(2) */
+    /end MEASUREMENT
+    /begin MEASUREMENT g_pid_mid "PID 积分项（定点 1/1000）"
+      SLONG cm_ident 0 0 -1.5e+06 1.5e+06
+      ECU_ADDRESS 0x0120A924
+      FORMAT "%8.0"
+      /* 建议采集事件：EVT(0) */
+    /end MEASUREMENT
+    /begin MEASUREMENT g_cpu_load_pm "主循环负载（千分比）"
+      UWORD cm_permille 0 0 0 1000
+      ECU_ADDRESS 0x0120A922
+      FORMAT "%6.1"
+      UNIT "%"
+      /* 建议采集事件：EVT(0) */
+    /end MEASUREMENT
+    /begin MEASUREMENT g_u8_cnt "EVT0 计数低 8 位"
+      UBYTE cm_ident 0 0 0 255
+      ECU_ADDRESS 0x0120A95C
+      FORMAT "%3.0"
+      /* 建议采集事件：EVT(0) */
+    /end MEASUREMENT
+    /begin MEASUREMENT g_stat_tx_datagrams "板端统计镜像（1 Hz，传输层/DAQ 计数）"
+      ULONG cm_ident 0 0 0 4.29497e+09
+      ECU_ADDRESS 0x0120A940
+      FORMAT "%10.0"
+      /* 建议采集事件：EVT(0) */
+    /end MEASUREMENT
+    /begin MEASUREMENT g_stat_tx_msgs "板端统计镜像（1 Hz，传输层/DAQ 计数）"
+      ULONG cm_ident 0 0 0 4.29497e+09
+      ECU_ADDRESS 0x0120A94C
+      FORMAT "%10.0"
+      /* 建议采集事件：EVT(0) */
+    /end MEASUREMENT
+    /begin MEASUREMENT g_stat_tx_drop "板端统计镜像（1 Hz，传输层/DAQ 计数）"
+      ULONG cm_ident 0 0 0 4.29497e+09
+      ECU_ADDRESS 0x0120A944
+      FORMAT "%10.0"
+      /* 建议采集事件：EVT(0) */
+    /end MEASUREMENT
+    /begin MEASUREMENT g_stat_tx_err "板端统计镜像（1 Hz，传输层/DAQ 计数）"
+      ULONG cm_ident 0 0 0 4.29497e+09
+      ECU_ADDRESS 0x0120A948
+      FORMAT "%10.0"
+      /* 建议采集事件：EVT(0) */
+    /end MEASUREMENT
+    /begin MEASUREMENT g_stat_rx_datagrams "板端统计镜像（1 Hz，传输层/DAQ 计数）"
+      ULONG cm_ident 0 0 0 4.29497e+09
+      ECU_ADDRESS 0x0120A93C
+      FORMAT "%10.0"
+      /* 建议采集事件：EVT(0) */
+    /end MEASUREMENT
+    /begin MEASUREMENT g_stat_rx_ctr_gap "板端统计镜像（1 Hz，传输层/DAQ 计数）"
+      ULONG cm_ident 0 0 0 4.29497e+09
+      ECU_ADDRESS 0x0120A938
+      FORMAT "%10.0"
+      /* 建议采集事件：EVT(0) */
+    /end MEASUREMENT
+    /begin MEASUREMENT g_stat_daq_frames "板端统计镜像（1 Hz，传输层/DAQ 计数）"
+      ULONG cm_ident 0 0 0 4.29497e+09
+      ECU_ADDRESS 0x0120A930
+      FORMAT "%10.0"
+      /* 建议采集事件：EVT(0) */
+    /end MEASUREMENT
+    /begin MEASUREMENT g_stat_daq_dropped "板端统计镜像（1 Hz，传输层/DAQ 计数）"
+      ULONG cm_ident 0 0 0 4.29497e+09
+      ECU_ADDRESS 0x0120A92C
+      FORMAT "%10.0"
+      /* 建议采集事件：EVT(0) */
+    /end MEASUREMENT
+    /begin MEASUREMENT g_stat_daq_overload "板端统计镜像（1 Hz，传输层/DAQ 计数）"
+      ULONG cm_ident 0 0 0 4.29497e+09
+      ECU_ADDRESS 0x0120A934
+      FORMAT "%10.0"
+      /* 建议采集事件：EVT(0) */
+    /end MEASUREMENT
+    /begin MEASUREMENT g_stat_cto_rx "板端统计镜像（1 Hz，传输层/DAQ 计数）"
+      ULONG cm_ident 0 0 0 4.29497e+09
+      ECU_ADDRESS 0x0120A928
+      FORMAT "%10.0"
+      /* 建议采集事件：EVT(0) */
+    /end MEASUREMENT
+    /begin CHARACTERISTIC g_kp "PID 比例增益" VALUE 0x012001D8 RL_FLOAT32 0 cm_ident 0 10
+      FORMAT "%6.3"
+      UNIT "-"
+    /end CHARACTERISTIC
+    /begin CHARACTERISTIC g_ki "PID 积分增益" VALUE 0x012001D4 RL_FLOAT32 0 cm_ident 0 20
+      FORMAT "%6.3"
+      UNIT "1/s"
+    /end CHARACTERISTIC
+    /begin CHARACTERISTIC g_ctrl_max_pm "控制量限幅（千分比）" VALUE 0x012001D0 RL_UWORD 0 cm_permille 0 4000
+      FORMAT "%5.0"
+      UNIT "-"
+    /end CHARACTERISTIC
+    /begin CHARACTERISTIC g_settle_ms "观察窗口（演示标定量）" VALUE 0x012001DE RL_UWORD 0 cm_ident 0 60000
+      FORMAT "%5.0"
+      UNIT "ms"
+    /end CHARACTERISTIC
+    /begin CHARACTERISTIC g_pwm_duty_pm "占空比标定量（写读回演示）" VALUE 0x012001DC RL_UWORD 0 cm_permille 0 1000
+      FORMAT "%5.0"
+      UNIT "‰"
+    /end CHARACTERISTIC
+    /begin CHARACTERISTIC g_sw_flag "位操作（MODIFY_BITS）演示" VALUE 0x012001E0 RL_ULONG 0 cm_ident 0 4.29497e+09
+      FORMAT "%10.0"
+      UNIT "-"
+    /end CHARACTERISTIC
+    /begin IF_DATA XCP
+      /begin PROTOCOL_LAYER
+        0x0104 0xFF 0x00 0x01 0xFF 0x00 0x01 0x00 0x00 0x00
+        BYTE_ORDER_MSB_LAST
+        ADDRESS_GRANULARITY_BYTE
+        OPTIONAL_CMD GET_COMM_MODE_INFO
+        OPTIONAL_CMD GET_ID
+        OPTIONAL_CMD SET_REQUEST
+        OPTIONAL_CMD GET_SEED
+        OPTIONAL_CMD UNLOCK
+        OPTIONAL_CMD SET_MTA
+        OPTIONAL_CMD UPLOAD
+        OPTIONAL_CMD SHORT_UPLOAD
+        OPTIONAL_CMD DOWNLOAD
+        OPTIONAL_CMD MODIFY_BITS
+        OPTIONAL_CMD SET_CAL_PAGE
+        OPTIONAL_CMD GET_CAL_PAGE
+        OPTIONAL_CMD GET_PAG_PROCESSOR_INFO
+        OPTIONAL_CMD GET_SEGMENT_INFO
+        OPTIONAL_CMD GET_PAGE_INFO
+        OPTIONAL_CMD SET_DAQ_PTR
+        OPTIONAL_CMD WRITE_DAQ
+        OPTIONAL_CMD SET_DAQ_LIST_MODE
+        OPTIONAL_CMD GET_DAQ_LIST_MODE
+        OPTIONAL_CMD START_STOP_DAQ_LIST
+        OPTIONAL_CMD START_STOP_SYNCH
+        OPTIONAL_CMD GET_DAQ_CLOCK
+        OPTIONAL_CMD GET_DAQ_PROCESSOR_INFO
+        OPTIONAL_CMD GET_DAQ_RESOLUTION_INFO
+        OPTIONAL_CMD GET_DAQ_EVENT_INFO
+        OPTIONAL_CMD FREE_DAQ
+        OPTIONAL_CMD ALLOC_DAQ
+        OPTIONAL_CMD ALLOC_ODT
+        OPTIONAL_CMD ALLOC_ODT_ENTRY
+        COMMUNICATION_MODE_SUPPORTED BLOCK
+      /end PROTOCOL_LAYER
+      /begin DAQ
+        DYNAMIC
+        0x4
+        0x0
+        OPTIMISATION_TYPE_DEFAULT
+        ADDRESS_EXTENSION_FREE
+        IDENTIFICATION_FIELD_TYPE_ABSOLUTE
+        GRANULARITY_ODT_ENTRY_SIZE_DAQ_BYTE
+        0xFF
+        OVERLOAD_INDICATION_EVENT
+        PRESCALER_SUPPORTED
+        /begin TIMESTAMP_SUPPORTED
+          0x1
+          SIZE_DWORD
+          UNIT_1US
+        /end TIMESTAMP_SUPPORTED
+        /begin EVENT "EVT_1ms" "GPTMR 1 kHz 事件" 0x0 DAQ 0x4 0x1 1MS 0x0
+        /end EVENT
+        /begin EVENT "EVT_100us" "GPTMR 10 kHz 事件（带宽压力测试）" 0x1 DAQ 0x4 0x64 1US 0x1
+        /end EVENT
+        /begin EVENT "EVT_10ms" "GPTMR 100 Hz 事件" 0x2 DAQ 0x4 0xA 1MS 0x2
+        /end EVENT
+      /end DAQ
+      /begin XCP_ON_UDP_IP
+        0x100
+        PORT 5555
+        ADDRESS "192.168.2.100"
+        MAX_BUS_LOAD 100
+        MAX_BIT_RATE 1000
+      /end XCP_ON_UDP_IP
+    /end IF_DATA
+  /end MODULE
+/end PROJECT

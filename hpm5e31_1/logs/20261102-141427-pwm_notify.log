@@ -1,0 +1,24 @@
+fy (board hpm5e31_1) ===
+Pwm v1.0.0 f_pwm0=200000000 Hz cpu=480000000 Hz
+[pwm_notify] auto 2s measurement:
+[notify] edges=40006 in 2000 ms  (rate=20003.0 Hz)
+[notify] expect=40000.0 edges for 2*10000Hz*2000ms  -> lost/extra=-6
+[notify] edge interval: mean=50.002 us min=39.800 max=50.054 pp=10.254 us stddev=0.052 us
+[notify] edges=60046 in 3003 ms  (rate=19995.3 Hz)
+[notify] expect=60060.0 edges for 2*10000Hz*3003ms  -> lost/extra=+14
+[notify] edge interval: mean=50.003 us min=49.692 max=50.308 pp=0.617 us stddev=0.131 us
+[notify] edges=59997 in 3000 ms  (rate=19999.0 Hz)
+[notify] expect=60000.0 edges for 2*10000Hz*3000ms  -> lost/extra=+3
+[notify] edge interval: mean=50.002 us min=49.692 max=50.308 pp=0.617 us stddev=0.158 us
+[notify] edges=59997 in 3000 ms  (rate=19999.0 Hz)
+[notify] expect=60000.0 edges for 2*10000Hz*3000ms  -> lost/extra=+3
+[notify] edge interval: mean=50.003 us min=49.692 max=50.319 pp=0.627 us stddev=0.156 us
+[notify] edges=59997 in 3000 ms  (rate=19999.0 Hz)
+[notify] expect=60000.0 edges for 2*10000Hz*3000ms  -> lost/extra=+3
+[notify] edge interval: mean=50.003 us min=49.712 max=50.294 pp=0.581 us stddev=0.085 us
+[notify] edges=59997 in 3000 ms  (rate=19999.0 Hz)
+[notify] expect=60000.0 edges for 2*10000Hz*3000ms  -> lost/extra=+3
+[notify] edge interval: mean=50.003 us min=49.692 max=50.319 pp=0.627 us stddev=0.129 us
+[notify] edges=59997 in 3000 ms  (rate=19999.0 Hz)
+[notify] expect=60000.0 edges for 2*10000Hz*3000ms  -> lost/extra=+3
+[notify] edge interval: mean=50.002 us min=49.706 max=50.308 pp=0.602 us stddev=0.152 us

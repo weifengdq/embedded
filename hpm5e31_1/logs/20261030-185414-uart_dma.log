@@ -1,0 +1,8 @@
+(RX), dmamux=2/3
+  tx_req=0x11 rx_req=0x10, dma_support=yes
+  0
+udma_test 512 921600
+udma_test n=512 baud=921600 rc=0 errors=0 time=5634 us throughput=90 KB/s
+
+letter:/$ 
+letter:/$ 
