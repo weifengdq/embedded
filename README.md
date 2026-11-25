@@ -31,7 +31,7 @@ GD32A503 (CANFD + LIN):
 
 HPM5E31 (4×CANFD + LAN8651 10BASE-T1S + YT8011AN 千兆以太网, 详见 [hpm5e31_1](hpm5e31_1/README.md)):
 
-![image-20260623112855378](README.assets/image-20260623112855378.png)
+![hpm5e31_1 斜视图](hpm5e31_1/README.assets/hpm5e31_1-oblique.jpg)
 
 LAN9370, 5-Port 100BASE-T1 Gigabit Ethernet Switch:
 
