@@ -47,7 +47,7 @@ UART4 @0xf0050000 baud=115200, TX=PC16 RX=PC17
 letter:/$ uarttest 20
 uarttest: 20 帧, 长度 1..64 变化, 帧间 1 ms 空闲
   result: frames=20 idle_frame=20 timeout=0
-  data: poll_rx_ok=3/20, dma_rx_ok=0/20 (DMA RX 异常见 README 坑 1)
+  data: poll_rx_ok=3/20, dma_rx_ok=0/20 (DMA RX 异常见 README 易错点 1)
   loss=0 ppm (按 idle 帧界计), tx->idle latency min=166 us avg=2388 us max=5038 us
   tx_dma: avg=470 us max=2085 us, idle irq total=21
 ```
@@ -58,9 +58,9 @@ uarttest: 20 帧, 长度 1..64 变化, 帧间 1 ms 空闲
 | 帧界识别（IDLE 中断） | **20/20，loss=0 ppm** | 每帧结束都产生一次 IDLE 中断 |
 | TX DMA 每帧耗时 | avg 470 µs，max 2085 µs | 含通道重建开销，115200 下 1~64 B 理论 87~5560 µs |
 | TX 开始→IDLE 延迟 | min 166 µs / avg 2388 µs / max 5038 µs | 与帧长成正比 |
-| RX DMA 数据 | **0/20 正确**（异常） | 见坑 1；同一帧用轮询读对照也只有 3/20，说明 DMA 抢占了 FIFO |
+| RX DMA 数据 | **0/20 正确**（异常） | 见易错点 1；同一帧用轮询读对照也只有 3/20，说明 DMA 抢占了 FIFO |
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. **【重要】UART RX DMA 在本板配置下搬到伪数据**：同一帧用轮询读（uart_check_status + RBR）能读到正确字节
    （首帧 poll_match=1），但 RX DMA 目的地内容是随机值（0x16/0x3c/0x40 等），且 LSR 的 DR 位仍置 1，

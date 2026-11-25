@@ -37,7 +37,7 @@ bash scripts/hwrun.sh mcal/eth_stats --secs 25 --send "stat;stat det;stat busy;s
 - 日志：`logs/<时间戳>-eth_stats.log`（hwrun 生成；正文第 49 章表 49-11/49-14 引用）
 - 复跑：`bash scripts/hwrun.sh mcal/eth_stats --secs 25 --send "stat;stat det;stat busy;stat types;stat"`
 
-## 6. 关键点与坑
+## 6. 关键点与易错点
 
 1. 统计是**软件计数 + 描述符错误位**的组合，不是 MMC 硬件计数器；口径按 SWS_Eth_91002/91003/91004 的字段含义映射（映射表见第 49 章表 49-11）。
 2. `stat det` 会故意制造 14 个 Det 错误，**这是预期行为**，不要当故障。

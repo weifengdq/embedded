@@ -52,7 +52,7 @@
 #endif
 
 /* ---------- Debug Options（全部关闭，避免 printf 进热路径） ---------- */
-#define LWIP_DEBUG                 1
+#define LWIP_DEBUG                 0
 #define LWIP_DBG_MIN_LEVEL         0
 #define PPP_DEBUG                  LWIP_DBG_OFF
 #define MEM_DEBUG                  LWIP_DBG_OFF

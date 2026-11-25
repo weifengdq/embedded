@@ -50,7 +50,7 @@ QEI0 phase=0 (软件写, 即 QEO 的位置源)  pos=0  angle=0
 
 实测日志：`logs/QEO_LOG`。
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. **QEO 不能自环测自己**：ABZ 是纯输出，SoC 内没有回读通路（见第 16 章 §16.4.5）。
 2. QEO 与 PWM 实例配对使用（`BOARD_QEO_PWM` 注释：QEO1 ↔ PWM1），

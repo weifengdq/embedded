@@ -17,7 +17,7 @@
  *   ⚠ 注意: 曾尝试用 PWM 的 TRGO -> TRGM -> GPTMR CAP2/CAP3 做纯硬件捕获,
  *   但 TRGO 是 1 个 PWM 时钟周期宽(200 MHz 下 5 ns)的窄脉冲, 跨到 100 MHz 的
  *   GPTMR 采样会大量漏采(实测 50 kHz 时 2 s 只捕到 3533 个周期, 应为 10 万个),
- *   详见第 14 章坑 14-3 与 logs/20261030-113* 系列日志。
+ *   详见第 14 章易错点 14-3 与 logs/20261030-113* 系列日志。
  *
  * 串口命令:
  *   pwm <freq_hz> <duty_permille>   设置频率与占空比(千分比), 例: pwm 10000 500
@@ -407,7 +407,7 @@ static void cmd_perr(int argc, char *argv[])
 
     printf("[perr] 模式=%lu(%s), CMP0/CMP4 交替更新 %lu 次, 期望值 %lu/%lu tick 交替\r\n",
            (unsigned long) mode,
-           (mode == 0U) ? "踩中勘误: TRIG_SEL 同为0 + UPDATE_TIME=trigmux"
+           (mode == 0U) ? "命中勘误: TRIG_SEL 同为0 + UPDATE_TIME=trigmux"
                         : ((mode == 1U) ? "规避: UPDATE_TIME=影子锁(软件强制)"
                                         : "对照: CMP4 的 TRIG_SEL 写 1, CMP0 写 0"),
            (unsigned long) iters,

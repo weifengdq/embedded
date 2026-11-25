@@ -77,14 +77,14 @@ verify: match
 | XDMA → AXI SRAM，burst ≥ 2 KB | **407 MB/s** | 受 AXI SRAM 带宽限制（读+写各占一半） |
 | XDMA 显式 8B 位宽 + 64T 突发 | 349 MB/s | 4096B 小拷贝有启动开销 |
 | HDMA → AXI SRAM，burst ≤ 64 B | 118 MB/s | 走 AHB→AXI 桥 |
-| HDMA → AXI SRAM，burst ≥ 128 B | **26 MB/s（掉 4.5 倍）** | 见"坑 2" |
+| HDMA → AXI SRAM，burst ≥ 128 B | **26 MB/s（掉 4.5 倍）** | 见"易错点 2" |
 | HDMA → AHB SRAM，burst ≥ 64 B | **328 MB/s** | HDMA 的最佳路径 |
 | 链式 3 段（每段 4 KB） | 485 MB/s | 描述符开销可忽略 |
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. **cache 一致性**：DMA 搬移的缓冲必须放在 non-cacheable 区（ATTR_PLACE_AT_NONCACHEABLE_WITH_ALIGNMENT），否则 CPU 侧 memcmp 可能读到 cache 里的旧数据。
 2. **HDMA 访问 AXI SRAM 时突发 ≥128 B 会掉速**：实测 117.7 MB/s(64B) → 25.9 MB/s(128B)。HDMA 是 AHB 主设备，AXI SRAM 在另一侧，突发跨过 AHB 桥能力后效率骤降。建议 HDMA 只用于"外设寄存器 ↔ AHB SRAM"，或把 AXI SRAM 访问的突发限制在 ≤64 B。
 3. **dma_start_memcpy() 会自动选位宽**（按 burst/地址/长度对齐取最大），返回 status_invalid_argument(2) 常见原因：突发不是 2^n 字节、或突发超过 DMA_SOC_TRANSFER_WIDTH_MAX * TRANSFER_PER_BURST_MAX。本示例 dmahb 的 1024/2048/4096/8192 B 突发就因此被拒绝（HDMA 上限 128T×4B=512B）。
-4. **链式搬移的每段长度必须能被突发整除**：size_in_byte 不是突发字节数的整数倍时 dma_config_linked_descriptor() 返回失败（本示例最初用 16384/3 就踩到了，改成 /4 后通过）。
+4. **链式搬移的每段长度必须能被突发整除**：size_in_byte 不是突发字节数的整数倍时 dma_config_linked_descriptor() 返回失败（本示例最初用 16384/3 就遇到了，改成 /4 后通过）。
 5. mchtmr 是 24 MHz 自由运行计数器（clock_mchtmr0），用于 µs 级计时；不要用 bsp_uptime_ms() 做几十 µs 的测量（1 ms 分辨率不够）。

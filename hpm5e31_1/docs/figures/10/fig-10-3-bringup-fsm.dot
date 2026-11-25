@@ -18,6 +18,6 @@ digraph bringup {
 
   por -> rstn -> rel -> state -> read -> cfg -> sync -> run;
 
-  meas   [shape=note, label="本仓库实测(2026-10-30):\nRESET_N=0 时 IRQ_N=1、SDO=高阻\nRESET_N=1 后 IRQ_N=0、CS 有效时 SDO 被驱动\n=> 复位/中断/SDO 链路正确;\n控制事务回显仍为全 0(见 10.9 节坑 2)", fillcolor="#FFEBE9", color="#DA3633"];
+  meas   [shape=note, label="本仓库实测(2026-10-30):\nRESET_N=0 时 IRQ_N=1、SDO=高阻\nRESET_N=1 后 IRQ_N=0、CS 有效时 SDO 被驱动\n=> 复位/中断/SDO 链路正确;\n控制事务回显仍为全 0(见 10.9 节易错点 2)", fillcolor="#FFEBE9", color="#DA3633"];
   state -> meas [style=dashed, arrowhead=none, color="#DA3633"];
 }

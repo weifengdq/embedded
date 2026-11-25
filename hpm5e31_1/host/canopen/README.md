@@ -118,7 +118,7 @@ $HOME/pyenv/bin/python co_sdo_seg.py --iterations 5
 分段本身不带重传）。因此 **Bench B 下本脚本会失败**，请用 Bench A（板内主站）测吞吐
 （14.0 KB/s，见第 32 章表 32-11），或用 cannelloni TCP 模式/主机侧重试。
 
-## 6. 坑
+## 6. 易错点
 
 1. **vcan 不限速会淹 MCU**：`tc qdisc ... tbf rate 500kbit` 必须加，否则板端网关丢帧、SDO 超时；
 2. **NMT Reset Application 会让板子重启**：`co_node_test.py` 默认只测 Reset Communication，

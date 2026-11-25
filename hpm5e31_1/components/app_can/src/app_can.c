@@ -3,8 +3,8 @@
  *
  * 参考：samples/can/mcan_two_node/src/main.c（位时序/初始化顺序已上板验证）、
  *       samples/can/mcan_throughput、samples/can/mcan_filter。
- * 关键坑：board_init_can_clock() 必须先于 mcan_deinit()/mcan_init()，否则访问被
- *         门控的 MCAN 寄存器会挂死（第 8 章坑 1）。
+ * 关键易错点：board_init_can_clock() 必须先于 mcan_deinit()/mcan_init()，否则访问被
+ *         门控的 MCAN 寄存器会挂死（第 8 章易错点 1）。
  *
  * 作者：tp-infra
  */

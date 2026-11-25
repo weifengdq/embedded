@@ -781,7 +781,7 @@ OVERRIDES = [
     ("docs/chapters/48-mcal-can.md", "§48.6", "§47.8", "指向 例程"),
     ("docs/chapters/48-mcal-can.md", "§48.7", "§47.9", "指向 实测"),
     ("docs/chapters/48-mcal-can.md", "§48.8", "§47.10", "指向 性能"),
-    ("docs/chapters/48-mcal-can.md", "§48.9", "§47.11", "指向 坑"),
+    ("docs/chapters/48-mcal-can.md", "§48.9", "§47.11", "指向 易错点"),
     ("docs/chapters/48-mcal-can.md", "§48.10", "§47.12", "指向 对比"),
     ("docs/chapters/48-mcal-can.md", "§48.11", "§47.14", "指向 待确认项与风险（参考来源插在其前）"),
 ]
@@ -805,7 +805,7 @@ TEXT_FIX = [
     ("docs/chapters/14-pwmv2-hrpwm.md", "§2.8", "§14.4.4", "ch14：原 §2.8 悬空，应用场景'多计数器同步+移相'对应 2.4 移相 -> 新号 §14.4.4"),
     ("components/app_can/README.md", "§29.5", "§28.4", "指第 29 章'寄存器与驱动 API 对照'（工作原理节）-> 新号 §28.4"),
     ("components/app_lwip/README.md", "§29.3", "§28.4", "指第 29 章 Bench C（工作原理节）-> 新号 §28.4"),
-    ("components/app_can_gw/README.md", "§29.6", "§28.8", "指第 29 章'坑与注意事项'（第 8 个 H2）-> 新号 §28.8"),
+    ("components/app_can_gw/README.md", "§29.6", "§28.8", "指第 29 章'易错点与注意事项'（第 8 个 H2）-> 新号 §28.8"),
     ("host/gs_usb/README.md", "图 40-4", "图 41-4", "R6 旧章号：gs_usb 现为第 42 章（新 41），枚举耗时对应 图 42-4 -> 图 41-4"),
     ("host/gs_usb/README.md", "图 40-5", "图 41-5", "R6 旧章号：单帧延迟/吞吐对应 图 42-5 -> 图 41-5"),
 ]

@@ -42,7 +42,7 @@ udma_test n=1024 baud=921600 rc=0 errors=0 time=11266 us throughput=90 KB/s
 udma_bench: 115200->11 KB/s, 460800->45, 921600->90, 2000000->199, 3000000->307 (全部 0 错误)
 ```
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. **先启动 RX DMA，再启动 TX DMA**：反过来前几个字节会丢（本样例按此顺序）。
 2. 缓冲区必须 `ATTR_PLACE_AT_NONCACHEABLE`（或做 cache 维护），否则 D-Cache 会读到旧数据 / 写到未刷新的内存。

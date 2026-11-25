@@ -60,7 +60,7 @@ def fig_header():
                 xy=(50, 78 + 2 * (row_h + 1.2)), xytext=(55, 40),
                 fontsize=8.2, color=C_GREEN,
                 arrowprops=dict(arrowstyle="->", color=C_GREEN, lw=1.0))
-    ax.text(4, 36, "所有多字节字段 = 大端（网络字节序）；用结构体 memcpy 会得到反序 —— 第 35 章坑 1",
+    ax.text(4, 36, "所有多字节字段 = 大端（网络字节序）；用结构体 memcpy 会得到反序 —— 第 35 章易错点 1",
             fontsize=8.4, color=C_GREY)
 
     # Message Type / Return Code 取值

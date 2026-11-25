@@ -68,7 +68,7 @@ lan865x_mmd_w(tc6, MDIO_OATC14_PLCA_CTRL0, enabled ? PLCA_CTRL0_EN : 0);
 return lan865x_plca_read(tc6, cfg);   /* 回读 = 自证 */
 ```
 
-**顺序很重要**：先写参数再使能是安全的；如果反过来（先使能再改 node_id），节点会在旧 ID 的时隙里发一帧，容易出现"偶发丢帧、随后恢复"的诡异现象（第 11.8 节坑 3）。
+**顺序很重要**：先写参数再使能是安全的；如果反过来（先使能再改 node_id），节点会在旧 ID 的时隙里发一帧，容易出现"偶发丢帧、随后恢复"的诡异现象（第 11.8 节易错点 3）。
 
 ### 11.4.3 两个角色
 
@@ -177,7 +177,7 @@ while (1) {
 
 | 传输方式 | 控制事务 echo | 实测 SCLK | 说明 |
 |---|---|---|---|
-| **SPI2 硬件控制器 + GPIO CS** | ✅ 每档 32 次 0 错误（1/2/5/10/20 MHz） | 1~20 MHz（第 10 章表 10-5） | **当前默认传输层**；根因修复见第 10 章坑 2（SCLK pad 补 LOOP_BACK 等四步） |
+| **SPI2 硬件控制器 + GPIO CS** | ✅ 每档 32 次 0 错误（1/2/5/10/20 MHz） | 1~20 MHz（第 10 章表 10-5） | **当前默认传输层**；根因修复见第 10 章易错点 2（SCLK pad 补 LOOP_BACK 等四步） |
 | GPIO 位翻转（10 nops） | ✅ 0 错误 | ≈1.59 MHz | 保留为兜底/调试通道（`trans bb`），慢 5~6 倍 |
 
 > 本节所有吞吐数字都是在 **SPI2 硬件控制器**上测的；20 MHz 下已经跑满 10BASE-T1S 的 10 Mbps 线速率（表 11-11）。位翻转通道只在硬件 SPI 异常时用来隔离问题。
@@ -218,7 +218,7 @@ while (1) {
 
 > **两处值得记录的细节**：
 > 1. 接收帧长度是 **64 B**（= 60 B 最小帧 + 4 B FCS）。LAN8651 会把 FCS 一起交给主机，接 lwIP 时要在 `low_level_input` 里 `len -= 4`（Linux 驱动按 `ETH_FCS_LEN` 处理，本仓库 raw 示例不裁）。
-> 2. `dropped=1` 是因为接收队列只有 2 个槽位、而命令一次发 5 帧时主机帧到达较快；示例代码里这是刻意保留的最小实现（第 11.8 节坑 5）。
+> 2. `dropped=1` 是因为接收队列只有 2 个槽位、而命令一次发 5 帧时主机帧到达较快；示例代码里这是刻意保留的最小实现（第 11.8 节易错点 5）。
 
 ### 11.7.4 PLCA 主从实测
 
@@ -298,7 +298,7 @@ PLCA: en=1 node_id=1 node_cnt=8 to_tmr=32 burst_cnt=0 burst_tmr=128 status=0x800
 | 硬件 SPI 修复后 | SPI2 控制器 10 MHz | **9.08 Mbit/s** | 7.61 Mbit/s |
 | 硬件 SPI 修复后 | SPI2 控制器 20 MHz | 9.0 Mbit/s（线速率封顶） | **8.87 Mbit/s** |
 
-吞吐提升约 **13 倍**，根因修复过程见第 10 章坑 2（时钟门控 → 真 GPIO CS → SCLK LOOP_BACK → FIFO 感知长事务）。
+吞吐提升约 **13 倍**，根因修复过程见第 10 章易错点 2（时钟门控 → 真 GPIO CS → SCLK LOOP_BACK → FIFO 感知长事务）。
 
 ### 11.8.3 PLCA 参数怎么调
 
@@ -315,7 +315,7 @@ PLCA: en=1 node_id=1 node_cnt=8 to_tmr=32 burst_cnt=0 burst_tmr=128 status=0x800
 
 本仓库把这三个参数做成了运行时命令（`plca`），复测时只需改参数重跑同一套脚本。
 
-## 11.9 坑与注意事项
+## 11.9 易错点与注意事项
 
 1. **现象**：PLCA 打开后 `PST` 一直是 0，ping 不通。
    **原因**：段上没有协调者（两端都不是 node 0），或两端 `node_cnt` 不一致导致 BEACON 被判定无效。
@@ -360,12 +360,12 @@ PLCA: en=1 node_id=1 node_cnt=8 to_tmr=32 burst_cnt=0 burst_tmr=128 status=0x800
 
 ![图 11-3 LAN8651 数据通路能力与 lwIP 首轮实测的 TC6 统计](figures/11/fig-11-3-lwip-throughput.png)
 
-### 11.10.1 三个工程细节（都是踩过的坑）
+### 11.10.1 三个工程细节（都是遇到过的问题）
 
 **① 接收帧要剥掉 4 B FCS。** LAN8651 把 FCS 一起交给主机（60 B 最小帧收到 64 B，见 11.6.2），
 所以 `low_level_input` 里必须 `len -= 4`，否则 lwIP 会因为 IP 总长度对不上丢掉整个帧。
 
-**② RX 不能"等有 chunk 再读"（本轮最大的坑）。** TC6 的待收块数只在**一次数据事务的尾字**里返回，
+**② RX 不能"等有 chunk 再读"（本轮最大的易错点）。** TC6 的待收块数只在**一次数据事务的尾字**里返回，
 纯收包时没有任何发送事件去刷新这个计数。第一版 `oa_tc6_poll_rx()` 写的是
 `if (rx_chunks_available == 0) return 0;`，结果就是"板子不发包就永远收不到包"：
 
@@ -413,7 +413,7 @@ while ((len = oa_tc6_rx_pop(s_tc6, s_rx_buf, sizeof(s_rx_buf))) > 0U) {
 
 1. **U-11-1 的核心目标达成**：ping 5/5、TCP 下行 5.69 Mbit/s，说明 TC6 → lwIP → ARP/IP/TCP 整条链路是通的；
    5.69 Mbit/s ≈ 10 Mbps 线速率的 57%，与 10BASE-T1S 半双工 + TCP ACK 反向流量相符。
-2. **修复的关键是 11.9.1 的坑②**：RX 计数只在数据事务尾字里返回，不能"等有 chunk 再读"。
+2. **修复的关键是 11.9.1 的易错点②**：RX 计数只在数据事务尾字里返回，不能"等有 chunk 再读"。
    修复后 `rx_dropped` 从 12 降到 0，ping 从全超时变成 0% 丢包。
 3. **上行仍只有 49.9 kbit/s**，与下行差两个数量级。候选原因三条（都给了复现命令）：
    ① 本示例 `TCP_SND_BUF/TCP_WND` 只有 4×MSS，而 lwiperf 客户端按 MSS 逐段写，
@@ -452,7 +452,7 @@ while ((len = oa_tc6_rx_pop(s_tc6, s_rx_buf, sizeof(s_rx_buf))) > 0U) {
 | 编号 | 待确认项 | 现状 | 验证方法 |
 |---|---|---|---|
 | U-11-1 | lwIP ping/iperf 端到端 | **已实测（2026-11-02）**：ping 5/5（RTT 0.7~2.4 ms）、TCP 下行 5.69 Mbit/s（57% 线速率）、RX 丢帧 0；上行仍 49.9 kbit/s，瓶颈定位到发送节奏（3 条候选见 11.9.2） | 复测命令：板端 `ip;link;iserver tcp`，主机 `ping -c 5` / `iperf -c 192.168.1.100 -t 8`；上行 `iperf -s` + 板端 `iclient 192.168.1.1 tcp` |
-| U-11-2 | 硬件 SPI2 为何 CS/SCLK 不到引脚 | **已实测**（2026-10-30，见第 10 章 U-10-1 坑 2）：时钟门控 + 软件 CS + SCLK LOOP_BACK + FIFO 感知长事务，四步后 1~20 MHz 各 32 次读 0 错误 | 已不需要再测；留 `hwchk`/`hwtx` 作为回归自证 |
+| U-11-2 | 硬件 SPI2 为何 CS/SCLK 不到引脚 | **已实测**（2026-10-30，见第 10 章 U-10-1 易错点 2）：时钟门控 + 软件 CS + SCLK LOOP_BACK + FIFO 感知长事务，四步后 1~20 MHz 各 32 次读 0 错误 | 已不需要再测；留 `hwchk`/`hwtx` 作为回归自证 |
 | U-11-3 | PLCA 主从在 10BASE-T1S 段上的**吞吐** | **已知限制**：PLCA 主从与裸帧收发已验证（表 11-7），但 PLCA + lwIP 组合未联调（lwIP 例程默认 CSMA/CD，主机适配器 PLCA 脚本 `t1s_host.sh plca0/plca1` 可切换）；吞吐数据因此仍缺 | 现场按 11.7.3 节参数扫描：主机 `t1s_host.sh plca0 8 <to> <bc>` + 板端 `plca on 1 ...`，再跑 iperf 对比 to_tmr=16/32/64、burst=0/2 |
 | U-11-4 | 25 MHz SPI 稳定性 | **已实测（2026-10-30 表 10-5）**：80 MHz 源无法整分频出 25 MHz，20 MHz 是上限；20 MHz 下 32 次读 0 错误，带宽已够跑满 10 Mbps 线速率 | 复核命令 `speed 25000000;scan`（返回仍约 20 MHz） |
 | U-11-5 | 多节点（>2）PLCA | **已知限制**：只有 1 块板 + 1 个 USB 适配器，无法构造 4/8 节点 | 增加 LAN8651 节点后：各节点唯一 `node_id`、`node_cnt` 一致，读 PLCA STATUS 的 PST=1，再扫吞吐（参考表 11-6） |

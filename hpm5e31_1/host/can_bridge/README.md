@@ -82,7 +82,7 @@ IFACE=vcan3 LOCAL_PORT=4003 REMOTE_PORT=4003 ./run_tunnel.sh &
 原始日志：板端 `logs/20261030-174321-can_gateway.log`（最终 PASS 那次）、`logs/20261030-173424-can_gateway.log`（首轮 PASS）、`logs/20261030-174200-can_gateway.log`（`-t 100000` 对照）；
 主机侧 `/tmp/can_bridge_accept/{ping,candump_hb,candump_echo,bench}.log`、`bench.json`。
 
-## 5. 坑
+## 5. 易错点
 
 | # | 现象 | 原因 | 解决 |
 |---|---|---|---|

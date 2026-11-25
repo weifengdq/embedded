@@ -112,7 +112,7 @@ include(${REPO_ROOT}/components/app_can_gw/app_can_gw.cmake)
 | 往返延迟 | python-can 200 次，`host/can_bridge/bench_gateway.py` | 待确认（需实测） |
 | 300 帧/s 丢包 | cangen / bench_gateway.py 10 s | 待确认（需实测） |
 
-## 6. 坑
+## 6. 易错点
 
 | # | 现象 | 原因 | 处理 |
 |---|---|---|---|

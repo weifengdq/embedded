@@ -109,7 +109,7 @@ struct gs_host_frame_header {  // 12 B
 - USB0（Pin67 USB_N / Pin68 USB_P）→ 主机；`board_init_usb(HPM_USB0)` 已在本仓库 board.c 实现（引脚 + 时钟），直接调用。
 - CAN0 PD00/PD01、CAN1 PD05/PD04、CAN2 PC08/PA09、CAN3 PC15/PC14；**CAN0↔CAN1、CAN2↔CAN3 已两两相连 + 120Ω**，可做设备自测（主机发 can0 → 从 can1 收）。
 - **终端电阻是手动拨码开关，软件不可控**（不实现，文档写清）。
-- MCAN 消息 RAM 必须在 AHB SRAM 并 `mcan_set_msg_buf_attr()`（见 `components/app_can` 的坑）。
+- MCAN 消息 RAM 必须在 AHB SRAM 并 `mcan_set_msg_buf_attr()`（见 `components/app_can` 的易错点）。
 - 调试串口仍是 CH343 `/dev/ttyACM0` 921600，烧写/抓串口流程不变；**gs_usb 固件运行时不要烧别的固件**（USB 设备会掉）。
 
 ## 6. 目录与作用域

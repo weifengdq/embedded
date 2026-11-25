@@ -4,7 +4,7 @@
  * 参考：
  *   AUTOSAR_CP_SWS_WatchdogDriver §8.3（Init/SetMode/SetTriggerCondition 语义）；
  *   HPM5E31 RM EWDG；hpm_sdk/drivers/src/hpm_ewdg_drv.c（ewdg_init/refresh 时序）；
- *   本书 docs/chapters/22-wdg-power-temp.md（EWDG 实测，含窗口模式坑）。
+ *   本书 docs/chapters/22-wdg-power-temp.md（EWDG 实测，含窗口模式易错点）。
  *
  * 语义映射：
  *   Wdg_SetMode(OFF/SLOW/FAST)  -> 关狗 / 用 slowTimeoutMs / fastTimeoutMs 重新使能；

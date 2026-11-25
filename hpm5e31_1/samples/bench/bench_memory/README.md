@@ -79,14 +79,14 @@ table 2：三种存储位置 @ 4096B，单位 MB/s：
    但**写**比读快很多（memset_u32 425 MB/s），写有缓冲、读是阻塞的。
 5. 64KB 时 unroll16 掉到 784.8 MB/s（源+目的 128KB 超过 L1 D-Cache 容量，开始反复 miss）。
 
-## 坑与注意事项
+## 易错点与注意事项
 
 1. **命令名冲突**：BSP 里已有 `mem`（hexdump），本样本注册的是 `membw`，否则链接期报
    `multiple definition of shellCommandmem`。
 2. **`.bss` 不是"非 cacheable"**：本 SoC 上 `.bss` 默认落在 AXI SRAM 且**可缓存**；
    要非 cacheable 必须显式用 `.noncacheable.bss`（链接脚本 `.noncacheable` → AXI_SRAM_NONCACHEABLE）。
 3. **DLM 是可写段 `.fast_ram.bss`，不是 `.fast`**：`.fast` 是 ILM 里的**代码**段，别混。
-4. **C 语言参数求值顺序坑**：第一版写成
+4. **C 语言参数求值顺序易错点**：第一版写成
    `report(op, region, size, reps, cyc, measure(...))`，`cyc` 可能在 `measure()` 之前被读取，
    导致日志里出现 `cyc_per_byte=35997024256.000` 这种乱码。**MB/s 值本身是对的**（那是 measure 的返回值），
    但 cyc_per_byte 不可信 —— 已改为先调用再传参。

@@ -19,7 +19,7 @@
 
 - **学到什么**：IEEE 1588 PTP 的报文家族与状态机、E2E 与 P2P 两种延迟机制、one-step/two-step 的取舍、
   offset 与路径延迟的推导、PI 伺服如何改硬件时钟；HPM5E31 ENET 的 PTP 寄存器与描述符时间戳位；
-  如何把 PTPd 2.0.1 接到 lwIP 上并**用 MAC 硬件时间戳**，以及和主机 linuxptp 互测的方法与坑。
+  如何把 PTPd 2.0.1 接到 lwIP 上并**用 MAC 硬件时间戳**，以及和主机 linuxptp 互测的方法与易错点。
 - **前置章节**：第 13 章（lwIP 移植、零拷贝收发、`common.c` 的 TX/RX 路径）是必读；
   第 12 章（PHY/RGMII）用于理解"MAC 打戳点"与"PHY 打戳点"的差别。
 - **承接章节**：第 39 章（DLT 日志的时间戳精度依赖本章的时基）、第 24 章（总线实时性对比）。
@@ -40,7 +40,7 @@
 
 本板的价值在于：**HPM5E31 的 ENET MAC 直接支持 IEEE 1588-2008**（时间戳单元 + 可调 PTP 时钟 +
 PPS 输出），不需要外挂 PHC 芯片，也不需要在软件里"收包时取当前时间"（那种做法精度只有几十 µs，
-见 §38.8.4 与 §38.10 坑 2）。
+见 §38.8.4 与 §38.10 易错点 2）。
 
 ### 38.3.2 技术路线：为什么不是从零移植 flexPTP
 
@@ -52,7 +52,7 @@ PPS 输出），不需要外挂 PHC 芯片，也不需要在软件里"收包时�
 因此本章路线是：
 
 1. **协议栈**：用 HPM SDK 自带的 **PTPd 2.0.1**（`middleware/ptpd/v2`，IEEE 1588-2008 完整普通时钟），
-   拷进 `components/app_ptp/ptpd_v2/` 并修 1 处上游缺陷（§38.10 坑 1）；
+   拷进 `components/app_ptp/ptpd_v2/` 并修 1 处上游缺陷（§38.10 易错点 1）；
 2. **时间戳**：复用 SDK lwIP 移植层已有的 `LWIP_PTP` 支持——RX 从描述符 RDES6/7 取、
    TX 对 UDP 319 置 TTSE 后从 TDES6/7 取；
 3. **参考**：flexPTP 作为架构与状态机对照（§38.4 的报文表/状态机与它的 `protocol.c`/`master.c`/`slave.c` 一致）。
@@ -253,7 +253,7 @@ sudo host/ptp/run_ptp_master.sh stop
 ```
 
 > 板端 shell 是单线程的：用 `ptpbench`（或组件自带 `sleep`）延时，它在延时期间继续轮询网络与 PTP；
-> 不要用忙等 delay，否则协议栈被冻结、offset 统计出现假台阶（§38.10 坑 4）。
+> 不要用忙等 delay，否则协议栈被冻结、offset 统计出现假台阶（§38.10 易错点 4）。
 
 ## 38.8 实测
 
@@ -368,7 +368,7 @@ Pdelay_Resp_Follow_Up 三报文，单向延迟 = 邻居往返 / 2。
 同日第二次 60 s 窗口复验（`logs/20261102-102525-gptp_demo.log`，n=46 稳态）：mean −155.2 ns / σ 248.1 ns /
 路径延迟 13842.1 ± 1.4 ns，与首轮一致；本次还验证了 **P2P 下板端 `ptpstats` 的统计**
 （n=42，mean −205.7 ns，σ 338.7 ns，min −1625 ns，max 121 ns）——修复前该模式恒为 "no sample yet"，
-因为路径延迟要从 `portDS.peerMeanPathDelay` 取而不是 `currentDS.meanPathDelay`（见 §38.10 坑 8b）。
+因为路径延迟要从 `portDS.peerMeanPathDelay` 取而不是 `currentDS.meanPathDelay`（见 §38.10 易错点 8b）。
 
 结论：**P2P 逐跳延迟测量通路打通**。两轮 60 s 窗口里 P2P 路径延迟 σ=1.0~1.4 ns、E2E σ=0.7 ns，
 都是"ns 级稳定"；P2P 的优势在于**不依赖对端 GM 的 Follow_Up 时间戳字段**，且锁定只要 3 s
@@ -395,9 +395,9 @@ lwIP 突发处理可达几十 µs，因此**软件打戳的 offset 抖动预期 
 | 时钟分辨率 | 10 ns（SSINC） | PTP 时钟源 100 MHz |
 | 上电锁定时间 | ≈ 15 s | 主要花在 Announce 接收超时与 qualification；802.1AS 的 announce 间隔为 0，可缩短 |
 
-## 38.10 坑
+## 38.10 易错点
 
-**坑 1：PTPd 上游把 transportSpecific 写成 8，linuxptp 会静默丢弃 Delay_Req。**
+**易错点 1：PTPd 上游把 transportSpecific 写成 8，linuxptp 会静默丢弃 Delay_Req。**
 现象：板端 `updateClock: one-way delay averaged (E2E): 0s 0ns` 恒为 0，从钟永远测不到路径延迟；
 主机 `ptp4l -m` 完全正常、无任何报错。抓包判据：板端 Delay_Req 首字节 `0x81`（应为 `0x01`）。
 根因：`ptpd_v2/src/dep/msg.c: msgPackHeader()` 里 `Nibble transport = 0x80`，即 transportSpecific=8，
@@ -405,50 +405,50 @@ lwIP 突发处理可达几十 µs，因此**软件打戳的 offset 抖动预期 
 临时规避：主机 `ptp4l.conf` 加 `ignore_transport_specific 1`。修复前后对比见
 `logs/20261030-170309-ptp_slave.log`（delay 恒 0）与 `logs/20261030-170507-ptp_slave.log`（13840 ns）。
 
-**坑 2：别把"MAC 打戳"和"PHY 打戳"混为一谈。**
+**易错点 2：别把"MAC 打戳"和"PHY 打戳"混为一谈。**
 YT8011AN 自己也支持 IEEE1588（PTP 寄存器 0x8000~0x801a、可解析 L2/IPv4/IPv6、有 PTP GPIO），
 打开 PHY 打戳能让打戳点更靠近线缆（省掉 RGMII + MAC 的几百 ns），但需要 MDIO 配置 PHY 并把时间戳读出来。
 本章用 MAC 打戳：offset 是相对量，固定延迟在对称假设下会抵消，**MAC 打戳足够**。
 
-**坑 3：路径延迟第一次测量会给 offset 一个 13.8 µs 的台阶，统计窗口必须避开。**
+**易错点 3：路径延迟第一次测量会给 offset 一个 13.8 µs 的台阶，统计窗口必须避开。**
 从钟进 SLAVE 后 `meanPathDelay` 还是 0，直到第一次 Delay_Resp 才变成 13835 ns；
 offset 公式里要减 `meanPathDelay`，那一拍 offset 会跳变（实测 −13114 ns，见
 `logs/20261030-172117-ptp_slave.log`）。**统计稳态要等"Delay_Resp 已到 + |offset|<5 µs + 5 s"**，
 本组件 `app_ptp_sample_stats()` 已内置；同时把 `DEFAULT_DELAYREQ_INTERVAL` 从 3 改成 0（1~2 s 一次），
 让第一次延迟测量尽早发生。
 
-**坑 4：板端 shell 单线程，忙等会把协议栈冻住。**
+**易错点 4：板端 shell 单线程，忙等会把协议栈冻住。**
 `hwrun --send` 是把分号拆成多行、0.05 s 间隔连续发送的，**没有内建 sleep**；若固件用
 `board_delay_ms()` 延时，这期间 `app_ptp_poll()` 不跑，PTP 会错过 Sync/Announce → 状态机回退。
 本组件提供 `sleep <ms>`（延时期间继续轮询）与 `ptpbench <secs>`（阻塞式测量窗口）。
 
-**坑 5：`bsp_uptime_ms()` 在每轮 < 1 ms 的主循环里会"冻结"（已修复）。**
+**易错点 5：`bsp_uptime_ms()` 在每轮 < 1 ms 的主循环里会"冻结"（已修复）。**
 旧实现按"距上次调用的周期数 × 1000 / CPU 频率"累加，间隔不足 1 ms 时整数除法把增量截断成 0，
 所以在每轮几十 µs 的循环里反复调用，返回值可能长时间不增——表现为"用 uptime 做超时的循环永不退出、
-周期打印不出现"（本项目第一次 `ptpbench` 就踩到：只打印开始、不打印结束）。
+周期打印不出现"（本项目第一次 `ptpbench` 就遇到：只打印开始、不打印结束）。
 **Lead 已于 2026-10-30 把 `boards/hpm5e31_1/bsp/bsp.c` 改为 mcycle 绝对时基**，之后可直接用；
 PTP 组件自身仍用 GPTMR 1 ms 中断维护的 `s_localtime_ms`（与 PTP 协议栈的 1 ms 时基同源，且不受 BSP 变更影响）。
 
-**坑 6：主机侧要点。**
+**易错点 6：主机侧要点。**
 `ptp4l` 需要 root（打开 `/dev/ptp1` 硬件时间戳）；`pmc` 默认通过 UDS `/var/run/ptp4l` 访问，
 需要 ptp4l 在跑；enp6s0 同时有 192.168.0.1 与 192.168.2.1 两个地址，ptp4l 会选 192.168.0.1 作源地址
 （不影响功能，抓包时别被源地址迷惑）。内核硬件时间戳依赖网卡驱动支持：
 `sudo ethtool -T enp6s0` 应看到 `hardware-transmit/receive` 与 `hardware-raw-clock`。
 
-**坑 8b：P2P 模式下"路径延迟"不在 `currentDS` 里。**
+**易错点 8b：P2P 模式下"路径延迟"不在 `currentDS` 里。**
 PTPd 的 E2E 把单向延迟算进 `currentDS.meanPathDelay`，而 P2P 的逐跳延迟放在
 `portDS.peerMeanPathDelay`（由 `updatePeerDelay()` 填）。若统计/打印只看 `currentDS`，
 P2P 模式就会出现"PTP 明明同步得很好，但板端 `ptpstats` 永远 `no sample yet`、`ptp` 的 pathdelay=0"。
 本组件已按延迟机制分别取值（`app_ptp_path_delay_ns()`），并用 60 s 窗口实测确认（§38.8.3）。
 
-**坑 8：用 `ptp4l -s` 把主机变成从钟后，主机的 PHC 会被改成对端时间。**
+**易错点 8：用 `ptp4l -s` 把主机变成从钟后，主机的 PHC 会被改成对端时间。**
 做完"板作主钟"实测后，主机 `/dev/ptp1` 的时间被 ptp4l 播到了板端时钟（本例是 2022 年的
 1651074xxx）。之后再让主机当主钟（`ptp4l -P`/`-E` 直接起），它就会把"2022 年"发给对端——
 板端虽然照样能同步（offset ~0），但绝对时间已经错了，容易误判为"时间没设"。
 复位方法：`sudo phc2sys -s CLOCK_REALTIME -c /dev/ptp1 -O 0 -m`（几秒后杀掉即可），
 或长期跑 `phc2sys` 让 PHC 跟随系统时钟。**每次切换主从角色前先确认 PHC 是 CLOCK_REALTIME。**
 
-**坑 7：中间转换盒是精度的天花板。**
+**易错点 7：中间转换盒是精度的天花板。**
 板与主机之间有 1000BASE-T1↔RJ45 转换盒，单向 13.8 µs，其排队抖动会以偶发 µs 级 offset 跳动的形式出现。
 要拿到真正的 ns 级绝对精度，需要直连（去掉转换盒），或用 P2P 逐跳测量 + 标定不对称（U-37-1）。
 

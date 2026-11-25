@@ -125,7 +125,7 @@ bool app_doip_parse_ra_req(const uint8_t *buf, uint32_t len, app_doip_ra_req_t *
         return false;
     }
     /* ISO 13400-2 规定 11 B（含 4 B OEM）；实测 EcuBus-Pro 等工具默认发 7 B，
-     * 所以两种都收，>=11 才算带 OEM（第 32 章“坑”里记录了这一点）。 */
+     * 所以两种都收，>=11 才算带 OEM（第 32 章“易错点”里记录了这一点）。 */
     if ((len != 7u) && (len != 11u)) {
         return false;
     }

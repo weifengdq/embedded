@@ -13,7 +13,7 @@
 ## 20.2 本章导览
 
 - 学到什么：HPM5E31 的 USB0 device 控制器结构、USB 枚举在主机侧长什么样、CherryUSB 的移植要点、
-  以及"最小系统板没有 VBUS 检测引脚"这个会让设备**根本不枚举**的坑。
+  以及"最小系统板没有 VBUS 检测引脚"这个会让设备**根本不枚举**的易错点。
 - 前置章节：第 02 章（烧写）、第 19 章（DMA，USB 端点也用总线搬运）。
 - 配套例程：`samples/usb/usb_cdc_acm_echo/`。
 - 实测结论：设备枚举为 `idVendor=34b7 / Product "HPMicro CDC DEMO"`（high-speed），
@@ -181,7 +181,7 @@ usbsend [n]           # 从设备向主机发 n 字节测试数据 (需要主机
 | input 设备 | input15，name=HPMicro HPMicro HID DEMO |
 | hidraw | /dev/hidraw1（root:root 0600） |
 
-坑：HID 中断 IN 传输需要主机读取报告，否则 usbd_ep_start_write() 会一直 BUSY；
+易错点：HID 中断 IN 传输需要主机读取报告，否则 usbd_ep_start_write() 会一直 BUSY；
 本示例最初在发送函数里裸 while 忙等导致主循环卡死（串口停打），已加约 200 ms 超时返回 -2。
 
 ## 20.7 上板实测数据
@@ -273,7 +273,7 @@ DTR 状态打印 + 512 B 切片回显），不是 USB HS 链路（理论上限 4
 - CDC ACM 的线速（波特率）只是"类请求参数"，bulk 传输不受它限制——所以用 CDC 做高速数据管道时，
   主机端要把波特率当作无意义参数。
 
-## 20.9 坑与注意事项
+## 20.9 易错点与注意事项
 
 1. **现象**：设备端初始化成功、打印 "waiting for host enumeration"，主机 `lsusb` 看不到任何 HPMicro 设备。
    **原因**：本板没有 VBUS 检测引脚，PHY 认为"没有 VBUS"，因此不拉 D+，主机端根本不知道有设备接入
@@ -306,7 +306,7 @@ DTR 状态打印 + 512 B 切片回显），不是 USB HS 链路（理论上限 4
 | 实测枚举 | PASS | — | — |
 
 优势：CherryUSB 集成度高（CDC/HID/MSC/DFU 例程齐全）、片内 PHY 省外围；
-劣势：板级 VBUS 检测缺失导致"默认不枚举"，文档不显眼（本仓库实测踩到）。
+劣势：板级 VBUS 检测缺失导致"默认不枚举"，文档不显眼（本仓库实测遇到）。
 
 ## 20.11 参考来源
 

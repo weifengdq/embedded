@@ -270,7 +270,7 @@ void app_ptp_print_status(void)
 /* 注意：这里用本组件的 1 ms 软时基 s_localtime_ms，而不是 bsp_uptime_ms()。
  * bsp_uptime_ms() 是“按调用间隔增量累加”的实现，间隔 < 1 ms 时整数除法把增量截断成 0，
  * 在每轮几十 µs 的主循环里会整段冻结（本板实测：循环永不退出、周期打印不出现）。
- * 详见第 37 章“坑”一节。*/
+ * 详见第 37 章“易错点”一节。*/
 void app_ptp_bench(uint32_t secs)
 {
     uint32_t t0, last, now;

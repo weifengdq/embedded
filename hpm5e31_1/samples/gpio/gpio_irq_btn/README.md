@@ -51,7 +51,7 @@ mchtmr=24000000 Hz, irq=1, debounce=20 ms, idle level=0
 实测日志：`logs/20261030-111911-gpio_irq_btn.log`（最终版日志：loop_back=OK、ISR=10、press/release 各 5 次；早期版本因未先跨过消抖窗少计 1 次，已在 111911 版本修复）
 （用 ``` bash scripts/hwrun.sh gpio/gpio_irq_btn --secs 6 --send 'btn_info;btn_stat' ``` 复现）。
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. **PA03 需要内部下拉**：`init_butn_pins()` 里 `PE=1, PS=0`；若漏配，悬空脚会随机触发中断。
 2. **GPIO0_A 是端口级中断向量**：ISR 里必须 `gpio_clear_pin_interrupt_flag()`，同一端口其他引脚的中断也走这个向量。

@@ -33,9 +33,9 @@ bash samples/bench/_bench_tools/run_variant.sh bench/bench_coremark o2 '-DBENCH_
 
 它会：独立 build 目录配置 → 构建 → 把 ELF 复制到 `build/<name>-debug/output/` → 调 `hwrun.sh --no-build` 上板。
 
-> **注意**：同一样本的两个变体**不要并发排队**，否则会互相覆盖 `build/<name>-debug/output/` 里的 ELF（踩过）。
+> **注意**：同一样本的两个变体**不要并发排队**，否则会互相覆盖 `build/<name>-debug/output/` 里的 ELF（遇到过）。
 
-## 通用坑（各样本 README 里有更详细的）
+## 通用易错点（各样本 README 里有更详细的）
 
 1. SDK 的 debug 配置**不带 -O**（默认 -O0），基准必须显式加 `-O2/-O3`；
 2. `hwrun.sh` 烧写后 0.3s 才开串口抓包，自动测量的第一组输出要用 `board_delay_ms(1500)` 保护；

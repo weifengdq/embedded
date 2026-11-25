@@ -46,7 +46,7 @@ static int uds_tx(void *ctx, const uint8_t *pdu, uint32_t len)
     return app_doip_send_diag(&g_doip, g_cur_ta, pdu, len);
 }
 
-/* 0x8001 -> UDS（这里只入队，主循环再处理，见第 31 章坑 3） */
+/* 0x8001 -> UDS（这里只入队，主循环再处理，见第 31 章易错点 3） */
 static int on_diag(void *ctx, uint16_t sa, uint16_t ta, const uint8_t *uds, uint32_t len)
 {
     g_cur_ta = sa;
@@ -101,9 +101,9 @@ int main(void)
   调用者的 UDS 队列另算（例程里 2 × 4096 = 8 KB）。组件自身 bss 实测 4.1 KB，text 11.1 KB（-O3）。
 - `cfg.max_payload`（帧上限，4096）与 `cfg.max_diag_uds`（交上层的 UDS 上限，默认 512）是两个概念：
   后者必须 ≤ 上层 UDS 的请求缓冲（本仓库 `components/app_uds` 是 `APP_UDS_MAX_REQ`），
-  否则上层会静默丢掉请求（第 31 章坑 10）。
+  否则上层会静默丢掉请求（第 31 章易错点 10）。
 - 无动态分配、无 OS 依赖；所有 API 只能在主循环（lwIP 回调同上下文）里调用。
-- lwIP 回调里**不要阻塞**：ACK 会被发送环拖住（第 31 章坑 3，tcpdump 实测 150 ms）。
+- lwIP 回调里**不要阻塞**：ACK 会被发送环拖住（第 31 章易错点 3，tcpdump 实测 150 ms）。
 - 需要的 lwIP 选项：`LWIP_TCP=1`、`LWIP_UDP=1`、`MEMP_NUM_TCP_PCB>=3`、`TCP_SND_BUF>=4*MSS`。
 
 ## 6. 自检

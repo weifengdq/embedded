@@ -25,7 +25,7 @@ Dio 管电平。三者是其它 10 个 MCAL 模块的地基——时钟不对，
 3. §44.5 给出寄存器级对照表（表 44-3），驱动源码就按这张表写；
 4. §44.6、§44.7 是 API 与 4 个例程的用法；
 5. §44.8、§44.9 是上板实测数据（主频误差、回环误码、单次调用开销）；
-6. §44.10 是踩过的坑（LOOP_BACK、上下拉稳定时间、PLL 重锁、PF26 与 ADC 复用）；
+6. §44.10 是遇到过的问题（LOOP_BACK、上下拉稳定时间、PLL 重锁、PF26 与 ADC 复用）；
 7. §44.11 与 HPM SDK 直调、Infineon TC4x MCAL、NXP S32K3 RTD 做对照。
 
 ## 44.3 概述
@@ -280,7 +280,7 @@ mreset               ：Mcu_PerformReset(): software reset in ~4 us ...
 - 内部上下拉：对端设高阻后，PA27/PA26 上拉读 1、下拉读 0，两组都 PASS；
   读回时 `PAD_CTL=0x01120075`（HYS=1、PRS=1(47 kΩ)、PE=1、SR=1、SPD=3、DS=5，PS=0 即下拉档）；
 - 开漏：PC12 写 1（释放）时 PA28 靠内部上拉读 1，写 0 时读 0，PASS；
-- 时序坑：改成内部下拉后**立刻读会读到旧电平**，例程加 200 us 等待才通过（第一次跑就是这里 FAIL）。
+- 时序易错点：改成内部下拉后**立刻读会读到旧电平**，例程加 200 us 等待才通过（第一次跑就是这里 FAIL）。
 
 ### 44.8.4 Dio 电平与通道组
 
@@ -310,7 +310,7 @@ mreset               ：Mcu_PerformReset(): software reset in ~4 us ...
 主频测量本身的开销：一次 `mmeasure` 是 5 个 10 ms 窗口 ≈ 50 ms，测量期间 CPU 忙等；
 对 480 MHz 来说 10 ms 窗口 ≈ 4.8 M 周期，远大于 rdcycle 的 1 周期量化误差，所以 ppm 级精度可信。
 
-## 44.10 坑
+## 44.10 易错点
 
 1. **GPIO 输出读回恒 0**：HPM 的 GPIO 输出不会自动把 pad 电平送回输入总线，必须置
    `IOC PADx.FUNC_CTL.LOOP_BACK=1`（RM："force input on"）。不置位时 `Dio_ReadChannel` 对输出通道恒返回 0，
@@ -327,7 +327,7 @@ mreset               ：Mcu_PerformReset(): software reset in ~4 us ...
 6. **shell 命令名冲突**：BSP 已占用 `ver/uptime/reboot/clk/pin/reg/mem`，MCAL 例程命令统一加模块前缀
    （`mcu/mclock/mset`、`pinfo/ploop`、`dio/dled`），避免覆盖 BSP 命令。
 7. **letter-shell 的 CMD_FUNC 与 CMD_MAIN 不是一回事**：`SHELL_TYPE_CMD_FUNC` 走 shell_ext 的参数解析
-   （按类型把参数转成 size_t），传 `(argc, argv)` 的函数必须用 `SHELL_TYPE_CMD_MAIN`。踩过一次，
+   （按类型把参数转成 size_t），传 `(argc, argv)` 的函数必须用 `SHELL_TYPE_CMD_MAIN`。遇到过一次，
    表现为 argc 恒为垃圾值、`mset 1` 永远走 usage 分支。
 8. **PF26 组读不是 LED 序号**：通道组的 mask 是引脚位；把 8 颗分散的灯当连续通道组用会得到"看起来错"的值。
 

@@ -40,7 +40,7 @@ bash scripts/hwrun.sh qei/qei_gpio_sim --secs 8 --send "qrun 20000;qstat;qstop;q
 并提示"检查 PD07->PC07 / PD06->PC06 两根飞线"。
 有飞线时：`phase` 应随边沿递减/递增，`qrun 20000` 约对应每秒 20000 个 4 倍频计数。
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. **QEO→QEI 也不能内部自环**：TRGM 与 QEI 之间只有"触发/暂停"通路，
    QEO 的 ABZ 输出没有进 TRGM 的通道（`hpm_trgmmux_src.h:210-217`）。

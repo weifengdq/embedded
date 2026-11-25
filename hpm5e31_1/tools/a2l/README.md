@@ -55,7 +55,7 @@ cargo build --release                            # 约 50 s
 a2ltool 还有 \`--elffile <elf> --update\`（按 ELF 刷新 A2L 地址）、\`--merge\`（合并 A2L）等能力；
 若以后改成"C 源码注解生成 A2L"路线，可用 \`--elffile --update\` 保持地址同步。
 
-## 踩过的语法坑（a2ltool 报错原文 → 修法）
+## 遇到过的语法问题（a2ltool 报错原文 → 修法）
 
 | 报错 | 原因 | 修法 |
 |---|---|---|

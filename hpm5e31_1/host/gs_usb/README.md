@@ -34,7 +34,7 @@
 | `test_classic.sh` | **项 2** 经典 500k：标准帧/29 位/0 字节/8 字节/RTR，双向，ip -s link 计数 | 20 s |
 | `test_fd.sh` | **项 4** CAN FD：1M 仲裁 + 2M/5M/8M 数据、BRS、ESI、32/64 字节，FD 下经典帧兼容 | 40 s |
 | `test_5m.sh` | **项 11** CAN FD 5 Mbit/s 双向满速矩阵：经典 500k / FD 1M-2M / FD 1M-5M、DLC 0~64、6 轮突发、autosuspend；`--soak N` 满速长测（R8） | 25 s（矩阵）/ 40 s（长测） |
-| `repro_tx_urb_leak.sh` | **项 12** TX URB 泄漏 A/B 复现：`--expect-stall`（旧固件）/ `--expect-ok`（修复后），判据是 `cansend` 是否报 ENOBUFS（R8 坑 20） | 15 s |
+| `repro_tx_urb_leak.sh` | **项 12** TX URB 泄漏 A/B 复现：`--expect-stall`（旧固件）/ `--expect-ok`（修复后），判据是 `cansend` 是否报 ENOBUFS（R8 易错点 20） | 15 s |
 | `test_4ch.sh` | **项 3** 4 通道并发（can0→can1、can2→can3，两组互不串扰） | 20 s |
 | `test_timestamp.py` | **项 5** 原始 socket + `SO_TIMESTAMPING(RAW_HARDWARE)` 解析 `scm_timestamping64`，统计硬件戳覆盖率/偏差/抖动/量化步长 | 15 s |
 | `test_timestamp.sh` | 上一项的 shell 包装（统一 GS_RESULT 与日志格式） | 15 s |

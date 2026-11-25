@@ -156,7 +156,7 @@ static boolean spi_master_blocking(void)
 
     /* 数据相用 SDK 的寄存器级 FIFO 泵（hpm_spi_drv.c: spi_transfer -> spi_write_read_data）：
      * 它把 TRANSCTRL/FIFO 复位/CMD 哑元/CS 时序一次配好。bring-up 阶段自研泵在
-     * 主机侧出现"MISO 读回自己 MOSI"的异常，先降级到这里保证功能，章节"坑"里记录。 */
+     * 主机侧出现"MISO 读回自己 MOSI"的异常，先降级到这里保证功能，章节"易错点"里记录。 */
     spi_master_get_default_control_config(&ctrl);
     ctrl.master_config.cmd_enable  = false;
     ctrl.master_config.addr_enable = false;

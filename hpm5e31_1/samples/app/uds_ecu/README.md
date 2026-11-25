@@ -64,7 +64,7 @@ bash scripts/hwrun.sh app/uds_ecu --secs 20 --send "run" \
 
 （需要板端同时跑 CAN 网关；网关会引入约 2.3 ms 往返延迟，见第 28 章。）
 
-## 6. 坑
+## 6. 易错点
 
 1. DTC 内存必须在 `app_uds_init()` 之前装填，init 不清表（第一版清表导致 19 02 读到 0 条）。
 2. 测试仪侧要按"PDU 队列"收响应：慢服务会先回 0x78 再回最终响应，两条可能在同一轮 pump 里到达，

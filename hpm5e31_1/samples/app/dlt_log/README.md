@@ -49,11 +49,11 @@ level 直方图   : fatal:98, error:100, warn:100, info:100, debug:101, verbose:
 `logs/20261102-104100-dlt-viewer-host-validation.png` 显示 599 条消息（Ecuid HPM5、APID/CTID
 MAIN/CAN/ADC/NET、Type log、Payload "2 seq=1628 ctx=MAIN level=2"），FileErr 0。
 
-## 坑
+## 易错点
 
 1. **UDP 无重传**：丢包只能靠 `MCNT` 检测（0.33% 属正常量级）；要零丢包需 TCP 或 dlt-daemon 的缓冲机制；
 2. **TMSP 位置**：WTMS 的 4 B 时间戳属于标准头扩展、在扩展头**之前**；放进扩展头会让官方解析器报 Plausibility(-18)；
 3. **type info 的 TYLE 是"标准长度编码"**（1=8bit、2=16bit、3=32bit、4=64bit），不是字节数——
-   接收端按 3 当 3 字节解析会整体错位（本章调试踩过，见 `host/dlt/dlt_recv.py` 的 `TYLE_BYTES`）；
+   接收端按 3 当 3 字节解析会整体错位（本章调试遇到过，见 `host/dlt/dlt_recv.py` 的 `TYLE_BYTES`）；
 4. **HTYP 必须同时置 UEH(0x01) 和 WTMS(0x10)**：漏 WTMS 时扩展头只有 10 B，接收端会把 TMSP 当参数解析；
 5. **APID/CTID 是 4 字节定长非 C 字符串**：不要用 `strlen` 处理。

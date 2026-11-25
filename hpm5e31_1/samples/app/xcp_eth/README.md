@@ -111,15 +111,15 @@ bash scripts/hwrun.sh app/xcp_eth --secs 8 --send "xcp info;xcp stat" \
 
 结论要分开说：**板端没有丢帧**（drop/overload 全 0、`daq_frames` 与 tick×ODT 对得上）；
 1.25%/3.09%/0.87% 是 UDP 链路丢包（同窗口 ping 0%，属小包突发队列/环形缓冲问题，
-见第 34 章"坑 13"与 U-35-9）。XCP 无重传，主机用 CTR 间隙 + `g_tick_*` 连续性双重统计。
+见第 34 章"易错点 13"与 U-35-9）。XCP 无重传，主机用 CTR 间隙 + `g_tick_*` 连续性双重统计。
 
 标定面同一轮全部 PASS：g_kp 1.200→1.300→1.200、MODIFY_BITS 0x12345678→0x12345A78、
 g_pwm_duty_pm 500→300→500。
 
-## 坑
+## 易错点
 
 1. **LEN 不含 4 B 头**（任务书写的"含头"是笔误），非最后一条消息的 4 B 对齐填充要计入 LEN，
-   否则 pyxcp/CANape 顺序解析会错位（第 34 章坑 9/10）。
+   否则 pyxcp/CANape 顺序解析会错位（第 34 章易错点 9/10）。
 2. **UDP 无重传**：CTR 只统计不修复；主机对幂等命令重发，对 UPLOAD/DOWNLOAD/WRITE_DAQ
    （会推进 MTA/条目指针）必须"重设 MTA/DAQ_PTR 再发"。
 3. **MTU 1472 B**：`IP_FRAG` 未开，超了直接丢；算 DAQ 包按 `4 + align4(ODT)` × 条数 ≤ 1472。

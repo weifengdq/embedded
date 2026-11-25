@@ -265,7 +265,7 @@ static void gs_bus_event(uint8_t busid, uint8_t event, void *arg)
     case USBD_EVENT_SUSPEND:
         /* 主机 autosuspend/LPM：Linux usbcore 默认 autosuspend=2s，空闲会挂起。
          * 固件必须能安全进入/退出；否则 host 会判 detach（本项目实测空闲 84.8 s 掉线，
-         * 根因即主机 USB autosuspend，见 README 与第40章“坑”。） */
+         * 根因即主机 USB autosuspend，见 README 与第40章“易错点”。） */
         s_suspend_cnt++;
         printf("[usb] SUSPEND #%lu\r\n", (unsigned long) s_suspend_cnt);
         break;

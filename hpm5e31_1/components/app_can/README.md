@@ -145,7 +145,7 @@ printf("tx=%lu rx=%lu bo=%u lec=%lu tec=%u rec=%u\r\n",
        st.tx_frames, st.rx_frames, st.bus_off, st.last_error_code, st.tec, st.rec);
 ```
 
-## 5. 坑（都是本板实测踩过的）
+## 5. 易错点（都是本板实测遇到过的）
 
 | # | 现象 | 原因 | 处理 |
 |---|---|---|---|

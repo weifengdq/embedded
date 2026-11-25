@@ -72,7 +72,7 @@ hid_keyboard_init done, waiting for host enumeration...
 shell: hidinfo | hidkey [n]
 ```
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. **HID IN 传输必须有主机读**：主机不读中断端点时 `usbd_ep_start_write()` 会一直处于
    BUSY（本示例最初在 `hid_keyboard_send_key()` 里裸 `while` 忙等，导致主循环卡死、

@@ -49,7 +49,7 @@ burst n=512 pass=32: isr+512 rx+512 drop+0 verified=512 errors=0, 5.68 ms, 90 KB
 uart_ring_stats: isr=768 rx_bytes=768 ring_level=0 ring_drop=0 fifo_overrun=0
 ```
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. **中断里不能用 `uart_send_byte()` 回显**（会与主循环竞争 TX，且阻塞时间不可控）；本样例 ISR 只做"搬运"。
 2. FIFO 触发级是 **字节数**，不是时间；`uart_intr_rx_data_avail_or_timeout` 还包含 RX timeout 中断，

@@ -45,7 +45,7 @@ fi
 
 echo "===== 2) candump 心跳（10 Hz，2 s）====="
 # 板端网关是"被动方"：必须先收到主机的一个 UDP 包才会学习 peer 并开始回发 CAN 帧，
-# 否则这里会抓到 0 帧（踩过：心跳 0 帧但后面的回显正常）。
+# 否则这里会抓到 0 帧（遇到过：心跳 0 帧但后面的回显正常）。
 cansend "$IFACE" 7FE#00 >/dev/null 2>&1
 sleep 0.3
 timeout 2 candump "$IFACE" > "$OUT/candump_hb.log" 2>&1

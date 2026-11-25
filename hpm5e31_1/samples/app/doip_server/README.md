@@ -87,7 +87,7 @@ bash host/doip/run_client.sh all                        # 封装 + 自动落 log
 | 回归套件 | 16 用例 15 PASS / 1 已知限制（多帧突发） |
 | DoIP 编解码自检 | 49 项 0 失败 |
 
-## 6. 坑（详见第 31 章 §31.13）
+## 6. 易错点（详见第 31 章 §31.13）
 
 1. 路由激活请求可能是 7 B（EcuBus-Pro 默认），别只按 11 B 校验。
 2. 电源模式载荷类型是 0x4003/0x4004，不是 0x0009/0x000A。
@@ -96,7 +96,7 @@ bash host/doip/run_client.sh all                        # 封装 + 自动落 log
 5. `TCP_SND_BUF=11.68 KB` 只够 2 条 4 KB 帧，批量发送要在帧间跑 `app_lwip_poll()`。
 6. 上位机收广播声明要 bind 0.0.0.0，bind 到 192.168.2.1 收不到受限广播。
 7. 单条 UDS 不能超过 512 B（`APP_UDS_MAX_REQ`）：本固件在 DoIP 层就回 0x8003/0x04，
-   不会把超长请求塞给 UDS（塞过去的表现是"有 ACK 没响应"，见第 31 章坑 10）。
+   不会把超长请求塞给 UDS（塞过去的表现是"有 ACK 没响应"，见第 31 章易错点 10）。
 
 ## 7. 复跑与排障
 
@@ -104,6 +104,6 @@ bash host/doip/run_client.sh all                        # 封装 + 自动落 log
 |---|---|
 | 主机连不上 13400 | 先 `ping 192.168.2.100`（本板实测 0.15~0.37 ms）；再看串口有没有 `[doip] listen TCP+UDP 13400 rc=0` |
 | 路由激活一律 0x00 | 板端 `doip route` 看 tester_addr；主机侧 SA 必须匹配 |
-| 连上就断 | 2 s 内没发 0x0005（initial inactivity），见第 31 章坑 6 |
+| 连上就断 | 2 s 内没发 0x0005（initial inactivity），见第 31 章易错点 6 |
 | 大报文收不到 | 看 `doip stat` 的 `big_msg`/`diag_rx`；单帧上限 4096 B |
-| 声明收不到 | 板端 `doip timer period 1000`；主机 bind 0.0.0.0（第 31 章坑 7） |
+| 声明收不到 | 板端 `doip timer period 1000`；主机 bind 0.0.0.0（第 31 章易错点 7） |

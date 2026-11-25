@@ -128,7 +128,7 @@ static int fl_write(void *ctx, uint32_t addr, const uint8_t *data, uint32_t len)
     t0 = mchtmr_get_count(HPM_MCHTMR);
     irq = irq_save();
     /*
-     * 关键坑：NOR Flash 的 Page Program 命令在页内回绕 —— 一次编程跨过 256 B
+     * 关键易错点：NOR Flash 的 Page Program 命令在页内回绕 —— 一次编程跨过 256 B
      * 页边界时，超出部分会写回本页开头，数据整体错位。本示例的下载起点是
      * 0x800F0010（16 字节镜像头），第一个 256 B 块就跨页：不切分时
      * 0x800F0100 之后的 240 B 会回绕到 0x800F0000，把魔数写坏。

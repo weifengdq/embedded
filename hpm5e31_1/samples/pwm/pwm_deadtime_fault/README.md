@@ -48,7 +48,7 @@ PWM0 clk=200000000 Hz  P6=PD06 P7=PD07 互补  PAIR_MODE=1
 | `dead 400` | `DEAD_AREA=0x00019000` | 2000 ns = 2 us |
 | `fault 1` → `fault 0` | `IRQ_STS_FAULT` 由 0x00 → **0xC0**（bit6/bit7 = 输出 6/7） | 证明同步故障通路被触发 |
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. `DEAD_AREA` 是 24 位 = 高 16 位整数 + 低 8 位小数，**直接写 ticks 会小 256 倍**；
    最小合法值 0x200。

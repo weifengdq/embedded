@@ -39,7 +39,7 @@ bash scripts/hwrun.sh app/j1939_dm --secs 20 --lock-wait 1800
 === RESULT: PASS (7 PASS / 0 FAIL) ===
 ```
 
-## 坑
+## 易错点
 
 - 无故障时 DM1 只有 2 字节（灯 + 闪灯）；解析器不要把 0xFF 填充当 DTC；
 - DM1 单帧只装 1 个 DTC，多故障要按严重度上报或改用 DM2 多包；

@@ -43,7 +43,7 @@
 | `mmd/mmwr <mms> <reg> [val]` | PHY MMD 寄存器读写（4 = MMD31） |
 | `levels` | 打印 nRST / nINT 电平 |
 
-## 硬件 SPI2 修复（2026-10-30，本板最重要的一个坑）
+## 硬件 SPI2 修复（2026-10-30，本板最重要的一个易错点）
 
 早期版本只能靠 GPIO 位翻转跑 TC6。根因与修复分四步，缺一不可：
 
@@ -85,7 +85,7 @@ board_init_spi_clock(SPI2) = 80000000 Hz
 
 日志：`logs/20261030-113834-lan8651_spi_probe.log`（另有 `logs/20261030-111739-lan8651_spi_probe.log` 记录复位/三态诊断）。
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. **SPI2 时钟门控**：板级 `clock.c` 原本没有 `init_spi2_clock()`，`board_init_spi_clock(HPM_SPI2)` 返回 0 且不开时钟 → 所有 SPI2 寄存器写被丢弃，读回全 0xFF。必须先调用 `board_init_spi_clock()` 并用其返回值当 SPI 源时钟。
 2. **Clause 22 地址**：PHY 的 C22 寄存器在 **MMS0 的 0xFF00** 起始窗口，不是 MMS=0xFF。写错会读到垃圾值（本项目一度把 PHY ID 读成 `0x1EA20000`）。

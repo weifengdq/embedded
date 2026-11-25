@@ -21,7 +21,7 @@
 3. 知道 CAN↔UDP 的**时延预算**花在哪里、怎么把往返延迟从 ~100 ms 压到个位数 ms；
 4. 用 `host/can_bridge/` 里的三行脚本把主机 `vcan0` 接到板端真实 CAN 总线，
    让 python-can / candump / cansend / udsoncan / canopen / pyxcp **直接当"CAN 分析仪"用**；
-5. 避开应用层联调最常见的坑：vcan 不限速、cannelloni 默认攒包 100 ms、MCAN 消息 RAM 在 AHB SRAM、
+5. 避开应用层联调最常见的易错点：vcan 不限速、cannelloni 默认攒包 100 ms、MCAN 消息 RAM 在 AHB SRAM、
    `ipaddr_ntoa()` 静态缓冲区、板锁 flock 死锁。
 
 **前置章节**：第 08 章（CAN FD 原理）、第 12 章（YT8011AN/RGMII）、第 13 章（lwIP 与 iperf）、
@@ -126,7 +126,7 @@ inline uint8_t canfd_len(const struct canfd_frame *f) {
 
 也就是说 cannelloni 把"是不是 FD 帧"塞进了 `len` 的最高位：`len=0x88` 表示"8 字节的 CAN FD 帧"，
 `len=0x08` 表示"8 字节的经典帧"。**漏掉 `& 0x7F` 就会把 0x88 当成 136 字节读越界**——
-这是自己实现网关时第一个会踩的坑。板端 `gw_encode_frame()/gw_decode_frame()` 与主机
+这是自己实现网关时第一个会遇到的问题。板端 `gw_encode_frame()/gw_decode_frame()` 与主机
 `host/can_bridge/udp2vcan.py` 都按这个语义实现。
 
 **单包容量**：经典帧每帧 5 B 头 + data，FD 帧 6 B 头 + data。板端默认单包最多 16 帧，
@@ -283,7 +283,7 @@ cannelloni 的 `-t` 参数是"帧在主机侧最多攒多久再合成一个 UDP 
 下一批已判超时，表现为"丢帧"。它恰好说明攒包超时为什么必须调小。
 
 **结论**：默认参数下 99% 的时延来自主机侧攒包，不是 MCU、不是 lwIP、不是 CAN。
-这是应用层联调第一个要改的参数，也是本章"坑 1"。
+这是应用层联调第一个要改的参数，也是本章"易错点 1"。
 
 ### 28.6.6 图 28-4 CAN↔UDP 时延预算与 `-t` 对比
 
@@ -323,9 +323,9 @@ CAN 层的 4 路并发能力本轮已实测（第 09 章表 9-10、图 9-5）：
 Bench B 的价值是**工具链**，不是极限性能：一次往返多花 1~2 ms。对 UDS（P2 50 ms）、CANopen SDO、
 XCP DAQ（10~100 ms 周期）都绰绰有余；对 1 ms 级硬实时环路（电机 FOC），必须用 Bench A（板内双节点）
 或把控制环放在 MCU 内部，只把监控数据经网关送出。
-## 28.8 坑（现象 → 原因 → 解决）
+## 28.8 易错点（现象 → 原因 → 解决）
 
-### 28.8.1 坑 1：cannelloni 默认攒包 100 ms，应用层联调"怎么都慢"
+### 28.8.1 易错点 1：cannelloni 默认攒包 100 ms，应用层联调"怎么都慢"
 
 **现象**：`cansend` 后 `candump` 要等 ~100 ms 才看到回显；UDS 用默认 P2 超时直接超时。
 **原因**：cannelloni 的 `-t`（buffer timeout）默认 100 000 µs，为"减少 UDP 包数"而设计；
@@ -333,7 +333,7 @@ XCP DAQ（10~100 ms 周期）都绰绰有余；对 1 ms 级硬实时环路（电
 **解决**：`run_tunnel.sh` 默认 `-t 1000`；需要更低可到 200~500 µs（代价是 UDP 包数变多）。
 **实测**：`-t 1000` 时 p99 = 2.49 ms；默认 `-t 100000` 时延迟被抬到 100 ms 量级（表 28-6）。
 
-### 28.8.2 坑 2：HPM5E31 的 MCAN 消息 RAM 在 AHB SRAM，不是 MCAN IP 内部
+### 28.8.2 易错点 2：HPM5E31 的 MCAN 消息 RAM 在 AHB SRAM，不是 MCAN IP 内部
 
 **现象**：`mcan_init()` 返回 2（`status_invalid_argument`），CAN 完全起不来；
 `mcan_get_protocol_status()` 读出来全是 0；串口没有任何 CAN 报错。
@@ -352,7 +352,7 @@ mcan_set_msg_buf_attr(base, &attr);   /* 必须在 mcan_get_default_config/mcan_
 #endif
 ```
 
-### 28.8.3 坑 3：`ipaddr_ntoa()` 返回静态缓冲区，一行 printf 打印三个地址会全错
+### 28.8.3 易错点 3：`ipaddr_ntoa()` 返回静态缓冲区，一行 printf 打印三个地址会全错
 
 **现象**：`printf("IP=%s MASK=%s GW=%s", ipaddr_ntoa(ip), ipaddr_ntoa(mask), ipaddr_ntoa(gw))`
 打印出三个一样的地址（看起来像 lwIP 配错了，实际是打印 bug）。
@@ -360,14 +360,14 @@ mcan_set_msg_buf_attr(base, &attr);   /* 必须在 mcan_get_default_config/mcan_
 **解决**：拆成三行 printf 或用 `ipaddr_ntoa_r()` 各自给缓冲区（组件 `app_lwip_print()` 已拆开）。
 **教训**：调试时先怀疑"打印/工具"，再怀疑协议栈——这一条在本项目里骗过一次人。
 
-### 28.8.4 坑 4：vcan 不限速会淹掉 MCU 网关
+### 28.8.4 易错点 4：vcan 不限速会淹掉 MCU 网关
 
 **现象**：`cangen vcan0 -g 0` 全速灌包后，板端 `gw stat` 的 `drop_can` 飙升，主机侧大量丢帧。
 **原因**：vcan 是内存回环，内核不做位定时/速率限制；CAN 帧瞬间灌入 → UDP 突发 → MCU 的 CAN TX FIFO（8 个元素）溢出。
 **解决**：`sudo tc qdisc add dev vcan0 root tbf rate 500kbit latency 10ms burst 4000`（`vcan_setup.sh` 已做）。
 注意 `latency` 参数不要设 100 ms（会让排队帧等 100 ms），10 ms 足够。
 
-### 28.8.5 坑 5：板锁 flock 死锁（多 agent 并行上板）
+### 28.8.5 易错点 5：板锁 flock 死锁（多 agent 并行上板）
 
 **现象**：17 个 `hwrun.sh` 全部卡住，日志不再更新，`/proc/locks` 显示的持锁 PID 已经不存在。
 **原因**：旧实现把 flock 绑在会被子进程继承的 fd 上，持锁进程被 kill 后 fd 被孤儿进程继承 → 锁永不释放。
@@ -375,7 +375,7 @@ mcan_set_msg_buf_attr(base, &attr);   /* 必须在 mcan_get_default_config/mcan_
 另外用 `hwrun.sh --post` 在持锁期间跑上位机测试，避免"烧完就放锁、上位机还没测"。
 **规则**：不要自己 `flock`；单次持锁 ≤90 s；`--post` 内命令必须带 `timeout`。
 
-### 28.8.6 坑 6：UDP 模式没有 ACK/重传，丢了就是丢了
+### 28.8.6 易错点 6：UDP 模式没有 ACK/重传，丢了就是丢了
 
 **现象**：长时间跑 CANopen SDO 或 UDS 多帧，偶发"对端没收到"，总线上看帧数不对。
 **原因**：cannelloni 的 UDP 路径只实现 DATA 包，enum 里的 ACK/NACK 只在 TCP/SCTP 模式用；
@@ -383,7 +383,7 @@ UDP 是 fire-and-forget，丢了不会重传。
 **解决**：靠上层协议自己的重传（ISO-TP 的 N_Ar/N_As、J1939 TP 的 RTS/CTS、CANopen SDO 重传、
 XCP 的 CMD 重发）；需要"绝不丢"的场合改用 TCP 模式或提高 `-x` 丢弃阈值并降速。
 
-### 28.8.7 坑 7：CAN FD 帧的 len 最高位 / flags 字节漏解析
+### 28.8.7 易错点 7：CAN FD 帧的 len 最高位 / flags 字节漏解析
 
 **现象**：主机能收到 FD 帧但长度变成 136、解析越界；或 BRS 位丢失导致数据段速率不对。
 **原因**：cannelloni 把"FD 帧"编码在 `len` 的 bit7，真实长度是 `len & 0x7F`，
@@ -391,7 +391,7 @@ FD 帧还要多读 1 字节 `flags`（bit0=BRS）。
 **解决**：按 §28.4 的字段表实现；本仓库 `components/app_can_gw` 与 `host/can_bridge/udp2vcan.py`
 都已处理，可直接对照。
 
-### 28.8.8 坑 8：串口逐帧打印拖慢网关
+### 28.8.8 易错点 8：串口逐帧打印拖慢网关
 
 **现象**：`verbose` 开着时，300 帧/s 的测试开始丢帧，延迟 p99 变大。
 **原因**：`printf` 走 921600 串口，一行 ~60 B ≈ 0.65 ms，逐帧打印会把主循环占满。
@@ -425,7 +425,7 @@ FD 帧还要多读 1 字节 `flags`（bit0=BRS）。
 |---|---|---|---|
 | U-29-1 | `-t 100000` 默认参数的完整延迟分布 | **已实测（2026-11-02 补画分布）** | 两次运行各 100 个往返样本：`-t 1000` avg 2.24 ms / p99 2.48 ms；`-t 100000` avg 79.89 ms / p99 101.00 ms（图 28-5，原始样本 `tools/figs/app29_data/bench_t1000.json`、`bench_t100000.json`） |
 | U-29-2 | 4 路网关同时满载 | **已知限制** | 板端 `gw full` 可同时开 CAN1/2/3（UDP 4000/4002/4003），主机要 3 个 cannelloni 各绑一个 vcan；本轮共享板卡排队没取到窗口。验证：`gw full` + 3 个 `run_tunnel.sh`（改 IFACE/PORT）+ 四路 `cangen -g 1`，与 `gw stat` 的 fwd/drop 对照 |
-| U-29-3 | CAN FD 帧经网关的端到端 | **已知限制** | 板端 FD 自测 PASS，网关的 FD 透传只做了代码路径审查（len 最高位/flags 解析，见坑 7）。验证：`cansend vcan0 123##1AABBCC...` 后 `candump vcan0` 抓 0x321 回显并核对 FDF/BRS |
+| U-29-3 | CAN FD 帧经网关的端到端 | **已知限制** | 板端 FD 自测 PASS，网关的 FD 透传只做了代码路径审查（len 最高位/flags 解析，见易错点 7）。验证：`cansend vcan0 123##1AABBCC...` 后 `candump vcan0` 抓 0x321 回显并核对 FDF/BRS |
 | U-29-4 | UDP 乱序/重复的统计 | **已知限制** | cannelloni 的 5 B 头带 1 字节 seq，本组件透传不校验；0.13% 丢包已测，但没有乱序/重复统计。验证：`tcpdump -i enp6s0 -w x.pcap udp port 4000` + python 解析 seq 单调性 |
 | U-29-5 | 长时间（>1 h）稳定性 | **已知限制** | 已跑通的窗口是 10~90 s（心跳 10 Hz、300 帧/s 持续 5 s）。验证：循环跑 `acceptance.sh` 60 轮，每轮看 `[alive]` 计数与 `gw stat` 是否漂移；板锁一次 ≤90 s，必须分段 |
 | U-29-6 | 主机防火墙/多网卡路由 | **已知限制** | 本机防火墙关闭，`enp6s0` 同时有 192.168.0.1/24 与 192.168.2.1/24。验证：开 `ufw` 后只放行 UDP 4000，再跑 `acceptance.sh` |

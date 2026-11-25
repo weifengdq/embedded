@@ -50,7 +50,7 @@ FreeRTOS 版：先 `tcpip_init(NULL, NULL)`，再 `app_lwip_eth_init()`，
 `tx_buffer_get/tx_commit/rx_get/rx_release/get_mac/link_get/poll/lock`。
 正式实现是 `src/app_lwip_eth_hw_mcal.c`；同一份 netif 代码也可挂到别的驱动后端上做对照实验。
 
-## 坑（详见第 49 章 §49.9 / §49.8.9）
+## 易错点（详见第 49 章 §49.9 / §49.8.9）
 
 1. `EthTrcv_Init` 之前读 MDIO 全是 0（Eth_Init 才做板级复位/时钟）；
 2. `Eth_ReadMii` 的 TrcvIdx 是收发器索引（0），不是 PHY 地址（1）；

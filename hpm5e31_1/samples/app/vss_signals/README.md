@@ -32,7 +32,7 @@ bash scripts/hwrun.sh app/vss_signals --secs 10 --send "vstat" \
   信号覆盖 6/6，范围检查 PASS，VSS 路径校验 PASS → RESULT: PASS
 ```
 
-## 坑
+## 易错点
 
 1. **网关 peer 必须显式配置**：纯发送场景下 app_can_gw 的 peer auto-learn 不会触发，
    固件里写死 `peer_ip=192.168.2.1, peer_port=4000`（第一版全 0 帧的根因）；

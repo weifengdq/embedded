@@ -51,7 +51,7 @@ bash scripts/hwrun.sh samples/mcal/eth_freertos_lwip --secs 320 --lock-wait 1800
 | `SYS_ARCH_PROTECT`+`UNPROTECT` | 63.03 | 0.131 | lwIP 内存/PCB 热路径 |
 | 临界区本身（平均/最大） | 25.02 / 1 234 | 0.052 / 2.57 | 最大值是被 tick 顶住的那次 |
 | `sys_sem` give+take | 192.13 | 0.400 | 同任务不阻塞 |
-| `sys_mbox` trypost+tryfetch | 3 917.09 | 8.16 | 偏高，见第 5 节坑 2 |
+| `sys_mbox` trypost+tryfetch | 3 917.09 | 8.16 | 偏高，见第 5 节易错点 2 |
 | 跨任务 sem 乒乓（含 2 次切换） | 7 807.4 | 16.27 | ≈8.1 µs/次上下文切换 |
 
 同日志：1 kHz tick 采样空闲率 **99.6%**；`tcpip` 栈水位 948/1 024 字；`malloc` 失败 0、栈溢出 0。
@@ -85,7 +85,7 @@ bash scripts/hwrun.sh samples/mcal/eth_freertos_lwip --secs 320 --lock-wait 1800
 | 单帧发送 | 756 cycle（描述符直指 pbuf） | 36 µs 上限（含整帧 memcpy） | 同量级 + 互斥量 |
 | 空闲 CPU | — | 忙轮询 | 99.6% 空闲（0.4% 占用） |
 
-## 5 坑
+## 5 易错点
 
 1. **`sys_msleep` 重复定义**：lwIP 2.1.2 的 `src/core/sys.c` 已实现，移植层再写会在链接期
    报 `multiple definition of sys_msleep`。只保留 `sys_now()/sys_jiffies()`。

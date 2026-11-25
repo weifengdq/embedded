@@ -56,7 +56,7 @@ FIFO count=0
 `data_ready=0`、FIFO 空——与"本板无外部 ΣΔ 调制器"的预期一致，
 证明**初始化通路正确**，但要验证数据精度必须外接调制器（第 17 章 §12 待确认 17-A）。
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. `clock_sdm0` **不在** `board_init_clock()` 默认加入的 clock group 里，
    必须自己 `clock_add_to_group(clock_sdm0, 0)`，否则 `clock_get_frequency` 返回 0。

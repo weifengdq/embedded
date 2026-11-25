@@ -69,7 +69,7 @@ adcstat: n=20000 mean=35545.18 sd=48.63 min=35391 max=37208 pp=1817
 - 轮询吞吐 **~607 kHz**：远低于理论 fs，瓶颈是"CPU 读结果寄存器 → 再触发下一次转换"的软件开销（1.65 µs/次），要跑到 MSPS 级必须用序列/抢占 + DMA；
 - 悬空输入的 sd≈49~53 LSB，按 FSR/噪声估算 ENOB≈8.6~8.7 bit —— **这是悬空引脚噪声，不是 ADC 本身精度**，实测精度必须外接低噪声源。
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. **oneshot 必须打开 bus mode**：HPM5E31 的 ADC_SOC_BUSMODE_ENABLE_CTRL_SUPPORT = 1（hpm_sdk/soc/HPM5E00/HPM5E31/hpm_soc_feature.h:131），初始化后要调用 adc16_enable_oneshot_mode()，否则 BUS_RESULT.VALID 不置位、adc16_get_oneshot_result() 一直返回失败。
 2. **默认是非阻塞读**：adc16_get_default_config() 把 wait_dis 设为 true（hpm_sdk/drivers/src/hpm_adc16_drv.c:34），此时读结果不等待转换完成，连续读会时好时坏；要"一次读=一次转换"必须 adc16_set_blocking_read()。

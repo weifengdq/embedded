@@ -54,7 +54,7 @@ t= 2011 ms  temp= 38.89 C  raw=0x26e3
 - OTP shadow21 = 0x03a008c3 → base=0x8c3、en=1，说明**出厂已校准**，不需要软件标定；
 - 空载 2 s 内峰峰值 1 ℃，属于环境/自热波动。
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. 必须先 `clock_add_to_group(clock_tsns, 0)` 再使能 TSNS，否则读到 0。
 2. `tsns_get_current_temp_in_raw()` 内部会等 valid 位，不要在中断里调用（可能长时间自旋）。

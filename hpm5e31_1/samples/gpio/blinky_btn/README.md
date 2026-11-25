@@ -29,7 +29,7 @@ btn pressed -> blink delay 500 ms
 
 日志示例：`logs/20261030-120632-blinky_btn.log`（无按键时只有启动行，LED 在闪）。
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 - LED 高电平点亮（`BOARD_LED_ON_LEVEL=1`）；
 - 按键按下为高（`BOARD_BUTTON_PRESSED_VALUE=1`），与官方 EVK 相反；`board_init_butn_pins()` 由 BSP 提供；

@@ -32,7 +32,7 @@ recovery after drop: BAM 100B OK
 === RESULT: PASS (7 PASS / 0 FAIL) ===
 ```
 
-## 坑
+## 易错点
 
 - **接收方收满 CTS 窗口必须续发 CTS**，否则发送方卡 T3（本实现修好后 500 B 才 PASS）；
 - BAM 是硬性 50 ms/包，500 B 要 3.55 s；RTS/CTS 才能跑满带宽（约 49 倍）；

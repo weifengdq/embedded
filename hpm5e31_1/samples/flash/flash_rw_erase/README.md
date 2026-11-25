@@ -66,10 +66,10 @@ rw test @0x800f0000 size=4096 B (safe window, app image untouched)
 | 页编程 | 14.28 ms | 280 KB/s | 256 B/页，含 ROM API 开销 |
 | 回读（ROM API） | 0.133 ms | 30.0 MB/s | XIP 直读更快（见第 21 章） |
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. **写之前必须确认镜像范围**：程序从 0x80000000 起执行，擦写自己所在的扇区会当场跑飞。本示例把可写范围硬编码为 [0x800F0000, 0x80100000)，并用 etext 打印镜像占用做交叉验证。
-2. **ROM API 写完后 XIP 直读可能读到旧数据**：AXI 读 Flash 经过 L1 D-Cache，ROM API 的写不会自动失效 cache。必须 l1c_dc_invalidate() 后再直读，否则看到的是擦除后的 0xFF（第一次实测就踩到了，见日志 logs/20261030-110720-flash_rw_erase.log）。
+2. **ROM API 写完后 XIP 直读可能读到旧数据**：AXI 读 Flash 经过 L1 D-Cache，ROM API 的写不会自动失效 cache。必须 l1c_dc_invalidate() 后再直读，否则看到的是擦除后的 0xFF（第一次实测就遇到了，见日志 logs/20261030-110720-flash_rw_erase.log）。
 3. **nor_cfg_option 与 BOARD_APP_XPI_NOR_CFG_OPT_OPT0 不一致**：board.c 里 flash_xip 用的 option[4] = {0xfcf90002, 0x00000005, 0x1000, 0}，而 board.h 的 BOARD_APP_XPI_NOR_CFG_OPT_OPT0 = 0x00000006。本示例用 board.h 的值(6)也能正常 auto_config，两者差异（probe type/读命令）建议以实际烧写进去的 0x80000400 内容为准。
 4. **XPI NOR 不是"独立 FLASH 控制器"**：SDK 没有 FLASH IP 驱动，只有 rom_xpi_nor_*（BootROM）和 hpm_serial_nor（外接 SPI NOR 用）。片内 Flash 只能走 ROM API 或裸 XPI 寄存器。
 5. J-Link 烧写会按 ELF 段擦写（日志里 "2 ranges affected (77824 bytes)"），所以本示例写进去的 0x800F0000 数据在下次烧写后会被恢复。

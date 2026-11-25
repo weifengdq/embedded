@@ -72,7 +72,7 @@ addr  ID1     ID2     OUI     MODEL REV  BMCR   BMSR   LINK
 > 说明：物理地址 0 与 1 都应答是**正常现象**：YT8011A/AN 数据手册 §3（p.38）写明
 > “YT8011A/AN/AR always responds to PHY address 0”，另外还有一个可配置的广播地址。
 
-## 6. 关键点与坑
+## 6. 关键点与易错点
 
 1. **MDIO 读不到任何器件时先查 nRST**：本板 PHY nRST=PB29，若上电后一直拉低则 MDIO 全部读回 0xFFFF。
    样例在扫描前显式做 2ms 低 + 30ms 高（数据手册 §3 p.38 要求 RESET_N 至少 10ms）。

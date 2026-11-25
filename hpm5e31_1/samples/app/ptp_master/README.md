@@ -76,7 +76,7 @@ ptp4l[116212.551]: master offset          2 s2 freq  +18286 path delay     13838
 > **关键**：板端必须用 `-DDEFAULT_PRIORITY1=100` 编译（CMakeLists 已设），否则主机 BMCA 认为
 > 自己（priority1=128）更优，会一直打印 `master state recommended in slave only mode`，永不进 SLAVE。
 
-## 6. 坑
+## 6. 易错点
 
 与 `ptp_slave` 相同的 5 条（见其 README §6）。补充两条主钟方向特有的：
 

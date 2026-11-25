@@ -73,7 +73,7 @@ uint32_t app_xrce_now_ms(void);                     /* 精确单调毫秒（调�
 | 静态 RAM（组件自用） | 可靠流出 4 KB + 入 4 KB + BE 出 1 KB + 接收环 2 KB ≈ **11 KB** |
 | 堆分配 | **0 次**（Client/microcdr/适配层无 `malloc`） |
 
-## 6. 坑（移植时必需知道的）
+## 6. 易错点（移植时必需知道的）
 
 1. `src/c` 下还有 Posix/FreeRTOS/Windows 的传输实现，**不能 `file(GLOB)`**，必须显式列出文件
    （见 `app_xrce.cmake`）；`.c` 同目录的 `*_internal.h` 也要一起拷贝，否则 `xrce_header_internal.h` 找不到。

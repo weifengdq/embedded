@@ -6,7 +6,8 @@ export GNURISCV_TOOLCHAIN_PATH="${GNURISCV_TOOLCHAIN_PATH:-$HOME/toolchains/risc
 export HPM_SDK_TOOLCHAIN_VARIANT=gcc
 export BOARD="${BOARD:-hpm5e31_1}"
 export BOARD_SEARCH_PATH="${BOARD_SEARCH_PATH:-$REPO_ROOT/boards}"
-export SERIAL_PORT="${SERIAL_PORT:-/dev/ttyACM0}"
+# 板载调试串口是 CH343(/dev/ttyACM1)；/dev/ttyACM0 是 J-Link 的 VCOM（R8 曾把两者写反）
+export SERIAL_PORT="${SERIAL_PORT:-/dev/ttyACM1}"
 export SERIAL_BAUD="${SERIAL_BAUD:-921600}"
 export JLINK_DEVICE="${JLINK_DEVICE:-HPM5E31xGNx}"
 export JLINK_SPEED="${JLINK_SPEED:-4000}"

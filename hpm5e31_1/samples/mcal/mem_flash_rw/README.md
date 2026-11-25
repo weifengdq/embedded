@@ -95,9 +95,9 @@ det   : after=7 (delta=7)
    显式轮询 MainFunction 并带 2~3 s 超时，生产代码里由 SchM 周期任务调用。
 2. **作业结果**（`Mem_GetJobResult`）：0=MEM_JOB_OK、1=PENDING、2=FAILED、3=MEM_INCONSISTENT、
    4=ECC_UNCORRECTED、5=ECC_CORRECTED，数值与 SWS_MemAcc_91016 一致。
-3. **D-Cache 坑**：ROM API 写完 Flash 后，XIP 直读可能命中 L1 D-Cache 的旧行。驱动在每次
+3. **D-Cache 易错点**：ROM API 写完 Flash 后，XIP 直读可能命中 L1 D-Cache 的旧行。驱动在每次
    编程/擦除后对受影响范围做 `l1c_dc_invalidate`，读作业开始前也会失效一次；不这样做会
-   出现"写成功但读回是旧数据"的假象（`samples/flash/flash_rw_erase` 也记录了同一个坑）。
+   出现"写成功但读回是旧数据"的假象（`samples/flash/flash_rw_erase` 也记录了同一个易错点）。
 4. **窗口保护**：SWS 本身允许驱动操作整片存储器，本实现按板级安全需求把擦/写/空白检查
    限制在 PBcfg 的 `eraseWindowStart..eraseWindowEnd`（最后 64KB），越界报 `MEM_E_PARAM_ADDRESS`。
    这属于工程约束，已写进第 47 章"待确认项"。

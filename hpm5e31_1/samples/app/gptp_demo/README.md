@@ -71,7 +71,7 @@ sudo pkill -INT -x ptp4l
 （2026-11-02 起板端 `ptpstats` 在 P2P 下也能统计：路径延迟取 `portDS.peerMeanPathDelay` 而非
 `currentDS.meanPathDelay`，此前 P2P 会一直显示 "no sample yet"。）
 
-## 5. 坑
+## 5. 易错点
 
 1. **E2E 与 P2P 不能混用**：一端 `-P` 一端 `-E` 时，双方各发各的 Delay_Req/Pdelay_Req，
    都收不到对应响应，现象是"一直不锁定、delay 恒 0"；
@@ -79,7 +79,7 @@ sudo pkill -INT -x ptp4l
 3. 125 ms Sync 下串口日志量 ×8，长测时建议把 `PTPD_DBG` 关掉（`constants_dep.h`）以免日志淹没；
 4. 其余与 `ptp_slave` 相同（transportSpecific、忙等、`bsp_uptime_ms` 冻结等）；
 5. 做完"主机当从钟"的实验后，主机 `/dev/ptp1` 会被改成对端时间，再当主钟前要
-   `sudo phc2sys -s CLOCK_REALTIME -c /dev/ptp1 -O 0 -m` 复位（第 36 章坑 8）。
+   `sudo phc2sys -s CLOCK_REALTIME -c /dev/ptp1 -O 0 -m` 复位（第 36 章易错点 8）。
 
 ## 6. 相关
 

@@ -84,7 +84,7 @@ python3 -c "import serial,time; s=serial.Serial('/dev/'+'$t',115200,timeout=0.5)
 
 注意：不要用 /dev/ttyACM0（那是 CH343 控制台），编号可能变化。
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. **不枚举的根因**：本板没有 VBUS 检测引脚，`board_init_usb()` 之后必须
    `usb_phy_using_internal_vbus()`（加之前主机完全看不到设备，加之后立刻出现 34b7）。

@@ -90,7 +90,7 @@ sudo host/ptp/run_ptp_master.sh stop
 [ptp] state=SLAVE domain=0 mech=E2E slaveOnly=t
 ```
 
-## 6. 坑（详见第 36 章 §8）
+## 6. 易错点（详见第 36 章 §8）
 
 1. **PTPd 上游把 transportSpecific 写成 8** → linuxptp 丢弃板端 Delay_Req，路径延迟恒 0。
    本仓库的 `components/app_ptp/ptpd_v2` 已修（默认 0）；用上游未修版时主机需 `ignore_transport_specific 1`。

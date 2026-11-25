@@ -82,7 +82,7 @@ VSS 把车辆信号组织成树（`Vehicle.Speed`、`Vehicle.Powertrain.Combusti
 
 - **位编号**：DBC/VSS 工具链用"sawtooth"位编号（Intel 格式低位在前），本表所有信号 8 位对齐，
   等价于"字节偏移 + 位偏移"；非对齐信号需要按 sawtooth 逐位展开；
-- **符号**：i8 表示的温度要先按二进制补码转负数，再加偏移（-40）——这是水温信号最常见的坑；
+- **符号**：i8 表示的温度要先按二进制补码转负数，再加偏移（-40）——这是水温信号最常见的易错点；
 - **单位换算**：物理值 = raw × factor + offset，factor 决定分辨率（0.01 km/h、0.1 %）；
 - **路径合法性**：用 VSS JSON 树校验叶子名存在（本章 `--vss-json`），避免"信号名拼错但数据看起来正常"。
 
@@ -95,7 +95,7 @@ DLT（Diagnostic Log and Trace）报文（图 39-1）：
 - **Standard Header（4 B）**：`HTYP`（1 B：UEH/WEID/WTMS/WTVS/WSID 标志）、
   `MCNT`（1 B，报文计数，用于检测丢包）、`LEN`（2 B 大端，含 header 的总长度）；
 - **Standard Header extra（可选，位于扩展头之前）**：`WEID`→ECU ID(4 B)、`WSID`→session(4 B)、
-  `WTMS`→`TMSP`(4 B，0.1 ms，小端)。**TMSP 属于标准头扩展，不在扩展头里**——本章第二版踩到的坑（见坑 9）；
+  `WTMS`→`TMSP`(4 B，0.1 ms，小端)。**TMSP 属于标准头扩展，不在扩展头里**——本章第二版遇到的问题（见易错点 9）；
 - **Extended Header（HTYP.UEH=1 时存在，固定 10 B）**：`MSIN`（0x01=verbose）、`NOAR`（参数个数）、
   `APID`（4 字符应用 ID）、`CTID`（4 字符上下文 ID）；
 - **文件存储头 DltStorageHeader（16 B）**：`pattern[4]="DLT\\x01"` + `seconds`(u32 LE) + `microseconds`(i32 LE)
@@ -299,7 +299,7 @@ APID/CTID \`MAIN/CAN/ADC/NET\`、Type \`log\`、Payload \`2 seq=1628 ctx=MAIN le
 | DLT 吞吐 | 未测 | 每包 ≤ 16 帧时 UDP 约 300 包/s；建议 1 帧/包 + `-t 1000` 网关 |
 | RAM 总占用 | can_logger 16 KB、vss_signals <4 KB | 与网关（DLM 72%）共存时日志缓冲要 ≤128 帧 |
 
-## 39.9 坑与注意事项
+## 39.9 易错点与注意事项
 
 1. **candump 时间戳必须是绝对 epoch**：只写相对毫秒会导致 `canplayer` 回放时把时间戳当 epoch，
    排序/统计全乱；本章用"固定 epoch 基准 + 相对 µs"并在文档注明，正式记录应带 RTC/NTP 时间。
@@ -311,7 +311,7 @@ APID/CTID \`MAIN/CAN/ADC/NET\`、Type \`log\`、Payload \`2 seq=1628 ctx=MAIN le
    **负间隔 0 处**、间隔 0.296~0.308 ms（`logs/20261030-175332-can_logger.log`）。
    `host/canlog/candump_parse.py` 已加"时间戳乱序"检查，出现负间隔直接判 FAIL（U-38-7）。
 3. **环形缓冲的"覆盖"语义**：写满后 `s_head` 回绕，最旧帧被覆盖；如果校验依赖"从头开始"，
-   必须 `log clear` 后再回放，否则 verify 会看到两段不连续的 seq（本章第一版就踩了，
+   必须 `log clear` 后再回放，否则 verify 会看到两段不连续的 seq（本章第一版就遇到过，
    表现为 `bad_order=1, first_bad_idx=73`）。
 4. **回放前要停掉周期源**：`replay` 内部先 `gen off` + 清缓冲，否则 0x300 有两个独立 seq 源。
 5. **网关 peer auto-learn**：纯发送（VSS/DLT）场景必须在板端显式配置对端 IP:port，

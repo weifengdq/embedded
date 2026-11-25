@@ -47,7 +47,7 @@ bash scripts/hwrun.sh app/j1939_ecu --secs 14 --lock-wait 1800
 bus0: tx=582 rx=9 err=0 | bus1: tx=9 rx=582 err=0
 ```
 
-## 坑
+## 易错点
 
 - PDU2 报文没有 DA，"请求 ET1 的应答"仍是广播，不能用 DA 判断应答；本测试仪用"请求后 80 ms 内
   到达同 PGN"判定；

@@ -584,7 +584,7 @@ MCAL 不是"不碰寄存器"，而是"只有 MCAL 碰寄存器"。表 50-15 列�
 
 这些例程同时也验证了 MCAL 的边界假设：所有例程的 `main.c` 都只调 SWS API（不直接写寄存器），说明抽象层没有漏。例外是 `mem_bench` 与 `crc_bench` 里的对拍基准——它们故意用寄存器/SDK 直调做参照，属于测试代码而非驱动代码。
 
-## 50.15 坑与注意事项
+## 50.15 易错点与注意事项
 
 1. **SWS 抽取文本的页眉页脚会污染解析**。`pdftotext` 出来的文本每页都有 `N of M / Document ID / ▽ / △`，用正则抓 `Definition of API function` 时必须先清掉这些行，否则会把页脚当成 API 块的一部分，Service ID 抓空。现象：解析出的 API 数比实际少；解决：`parse_sws.py` 里的 `JUNK` 正则。
 2. **Service ID 与 API ID 宏不是一回事**。SWS 的 "Service ID [hex]" 是 DET 上报用的编号，本实现头文件里的 `<MOD>_API_ID_*` 应该逐个对应；但有些模块（如 Mem）的 SWS 版本里编号有调整，抄旧版会错。现象：DET 日志里的 API ID 与 SWS 表对不上；解决：以 R25-11 文本为准，逐模块 diff。

@@ -37,10 +37,10 @@ bash scripts/hwrun.sh app/canopen_pdo --secs 22 --lock-wait 1800            # �
 - ⚠️ TPDO2（事件定时器 1000 ms）在 5 s 窗口内 0 帧，已登记为待确认 U-33-10（不影响 TPDO1 同步路径）；
 - 从站侧 ADC16 每 10 ms 采样一次，TPDO1 每帧 6 B（0x2101 u16 + 0x2102 u32）。
 
-## 坑
+## 易错点
 
 1. **0x1019=0 时 SYNC 必须 DLC=0**：带计数字节的 SYNC 会被 CANopenNode 判为长度错误
-   （`CO_SYNC.receiveError=0x41`）而完全丢弃，表现为"TPDO 一帧都不发"——本移植第一版就踩了这个坑；
+   （`CO_SYNC.receiveError=0x41`）而完全丢弃，表现为"TPDO 一帧都不发"——本移植第一版就遇到过这个问题；
 2. **TPDO1 的 transmission type 写 1 才是"每个 SYNC 发一次"**；写 0 表示"仅同步且事件发生"，
    应用不改数据就永远不发；
 3. **主站忙等期间必须持续驱动从站**（`co_master_set_service`），否则同一 MCU 上从站被饿死，

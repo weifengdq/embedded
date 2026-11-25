@@ -34,7 +34,7 @@ bash scripts/hwrun.sh reliability/soak_test --secs 1800 --lock-wait 1800
 
 日志：`logs/20261030-114255-soak_test.log`（0 错误）。
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 - **GPTMR0 时钟默认未开**：必须先 `clock_add_to_group(clock_gptmr0,0)`，否则 shell banner 打到一半就停；
 - 中断计数实测 1171 Hz vs 配置 1 kHz（+17%），说明 GPTMR 实际时钟与 `clock_get_frequency` 报告值有偏差，

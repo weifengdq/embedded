@@ -354,7 +354,7 @@ class DoIPClient(object):
                 rsa, rta = struct.unpack(">HH", pay[:4])
                 body = pay[4:]
                 if (rsa, rta) != (self.entity, sa):
-                    # 地址方向不对：不静默放过，直接报错（书稿“坑”里记录的方向问题）
+                    # 地址方向不对：不静默放过，直接报错（书稿“易错点”里记录的方向问题）
                     raise DoIPError("诊断响应地址不符: SA=0x%04X TA=0x%04X (期望 0x%04X/0x%04X)"
                                     % (rsa, rta, self.entity, sa))
                 if keep_pending and len(body) >= 3 and body[0] == 0x7F and body[2] == 0x78:

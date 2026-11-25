@@ -206,7 +206,7 @@ mem                   CMD   --------  hexdump memory: mem <addr> [len]
 4. 若日志量大，可把 `printf` 重定向到环形缓冲 + DMA 发送（第 05 章 uart_dma 的思路）。
 5. 命令表是只读 Flash 数据，`help` 遍历是 O(n) 字符串比较，16 条可忽略；上千条命令时应改用哈希或前缀树。
 
-## 3.10 坑与注意事项
+## 3.10 易错点与注意事项
 
 1. **现象：敲 Enter 没反应 / 一次回车执行两次** → 原因：`SHELL_ENTER_CR` 和 `SHELL_ENTER_LF` 配置与终端不一致。
    本板把 **CR 与 LF 同时打开**（`SHELL_ENTER_CR=1、SHELL_ENTER_LF=1`），因此 `

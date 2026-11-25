@@ -50,7 +50,7 @@
 #define DEFAULT_ACCEPTMBOX_SIZE     (8)
 
 /* 同裸机版：不定义 CHECKSUM_BY_HARDWARE，校验和由 lwIP 软件算 */
-#define LWIP_DEBUG                  1
+#define LWIP_DEBUG                  0
 #define LWIP_DBG_MIN_LEVEL          0
 #define NETIF_DEBUG                 LWIP_DBG_OFF
 #define PBUF_DEBUG                  LWIP_DBG_OFF

@@ -25,7 +25,7 @@ bash scripts/hwrun.sh power/lowpower_wait_timer --secs 8 --send "lp"
 
 日志：`logs/20261030-120934-lowpower_wait_timer.log`。
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 - WAIT 模式下 CPU 时钟门控、外设仍可运行（GPTMR 继续计数），适合"低功耗待机 + 周期唤醒"；
 - 唤醒延迟包含中断入口与主循环恢复，实测为微秒级；

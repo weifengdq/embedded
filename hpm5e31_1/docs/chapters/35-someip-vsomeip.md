@@ -56,7 +56,7 @@ SOME/IP（Scalable service-Oriented MiddlewarE over IP）是 AUTOSAR 定义的**
 | 事件 | NOTIFICATION（周期或变化触发） | 已实现 3 路周期事件（100/10/500 ms） |
 | 字段 | getter/setter/notifier（用方法号派生） | 已实现 temperature getter(0x0004)/setter(0x0005) |
 | 大包 | SOME/IP-TP 分段（>1400 B） | 已实现 4 KB 双向分段/重组 |
-| 序列化 | 大端、4 B 对齐、字符串带长度 | 与 vsomeip serializer 对齐（见"坑"） |
+| 序列化 | 大端、4 B 对齐、字符串带长度 | 与 vsomeip serializer 对齐（见"易错点"） |
 
 ## 35.4 工作原理
 
@@ -144,7 +144,7 @@ Flags(1) | Reserved(3) | Entries-Length(4) | Entry × N (每个 16 B) | Options-
 | 12 | 尾部 4 B | 4 | Minor Version（u32） | Reserved(12b)+Counter(4b) |
 | 14 | EventGroup ID | 2 | — | 0x0001 |
 
-表 35-4 IPv4 Endpoint Option（0x04）——**Length 语义是坑**：
+表 35-4 IPv4 Endpoint Option（0x04）——**Length 语义是易错点**：
 
 | 偏移 | 字段 | 宽度 | 值 |
 |---|---|---|---|
@@ -324,7 +324,7 @@ static void dispatch_request(app_someip_t *s, const uint8_t src_ip[4], uint16_t 
 
 ```c
 /* 订阅表里的 last_renew_ms 用真实时基（sys_now），所以模拟时间必须从同一时基起算，
- * 否则 now - last_renew 下溢，订阅会被误判为过期（本次调试踩过，见"坑 6"） */
+ * 否则 now - last_renew 下溢，订阅会被误判为过期（本次调试遇到过，见"易错点 6"） */
 const uint32_t t_base = app_someip_net_now_ms(NULL);
 for (uint32_t t = t_base; t <= (t_base + 1000U); t += 10U) {
     s_cap.count = 0;
@@ -478,7 +478,7 @@ RTT 构成：主机 lwIP/socket 往返 + 千兆链路 ~几十 µs + 板端收包
    好处是避免 IP 分片（lwIP `IP_REASSEMBLY=0` 时 >1500 B 的 UDP 直接丢）。
 5. **可优化点**：事件载荷直接写进 `tx_buf` 避免二次 `memcpy`（已做）；SD Offer 用模板预编码（未做，收益很小）。
 
-## 35.10 坑与注意事项
+## 35.10 易错点与注意事项
 
 1. **`Length` 字段的起算点**：从 Request ID 开始算（= 8 + 载荷），不含 Message ID 与 Length 自身。
    上位机若按"整包长度"填，板端会以"长度字段与实际不符"丢弃。现象：RPC 全部超时、`stat` 里 `malformed` 涨。
@@ -501,7 +501,7 @@ RTT 构成：主机 lwIP/socket 往返 + 千兆链路 ~几十 µs + 板端收包
    （或把 MTU 提到 jumbo，代价是 DLM 内存，见第 13 章）。
 10. **单板多 agent 联调把"烧写 + 上位机测试"放在一把锁里**：`hwrun.sh --post` 提供了这个能力。
     自己写脚本时务必 `export HPM_HW_LOCK_HELD=1` 再调 `flash.sh`，否则 `flash.sh` 会对同一把锁再次 flock → 自锁死
-    （本章编写期间踩过，全队板锁被阻塞数分钟）。
+    （本章编写期间遇到过，全队板锁被阻塞数分钟）。
 11. **回调里不要 printf**：UDP 收包回调在主循环上下文里，打印会拉长处理时间、增加丢包与抖动；
     统计量用 `stat` 命令统一打印。
 12. **大帧连发要给 MAC 的 FCS 留余量 / 或改用 append 模式**（U-35-10 根因）：SDK `enet_lwip_output()` 在

@@ -78,7 +78,7 @@ AHB SRAM 17 920 B（54.69%）、ILM 1 544 B。运行时：j1939_stack 9 760 B、
 **结论**：4 路 CAN + 两类协议 + 网关三合一后 DLM 仍 72.6%，J1939 10 ms 周期最大 10.053 ms
 （比单跑多 49 µs）；CPU 空闲率下降 44%，是共存的主要代价。
 
-## 坑
+## 易错点
 
 - 四个通道必须由**各自组件**初始化：CAN0 用 app_j1939 的端口层（自带 mcan_init），CAN1 用 app_can
   （网关内部初始化），CAN2 用 CANopenNode 的 CO_driver，CAN3 用 co_master；任何两处重复 mcan_init

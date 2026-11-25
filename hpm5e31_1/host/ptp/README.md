@@ -89,13 +89,13 @@ bash scripts/hwrun.sh samples/app/gptp_demo --secs 40 --send "sleep 1000;ptpbenc
 
 > **PHC 复位**：主机当过从钟后，`/dev/ptp1` 会被 ptp4l 改成对端时间（本板初值是 2022 年）。
 > 切换角色前执行 `sudo phc2sys -s CLOCK_REALTIME -c /dev/ptp1 -O 0 -m`（几秒后 Ctrl-C），
-> 否则主机当主钟时会把错误时间发给对端（见第 36 章坑 8）。
+> 否则主机当主钟时会把错误时间发给对端（见第 36 章易错点 8）。
 
 ## 6. 常见问题
 
 | 现象 | 原因 / 处理 |
 |---|---|
 | ptp4l 卡在 `LISTENING` | 只有自己一台设备，等 `ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES`（约 6~10 s）后自任主钟，正常 |
-| 板端 `one-way delay averaged` 恒为 0 | 对端丢弃了板端 Delay_Req：早期 PTPd 把 transportSpecific 写成 8，linuxptp 按 0 过滤 → 本仓库移植版已修（见第 36 章坑 1） |
+| 板端 `one-way delay averaged` 恒为 0 | 对端丢弃了板端 Delay_Req：早期 PTPd 把 transportSpecific 写成 8，linuxptp 按 0 过滤 → 本仓库移植版已修（见第 36 章易错点 1） |
 | `pmc: timed out` | pmc 默认走 /var/run/ptp4l 的 UDS，需要 ptp4l 正在运行且 `-m` 模式带 UDS（默认开） |
 | 主机报 `failed to open /dev/ptp1` | 需要 root；或该网卡不支持硬件时间戳，改 `-S`（软件时间戳）对比 |

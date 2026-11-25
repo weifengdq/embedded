@@ -9,7 +9,7 @@
  *
  * 关键实现约定（第 45 章有表）：
  *   1) 一个 PWMv2 实例内所有计数器的重载值都绑定到同一个影子 0，并统一
- *      reload_update_on_shlk —— 否则 CMP4..CMP7 事件会被静默丢弃（ch14 坑 14-3）；
+ *      reload_update_on_shlk —— 否则 CMP4..CMP7 事件会被静默丢弃（ch14 易错点 14-3）；
  *   2) 通道相位 = 配置里的 phasePermille，上升沿比较值 a = T*phase/1000，
  *      下降沿 b = a + 占空比 ticks（按周期回绕）；
  *   3) 0% / 100% 占空比用 b=a / b=T 两个特例实现，不依赖比较器边界行为；
@@ -125,7 +125,7 @@ static void pwm_program(Pwm_ChannelType ch)
     pwmv2_set_shadow_val(base, pch->shadowA, s_rt[ch].a, 0u, false);
     pwmv2_set_shadow_val(base, pch->shadowB, s_rt[ch].b, 0u, false);
 
-    /* 4 个计数器都指向影子 0：CMP 事件依赖对应计数器的重载值（RM §37.4.8 / 坑 14-3） */
+    /* 4 个计数器都指向影子 0：CMP 事件依赖对应计数器的重载值（RM §37.4.8 / 易错点 14-3） */
     for (i = 0u; i < 4u; i++)
     {
         pwmv2_counter_select_data_offset_from_shadow_value(base, (pwm_counter_t)i, PWM_SHADOW_RELOAD);

@@ -4,7 +4,7 @@
 someip_client.py -- 自实现 SOME/IP 客户端（SOME/IP-SD + 方法 RPC + 事件订阅 + SOME/IP-TP）
 
 用途：
-  1) 板端例程的"无 vsomeip 依赖"验证工具（vsomeip 构建慢、配置坑多，先用它把线上行为确认下来）；
+  1) 板端例程的"无 vsomeip 依赖"验证工具（vsomeip 构建慢、配置易错点多，先用它把线上行为确认下来）；
   2) 教学：每一段字节都自己拼，便于对照 AUTOSAR PRS SOME/IP 规范逐字段看报文。
 
 覆盖：
@@ -115,7 +115,7 @@ def enc_sd_entry_service(etype, service, instance, major, ttl, minor=0):
 def enc_sd_entry_eventgroup(etype, service, instance, major, ttl, eventgroup, counter=1,
                             num_options=0):
     # 第 4 字节 = 两段 option run 的个数（低 4 位 = 第一个 run）。带 endpoint option 时必须写 1，
-    # 否则对端会认为"没有 option"，事件就退化成发给订阅者的 SD 端点（30490）——踩过的坑（第 35 章坑 5）。
+    # 否则对端会认为"没有 option"，事件就退化成发给订阅者的 SD 端点（30490）——遇到过的问题（第 35 章易错点 5）。
     return struct.pack("!BBBBHHB3sHH", etype, 0, 0, num_options, service, instance, major,
                        ttl.to_bytes(3, "big"), counter, eventgroup)
 

@@ -81,7 +81,7 @@ bash scripts/hwrun.sh enet/enet_phy_config --secs 30 --send 'dump;status;mode 10
 | 强制 Master | 0xC001 | 0x2000（[13]=1 Master） | **DOWN** | 双 Master 冲突，主从配置生效的直接证据 |
 | 恢复 Slave | 0x8001 | 0x8400 | UP | 恢复成功 |
 
-## 6. 关键点与坑（本样例实测得到）
+## 6. 关键点与易错点（本样例实测得到）
 
 1. **写 MMD1 0x834 后会“回退”**：如果按手册 §5.3 写完 0x834 再执行`BMCR=0x8000`软复位，
    速率会回到上电默认 1000BASE-T1（实测 MMD1 0x834 又从 0x8000 变回 0x8001）。

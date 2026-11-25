@@ -73,7 +73,7 @@ bash scripts/hwrun.sh app/xcp_can_daq --secs 15 --send "gw on" \
 
 （网关接入与 \`--post\` 的用法见 \`host/can_bridge/\` 与第 28 章；本条联调状态见第 33 章 U-34-2。）
 
-## 坑
+## 易错点
 
-见第 33 章"坑与注意事项"：AHB SRAM 消息缓冲区、CAN 帧填充导致长度判断、
+见第 33 章"易错点与注意事项"：AHB SRAM 消息缓冲区、CAN 帧填充导致长度判断、
 \`ALLOC_ODT_ENTRY\` 6 字节、PID 上限、时间戳吃 ODT0 容量、\`MODIFY_BITS\` 依赖 MTA。

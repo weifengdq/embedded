@@ -137,7 +137,7 @@ int app_someip_net_send(void *ctx, const uint8_t dst_ip[4], uint16_t dst_port,
     /* 关键：多申请 4 字节。
      * SDK 的 enet_lwip_output() 在 ENET_TX_HW_CRC_MODE=replace 时，最后一段描述符的
      * tbs1 长度是 chunk + 4（MAC 要把 4 B FCS 写回缓冲）。如果 pbuf 只申请 len 字节，
-     * 这 4 B 会写到相邻堆内存里——单个小帧通常踩到填充区看不出问题，但连续发多个大帧时
+     * 这 4 B 会写到相邻堆内存里——单个小帧通常遇到填充区看不出问题，但连续发多个大帧时
      * 会把下一帧的 pbuf 头/数据踩坏 -> 该帧 FCS 错、被对端 MAC 丢弃（抓包也看不到）。
      * 这正是"连续 3 个 1412 B 的 SOME/IP-TP 段只上线最后 1 个"的根因（U-35-10）。 */
     p = pbuf_alloc(PBUF_TRANSPORT, (u16_t)(len + ENET_TX_CRC_REPLACE_PAD), PBUF_RAM);

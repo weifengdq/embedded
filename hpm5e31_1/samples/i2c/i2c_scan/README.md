@@ -60,11 +60,11 @@ i2c_lines: SCL=1 SDA=1 (1=released/high), CMPL=0, BUSBUSY=0
 注：板上无 I2C 从器件，**全部 NACK 是正确现象**；probe 751 µs 主要由驱动的 NACK 重试（5000 次）构成，
 不能用来反推 SCL。
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. **全 NACK 是预期**：没有从器件拉低 SDA，ACK 位就是 1（NACK），`i2c_master_write` 返回 `status_i2c_no_addr_hit`。
 2. `i2c_master_write(ptr, addr, buf, 0)` 是官方推荐的"纯 probe"，不写数据。
-3. **I2C0 的 PC08 与 CAN2_TXD 冲突**（同一 PAD 的两个 ALT），这是本板最容易踩的复用坑；本样例因此改用 I2C1。
+3. **I2C0 的 PC08 与 CAN2_TXD 冲突**（同一 PAD 的两个 ALT），这是本板最容易用错的复用点；本样例因此改用 I2C1。
 4. IOC 的 `LOOP_BACK` 只把**本 PAD 的输出回送到本 PAD 的输入**，不是把 SCL 和 SDA 互连；
    它不能代替从器件，只能用于时钟反馈类调试。
 5. 上拉电阻：本板用内部上拉（`PE=1,PS=1`），总线电容大或线长时会明显吃掉上升沿，400k/1M 需要外部 2.2k~4.7k 上拉（待确认，需实测波形）。

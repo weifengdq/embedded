@@ -192,7 +192,9 @@ void yt8011_basic_mode_default_config(ENET_Type *base, yt8011_config_t *cfg)
     cfg->master            = false;
     cfg->auto_negotiation  = false;
     cfg->rx_delay_en       = true;
-    cfg->tx_delay_sel      = 1U;
+    /* R10 实测（2026-11-24）：TXC 档位 1 在 1000M 板->主机方向约 1% 帧 FCS 错，
+     * 2~15 共约 478 万帧零误码，0 数据不可用；取 4 居中（详见第 12 章 §12.7.5）。 */
+    cfg->tx_delay_sel      = 4U;
     cfg->tx_clk_sel        = false;
 }
 

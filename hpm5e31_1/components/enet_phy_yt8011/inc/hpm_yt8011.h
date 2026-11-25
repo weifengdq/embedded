@@ -36,7 +36,7 @@ typedef struct {
     bool master;                /* true=Master(强制), false=Slave(强制) */
     bool auto_negotiation;      /* true: 走 MMD7 0x200 自协商（会影响建链时间） */
     bool rx_delay_en;           /* EXT 0x9001[8] RXC 2ns 延迟, 板级 strap 默认 1 */
-    uint8_t tx_delay_sel;       /* EXT 0x9001[7:4] TXC 延迟档位, 默认 1 */
+    uint8_t tx_delay_sel;       /* EXT 0x9001[7:4] TXC 延迟档位, 默认 4（R10：档位 1 有 ~1% CRC 错） */
     bool tx_clk_sel;            /* EXT 0x9001[9] 反相 GMII 时钟 */
 } yt8011_config_t;
 

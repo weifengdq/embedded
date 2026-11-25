@@ -88,7 +88,7 @@ bash scripts/hwrun.sh samples/app/can_gateway --secs 45 --send "quiet;gw on;pass
 `host/can_bridge/README.md` 的真实运行输出。关键指标：ping 通、心跳 10 Hz、`0x123` 回显、
 往返延迟 avg/p99、300 帧/s 丢包率。
 
-## 7. 坑
+## 7. 易错点
 
 | # | 现象 | 原因 | 处理 |
 |---|---|---|---|
@@ -121,6 +121,6 @@ samples/app/can_gateway/
 主机侧日志：`/tmp/can_bridge_accept/{ping,candump_hb,candump_echo,bench}.log`、`bench.json`；
 章节证据：第 28 章 表 28-5 / 表 28-6 / 图 28-3 / 图 28-4。
 
-> **坑速查**：① vcan 必须 `tc tbf` 限速，否则打爆 MCU；② cannelloni 默认 `-t 100000`（100 ms）
+> **易错点速查**：① vcan 必须 `tc tbf` 限速，否则打爆 MCU；② cannelloni 默认 `-t 100000`（100 ms）
 > 会把时延抬高两个数量级，`run_tunnel.sh` 已改 `-t 1000`；③ 板端网关是"被动方"，
 > 主机必须先发一个包触发 peer 学习；④ HPM5E31 的 MCAN 消息 RAM 在 AHB SRAM，组件已处理。

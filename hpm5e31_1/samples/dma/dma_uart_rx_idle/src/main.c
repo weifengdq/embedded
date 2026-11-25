@@ -216,7 +216,7 @@ static void cmd_uarttest(int argc, char *argv[])
 
     printf("  result: frames=%lu idle_frame=%lu timeout=%lu\r\n",
            (unsigned long) frames, (unsigned long) idle_ok, (unsigned long) timeouts);
-    printf("  data: poll_rx_ok=%lu/%lu, dma_rx_ok=%lu/%lu (DMA RX 异常见 README 坑 1)\r\n",
+    printf("  data: poll_rx_ok=%lu/%lu, dma_rx_ok=%lu/%lu (DMA RX 异常见 README 易错点 1)\r\n",
            (unsigned long) poll_ok, (unsigned long) frames,
            (unsigned long) dma_ok, (unsigned long) frames);
     printf("  loss=%.0f ppm (按 idle 帧界计), tx->idle latency min=%lu us avg=%lu us max=%lu us\r\n",

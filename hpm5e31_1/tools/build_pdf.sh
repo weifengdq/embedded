@@ -34,7 +34,7 @@ WORK="$BUILD/.tmp"
 LOG="$ROOT/tools/build_pdf.log"
 
 TITLE="HPM5E31 实战手册"
-SUBTITLE="原理 · 例程 · 上板实测 · 避坑"
+SUBTITLE="原理 · 例程 · 上板实测 · 经验"
 AUTHOR="hpm5e31_1 项目组"
 VERSION=""
 OUT=""

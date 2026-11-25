@@ -73,7 +73,7 @@ sudo python3 samples/mcal/eth_raw_echo/host/eth_host.py --iface enp6s0 flood --l
   `FF FF FF FF FF FF | 02 00 00 00 01 00 | 88 B5 | 45 54 48 30`
   （广播 + 本机 MAC + 0x88B5 + "ETH0"）。
 
-## 6. 关键点与坑
+## 6. 关键点与易错点
 
 1. **缓冲必须 DMA 可达**：TX/RX 缓冲放 `.noncacheable.bss`（AXI SRAM）；放默认 .bss（DLM）会
    出现"描述符 OWN 不翻转、计数全 0"。

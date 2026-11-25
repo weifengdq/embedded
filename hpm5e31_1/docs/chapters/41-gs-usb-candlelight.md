@@ -12,7 +12,7 @@
 | 上位机（计划） | host/gs_usb/（测试矩阵脚本） |
 | 事实来源 | 本机内核驱动源码 drivers/net/can/usb/gs_usb.c（逐条带行号）+ docs/gs_usb开发约定.md |
 | 实测日期 | 2026-11-02（主机环境与设备侧全部实测；5M 复测见 §41.7.8） |
-| 实测状态 | **M1~M4 主体均已实测**：枚举 10/10、经典 500k 11/11、4 通道 12/12、CAN FD 2M 100/100（反向 10/10）、硬件时间戳（100% 覆盖，-23~-40 ppm）、吞吐 935.2 帧/s（R4 日志已归档）、模式 9/9、终端电阻请求 rc=255（不支持）、兼容性 8/8、空闲 300 s/60 次轮询 0 掉线、压力 2500/2500 且 TX dropped 增量 0、one-shot TEC 7→23；**R8 复测（§41.7.8）**：CAN FD 1M/5M 64 B BRS 双向 4000/4000 帧 0 丢帧、6 988.5 / 6 995.1 帧/s、64 B 载荷 3.58 Mbit/s，25 万帧满速长测 0 丢帧 0 错误；并修复“满速 TX 丢帧不回 echo → TX URB 泄漏 → netdev 队列永久停”的固件缺陷（§41.9 坑 20）。剩余：bus-off 未注入成功（需 one-shot 长注入）、>1 h 长稳与时间戳分段拟合受窗口限制（见 U-40-6/18/20）；8M 超 TCAN1044AV 规格，只记录不作档位 |
+| 实测状态 | **M1~M4 主体均已实测**：枚举 10/10、经典 500k 11/11、4 通道 12/12、CAN FD 2M 100/100（反向 10/10）、硬件时间戳（100% 覆盖，-23~-40 ppm）、吞吐 935.2 帧/s（R4 日志已归档）、模式 9/9、终端电阻请求 rc=255（不支持）、兼容性 8/8、空闲 300 s/60 次轮询 0 掉线、压力 2500/2500 且 TX dropped 增量 0、one-shot TEC 7→23；**R8 复测（§41.7.8）**：CAN FD 1M/5M 64 B BRS 双向 4000/4000 帧 0 丢帧、6 988.5 / 6 995.1 帧/s、64 B 载荷 3.58 Mbit/s，25 万帧满速长测 0 丢帧 0 错误；并修复“满速 TX 丢帧不回 echo → TX URB 泄漏 → netdev 队列永久停”的固件缺陷（§41.9 易错点 20）。剩余：bus-off 未注入成功（需 one-shot 长注入）、>1 h 长稳与时间戳分段拟合受窗口限制（见 U-40-6/18/20）；8M 超 TCAN1044AV 规格，只记录不作档位 |
 | 可信度 | 协议事实：高（对照内核源码）；实测数字：高（经典/2M/5M/时间戳/长测均有 logs/ 归档日志，见 §41.7.8）；>1 h 长稳与 8M 眼图未做 |
 
 ## 41.2 本章导览
@@ -102,7 +102,7 @@ USB 侧能力与 CherryUSB API 的对照见表 41-3。
 ### 41.4.3 控制请求（bRequest）全表
 
 所有控制请求都是 bmRequestType = 0xC0/0x40（厂商、设备或接口收），数据小端 packed。
-**通道号放在 wValue**（不是 wIndex）——这是内核 7.0.0 的事实，也是本仓库第一版固件踩过的坑：
+**通道号放在 wValue**（不是 wIndex）——这是内核 7.0.0 的事实，也是本仓库第一版固件遇到过的问题：
 按 wIndex 传通道号不会报错，但 can1~can3 的 BITTIMING/MODE 会全部落到 ch0（表现为 can1~3 FD 无 ACK、TEC 冲到 248）。
 `HOST_FORMAT` 与 `DEVICE_CONFIG` 例外：它们的 wValue = 1（接口号），不表示通道。
 
@@ -177,7 +177,7 @@ USB 侧能力与 CherryUSB API 的对照见表 41-3。
 | 设备到主机（RX） | FD + HW_TS | 12 | 64 | 4 | **80 B** |
 
 **表 41-6** ：四种尺寸。注意 **echo 帧（TX 回显）也是设备到主机方向，同样必须是 24/80 B 带时间戳**，
-少 4 字节会被内核判为 short read（本仓库固件第一版踩过）。**只要 advertise 了 HW_TIMESTAMP，RX 帧就必须是 24/80 B**——
+少 4 字节会被内核判为 short read（本仓库固件第一版遇到过）。**只要 advertise 了 HW_TIMESTAMP，RX 帧就必须是 24/80 B**——
 内核的 gs_usb_get_minimum_rx_length()（drivers/net/can/usb/gs_usb.c:575-601）按
 struct_size(hf, canfd_ts, 1) 算最小值，短一个字节整帧被丢（rx_fifo_errors 加一）；
 而 URB 缓冲大小在 probe 时按同样规则算死（gs_usb.c:1609-1622）。
@@ -194,7 +194,7 @@ struct_size(hf, canfd_ts, 1) 算最小值，短一个字节整帧被丢（rx_fif
 | reserved | u8 | 保留，填 0 |
 
 **表 41-7** ：头部字段。can_dlc 与第 29 章 MCAN 的 dlc 字段是同一套编码，**不是字节数**——
-这个坑在本书里出现了两次（第 29 章 ISO-TP、本章 gs_usb），因为内核与 MCAN 都用 DLC 编码。
+这个易错点在本书里出现了两次（第 29 章 ISO-TP、本章 gs_usb），因为内核与 MCAN 都用 DLC 编码。
 
 回显（echo）是 gs_usb 的流量控制核心：主机每发一帧 TX，设备把它**交给 CAN 控制器成功后**
 原样回一帧（echo_id 不变），内核靠它释放 TX URB 并统计发送完成。设备不回显，主机 10 个 URB
@@ -348,7 +348,7 @@ static uint32_t make_ts_us(void)            /* 1 MHz、自由运行、单调 */
 | test_timestamp.py | SO_TIMESTAMPING(RAW_HARDWARE) + scm_timestamping64，统计与系统时钟偏差/抖动 | 否 |
 | test_stress.sh | cangen 高压 10 s + ip -s link 丢包/错误计数 | 否 |
 | test_5m.sh | **CAN FD 5M 矩阵（R8）**：经典 500k / FD 1M-2M / FD 1M-5M 双向满速突发、FD DLC 0~64、6 轮突发、autosuspend；`--soak N` 满速长测（U-40-3/U-40-18） | 否 |
-| repro_tx_urb_leak.sh | **TX URB 泄漏 A/B 复现（R8）**：`--expect-stall`（旧固件）/ `--expect-ok`（修复后），判据是 `cansend` 是否报 ENOBUFS（坑 20） | 否 |
+| repro_tx_urb_leak.sh | **TX URB 泄漏 A/B 复现（R8）**：`--expect-stall`（旧固件）/ `--expect-ok`（修复后），判据是 `cansend` 是否报 ENOBUFS（易错点 20） | 否 |
 | bench_ts_drift.py | 硬件时间戳绝对漂移分段采样 + 跨段线性拟合（U-40-20） | 否 |
 | r5_window.sh | 单窗口采样：设备在线/丢帧/berr + 时间戳漂移，供 r5_loop.sh 长测调用 | 否 |
 | r5_loop.sh | 分段长稳循环：租约 110 s → r5_window → 释放 → 休息，结果写 CSV | 否 |
@@ -362,10 +362,10 @@ static uint32_t make_ts_us(void)            /* 1 MHz、自由运行、单调 */
 
 **不需要改 udev 规则**：内核 gs_usb 自带 id_table（1209:2323），插上即绑；lsusb / ethtool -T / candump 都不需要 root。
 
-> 脚本小坑（实测遇到）：cangen 的 `-I` / `-D` 参数要填 **8 位十六进制 CAN ID**，写成 `-I R` / `-D R` 这种拍脑袋值不会报错，
+> 脚本小易错点（实测遇到）：cangen 的 `-I` / `-D` 参数要填 **8 位十六进制 CAN ID**，写成 `-I R` / `-D R` 这种拍脑袋值不会报错，
 > 只会“一帧不发”，测试判据就会看到 0 帧（logs/20261102-103841-gs-usb-compat.log 的 cangen 项，已修正待复测）。
 
-但 **`ip link set canX up type can ...` 需要 CAP_NET_ADMIN（即 root 或 sudo）** —— 这一点与“测试不需要 root”的说法不同，实测踩过：用非 root 跑 test_classic.sh 时 `ip link set` 直接返回 `RTNETLINK answers: Operation not permitted`，后续用例全部 FAIL（证据 logs/20261102-102540-gs-usb-retry.log 与 logs/20261102-102654-gs-usb-classic.log）。
+但 **`ip link set canX up type can ...` 需要 CAP_NET_ADMIN（即 root 或 sudo）** —— 这一点与“测试不需要 root”的说法不同，实测遇到过：用非 root 跑 test_classic.sh 时 `ip link set` 直接返回 `RTNETLINK answers: Operation not permitted`，后续用例全部 FAIL（证据 logs/20261102-102540-gs-usb-retry.log 与 logs/20261102-102654-gs-usb-classic.log）。
 但本机 kernel.dmesg_restrict = 1（实测），普通用户读不到 dmesg，脚本统一用 sudo -n dmesg。
 
 ## 41.7 上板实测
@@ -429,7 +429,7 @@ static uint32_t make_ts_us(void)            /* 1 MHz、自由运行、单调 */
 2. **基线缺一项能力**：硬件时间戳未 advertise（ethtool -T 只有 software-*）。自研固件已补齐（40.7.3 实测有 hardware-*）。
    基线的 CAN FD 能力未验证（被并行烧写打断），不能下结论。
 3. **掉线不是内核崩，也不是固件崩**：dmesg 只有 USB disconnect、无 Oops/BUG/WARNING；根因是**共享板卡被并行 hwrun 烧写复位**
-   （J-Link 复位会断 USB）。这条已升级为操作型坑（40.9 坑 12）：gs_usb 测试必须独占板卡（U-40-12）。
+   （J-Link 复位会断 USB）。这条已升级为操作型易错点（40.9 易错点 12）：gs_usb 测试必须独占板卡（U-40-12）。
 
 ### 41.7.3 自研固件实测（M1）+ 后续矩阵
 
@@ -474,7 +474,7 @@ dmesg: 无 oops/WARN
    说明 BT_CONST（40 B）与 BT_CONST_EXT（72 B）都被内核按正确长度解析。
 5. **经典 500k 物理层与 USB 链路是通的**：双方 UP/ERROR-ACTIVE、berr 全 0、can0 TX=4 / can1 RX=5、无 oops。
    该轮 `test_classic.sh` 判 FAIL 是**测试环境问题**：并行 hwrun 烧写复位了 USB 设备
-   （抓包报 `SIOCGIFINDEX: No such device`），不是协议失败（见 40.9 坑 12）。
+   （抓包报 `SIOCGIFINDEX: No such device`），不是协议失败（见 40.9 易错点 12）。
 
 ![图 41-4 gs_usb 枚举结果与 ethtool -T 上报的时间戳能力](figures/41/fig-41-4-enum-capability.png)
 
@@ -633,8 +633,8 @@ cat /tmp/hpm5e31_hw.lock.d/what                 # 看谁占着
 | 11 | 内核稳定性 | run_all.sh / test_5m.sh 每步后的 dmesg 检查 | 全程无 Oops/BUG/WARNING/Call Trace | **PASS（R8）**：5M 矩阵 + 25 万帧满速长测 `dmesg --since` 0 命中（§41.7.8） |
 
 本矩阵的判定标准与 `docs/gs_usb开发约定.md` 第 8 节一致。已发生的两次"假 FAIL"都记在 40.9：
-一是**非 root 无法 `ip link set`**（坑 13，`logs/20261102-102540-gs-usb-retry.log`），
-二是**并行 hwrun 烧写踢掉 USB**（坑 12，`logs/20261102-102830-gs-usb-classic.log` 的 `SIOCGIFINDEX: No such device`）。
+一是**非 root 无法 `ip link set`**（易错点 13，`logs/20261102-102540-gs-usb-retry.log`），
+二是**并行 hwrun 烧写踢掉 USB**（易错点 12，`logs/20261102-102830-gs-usb-classic.log` 的 `SIOCGIFINDEX: No such device`）。
 两者都不是协议问题；M2/M3 数据到位后按行回填"结果"与"日志"两列。
 
 **表 41-16** ：设备侧测试矩阵（11 项）。日志命名 logs/时间戳-gs-usb-测试名.log，
@@ -720,12 +720,12 @@ Oops/BUG/WARNING/Call Trace/RCU stall。USB 侧掉线只出现在“别人正在
 5M 吞吐部分闭环，>1 h 长稳仍是已知限制。
 
 > 上表第 3、4 行的“本轮未取得可归档数据”已被 §41.7.8 取代：5M 数据段在 R8 复测中双向 0 丢帧通过，
-> 并顺带定位/修复了导致满速 TX 卡死的固件缺陷（§41.9 坑 20）。
+> 并顺带定位/修复了导致满速 TX 卡死的固件缺陷（§41.9 易错点 20）。
 
 ### 41.7.8 R8 复测：CAN FD 5 Mbit/s 数据段（2026-11-02 18:14）
 
 > 本节把 U-40-3 / U-40-18 里“5M 未取得可归档数据”升级为实测数字。前提是一次**固件缺陷修复**：
-> 满速 TX 时设备丢帧不回 echo，泄漏主机 TX URB，netdev 队列永久停（§41.9 坑 20）。
+> 满速 TX 时设备丢帧不回 echo，泄漏主机 TX URB，netdev 队列永久停（§41.9 易错点 20）。
 > 修复后本节全部档位双向 0 丢帧。
 > 主机日志：`logs/20261102-181452-gs-usb-5m.log`（core+ext，15 项 PASS / 0 FAIL）、
 > `logs/20261102-182018-gs-usb-5m.log`（5M 满速长测 25 万帧，含固件计数器）；
@@ -735,7 +735,7 @@ Oops/BUG/WARNING/Call Trace/RCU stall。USB 侧掉线只出现在“别人正在
 
 **测量口径**（表格里每个数字都能按它复算）：
 
-- 发送侧 `cangen <if> -f -b -g 0 -n N -L 64`（`-g 0` 表示能多快多快；`-L` 是**字节数**，64 = FD 64 B，见坑 21）；
+- 发送侧 `cangen <if> -f -b -g 0 -n N -L 64`（`-g 0` 表示能多快多快；`-L` 是**字节数**，64 = FD 64 B，见易错点 21）；
 - 接收侧 `candump -t a -n N <if>`（收满 N 帧正常退出并 flush，不用 SIGTERM）；帧率 =（收帧数 − 1）/（末帧时间戳 − 首帧时间戳）；
 - 丢帧率 = 1 − rx_packets 增量 / tx_packets 增量（取自 `/sys/class/net/canX/statistics`）；误码看 `tx_errors/rx_errors` 增量、
   `ip -details` 的 berr-counter 与 CAN 状态行；每一步后用 `dmesg --since <基线>` 扫 oops/WARN。
@@ -774,7 +774,7 @@ Oops/BUG/WARNING/Call Trace/RCU stall。USB 侧掉线只出现在“别人正在
 |---|---|---|---|
 | 5M 分段突发 | 6 轮 × 1000 帧，can0→can1 与 can1→can0 交替 | 每轮 tx=rx=1000（6/6 轮），累计 6000 帧，berr 0/0 | PASS |
 | **5M 满速长测** | `cangen -g 0 -n 250000 -L 64`（64 B，单向） | **35.88 s、250 000/250 000 帧、丢帧 0、6 967.7 帧/s**；`ip -s`：can0 TX errors/dropped 0、can1 RX errors/dropped 0；固件 `rx_frames=250000 tx_frames=250000 echo=250000 tx_drop=0 tx_retry=1 872 531 in_drop=0` | PASS |
-| 修复前对照（A/B） | 同一 `cangen -g 0` 满速，烧修复前的固件 | 1M/2M 64 B 只发出 **5/3000 帧**、can0 `tx_packets` 8→8 不再增长，`cansend` 报 `write: No buffer space available`（队列永久停） | 已定位（坑 20） |
+| 修复前对照（A/B） | 同一 `cangen -g 0` 满速，烧修复前的固件 | 1M/2M 64 B 只发出 **5/3000 帧**、can0 `tx_packets` 8→8 不再增长，`cansend` 报 `write: No buffer space available`（队列永久停） | 已定位（易错点 20） |
 | 修复后对照（A/B） | 同一 `cangen -g 0` 满速，烧修复后的固件 | 1M/2M 64 B **3000/3000 帧**、`cansend` rc=0、`tx_packets` 3003→3004（队列活着） | PASS（`logs/20261102-182303-gs-usb-tx-urb-leak.log`） |
 | 内核 oops/WARN | 每步 `dmesg --since <基线>` | core + ext + 25 万帧长测全程 **0 命中** | PASS |
 | USB 空闲与 autosuspend | `usbcore.autosuspend=2`、端口 `power/control=on`、10 s 空闲 20 次轮询 | 0/20 掉线（300 s 结论见 §41.7.6 与 U-40-14） | PASS |
@@ -813,7 +813,7 @@ Oops/BUG/WARNING/Call Trace/RCU stall。USB 侧掉线只出现在“别人正在
    而不是等主循环（否则主机侧表现为 tx queue stopped、发送帧率骤降）。
 2. **RX 每帧一个 URB**：内核假设"一个 URB = 一个 gs_host_frame"，把多帧塞进一个 URB 只会解析第一帧。
 3. **环形队列深度**：RX 环太小会在高负载丢帧（ip -s link 的 rx_fifo_errors 会涨），建议不小于 64 帧/通道。
-4. **不要在 USB 回调里做重活**：回调只入队，打包放主循环（第 20 章的 USB 坑）。
+4. **不要在 USB 回调里做重活**：回调只入队，打包放主循环（第 20 章的 USB 易错点）。
 5. **时间戳打点位置**：放在 MCAN RX FIFO 读出时刻，比放在 USB 发送前能少掉整个排队延迟。
 
 与参考基线的两个关键差异（用于自研固件对比）：
@@ -861,13 +861,13 @@ gs_usb 与 cannelloni 链路的对比见表 41-21。
 **表 41-21** ：gs_usb 与 cannelloni 链路对比。**gs_usb 的单帧延迟约为以太网隧道的 1/8.5**（267 µs 对 2.26 ms），
 且不需要 vcan/网关进程；代价是占用主机一个 USB 口、且设备侧要实现完整 USB 设备栈。
 
-## 41.9 坑
+## 41.9 易错点
 
 1. **RX 帧短一字节，内核就丢帧**。advertise 了 HW_TIMESTAMP 就必须发 24/80 B，
    内核按 struct_size(hf, canfd_ts, 1) 做最小长度校验（gs_usb.c:575-601）。
    最容易犯的错是"经典帧只发 20 B"，那是不带时间戳的尺寸。
 2. **can_dlc 是 DLC 编码不是字节数**。填 64 会被当成非法 DLC；FD 64 字节对应编码 15。
-   （同一坑在第 29 章 MCAN 侧也踩过。）
+   （同一易错点在第 29 章 MCAN 侧也遇到过。）
 3. **channel 越界会被内核 detach 设备**。4 通道时 icount=3，数据帧 channel 只能是 0 到 3。
 4. **echo_id 必须小于 10**。内核 GS_MAX_TX_URBS=10，回显序号越界会命中错误的 TX 上下文，
    轻则统计错乱、重则 BUG_ON（gs_usb.c:294）。
@@ -885,7 +885,7 @@ gs_usb 与 cannelloni 链路的对比见表 41-21。
 11. **dmesg_restrict=1 会让"看不到 oops"变成假象**。本机实测普通用户读 dmesg 被拒；
     测试脚本必须 sudo -n dmesg，否则会把"命令失败"误判成"没有 oops"。
 
-12. **共享板卡时，别人的 hwrun 烧写会把 gs_usb 设备踢下线**（实测定案，最容易误判的坑）：
+12. **共享板卡时，别人的 hwrun 烧写会把 gs_usb 设备踢下线**（实测定案，最容易误判的易错点）：
     任何成员用 J-Link 烧写都会复位整颗 MCU，USB 设备随之重枚举，主机侧只看到 `USB disconnect`
     （**没有 Oops/BUG/WARNING**）。表现是：刚刚还能 `cansend`，几秒后 `candump` 报 `SIOCGIFINDEX: No such device`。
     判别方法：用 `bash scripts/board_lease.sh 300 gs_usb` 持锁（后台加 nohup），
@@ -900,14 +900,14 @@ gs_usb 与 cannelloni 链路的对比见表 41-21。
 
 14. **USB autosuspend 会让空闲设备掉线**（A/B 已定案）：默认 autosuspend 下自研固件空闲约 85 s 后 USB detach，
     dmesg 只有 disconnect、无 oops；把 autosuspend 设为 -1 且端口 power/control=on 后，空闲 150 s 全程在线、0/30 掉线。
-    根因是主机 USB 自动挂起而固件未处理 SUSPEND/RESUME（与坑 12 的并行烧写是两回事），U-40-14。
+    根因是主机 USB 自动挂起而固件未处理 SUSPEND/RESUME（与易错点 12 的并行烧写是两回事），U-40-14。
 
 15. **FD 位会"粘"在接口上**（实测）：做完 CAN FD 测试后，接口停留在 `<FD>` 模式；此时只写
     `ip link set can0 type can bitrate 500000` 不会清掉 FD 位，经典帧收发就会异常
     （实测现象：can1 一帧收不到、can1 到 can0 却正常，极易误判成硬件问题）。
     正确做法：每次配置都显式写 **`fd off`**（或 `fd on dbitrate ...`），不要依赖"默认"。
 
-16. **控制请求的通道号在 wValue，不是 wIndex**（内核 7.0.0 事实，最隐蔽的坑）：
+16. **控制请求的通道号在 wValue，不是 wIndex**（内核 7.0.0 事实，最隐蔽的易错点）：
     按 wIndex 传通道号时内核不报错，但 BITTIMING/MODE 会**全部落到 ch0**——表现为 can1~3
     配置“成功”却 FD 无 ACK、TEC 冲到 248、`ip -details` 状态诡异。判别方法：固件串口 trace
     `[gs] MODE ch=`，正常应 `ch=0` 到 `ch=3` 各一次；修复前 11 次 MODE 全是 `ch=0`。
@@ -1016,4 +1016,4 @@ host/gs_usb/bench_latency.py（R4 实测，日志 logs/20261102-105931-gs-usb-ti
 | U-40-19 | one-shot 不重传的验证与初版 fail 根因 | **已闭环（固件已修）**：根因是未把 `GS_CAN_MODE_ONE_SHOT` 映射到 MCAN `disable_auto_retransmission`；修复后串口 `MODE flags=0x18 → CAN0 START one_shot=1`，速率错配下 8 帧后 **berr tx 7→23**、state 保持 ERROR-ACTIVE（未 bus-off = 单次不重传生效） | 复测：can0 `one-shot on`、can1 设 250k 制造无 ACK，发 8 帧看 berr 增量；**不要用 `ip link set can1 down`**（MODE RESET 后 MCAN 仍 ACK，不会产生错误） |
 | U-40-20 | 硬件时间戳绝对精度（-40.7 ppm / 绝对偏差约 81 µs） | **已知限制（本轮未取到新数据）**：R4 单窗口量到 -40.7 ppm（hw/sw 间隔比 0.999959）、同帧偏移中位 67.2 µs，台架时间关联够用；PTP 级需固件周期 TIMESTAMP 校准。R5 新增 `bench_ts_drift.py`（分段采样 + 跨段线性拟合）已就绪，但窗口内以普通用户执行 `ip link set` 被拒（EPERM），未采到分段数据 | 复测：`sudo -n python3 host/gs_usb/bench_ts_drift.py --secs 25 --append /tmp/ts.csv` 跑 6 段（间隔 >60 s，租约 ≤110 s），再 `--fit /tmp/ts.csv` 出 ppm/R² |
 | U-40-11 | 5M/8M 的 PHY 与线缆门槛 | **已知限制（器件上限，R8 有实测对照）**：TCAN1044AV-Q1 标称 5 Mbit/s（<https://www.ti.com/product/TCAN1044AV-Q1>），5M 双向 0 丢帧已实测；**8M 在这块板的短链路上也能 0 丢帧跑通（9 981 帧/s、5.11 Mbit/s），但属超规格，不作可用档位**，且本章没有眼图/抖动/温漂数据 | 5M：bash host/gs_usb/test_5m.sh；8M 只记录（同脚本 ext 段） |
-| U-40-21 | 满速 TX 时 netdev TX 队列永久停（TX URB 泄漏） | **已定位并已修复（R8，固件缺陷）**：旧 `bridge.c:drain_host_tx()` 在 `app_can_send()` 失败（MCAN TX FIFO 满）时丢帧且不回 echo，内核 10 个 TX URB 泄漏完即 `netif_stop_queue()`。A/B：修复前 1M/2M 64 B 满速只发出 **5/3000 帧**、`cansend` 报 `No buffer space available`；修复后同配置 25 万帧 0 丢帧。改法：保留队尾下轮重试（背压）+ echo 暂存补发，新增 `tx_retry` 计数 | bash host/gs_usb/repro_tx_urb_leak.sh --expect-stall / --expect-ok；§41.9 坑 20；日志 logs/20261102-182213-gs-usb-tx-urb-leak.log |
+| U-40-21 | 满速 TX 时 netdev TX 队列永久停（TX URB 泄漏） | **已定位并已修复（R8，固件缺陷）**：旧 `bridge.c:drain_host_tx()` 在 `app_can_send()` 失败（MCAN TX FIFO 满）时丢帧且不回 echo，内核 10 个 TX URB 泄漏完即 `netif_stop_queue()`。A/B：修复前 1M/2M 64 B 满速只发出 **5/3000 帧**、`cansend` 报 `No buffer space available`；修复后同配置 25 万帧 0 丢帧。改法：保留队尾下轮重试（背压）+ echo 暂存补发，新增 `tx_retry` 计数 | bash host/gs_usb/repro_tx_urb_leak.sh --expect-stall / --expect-ok；§41.9 易错点 20；日志 logs/20261102-182213-gs-usb-tx-urb-leak.log |

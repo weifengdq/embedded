@@ -19,7 +19,7 @@ PTP/gPTP、日志与信号（DLT/VSS/candump）。本章不再增加新例程，
 - 把十类协议放回同一张分层图（图 40-1），说明它们在 OSI 模型中的位置与相互关系；
 - 汇总**同一块板、同一套工具链**下测到的延迟、吞吐、资源开销（表 40-5~38-7）；
 - 给出按场景选型的决策树（图 40-3）与对比矩阵（表 40-8）；
-- 提炼**跨协议通用坑**（§40.9），这些坑与具体协议无关，换任何一套栈都会遇到；
+- 提炼**跨协议通用易错点**（§40.9），这些易错点与具体协议无关，换任何一套栈都会遇到；
 - 与 STM32H7、TC397 等同类平台做对照（表 40-9），并列出全部未闭环项（§40.12）。
 
 前置章节：第 08 章（CAN FD）、第 13 章（lwIP/以太网）、第 28 章（测试台与网关）。
@@ -116,7 +116,7 @@ ISO-TP 从板内双节点（Bench A）切到主机 vcan0（Bench B）时只换�
 | app_can（所有 CAN 协议） | MCAN_TXBAR / MCAN_TXFQS | 发送请求/空闲 FIFO | `mcan_transmit_blocking()` | `components/app_can/src/app_can.c` |
 | app_can | MCAN_RXF0C / MCAN_RXF0S | RX FIFO 配置/填充级别 | `mcan_read_rxfifo()` | 同上 |
 | app_can | MCAN_SIDFC/XIDFC | 标准/扩展 ID 过滤器 | `mcan_set_rx_filter()` | 同上 |
-| app_can | AHB SRAM 消息 RAM（0xF020_0000） | `mcan_set_msg_buf_attr()` 必须先于 init | `mcan_init()` | `app_can.c` / 第 28 章坑 1 |
+| app_can | AHB SRAM 消息 RAM（0xF020_0000） | `mcan_set_msg_buf_attr()` 必须先于 init | `mcan_init()` | `app_can.c` / 第 28 章易错点 1 |
 | ISO-TP / UDS | 无新寄存器（复用 MCAN） | 流控靠软件状态机 | `app_isotp_send/recv()` | `components/app_isotp/src/app_isotp.c` |
 | app_lwip（SOME/IP、XRCE、PTP、DLT） | ENET_DMA 描述符 TDES/RDES | 收发描述符 OWN/INT 位 | `enet_prepare_tx_desc()` | `components/app_lwip/src/app_lwip.c` |
 | app_lwip | ENET_MAC 配置 / MDIO | RGMII 接口、PHY 读写 | `enet_set_mac_addr()`、`yt8011_*` | `app_lwip.c` + `components/enet_phy_yt8011/` |
@@ -343,11 +343,11 @@ drop_can=0、bad_pkt=0，CAN0 的 J1939 端口把这 402 帧计为 bus.dropped�
    10 ms 周期只漂移 49 µs；真正会被拖慢的是"软件定时 + 轮询"的轻量任务（CANopen SYNC max 12.2 ms）。
    若应用对周期抖动敏感，应把周期发送搬到 GPTMR 硬件节拍中断（第 15 章），主循环只做收发。
 
-## 40.9 坑与注意事项（跨协议通用）
+## 40.9 易错点与注意事项（跨协议通用）
 
 1. **MCAN 消息 RAM 必须在 AHB SRAM**：`mcan_set_msg_buf_attr()` 要在 `mcan_init()` 之前，
-   否则返回 status_invalid_argument（=2）。第 29/33/34 章都踩过。
-2. **SPI/I2C 引脚的 IOC LOOP_BACK 位**（第 6/7 章的坑，与本章协议无关但同样致命）：
+   否则返回 status_invalid_argument（=2）。第 29/33/34 章都遇到过。
+2. **SPI/I2C 引脚的 IOC LOOP_BACK 位**（第 6/7 章的易错点，与本章协议无关但同样致命）：
    HPM 的 SPI 主机靠 SCLK pad 内部回环取移位时钟、I2C 开漏也依赖回环，手写 pinmux 漏了这位
    就会出现"能发不能收 / 一个边沿都不发"。
 3. **`ipaddr_ntoa()` 返回静态缓冲区**：一行 printf 打三个地址会全部变成最后一个，调试时极易误判。

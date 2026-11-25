@@ -57,7 +57,7 @@ shell: resetcause | wdgarm [ms] | wdgfeed [timeout_ms] [period_ms]
 - 复位后 `RESET_FLAG = 0x00010000`（bit16 = WDG0）；
 - 烧写后首次启动读到 `0x00000010`（bit4 = 调试复位，J-Link 造成，不是上电）。
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. **bit4 是调试复位**，不是"上电复位"；判读复位源时要把 J-Link 烧写的影响排除（RM §12.6.1 p.171）。
 2. 若开了 `enable_config_lock` / `enable_refresh_lock`，`ewdg_refresh()` 前必须先

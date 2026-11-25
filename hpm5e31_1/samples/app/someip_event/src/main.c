@@ -258,7 +258,7 @@ static int cmd_run(int argc, char *argv[])
     s_cap.count = 0;
     s_cap.notif[0] = s_cap.notif[1] = s_cap.notif[2] = 0;
     /* 注意：订阅表里的 last_renew_ms 用的是"真实"时基（sys_now），模拟时间必须从同一时基起算，
-     * 否则 now - last_renew 下溢，订阅会被误判为过期（踩过）。 */
+     * 否则 now - last_renew 下溢，订阅会被误判为过期（遇到过）。 */
     const uint32_t t_base = app_someip_net_now_ms(NULL);
     for (uint32_t t = t_base; t <= (t_base + 1000U); t += 10U) {
         s_cap.count = 0;            /* 每步重新捕获 */

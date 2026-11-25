@@ -4,14 +4,14 @@
  * 参考：
  *   AUTOSAR_CP_SWS_GPTDriver §8.3（API 语义/状态机）、§8.3.4~8.3.14 DET 规则；
  *   HPM5E31 RM 第 15 章 GPTMR（CR/RLD/CMP/CNT 与状态位）；
- *   本书 docs/chapters/15-gptmr.md（GPTMR 寄存器级实测与坑）。
+ *   本书 docs/chapters/15-gptmr.md（GPTMR 寄存器级实测与易错点）。
  *
  * 设计要点：
  *   1) 逻辑通道 → GPTMR 实例/通道的映射全部来自 Gpt_PBcfg.c，不在此硬编码；
  *   2) 连续模式下计数器 0..Value-1 自动回绕，GetTimeElapsed 直接读 CNT，
  *      GetTimeRemaining = Value - CNT，均无临界区（32 位 RV32 读原子）；
  *   3) one-shot 模式靠 reload 中断在目标时刻停表并置 EXPIRED，即使未使能
- *      notification 也开该中断（状态机需要），见第 45 章"坑 45-x"；
+ *      notification 也开该中断（状态机需要），见第 45 章"易错点 45-x"；
  *   4) Predef Timer 用 GPTMR0 CH3 自由运行计数器（10 ns 分辨率），
  *      1us/100us 时基在软件里做整数除法换算，避免占用额外硬件定时器。
  */

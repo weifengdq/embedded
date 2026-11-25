@@ -80,7 +80,7 @@ def main():
     ax1.plot(xs, ys, color=COLORS["blue"], lw=1.1, marker="o", ms=2.6, label="offset（updateClock 输出）")
     ax1.axhline(0, color=COLORS["gray"], lw=0.8, ls=":")
 
-    # 首次 Delay_Resp 造成的 13.8 µs 台阶：标注出来（第 38 章坑 3）
+    # 首次 Delay_Resp 造成的 13.8 µs 台阶：标注出来（第 38 章易错点 3）
     if -13.6 <= min(ys) <= -12.6:
         ax1.axhspan(-14.5, -12.5, color=COLORS["red"], alpha=0.07)
         ax1.text(0.98, 0.12, "第一次 Delay_Resp 带来的 13.8 µs 台阶（正常收敛过程）",

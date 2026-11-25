@@ -39,7 +39,7 @@
 | `thr [n]` | 跑全部用例，每例 n 帧（默认 2000） |
 | `one <idx> [n]` | 只跑第 idx 个用例 |
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. **批次深度受 TX FIFO 限制**：FD 默认 TX FIFO 只有 4 个 64 B 元素，本样例用批次 3；经典用 6（16 元素）。
    `mcan_transmit_via_txfifo_nonblocking()` 返回满时要立即重试。

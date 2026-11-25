@@ -18,4 +18,4 @@ bash scripts/hwrun.sh <category>/<name> --secs 6 --send "info"
 粘贴 logs/xxx.log 关键片段
 ```
 
-## 关键点 / 坑
+## 关键点 / 易错点

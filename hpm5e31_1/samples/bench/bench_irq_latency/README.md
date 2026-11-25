@@ -22,7 +22,7 @@ gptmr_channel_reset_count(tmr, ch);         /* 清零 -> 下个周期 = CMP tick
 
 ## 接线
 
-GPTMR 部分无接线；GPIO 部分尝试用 PA02 自环回（失败，见"坑"）。
+GPTMR 部分无接线；GPIO 部分尝试用 PA02 自环回（失败，见"易错点"）。
 
 ## 编译与运行
 
@@ -63,7 +63,7 @@ IRQ_STAT mode=ilm      n=10000 min=22 avg=22.00 max=25 sd=0.03 p50=22 p90=22 p99
 注意 `isr_addr=0x186`（flash 0x80000xxx 的高位被省略打印为偏移？完整地址见 `irqinfo`）与
 `ilm_body=0xa08`（ILM 0x0~0x20000 区间内）—— 这是验证".fast 段确实被搬进 ILM"的直接证据。
 
-## 坑与注意事项
+## 易错点与注意事项
 
 1. **ISR 第一条语句就必须读 CNT**，否则测的是"第 N 条指令"的延迟。
 2. **CMP 写入值与读回值差 1**：SDK 注释说明"写 cmp，硬件为 cmp-1"，所以延迟要用

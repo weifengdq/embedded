@@ -9,7 +9,7 @@
  *   主循环读取并做统计, 因此可以得到 频率/占空比 的均值、极值、抖动。
  *
  * 为什么被测源用 GPTMR 输出而不是 PWM 的 TRGO: TRGO 是 5 ns 窄脉冲,
- * GPTMR 100 MHz 采样会漏采(第 14 章坑 14-3)。GPTMR 输出是 500 us 宽脉冲, 100% 可靠。
+ * GPTMR 100 MHz 采样会漏采(第 14 章易错点 14-3)。GPTMR 输出是 500 us 宽脉冲, 100% 可靠。
  *
  * 想测外部信号: 把信号接到 PC00(TRGM_P_00), 调用 board_timer_init_trgm_gptmr_p00_to_cap(),
  * 再把 capture_src_select(1) 切到外部引脚。
@@ -26,7 +26,7 @@
 #include "clock.h"
 
 #define GPTMR      BOARD_TIMER_GPTMR0
-#define SRC_CH     (3U)    /* 信号源: 输出比较(OUT3, 本板 CAPT_3 路由异常, 见坑) */
+#define SRC_CH     (3U)    /* 信号源: 输出比较(OUT3, 本板 CAPT_3 路由异常, 见易错点) */
 #define CAP_CH     (2U)    /* 测量: 输入捕获(CAPT_2, 实测可用) */
 
 static uint32_t s_clk_hz;

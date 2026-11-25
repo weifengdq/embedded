@@ -23,7 +23,7 @@ DMA 驱动里常见的"一个队列一个中断"。它要同时处理四件互�
 
 1. **帧的所有权**：谁写缓冲、谁交给 DMA、谁在什么时候可以复用——搞错就是"偶发丢帧"；
 2. **内存可达性**：DMA 只能访问 AXI/AHB SRAM，访问不到 core-local 的 ILM/DLM；而 MCAL 的
-   全局数组默认落在 .bss（DLM），这是一个非常容易踩的坑（50.9 节有完整复盘）；
+   全局数组默认落在 .bss（DLM），这是一个非常容易遇到的问题（50.9 节有完整复盘）；
 3. **cache 一致性**：缓冲在 cached 内存时要 clean/invalidate，在 non-cacheable 时不用——
    两种方案的开销差一个数量级，选哪个取决于你把缓冲放哪里；
 4. **MAC 与 PHY 的分工**：MAC（Eth）只管帧的收发与统计，速率/主从/自协商/RGMII 延迟全在
@@ -306,7 +306,7 @@ MDIO 时序由 ENET 的 MDIO 时钟分频决定，一次读写在百微秒量级
 | RX 中断 | DMA_STATUS.RI → PLIC IRQ 58 | 计数、记 mcycle、清 W1C 状态位、置 pending | 主循环仍调 Eth_GetRxBuffer |
 
 ISR 里**不做**数据搬运、不回调上层——这是刻意的：以太网帧长可达 1518 B，在 ISR 里做
-memcpy/协议处理会把中断延迟拉长到几十微秒，破坏其他 MCAL 模块的时序（第 44/46 章都踩过）。
+memcpy/协议处理会把中断延迟拉长到几十微秒，破坏其他 MCAL 模块的时序（第 44/46 章都遇到过）。
 中断模式下 ISR 只负责"告诉主循环有新帧"。
 
 ## 49.5 寄存器与 API 对照
@@ -580,7 +580,7 @@ R7 只写了"两种模式共用同一套 DMA 环，差异只在谁发现 OWN=0"�
 全速档两种模式收帧率只差 1.2 %（在重复性波动内，见表 49-34），驱动计数（`DiscInbdPkt`/`ErrInbdPkt`/CRC/overflow）
 全 0；板端实收只有主机发送的 91.0 %（轮询）/ 92.1 %（中断），差额是 MAC/DMA 侧的丢弃，本驱动没有对应计数（已知限制）。
 
-表 49-33 中断模式的延迟（同一日志；延迟口径见"坑 3"）
+表 49-33 中断模式的延迟（同一日志；延迟口径见"易错点 3"）
 
 | 场景 | ISR→消费 avg | min | max | 有效样本 | 异常样本 | ISR→主循环"发现" avg / max | 分布（<5 µs / 5–20 µs / 20–100 µs / >100 µs） | 兜底取帧占比 |
 |---|---|---|---|---|---|---|---|---|
@@ -590,7 +590,7 @@ R7 只写了"两种模式共用同一套 DMA 环，差异只在谁发现 OWN=0"�
 
 "兜底取帧占比"是 1 ms 兜底轮询先于 ISR 路径取走帧的比例：恒 <2 %，且 1 ms 内最多 1 帧，
 说明**RX 中断没有漏帧**；它不是丢中断，而是"帧刚进环、主循环还没看到 ISR 计数"的竞争窗口。
-"异常样本"是 `Eth_GetLastIsrCycle` 批量语义的必然产物（见坑 3），已从 avg/min/max 中剔除。
+"异常样本"是 `Eth_GetLastIsrCycle` 批量语义的必然产物（见易错点 3），已从 avg/min/max 中剔除。
 
 表 49-34 全速窗口重复性（同一命令重复 5 次，每次 4 s 窗口 + 主机不限速灌包）
 
@@ -623,9 +623,9 @@ R7 只写了"两种模式共用同一套 DMA 环，差异只在谁发现 OWN=0"�
    ISR→主循环"发现"延迟 3~17 µs（max 96 µs）。低速档的 8 µs 主要来自主循环节奏与 1 ms 兜底，不是 ISR 本身。
 5. **中断可靠性可自证**：1 ms 兜底轮询取到的帧占比 <2 %，且不存在"有帧无中断"的堆积，说明 RI 没有漏报。
 
-**三个坑（都已实测复现，写进例程注释）**
+**三个易错点（都已实测复现，写进例程注释）**
 
-**坑 1：从"中断模式"直接 `Eth_Init` 切回轮询会整机卡死（已定位 + 已修复）。**
+**易错点 1：从"中断模式"直接 `Eth_Init` 切回轮询会整机卡死（已定位 + 已修复）。**
 `Eth_Init` 第一步就把驱动状态 `memset` 掉（`Base=NULL`），而此时 PLIC 里 ENET0 中断仍是开的；
 紧接着 `board_reset_enet_phy()` 要拉低 PHY 复位 30 ms，这段时间只要来一帧（链路上的广播/协议帧即可），
 ISR 就会看到 `Base==NULL` 直接返回、不写 `DMA_STATUS` W1C → 中断线保持有效 → ISR 风暴，主循环饿死、串口再无输出。
@@ -634,14 +634,14 @@ ISR 就会看到 `Base==NULL` 直接返回、不写 `DMA_STATUS` W1C → 中断�
 `logs/20261102-182447-eth_irq.log` 里可见 `REINIT begin old_irq=1 target=0` → `IRQ mode=polling` → `irq on` → `IRQ mode=interrupt`。
 驱动层面更彻底的做法是在 `Eth_Init` 入口对"旧状态"做同样的收尾（本稿未改 `Eth.c`，避免与同轮其他改动冲突，列为建议）。
 
-**坑 2：R7 版例程有两处"能编译、上板却收不到帧"的 bug（已定位 + 已修复）。**
+**易错点 2：R7 版例程有两处"能编译、上板却收不到帧"的 bug（已定位 + 已修复）。**
 ① 接收窗口单位写成 `secs * cycles_per_us * 1000`，实际只有毫秒级——`irq rx 6` 只跑 6 ms；
 ② 测试帧 magic 判在 `data[0]`/`data[1]`，而 `Eth_GetRxBuffer` 返回的是**整帧**（以太网头占 14 B），
 广播帧首字节是 `FF FF`，永远匹配不上——表现为"ISR 有计数、frames 恒 0"。
 本次分别改成 `bsp_uptime_ms()` 计时和 `data[ETH_HEADER_LEN]` 判 magic 后才有数据；这也是 R7 §49.7.5
 只有差异表、没有数字的直接原因（板卡排队只是表象）。
 
-**坑 3：`Eth_GetLastIsrCycle` 是"最近一次 ISR"，不能当逐帧到达时间戳（已定位，口径已修正）。**
+**易错点 3：`Eth_GetLastIsrCycle` 是"最近一次 ISR"，不能当逐帧到达时间戳（已定位，口径已修正）。**
 一次中断覆盖多帧/主循环批量排空时，后几帧的"最近 ISR 时间"可能比当前时刻还晚，直接相减会得到负数，
 强转 unsigned 后变成 ~8.9 s 的假最大值。修正：只统计"时间差为正且 <10 ms"的样本，其余计 `lat_bad`；
 同时给出 1 ms 兜底与 `ISR→主循环发现` 两个更稳的量。全速窗口 `lat_bad` 0.8 %，不影响 avg/max 的结论。
@@ -693,7 +693,7 @@ python3 tools/figs/mcal_eth_irq.py --log logs/20261102-184310-eth_irq-host.log
 | PHYID1 / PHYID2 | 0x4F51 / 0xEB01 | YT8011AN（OUI=0x13D47A、Model=48、Rev=1） |
 | GBSR (0x0A) | 0x3000 | local/remote receiver OK（1000BASE-T1 双向训练完成） |
 | PHYSR (0x11) | 0x8400 | [15:14]=10 → 1000M，[13]=0 → Slave，[10]=1 → 实时链路 |
-| EXT 0x9001 | 0x0110 | RXC 延迟使能（bit8）、TXC 延迟档位 1（bit[7:4]=1）、未反相时钟 |
+| EXT 0x9001 | 0x0110 | RXC 延迟使能（bit8）、TXC 延迟档位 1（bit[7:4]=1）、未反相时钟（R8 历史读回；R10 起档位 4 → 0x0140，见 §49.9.16） |
 | MMD1 0x0834 | 0x8001 | force_config=0（Slave）、force_phy_type=1（1000BASE-T1） |
 
 这三组数据说明：**EthTrcv_Init 的 PHY 配置确实生效**（EXT 0x9001 与 MMD1 0x834 的读回值与
@@ -701,6 +701,68 @@ PBcfg 一致），而且速率/主从切换的"失败"都是**对端/角色约�
 
 - 100BASE-T1 失败：转换盒是 1000BASE-T1 设备，链路两端速率必须一致；
 - Master 失败：T1 强制模式必须一主一从，板上 PHY 与转换盒已固定为 Slave/Master。
+
+### 49.7.7 15 h 千兆链路耐久测试（R9，2026-11-23 19:40 ~ 11-24 10:44）
+
+工况：板 192.168.2.100 ⇄ 转换盒 ⇄ 主机 enp6s0（1000M / 全双工 / SLAVE），每 25 min 一个周期：
+主机→板 TCP 600 s（板作 iperf2 server）→ 板→主机 TCP 10 s × 20 burst → 主机→板 UDP 900 Mbit/s 300 s →
+空载 300 s；全程 ping 5 次/s、每 30 s 采样板端统计与主机网卡计数。共 36 个周期。
+
+表 49-35 15 h 耐久测试汇总（logs/soak-20261123-1942/summary.md）
+
+| 项 | 结果 |
+|---|---|
+| 有效时长 / 阶段数 | 15.05 h / 142（阶段全部 ok） |
+| TCP 主机→板 | 249.0 Mbit/s 平均（227.6~251.7），累计 672.30 GB |
+| 板→主机 TCP burst | 271.6 Mbit/s 平均（252.2~294.1），720/720 burst 成功，累计 244.56 GB |
+| UDP 主机→板 | 943.7 Mbit/s（主机发送侧），累计 1238.63 GB |
+| ping（非 UDP 压测段） | 210 079 包，丢 0.213%，RTT avg/p99 = 0.288/0.595 ms |
+| ping（UDP 900M 段） | 丢 96.52%（容量性：lwIP NO_SYS 收包上限约 285 Mbit/s，不计入判定） |
+| 板端错误计数 | rx_err / tx_err / pbuf_fail / tx_drop / retry_fail 全 0 |
+| 前后段退化（前 1.5 h vs 后 1.5 h） | TCP 245.6→245.7 Mbit/s（+0.0%），板→主机 270.1→279.0（+3.3%） |
+| 复位 | **3 次**（23:54 / 04:09 / 08:23），全部由 TCP 监听失效触发，根因见 §49.9.17 |
+
+表 49-36 主机网卡 rx_crc_errors 分阶段（板→主机方向；R10 修正归属口径）
+
+| 阶段 | CRC 错帧增量 | 板端发帧增量 | 折算 |
+|---|---|---|---|
+| TCP 主机→板（板端只发 ACK，小帧） | 923 383 | 218 987 503 | **4217 ppm（0.42%）** |
+| 板→主机数据（1518 B 帧） | 20 537 | 151 982 626 | 135 ppm（0.0135%） |
+| UDP 主机→板（板端几乎不发帧） | 32 | 1 850 | —（样本太小） |
+| 空载（只发 ping 回包） | 96 | 45 624 | 2104 ppm |
+
+结论：15 h 内吞吐无退化、板端零错误计数、链路速率全程 1000M/Full。
+可用性问题的唯一来源是 §49.9.17 的 pcb 泄漏（已修复）；
+CRC 误码（§49.9.16）的根因是 PHY RGMII TXC 延迟档位 1，**已在 R10 修复（TxDelaySel=4）**，
+这条 15 h 数据是该问题修复前的长期量化证据。
+
+复跑：`bash host/soak/soak_loop.sh <tag> 15`，报告 `logs/soak-<tag>/summary.md`（详见 `host/soak/README.md`）。
+
+### 49.7.8 R10 修复后 15 h 重跑：CRC 归零，但暴露残余 pcb 泄漏（FAIL，R10.1 已修）
+
+2026-11-24 15:37:52 ~ 11-25 06:46:35，tag `20261124-1540`，报告 `logs/soak-20261124-1540/summary.md`。
+
+表 49-39 R10 15 h 重跑结果
+
+| 项 | 结果 |
+|---|---|
+| 时长 / 阶段 | 15.14 h / 145（全部 ok，0 失败阶段） |
+| TCP 主机→板 | 242.8 Mbit/s 平均（228.5~249.0），658.86 GB |
+| 板→主机 TCP | 271.5 Mbit/s 平均（261.2~282.1），720/720 burst 成功，244.33 GB |
+| UDP 主机→板 | 943.7 Mbit/s，1274.02 GB |
+| ping（非 UDP 段） | 210 244 包，丢 **0.020%**，RTT avg/p99 = 0.283/0.640 ms |
+| **主机 rx_crc_errors** | 1 366 308 → 1 366 308，增量 **0**（212 102 893 发帧，**0 ppm**） |
+| 板端错误计数 | rx_err / tx_err / pbuf_fail / tx_drop / retry_fail 全 0 |
+| 判定 | **FAIL**：22:05（cycle 14）一次板子挂死 + 看门狗重复复位 |
+
+**故障**：21:05:56 的 cycle 14 `tcp_h2b` 出现板端收帧只有 6 fps、新 TCP 连接建不起来；runner 判 HARD 后
+J-Link 复位（21:06:01），外部看门狗又对同一事件在 21:07:56 复位了一次（所以 banner 2 次、uptime 回退 1 次、
+真实故障只有 1 次）。复位后运行到 06:46 一切正常。
+
+**根因**：15 h 开始时 `MEM TCP_PCB used=13`（R10 调试打流遗留的孤儿 pcb），18:49 到 24（池满），
+21:05 池耗尽，与 §49.9.17 同一类"监听还在但 SYN 被静默丢弃"；复位后 9.5 h 又漏到 22，
+≈ **1 个 pcb / 25 min 周期**，详见 §49.9.18（R9 修复不完整：重复 arm 监听触发 SDK bind 失败泄漏）。
+注：本次 0 ppm 的 CRC 数据说明 R10 的 PHY 修复有效；FAIL 与 PHY 无关。
 
 ## 49.8 lwIP 与 FreeRTOS 集成
 
@@ -883,7 +945,7 @@ FreeRTOS 版与裸机版共用同一份 netif 代码，所以两者的差别就�
 | 下行（主机→板） | 935 Mbit/s（TCP） | **TCP 252 Mbit/s**（iperf2，R8 修复后，见 §49.8.10） | 见 `logs/` 长测日志 |
 | 上行（板→主机） | TCP 466 / UDP 641 Mbit/s | **TCP 169~261 Mbit/s**（lwiperf 客户端口径）/ **UDP 375.10 Mbit/s**（主机实收 365 Mbit/s、丢 0.087%） | 见下 |
 | 单帧发送耗时 | 756 cycle/帧（描述符直指 pbuf） | 36 µs 上限（含整帧 memcpy） | 36 µs + 互斥量（实测同量级） |
-| ICMP RTT | — | 136/280/383 µs（丢包 67%） | **1015/1015/1016 µs**（被 1 kHz tick 量化，见 §49.8.9 坑 8） |
+| ICMP RTT | — | 136/280/383 µs（丢包 67%） | **1015/1015/1016 µs**（被 1 kHz tick 量化，见 §49.8.9 易错点 8） |
 | 链路查询 | — | 99~105 µs（EthTrcv MDIO） | 同左 |
 | 空闲 CPU 占用 | — | 主循环忙轮询 | **99.6% 空闲**（= 0.4% 占用，1 kHz tick 采样，10 s 窗口） |
 
@@ -918,7 +980,7 @@ FreeRTOS 版与裸机版共用同一份 netif 代码，所以两者的差别就�
 | 6 | `ethload 4 20000` | 见 README | — | — | 低优先级忙任务不影响收包 |
 | 6 | `ethload 7 20000` | 见 README | — | — | 高于收包任务，预期掉包 |
 
-### 49.8.9 FreeRTOS 侧的坑
+### 49.8.9 FreeRTOS 侧的易错点
 
 1. **`sys_msleep` 重复定义**：lwIP 2.1.2 的 `src/core/sys.c` 已经实现了 `sys_msleep()`，
    移植层再写一遍会在链接期报 `multiple definition`。只保留 `sys_now()/sys_jiffies()`。
@@ -1001,13 +1063,13 @@ C 组把 ping 收到率从 2/5 拉到 19/20、TCP 从 62 kbit/s 拉到 4.83 Mbit
 1. **主机→板稳定在 251~253 Mbit/s**（三轮 + §49.8.7 的两轮共 5 轮，无塌陷）。这是 TCP 服务端方向，
    板子的职责是"收数据 + 回 ACK"，链路层吞吐由 ACK 与窗口共同决定——252 Mbit/s 已接近
    8×MSS 窗口在 0.5 ms 往返下的理论上限（11 680 B / 0.5 ms ≈ 187 Mbit/s 的量级，
-   实际因 ACK 压缩与延迟 ACK 略高），再要更高就得把窗口放大，而放大窗口在本板会踩到
+   实际因 ACK 压缩与延迟 ACK 略高），再要更高就得把窗口放大，而放大窗口在本板会遇到
    下面的第 2 条。
 2. **板→主机波动大（4.45~169 Mbit/s）**，根因是**发送方向存在约 2% 的线上误码**：同一轮 test 里
    主机网卡 `rx_crc_errors` 增 991~5 828（发送 4~12 万帧），而板端驱动 `TDES0.ES`/
    `UF` 全 0（MAC 认为每帧都发成功了）。也就是说误码发生在 MAC 之后（RGMII/YT8011AN/转换盒一侧），
    不在描述符逻辑里。TCP 只要丢一段就等 RTO，lwiperf 的 TCP 客户端又是"发完一批等 `tcp_sent`
-   回调再发"的结构，于是一旦踩中丢包就退化成"每秒 4 个 MSS"，表现就是表 49-30 里的 4.45 / 8.19。
+   回调再发"的结构，于是一旦遇到丢包就退化成"每秒 4 个 MSS"，表现就是表 49-30 里的 4.45 / 8.19。
    这一项登记为 §49.12 #2（已定位，未闭环：需要示波器量 RGMII TXD/TX_CTL 与 1000BASE-T1 眼图）。
 
 **为什么之前一直误判成 lwIP 窗口问题？** 三个因素叠在一起：
@@ -1017,9 +1079,9 @@ C 组把 ping 收到率从 2/5 拉到 19/20、TCP 从 62 kbit/s 拉到 4.83 Mbit
 - TCP 的 ACK 与数据**双向交织**，环里常年 8 帧在排队，一次错位就是整环积压。
 - `tx_busy` 在 ping 阶段是 0（环没满），看起来"驱动没压力"，掩盖了"帧进了环但没出去"。
 
-## 49.9 坑
+## 49.9 易错点
 
-这一节是本章最值得抄下来的一节：每条都是本轮真实踩过、且**现象与根因相距很远**的。
+这一节是本章最值得抄下来的一节：每条都是本轮真实遇到过、且**现象与根因相距很远**的。
 
 ### 49.9.1 收发缓冲放在 .bss 里，DMA 读不到
 
@@ -1214,31 +1276,136 @@ R8 把三条 fence（`fence w,w` 描述符字段→OWN、`fence w,o` 写 poll de
 ping 仍然 5/20、TCP 仍然 62.5 kbit/s（表 49-29 B 组）——**对现象零改善**。
 
 fence 保留（它是正确性要求，成本可忽略），但它不是根因；根因是"DMA 走不到那个描述符"（§49.9.12）。
-这条坑的价值在于：**遇到"时序看起来被重排"的现象，先证明 DMA 到底停在哪，再谈内存序。**
+这条易错点的价值在于：**遇到"时序看起来被重排"的现象，先证明 DMA 到底停在哪，再谈内存序。**
 
-### 49.9.16 发送方向约 2% 的线上误码（已知限制，不在描述符逻辑里）
+### 49.9.16 发送方向约 1.5% 的线上误码：PHY RGMII TXC 延迟档位 1 余量不足（R10 已修复）
 
-**现象**：板→主机 TCP 吞吐在 4.45~169 Mbit/s 之间大幅波动；主机网卡 `rx_crc_errors`
-在一轮 240 Mbit/s 的板→主机打流里增长 991~5 828（发送 4~12 万帧，约 1.6~5%）。
+**现象（R8~R9）**：板→主机方向主机网卡 `rx_crc_errors` 持续增长——一轮 240 Mbit/s 打流增 991~5 828
+（1.6~5%），15 h 耐久累计 **1 004 936 帧（1.52%）**。板端 `TDES0.ES/UF/LC` 全 0、`disc_otbd` 0，
+反方向板端 `DropPktCrc` 恒 0，说明误码在 MAC 之后的 RGMII/YT8011AN/转换盒一侧，与描述符、缓冲无关。
 
-**已排除**：板端驱动 `TDES0.ES`（错误汇总）、`UF`（发送下溢）、`LC`（迟冲突）
-全 0，`disc_otbd` 也 0 —— MAC 认为每帧都发成功；反方向（主机→板 252 Mbit/s）
-板端 `DropPktCrc` 恒 0。也就是说误码发生在 MAC 之后的 RGMII / YT8011AN / 1000BASE-T1
-转换盒一侧，与描述符、缓冲、cache 都无关（缓冲在 `.noncacheable.bss`，且低速时零误码）。
+**15 h 分阶段量化（R9 数据，R10 修正归属口径）**：见表 49-36（§49.7.7）。按新口径只统计
+"前后采样同阶段"的区间，旧版 `soak_report.py` 会把跨阶段区间算进下一阶段，
+导致 udp_h2b 被误报成 9.2 M 发帧 / 91 ppm（实际该段板端几乎不发帧）。
 
-**为什么它现在才暴露**：UDP 丢了不重传，TCP 一丢就等 RTO；lwiperf 的 TCP 客户端又是
-"发一批 → 等 `tcp_sent` 回调 → 再发"的结构，踩中丢包就退化成"每秒 4 个 MSS"。
+**定位（R10，2026-11-24）**：给 `eth_lwip` 加 `eth phy` / `eth txdly <0..15>` 两个运行时诊断命令，
+写 `host/soak/crc_probe.py` 做"受控流量 + 主机 `rx_crc_errors` + 板端 `hw_tx_frames` → ppm"的测量，
+然后扫 YT8011AN 的 RGMII TXC 延迟档位（EXT 0x9001[7:4]）：
+
+表 49-37 RGMII TXC 延迟档位扫描（1000M，板发 ACK 为主，主机 enp6s0 计数）
+
+| 档位 | 流量/时长 | 板端发帧 | 主机 CRC 错帧 | 折算 |
+|---|---|---|---|---|
+| 0 | ACK 25 s | 16 | 7 | TX 数据不可用（iperf 连不通） |
+| **1（R8/R9 默认）** | ACK 12.6 s / 20.6 s | 127 663 / 122 349 | 1 509 / 1 118 | **11 820 / 9 138 ppm** |
+| 2 | ACK 12+30+60 s | 1 043 461 | 0 | 0 |
+| 3~7 | ACK 各 12~30 s | ≈1 913 000 | 0 | 0 |
+| 8~15 | ACK 各 20 s | ≈1 702 000 | 0 | 0 |
+
+**根因**：档位 1 时 PHY 对 MAC 送来的 TXD 采样点落在建立/保持窗口边缘，帧在 RGMII 段被采样错；
+档位 1 的误码还随帧型变化（60 B ACK 约 1%、1518 B 数据帧 135 ppm、98 B ping 回包约 0.05~0.2%），
+但**档位是决定性因素**——同一流量换档后误码直接归零。帧型依赖的物理机理未完全解释（列为假设）。
+
+**修复**：`mcal/EthTrcv/cfg/EthTrcv_PBcfg.c` 的 `TxDelaySel` 由 1 改为 **4**（窗口 2~15 的中间值，
+避开数据不可用的 0 和有误码的 1）。初始化回读 EXT 0x9001=0x0140。运行时可用 `eth txdly 4` 立即改回/扫档。
+
+**验证（R10）**：档位 2~15 合计约 **478 万帧零 CRC 错**；固定为 4 后
+60 s ACK（638 041 帧）+ 40 s ACK（425 313 帧）+ 40 s 板→主机数据（843 311 帧，253 Mbit/s）全部 0 错。
+随后 1 h 压缩耐久（`logs/soak-val2-20261124`）复核整轮 `rx_crc_errors` 增量为 0。
 
 **复跑**：
 
 ```bash
-sudo ethtool -S enp6s0 | grep -E 'rx_crc_errors|rx_errors'     # 打流前后各取一次，看增量
-bash scripts/hwrun.sh mcal/eth_lwip --secs 32 --no-build \
-  --send "sleep 6000;eth iclient 192.168.2.1 tcp;sleep 16000"   # 主机先起 iperf -s
+# 复现（应约 1e4 ppm）
+python3 host/soak/crc_probe.py ack --secs 30 --txdly 1
+# 修复（应为 0）
+python3 host/soak/crc_probe.py ack --secs 30 --txdly 4
+python3 host/soak/crc_probe.py data --secs 30          # 板->主机 1518 B，吞吐约 250 Mbit/s
 ```
 
-下一步要用示波器量 RGMII TXD[3:0]/TX_CTL 相对 TXC 的建立保持、以及 1000BASE-T1 侧眼图，
-或换一块转换盒复测——这已经超出"驱动代码"的范围，登记在 §49.12 #2。
+**为什么它现在才暴露**：UDP 丢了不重传，TCP 一丢就等 RTO；lwiperf 的 TCP 客户端又是
+"发一批 → 等 `tcp_sent` 回调 → 再发"的结构，遇到丢包就退化成"每秒 4 个 MSS"。
+
+### 49.9.17 TCP pcb 池被"脱链"会话耗尽：监听还在，新连接静默超时
+
+**现象（R9 15 h 耐久测试）**：每约 4 h 14 min（= 10 个周期）TCP 主机→板阶段必然失败：
+主机 `iperf -c` 报 `tcp connect ... failed (Connection timed out)`（SYN 无响应，约 136 s 超时），
+而 ping 正常、板端 `eth` 错误计数全 0、`eth iserver tcp` 回 `server start FAILED (已有会话在跑?)`。
+J-Link 复位后立即恢复，复位后第 11 个周期再次复现（15 h 共 3 次）。
+
+**定位**（固件加 `lwipstat` / `tcppcb` 两个命令，见 §49.6 例程命令表）：
+
+1. 对照实验：主机并发保持 10 条 TCP 连接占满 `MEMP_NUM_TCP_PCB`（SDK 默认 10），
+   ping 仍 0% 丢包、新 TCP connect 5 s 静默超时——与现场症状完全一致。
+2. `lwipstat`：一次 600 s 会话结束后 `MEM TCP_PCB used=1`，3 分钟后仍为 1（TIME_WAIT 120 s 已过）。
+3. `tcppcb`：`tcp_active_pcbs` / `tcp_tw_pcbs` / `tcp_bound_pcbs` 全空、只剩 listener——
+   该 pcb **已从所有链表摘除但没有 memp_free**（孤儿）；同期 `MEM HEAP used` 192→384，
+   说明 lwiperf 的会话状态（192 B）也一起泄漏。
+
+**根因**：`app_lwip_eth_iperf_report()` 原来只在 `LWIPERF_*_DONE_*` 时清 `s_iperf_session`。
+会话以 `ABORTED_*`（本地/远端中止）结束时指针不清，留下**悬空指针**；后续 `eth istop` 或重建监听
+对它调用 `lwiperf_abort()`，会遍历已被复用的 `lwiperf_all_connections` 链表，把别的会话状态摘掉——
+表现为 pcb 与 lwiperf 状态成对泄漏。10 个周期后池耗尽，`tcp_alloc()` 失败使 SYN 被静默丢弃
+（`tcp_in.c` 注释明确"依赖对端重传"，不回报错误），于是"监听还在但连不上"。
+
+**修复（R9）**：
+
+- `components/app_lwip_eth/src/app_lwip_eth.c`：报告回调**任何终态都清 `s_iperf_session`**（DONE 与 ABORTED 一视同仁）。
+- `samples/mcal/eth_lwip/inc/lwipopts_app.h`：`MEMP_NUM_TCP_PCB` 10→**24**
+  注：池大小还要覆盖 **TIME_WAIT 的并发占用**（2×MSL=120 s）。10 s burst + 5 s 间隔的板→主机段，
+  稳态会有 8~9 个 TIME_WAIT pcb；旧池只有 10 个，余量为 0，任何一次泄漏都会立刻打满。
+  24 个 = 9 个 TIME_WAIT + 1 个长会话 + 1 个 listener 之外仍有一倍余量。
+  48 min 压缩回归实测峰值 `MEM TCP_PCB max=16`（12 burst/段的节拍），旧池 10 个**必然打满**；
+  说明 15 h 里的失效是"泄漏 + 池偏小"共同作用，两处都修了；`MEMP_NUM_TCP_PCB_LISTEN` 5→6（余量，DLM +2.4 KB）。
+- 新增串口命令 `lwipstat`（mem/memp 用量，需 `LWIP_STATS/MEM_STATS/MEMP_STATS=1`）与
+  `tcppcb`（dump listen/active/timewait/bound 链表），作为长跑现场诊断工具。
+
+**验证（2026-11-24）**：修复后 600 s 会话结束 `MEM TCP_PCB used=0`、`MEM HEAP used=192`；
+并发 10 连接压测后同样回到 0。修复前同样两个场景分别残留 1 个孤儿 pcb + 192 B 堆。
+
+**复跑**：
+
+```bash
+# 1) 压满 pcb 池复现症状（主机侧保持 10 条连接）
+python3 -c "import socket,time; s=[socket.create_connection(('192.168.2.100',5001),3) for _ in range(10)]; time.sleep(5)"
+ping -c 3 192.168.2.100          # 仍然通
+iperf -c 192.168.2.100 -t 5      # 池满时静默超时
+# 2) 板端串口看池与链表
+lwipstat
+tcppcb
+```
+
+### 49.9.18 残余 pcb 泄漏：重复 arm 监听触发 lwiperf 的 bind 失败路径（R10.1 已修复）
+
+§49.7.8 的 15 h 重跑暴露了 R9 修复**不完整**的一面：修复后不再出现"悬空指针破坏链表"，
+但长跑里仍以 **1 个 TCP_PCB + 192 B HEAP / 25 min 周期**的速度泄漏，约 24 个周期后池耗尽。
+
+**定位**（板子现场 `lwipstat` + `tcppcb`）：
+
+- 故障后/长跑末端 `MEM TCP_PCB used=22~24`，而 `tcppcb` 的 LISTEN/active/TIME_WAIT/bound 全空——
+  又是"从所有链表摘除但未 memp_free"的孤儿；`MEM HEAP used` 同步 +192 B/个。
+- 直接复现：在 TCP 5001 已监听时连续执行 `eth iserver tcp`，每次 `MEM TCP_PCB` +1、
+  `MEM HEAP` +192 B（实测 22→23→24，4672→4864→5056），与周期速率完全吻合。
+- 代码：R9 的 `app_lwip_eth_iperf_report()` **无条件**清 `s_iperf_session`。但 lwiperf 的
+  server 模式下，报告回调是"每个被接受的连接"结束时调用的，监听句柄 `s` 本身并不释放；
+  句柄被清掉后，下个周期 `eth iserver` 重新进入 `lwiperf_start_tcp_server_impl()`，
+  它 `tcp_bind(5001)` 失败时**直接 return，既不 LWIPERF_FREE(state) 也不 tcp_close(pcb)**——
+  于是每次 arm 泄漏 1 pcb + 192 B。
+
+**修复（R10.1，应用层，不改 SDK）**：`components/app_lwip_eth/src/app_lwip_eth.c` 把句柄拆成三个：
+
+| 句柄 | 生命周期 |
+|---|---|
+| `s_iperf_client` | 单次客户端会话；报告回调（DONE/ABORTED）清它（R9 的悬空指针修复仍然有效） |
+| `s_iperf_tcp_server` | TCP 5001 监听，常驻；重复 `eth iserver tcp` 直接返回"已监听"，不再进 lwiperf |
+| `s_iperf_udp_server` | UDP 5001 服务端状态，常驻 |
+
+`eth istop` 统一 abort 三者（供恢复/重建监听用）；服务端连接终态的报告不再清监听句柄。
+
+**验证（2026-11-25）**：重新烧写后 `MEM TCP_PCB used=0`；连续 3 次 `eth iserver tcp` +
+一次真实 iperf 会话（249 Mbit/s）后再 arm，`TCP_PCB` 始终 0、`HEAP` 保持 192 B（仅监听态），
+不再增长；12 周期压缩耐久（tag `val3-20261125`，3 min/周期）复核周期级泄漏。
+修复后仍需一次 15 h 全量复跑。
 
 ## 49.10 与 SDK 驱动、商用 MCAL 的对比
 
@@ -1291,12 +1458,12 @@ EthTrcv、把缓冲管理抽象成 BufIdx、把"什么时候把帧交给上层"�
 1. AUTOSAR CP R25-11《SWS Ethernet Driver》（Document ID 430）、《SWS Ethernet Transceiver Driver》
    （Document ID 431）、《SWS Ethernet Interface》（分层参考）：
    <https://www.autosar.org/standards/classic-platform/>
-   本地抽取文本 `autosar_txt/AUTOSAR_CP_SWS_Ethernet*.txt`，PDF 在 AUTOSAR 官网。
+   本地抽取文本 `autosar_txt/AUTOSAR_CP_SWS_Ethernet*.txt`，PDF 在 `temp2/autosar_pdf/`。
 2. HPM5E31 参考手册 ENET 章节（DMA 描述符 TDES/RDES、MAC 配置、MDIO 帧、INTR_STATUS/INT_EN）；
    SDK 驱动 `hpm_sdk/drivers/src/hpm_enet_drv.c`、`hpm_sdk/drivers/inc/hpm_enet_drv.h`、
    `soc/HPM5E00/HPM5E31/hpm_enet_soc_drv.h`。
 3. YT8011AN 数据手册（Motorcomm/裕太微）：<https://www.motor-comm.com/>；板级原理图
-   `hardware/hpm5e31_1_refsch.pdf`；本仓库第 12 章（RGMII 延迟与三套寄存器空间）。
+   `ref/hpm5e31_1_sch.pdf`；本仓库第 12 章（RGMII 延迟与三套寄存器空间）。
 4. lwIP 2.1.2：<https://savannah.nongnu.org/projects/lwip/>；FreeRTOS-Kernel：
    <https://github.com/FreeRTOS/FreeRTOS-Kernel>。
 5. HPM SDK v1.13.0：<https://github.com/hpmicro/hpm_sdk>；先楫半导体：<https://www.hpmicro.com/>。
@@ -1311,7 +1478,7 @@ EthTrcv、把缓冲管理抽象成 BufIdx、把"什么时候把帧交给上层"�
 
 | # | 项 | 状态 | 说明与复跑命令 |
 |---|---|---|---|
-| 1 | lwIP 侧 TCP 收发异常 | **已修复（R8 实测）** | 根因三层：①`Eth_ProvideTxBuffer` 按"下标最小空闲"发放，与 TX DMA 的环顺序错位 → 整环积压后一次性喷出（§49.9.12，主坑）；② ACK 在 `netif->input()` 里同步产生，而 `Eth_TxConfirmation` 只在主循环跑 → 8 个 TX 缓冲被ACK 占满、后续 ACK 被丢（§49.9.13）；③ RX drain 不设上限 → 一次 `app_lwip_eth_poll()` 连收 2.4 s，TCP 定时器被饿死（§49.9.14）。修复后：主机→板 TCP **251~253 Mbit/s**（5 轮不塌）、自证 ping 5/5、`eth ping 20` 19/20；UDP 上行 92.02→**375.10 Mbit/s**（主机实收 365、丢 0.087%）；`eth_raw_echo` TX burst 64 B 219 370→242 924 fps；板→主机 TCP 4.45~261 Mbit/s 双峰，剩余项见 #12/#13。A/B 四组见 §49.8.10 表 49-29、图 49-8/49-9。复跑：`bash scripts/hwrun.sh mcal/eth_lwip --secs 27 --no-build --send "eth iserver tcp"`，主机侧同时 `iperf -c 192.168.2.100 -t 6 -i 1` |
+| 1 | lwIP 侧 TCP 收发异常 | **已修复（R8 实测）** | 根因三层：①`Eth_ProvideTxBuffer` 按"下标最小空闲"发放，与 TX DMA 的环顺序错位 → 整环积压后一次性喷出（§49.9.12，主易错点）；② ACK 在 `netif->input()` 里同步产生，而 `Eth_TxConfirmation` 只在主循环跑 → 8 个 TX 缓冲被ACK 占满、后续 ACK 被丢（§49.9.13）；③ RX drain 不设上限 → 一次 `app_lwip_eth_poll()` 连收 2.4 s，TCP 定时器被饿死（§49.9.14）。修复后：主机→板 TCP **251~253 Mbit/s**（5 轮不塌）、自证 ping 5/5、`eth ping 20` 19/20；UDP 上行 92.02→**375.10 Mbit/s**（主机实收 365、丢 0.087%）；`eth_raw_echo` TX burst 64 B 219 370→242 924 fps；板→主机 TCP 4.45~261 Mbit/s 双峰，剩余项见 #12/#13。A/B 四组见 §49.8.10 表 49-29、图 49-8/49-9。复跑：`bash scripts/hwrun.sh mcal/eth_lwip --secs 27 --no-build --send "eth iserver tcp"`，主机侧同时 `iperf -c 192.168.2.100 -t 6 -i 1` |
 | 2 | DMA_STATUS.TU 发送下溢 | 已定位 | 见 50.9.10；拟调大 PBL 或减少连续提交 |
 | 3 | R25-11 无 Eth_ControllerInit | 已实测 | SWS 变更历史：功能并入 Eth_Init；与 CP4.4 的差异见 50.10 |
 | 4 | Eth_SetControllerMode 在 SWS 标为异步 | 已知限制 | 本实现同步完成（调用返回时模式已切换），文档标注 |
@@ -1322,6 +1489,8 @@ EthTrcv、把缓冲管理抽象成 BufIdx、把"什么时候把帧交给上层"�
 | 9 | EthTrcv 唤醒/线缆诊断/测试模式 | 已知限制 | YT8011AN 无对应能力或未公开；DET 报 ETHTRCV_E_NOT_SUPPORTED |
 | 10 | ETHTRCV_E_NOT_SUPPORTED 的数值 | 已知限制 | SWS 正文引用该错误码但错误码表未给值，本实现取 0x05 |
 | 11 | 单控制器（CtrlIdx 恒 0） | 已知限制 | 本板只有 ENET0；PBcfg 用 CtrlCount 表达，多口扩展只需加配置 |
-| 12 | 发送方向约 2% 的线上误码（板→主机） | 已定位（未闭环） | 主机网卡 `rx_crc_errors` 在一轮 240 Mbit/s 的板→主机打流里增 991~5 828（1.6~5%）；板端 `TDES0.ES/UF/LC` 全 0、反方向板端 `DropPktCrc` 恒 0，说明误码在 MAC 之后（RGMII/YT8011AN/转换盒），不在描述符逻辑里。见 §49.9.16；下一步需示波器量 RGMII TX 时序/眼图，或换转换盒复测。复跑命令见 §49.9.16 |
-| 13 | 板→主机 TCP 吞吐双峰（~170 或 ~5 Mbit/s） | 已定位 | 由 #12 的丢段触发 RTO 风暴：lwiperf 的 TCP 客户端"发一批 → 等 `tcp_sent` 回调 → 再发"，踩中丢包就退化成"每秒 4 个 MSS"（实测主机侧 5.7 KB/s）。主机→板方向是服务端、由 ACK/窗口驱动，不受影响，稳定 251~253 Mbit/s。复跑：主机起 `iperf -s`，板端 `eth iclient 192.168.2.1 tcp`（§49.8.10 表 49-30） |
-| 12 | 无外部错帧注入器 | 已知限制 | 错 FCS/对齐错误帧无法主动注入，错误计数路径只做了逻辑验证 |
+| 12 | 发送方向线上误码（板→主机，小帧更严重） | **已修复（R10 实测）** | 15 h 耐久：总 1 004 936 错帧 / 65 915 295 发帧 = 1.52%；分阶段 TCP-ACK 段 4217 ppm、1518 B 数据帧 135 ppm、ping 回包 2104 ppm（表 49-36，R10 修正归属口径）。根因：YT8011AN **RGMII TXC 延迟档位 1**（EXT 0x9001[7:4]）采样余量不足；扫描 0~15 档，0 数据不可用、1 约 1e4 ppm、2~15 共 436 万帧零误码。修复：`EthTrcv_PBcfg.c` 的 `TxDelaySel` 1→4，回读 EXT=0x0140。验证：60 s ACK 638 041 帧、40 s 数据 843 311 帧全部 0 错。诊断命令：`eth phy` / `eth txdly <0..15>`；复跑 `python3 host/soak/crc_probe.py ack --secs 30 --txdly 1|4`。见 §49.9.16 |
+| 13 | 板→主机 TCP 吞吐双峰（~170 或 ~5 Mbit/s） | 已定位 | 由 #12 的丢段触发 RTO 风暴：lwiperf 的 TCP 客户端"发一批 → 等 `tcp_sent` 回调 → 再发"，遇到丢包就退化成"每秒 4 个 MSS"（实测主机侧 5.7 KB/s）。主机→板方向是服务端、由 ACK/窗口驱动，不受影响，稳定 251~253 Mbit/s。复跑：主机起 `iperf -s`，板端 `eth iclient 192.168.2.1 tcp`（§49.8.10 表 49-30） |
+| 14 | TCP pcb 池被「脱链」会话耗尽（监听还在但新连接静默超时） | **已修复（R9 实测）** | 根因：报告回调只在 DONE_* 清 `s_iperf_session`，ABORTED_* 留悬空指针，后续 `lwiperf_abort()` 破坏 lwiperf 链表，泄漏的 pcb 脱离所有链表、不可回收；约 10 个周期后池满，SYN 被静默丢弃。修复：任何终态都清指针 + `MEMP_NUM_TCP_PCB` 10→24。验证：600 s 会话与 10 并发连接压测后 `MEM TCP_PCB used=0`（修复前为 1）。见 §49.9.17；复跑：串口 `lwipstat` / `tcppcb` |
+| 15 | 无外部错帧注入器 | 已知限制 | 错 FCS/对齐错误帧无法主动注入，错误计数路径只做了逻辑验证 |
+| 16 | pcb 池被"重复 arm 监听"的 lwiperf bind 失败路径泄漏耗尽 | **已修复（R10.1 实测）** | R10 的 15 h 重跑（§49.7.8）数据面全绿但 cycle 14 挂死：起始 13 个孤儿 pcb + 每 25 min 漏 1 个，约 24 周期耗尽。根因：R9 无条件清 `s_iperf_session` 把 server 监听句柄也清了 → 下个周期 `eth iserver` 重复 bind 失败，SDK 的 `lwiperf_start_tcp_server_impl` 错误路径不释放 state/pcb。修复：客户端/TCP 服务端/UDP 服务端三句柄分离（§49.9.18）。验证：重复 arm + 真实会话后 `TCP_PCB used=0` 不增长 |

@@ -34,7 +34,7 @@ MCAN0 内部环回 + 全局过滤配置（GFC）设为"未命中即拒收"，用
 | `info` | 打印场景说明 |
 | `test` | 重跑 5 个场景 14 个探针 |
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. **GFC 必须设成 reject**：驱动默认把未命中帧放进 RX FIFO0，不设
    `MCAN_ACCEPT_NON_MATCHING_FRAME_OPTION_REJECT` 的话"过滤器没生效"的假象会让人怀疑人生。

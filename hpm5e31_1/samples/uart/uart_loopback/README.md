@@ -56,7 +56,7 @@ fifo: sent=96 without reading, fifo_size=32, received=33
 误差表（request / reg_baud / measured）：9600/9596/9596、115200/114942/114940、
 460800/454545/454541、921600/909090/909081（-13574 ppm）、3000000/3076923/3076820（+25641 ppm）。
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. **uart_send_byte() 有重试上限**（`HPM_UART_DRV_RETRY_COUNT`），低波特率长时间等待会返回 `status_timeout`；
    本样例改用"轮询 LSR.THRE"的本地阻塞写。

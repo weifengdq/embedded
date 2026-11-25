@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# repro_tx_urb_leak.sh —— TX URB 泄漏复现/验证（ch42 §42.9 坑 20 的 A/B 证据脚本）
+# repro_tx_urb_leak.sh —— TX URB 泄漏复现/验证（ch42 §42.9 易错点 20 的 A/B 证据脚本）
 #
 # 背景：修复前固件在 drain_host_tx() 里 app_can_send() 失败时丢帧且不回 echo，
 #       内核 gs_usb 每个 TX URB 只能靠 echo 回收（GS_MAX_TX_URBS=10），漏满 10 个后

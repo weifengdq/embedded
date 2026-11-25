@@ -66,7 +66,7 @@ bash scripts/hwrun.sh app/canopen_node --secs 12 --send "gw on" \
 `co_sdo_seg.py` 在 UDP 网关下会因丢包超时（见第 32 章 U-33-11）。
 DLM 占用 72.61%，Flash 158.7 KB。
 
-## 坑
+## 易错点
 
 1. **MCAN 消息 RAM 必须在 AHB SRAM**：漏掉 `mcan_set_msg_buf_attr()` 时 `mcan_init()` 直接失败，
    表现为 `co_node_init()` 返回负数、总线上没有任何帧；

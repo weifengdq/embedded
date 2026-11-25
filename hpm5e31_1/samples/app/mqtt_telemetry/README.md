@@ -94,7 +94,7 @@ bash host/mqtt/run_broker.sh stop
 | keepalive=10 s 空闲 | 30 s 内 PINGREQ/PINGRESP 各 3 次 | `logs/20261102-162915-host-mqtt-lwt-keepalive.json` |
 | 软复位 LWT | broker 304 ms 后发遗嘱，复位后重新 online | `logs/20261102-162620-host-mqtt-lwt-reboot.json` |
 
-## 6. 坑（详见第 37 章 §37.10）
+## 6. 易错点（详见第 37 章 §37.10）
 
 1. **不清 Nagle 会多 40 ms**：PUBACK 之后紧跟的小 PUBLISH 被 Nagle + 对端 delayed ACK 卡住。板端 `tcp_nagle_disable()`、broker 侧 `set_tcp_nodelay true` 都要做（实测单条 RTT 41 ms → 0.27 ms）。
 2. **接收缓冲 ≥ 一个 TCP MSS**：`APP_MQTT_RX_BUF` 若小于 1460+报文头，批量 PUBLISH 一到就判协议错误断链（本板实测过 1000 条压测时断链）。

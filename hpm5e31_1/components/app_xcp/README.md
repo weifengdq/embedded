@@ -85,16 +85,16 @@ XCP 按**绝对地址**读写内存，配错就是总线错误/死机。本板�
   DAQ 全套（动态列表、预分频、时间戳、过载 EVENT）；
 - 不支持：PGM（Flash 编程）、STIM、块传输、CHECKSUM、PID_OFF、PACKED_MODE。不支持的命令返回 ERR_CMD_UNKNOWN(0x20)。
 
-## 踩过的坑（务必先看）
+## 遇到过的问题（务必先看）
 
 1. **HPM5E31 的 MCAN 消息 RAM 在 AHB SRAM**：不调 `mcan_set_msg_buf_attr()` 时 `mcan_init()` 返回 2
    （status_invalid_argument），CAN 完全不通。本组件在 `xcp_can_init()` 里为从站节点注册了
    一份 `ATTR_PLACE_AT(".ahb_sram")` 的 640 word 缓冲区；**第二个 MCAN 实例要自己再注册一份**。
-2. **CAN 帧被填充到 DLC=8**：固定长度命令必须用 `len < 期望` 判断，不能用 `!=`（详见第 34 章坑 2）。
+2. **CAN 帧被填充到 DLC=8**：固定长度命令必须用 `len < 期望` 判断，不能用 `!=`（详见第 34 章易错点 2）。
 3. **DAQ 采样与发送分离**：`xcp_event()` 只在中断里打包入队，`xcp_poll()` 才发；队列满计 `daq_dropped`，
    TX FIFO 满计 `daq_overflow` 并上报一次 EVENT 0x06（UDP 侧 `tx_drop/tx_err` 单独统计）。
 4. **`ALLOC_ODT_ENTRY` 是 6 字节 CRO**（cmd, mode, list_lo, list_hi, odt, count）。
-5. **XCPonEth 的 LEN 不含头、4 B 对齐填充要计入非最后一条的 LEN**：详见第 34 章"坑 9/10"，
+5. **XCPonEth 的 LEN 不含头、4 B 对齐填充要计入非最后一条的 LEN**：详见第 34 章"易错点 9/10"，
    实现对照 `xcp_port_udp.c:eth_append_msg()` 与 vectorgrp/XCPlite `xcpethtl.c`。
 6. **UDP 回调在主循环上下文**（`app_lwip_poll()` 里）：不要在回调里 printf/阻塞；DAQ 打包仍在中中断，
    发送在主循环 `xcp_poll()`。

@@ -19,7 +19,7 @@
 | PD02 = I2C2_SCL (ALT4) | ↔ | PD07 = I2C3_SCL (ALT4) |
 | PD03 = I2C2_SDA (ALT4) | ↔ | PD06 = I2C3_SDA (ALT4) |
 
-- 两侧 PAD 都配 **开漏 OD=1 + 内部上拉 PE/PS=1**，并且 **必须带 IOC LOOP_BACK**（见"坑 1"）。
+- 两侧 PAD 都配 **开漏 OD=1 + 内部上拉 PE/PS=1**，并且 **必须带 IOC LOOP_BACK**（见"易错点 1"）。
 - ⚠️ **PD06/PD07 与 tp-timer 的 `samples/qei/qei_gpio_sim` 复用**（那边把 PD06/PD07 当 GPIO 输出模拟编码器）：
   两个例程**不能同时初始化**，各自单独跑没问题。
 
@@ -62,7 +62,7 @@ i2c_ms_write 64 @100k: PASS errors=0 time=6351.07 us bw=80 kbps
 
 **全部 0 错误**（内部上拉条件下 1 MHz 也能跑通）。
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. **必须开 IOC LOOP_BACK！**（本仓库实测：不开时 master 一个 SCL 边沿都不产生、slave 永远收不到地址，
    `i2c_ms_write` 全部 NACK/超时；给 PD02/PD03/PD06/PD07 的 `FUNC_CTL` 加上

@@ -60,7 +60,7 @@ def main(argv=None):
     ap.add_argument("--title", default="HPM5E31 实战手册")
     ap.add_argument("--author", default="hpm5e31_1 项目组")
     ap.add_argument("--version", default="")
-    ap.add_argument("--subject", default="HPM5E31 原理、例程、上板实测与避坑")
+    ap.add_argument("--subject", default="HPM5E31 原理、例程、上板实测与经验")
     ap.add_argument("--min-entries", type=int, default=0, help="书签条目数下限（建议=章节数×2）")
     ap.add_argument("--require-level", type=int, default=0, help="要求达到的最大书签层级（建议 3）")
     args = ap.parse_args(argv)

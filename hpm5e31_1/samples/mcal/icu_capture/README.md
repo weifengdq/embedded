@@ -58,7 +58,7 @@ bash scripts/hwrun.sh mcal/icu_capture --secs 20
 - 周期/频率：1 kHz -10 ppm（1 tick 量化）、10 kHz -100 ppm（1 tick 量化）、100 kHz 0 ppm ——
   全部落在 ±1 tick 量化范围内；
 - 占空比：恒定 **-0.083% × (1 kHz) / -0.835% (10 kHz) / -8.3% (100 kHz)**，绝对值都是约
-  83 tick = 0.83 µs 的高电平缺失 —— 同一固定偏置在不同周期下的百分比不同（坑 45-3）；
+  83 tick = 0.83 µs 的高电平缺失 —— 同一固定偏置在不同周期下的百分比不同（易错点 45-3）；
 - 边沿计数 1998/2000，-0.1%；时间戳相邻间隔 100001/100000 tick 与 1 kHz 一致；
 - `det before=1` 的那 1 条是运行中线性缓冲填满后 `Icu_StopTimestamp` 按 SWS 报
   ICU_E_NOT_STARTED(0x15)，属预期行为。

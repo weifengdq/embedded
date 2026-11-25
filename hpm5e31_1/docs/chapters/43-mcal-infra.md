@@ -177,7 +177,7 @@ ELF: build/mcal_hello-debug/output/demo.elf
 AUTOSAR 驱动源码通常长这样：`#define MCU_START_SEC_CODE` / `#include "MemMap.h"` / 函数 / `#define MCU_STOP_SEC_CODE`。
 MemMap 负责把这些段映射到链接脚本里的不同区域，配合 MPU 实现"驱动代码不可写、配置数据只读"等保护。
 
-本仓库 `mcal/common/MemMap.h` 把所有段宏定义成空宏（第 42 章坑 3 提到过），原因：① 本工程没有 MPU/OS-Application；
+本仓库 `mcal/common/MemMap.h` 把所有段宏定义成空宏（第 42 章易错点 3 提到过），原因：① 本工程没有 MPU/OS-Application；
 ② HPM SDK 的链接脚本是统一 `.text/.data/.bss`，强行分段会和 SDK 冲突。这样做的代价是**没有内存保护**，
 属于第 50 章"量产差距清单"里的一条；如果将来要接 OS，需要按 OS 的 MemMap 规则重新落段。
 
@@ -283,7 +283,7 @@ bash scripts/hwrun.sh mcal/ecu_integration --secs 30 \
 在 -O2 下是 2~4 条指令；15 个模块 × 每个模块 10 个 API，合计不到 1 KB 代码。第 48 章表 48-8 会给出
 各模块的 Flash/RAM 实测，可以对照本章的"骨架"成本。
 
-## 43.9 坑与注意事项
+## 43.9 易错点与注意事项
 
 1. **`uint32` 与 `uint32_t` 不能混着用**：MCAL 公共头用 AUTOSAR 的 `uint32`，SDK 头用 `uint32_t`；同一文件
    同时 include 两者时类型其实相同（都是 unsigned int），但混写会让读者困惑，也容易在别的编译器上出问题。

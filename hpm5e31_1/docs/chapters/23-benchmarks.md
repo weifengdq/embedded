@@ -188,7 +188,7 @@ gptmr_channel_reset_count(tmr, ch);           /* 清零 -> 周期 = CMP ticks */
 | `-O2` | 1,130,779 | 643.59 | 1.3408 | FAIL（自检条件第一版写错；分数有效，未复跑） | `logs/20261030-113100-bench_dhrystone.log` |
 
 注：DMIPS = Dhrystones/s ÷ 1757。**HPM SDK 自带 dhrystone 例程打印的 "DMIPS per Second" 实际上是 DMIPS/MHz**
-（它把 Dhrystones/s 又除以了 CPU MHz），这是文档 / 代码不一致，见"坑"第 4 条。
+（它把 Dhrystones/s 又除以了 CPU MHz），这是文档 / 代码不一致，见"易错点"第 4 条。
 
 ### 23.7.3 内存带宽（`logs/20261030-111657-bench_memory.log`）
 
@@ -210,7 +210,7 @@ gptmr_channel_reset_count(tmr, ch);           /* 清零 -> 周期 = CMP ticks */
 三条必须记住的结论（数据见表 23-5）：
 
 1. **libc（newlib-nano）的 memcpy 是逐字节实现**，480MHz 下只有 95.9MB/s（约 5 周期 / 字节）。
-   用它测"内存带宽"得到的是 **CPU 指令吞吐**，不是内存能力 —— 是非常常见的测量陷阱。
+   用它测"内存带宽"得到的是 **CPU 指令吞吐**，不是内存能力 —— 是非常常见的测量误区。
 2. 手写 16 字展开内核达 **922.9MB/s**，memset_u32 达 **959.6MB/s**。这个数已接近甚至超过
    "AXI 200MHz × 32bit = 800MB/s"的理论值 —— 说明小尺寸下测的是 **L1 D-Cache 命中路径**（写回缓存，不落内存），
    或 AXI 端口位宽 / 时钟与 `clock_get_frequency()` 报告不一致（待确认，见章末 P1）。
@@ -280,13 +280,13 @@ GPTMR→PLIC→trap 入口这一段代码在 `.isr_vector`（ILM），而用户 
 1. **编译器选项是第一杠杆**：CoreMark -O2→-O3 +5%，Dhrystone +4.9%（1.3408→1.4088 DMIPS/MHz）。
    注意 SDK 的 debug 配置**不带任何 -O**（默认 -O0），很多工程"跑得慢"其实是忘了开优化。
 2. **FPU 要用起来必须改 -march**：板级默认 rv32imac（无 F/D），浮点是软件模拟；
-   需要硬件单精度要 `-march=rv32imafc -mabi=ilp32f`。改完链接期容易踩 multilib 坑（坑第 6 条）。
+   需要硬件单精度要 `-march=rv32imafc -mabi=ilp32f`。改完链接期容易遇到 multilib 问题（易错点第 6 条）。
 3. **数据放哪、代码放哪都不影响吞吐**——只要工作集能进 cache。真正该关心的是**最坏情况**：
    cache miss、总线抢占、非 cacheable 访问（慢 11.5 倍）。
 4. **测量要交叉验证**：mcycle vs MCHTMR、实测 vs 理论值、两个独立例程互相印证
    （本章 XPI 读带宽与 tp-sys 的独立测量一致：40 vs 46 MB/s，见第 24 章）。
 
-## 23.9 坑与注意事项
+## 23.9 易错点与注意事项
 
 1. **SDK debug 配置不带 -O**：`compile_commands.json` 里只有 `-g -Wall ...`。基准必须显式追加 `-O2/-O3`，
    而且要注意选项顺序（GCC 以最后一个 -O 为准，应用层追加的选项要排在 SDK 之后）。
@@ -295,14 +295,14 @@ GPTMR→PLIC→trap 入口这一段代码在 `.isr_vector`（ILM），而用户 
    而不是去改 SDK 源码（SDK 是只读参考）。
 3. **`scripts/build.sh` 只有一个 build 目录**（`build/<name>-debug`），做编译选项扫描时样例会互相覆盖。
    本仓给了 `samples/bench/_bench_tools/run_variant.sh`：独立 build 目录 + 复制 ELF 给 `hwrun.sh --no-build`。
-   **同一个样本的两个变体千万不要并发排队**，会互相覆盖 ELF（本章踩过："-O3" 那次实际跑的是 -O2 的 ELF，
+   **同一个样本的两个变体千万不要并发排队**，会互相覆盖 ELF（本章遇到过："-O3" 那次实际跑的是 -O2 的 ELF，
    靠输出里的 `opt=` 字段才发现）。
 4. **HPM SDK dhrystone 例程的 "DMIPS per Second" 其实是 DMIPS/MHz**：
    `hpm_sdk/samples/dhrystone/src/dhry_1.c` 里 `DMIPS_Per_Mhz = Dhrystones_Per_Second / 1757 / cpu_frequency_in_mhz`，
    但 printf 标签写成 "DMIPS per Second"。引用 SDK 输出时务必换算。
 5. **Dhrystone 自检值别记错**：`Enum_Loc` 期望值是 **1（Ident_2）**、`Int_3_Loc` 是 7、
    `Arr_2_Glob[8][7]` 是 `LOOP_COUNT+10`。本仓第一版把 `Enum_Loc` 写成 Ident_1 导致 verify=FAIL。
-6. **`-mabi=ilp32f` 的 multilib 坑**：本工具链的 ilp32f 库只按 `-march=rv32imafc` / `rv32imafdc` 精确匹配
+6. **`-mabi=ilp32f` 的 multilib 易错点**：本工具链的 ilp32f 库只按 `-march=rv32imafc` / `rv32imafdc` 精确匹配
    multilib 目录；如果 `-march` 带了 `_zba_zbb_zbc_zbs` 后缀，链接器会退化成 soft-float 库并报
    `can't link soft-float modules with single-float modules`。解决办法：FPU 变体设 `HPM_SOC_DISABLE_B_EXT 1`，
    并在**链接期**再显式给一次 `-march=rv32imafc -mabi=ilp32f`。

@@ -74,9 +74,9 @@ BENCH_COMPUTE kernel=sin_f32     unit=MOPS   xip_mops=3.39   ilm_mops=3.35   xip
 2. `sin_f32`（141 周期）与 `div_u64`（56 周期）是最贵的两个操作，控制环里要避开；
 3. 硬件 FPU 的 `mac_f32` 是 4 周期/flop（fmul+fadd 流水），`sqrt_f32` 26 周期（含 Newton 修正）。
 
-## 坑与注意事项
+## 易错点与注意事项
 
-1. **FPU 构型的 multilib 坑**（最重要）：本工具链的 ilp32f 库只按 `-march=rv32imafc` / `rv32imafdc` 精确匹配；
+1. **FPU 构型的 multilib 易错点**（最重要）：本工具链的 ilp32f 库只按 `-march=rv32imafc` / `rv32imafdc` 精确匹配；
    若 `-march` 带 `_zba_zbb_zbc_zbs` 后缀，链接期会报
    `can't link soft-float modules with single-float modules`。解决：
    `set(HPM_SOC_DISABLE_B_EXT 1)` 关掉 B 扩展追加，并在**链接期**再显式给 `-march=rv32imafc -mabi=ilp32f`。

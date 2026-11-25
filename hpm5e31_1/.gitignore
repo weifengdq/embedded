@@ -15,3 +15,7 @@ tools/build_pdf.log
 logs/.last_*
 .vscode/
 debug.log
+
+# 耐久测试日志（15 h 级别，体积大，不入库；只留 summary.md）
+logs/soak-*/*
+!logs/soak-*/summary.md

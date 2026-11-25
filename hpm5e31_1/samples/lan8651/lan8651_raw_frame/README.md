@@ -127,7 +127,7 @@ stats
 
 判据：板端 `status` 的 **bit15（PST）= 1** 且主机 `ethtool --get-plca-status` 显示 `Status: on`，同时 `send`/`stats` 能看到双向帧计数都增长；恢复 CSMA 只需 `plca off` + `t1s_host.sh csma`。
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. **接收帧带 FCS**：LAN8651 交给主机的接收帧包含 4 B FCS（实测 `len=64` = 60 B 最小帧 + 4 B FCS）。接 lwIP 时要在 `low_level_input` 里减掉 4 B。
 2. **接收队列只有 2 槽**：一次连发多帧时会 `dropped`，示例里刻意保持最小实现；产品代码应按 MTU 扩队列或在中途服务。

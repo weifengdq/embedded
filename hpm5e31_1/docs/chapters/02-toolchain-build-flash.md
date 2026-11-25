@@ -17,7 +17,7 @@
 - 三条命令完成"编译 → 烧写 → 抓串口"（`build.sh` / `flash.sh` / `hwrun.sh`）；
 - 烧写原理（J-Link 命令行 + 片内 Flash + 实测速度）与失败处理、ISP 备用方案；
 - 用 GDB 调试 RISC-V、死机（trap）定位方法；
-- 从零搭环境（含代理）与踩过的坑。
+- 从零搭环境（含代理）与遇到过的问题。
 
 ## 2.3 环境总览
 
@@ -301,9 +301,9 @@ bash scripts/build.sh shell/letter_shell_basic
 bash scripts/hwrun.sh shell/letter_shell_basic --secs 5 --send "ver;clk"
 ```
 
-## 2.10 坑清单（本仓库开发过程中真实踩过）
+## 2.10 易错点清单（本仓库开发过程中真实遇到过）
 
-表 2-8 环境/构建/烧写坑
+表 2-8 环境/构建/烧写易错点
 
 | # | 现象 | 原因 | 解决 |
 |---|---|---|---|

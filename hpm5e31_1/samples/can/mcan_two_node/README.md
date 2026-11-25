@@ -39,7 +39,7 @@ hpm5e31_1 板上 CAN0 与 CAN1 两颗 TCAN1044AV 收发器接在同一段 CAN �
 
     stat: CAN0: act=1 lec=0 bo=0 ep=0 ew=0 tec=0 rec=0 tdcv=25（CAN1 同）
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. **对端必须先初始化**：CAN 是带 ACK 的总线，总线上只有一个活动节点时发送端会
    一直 ACK error 并重传（TEC 快速上涨进 bus-off）。本样例先初始化 CAN1 再初始化

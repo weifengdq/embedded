@@ -98,7 +98,7 @@ static uint32 cyc_to_ns(uint32 cyc)
 
 /*! 用"运行期配置副本"重新初始化：interrupt=TRUE 开 RX 中断，FALSE 回轮询
  *
- * 坑（实测：从"中断模式"直接调 Eth_Init 切回轮询会整机卡死）：
+ * 易错点（实测：从"中断模式"直接调 Eth_Init 切回轮询会整机卡死）：
  *   Eth_Init 第一步就 memset 掉驱动状态（Base=NULL），而 PLIC 里 ENET0 中断此时仍是开的；
  *   紧接着 board_reset_enet_phy() 要拉低 PHY 复位 30 ms，这 30 ms 里只要来一帧（链路上的
  *   广播/协议帧，启动后实测 isr 已经非 0）就会进 ISR —— ISR 看到 Base==NULL 直接返回，
@@ -157,7 +157,7 @@ static boolean recv_test(uint16 *len_out)
 
 /*! 记一帧；have_isr=TRUE 时同时累计 ISR→消费延迟
  *
- * 口径说明（写进 draft 的"坑"）：Eth_GetLastIsrCycle 是"最近一次 RX 中断进入"的时刻，
+ * 口径说明（写进 draft 的"易错点"）：Eth_GetLastIsrCycle 是"最近一次 RX 中断进入"的时刻，
  * 一次中断覆盖多帧时，后几帧的这个时间戳可能比"当前时刻"还晚（批量排空时 ISR 仍在进来），
  * 直接相减会得到负数 → 强转 unsigned 变成 ~8.9 s 的假最大值。所以这里只统计
  *   isr_cyc 有效、时间差为正、且 < 10 ms 的样本，其余计入 lat_bad；

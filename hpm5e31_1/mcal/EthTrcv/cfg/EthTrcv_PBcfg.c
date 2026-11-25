@@ -23,7 +23,9 @@ static const EthTrcv_TrcvConfigType s_trcv_cfg[ETHTRCV_TRCV_COUNT] = {
         .Master          = FALSE,                     /* strap RXD3=0 -> Slave */
         .AutoNegotiation = FALSE,                     /* 强制模式（1000BASE-T1 主从固定） */
         .RxDelayEn       = TRUE,                      /* EXT 0x9001[8]：RXC 2 ns 延迟 */
-        .TxDelaySel      = 1U,                        /* EXT 0x9001[7:4]：TXC 延迟档位 1 */
+        .TxDelaySel      = 4U,                        /* EXT 0x9001[7:4]：TXC 延迟档位 4
+                                                  * R10 实测：档位 1 板->主机线缆 CRC 误码 ~1%（ACK 段 1.2e4 ppm），
+                                                  * 改为 2~15 任一档后约 4.78e6 帧零误码；取 4 留两侧余量。 */
         .TxClkSel        = FALSE,
         .MacMethod       = ETHTRCV_MAC_TYPE_RGMII,
         .LinkPollDivider = ETHTRCV_LINK_POLL_DIVIDER_DEFAULT,

@@ -40,7 +40,7 @@ sdk_app_src(${NET2_COMPONENT}/src/hpm_yt8011.c)
 | `yt8011_wait_link_up` | 轮询直到 link up 或超时 |
 | `yt8011_speed_str` | 速率转字符串 |
 
-## 重要实现说明（都是实测踩坑结论）
+## 重要实现说明（都是实测易错结论）
 
 1. **EXT/MMD 都是间接访问**：EXT 用 MII 0x1E/0x1F；MMD 用 0x0D/0x0E（0x4000|devad 表示数据相）。
    数据手册 §4 只给寄存器表，访问方法在《YT8011Ax 应用说明 V2.2》§2.1.2/§2.1.3（p.10-11）。

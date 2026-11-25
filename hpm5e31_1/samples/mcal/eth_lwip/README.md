@@ -43,6 +43,10 @@ bash scripts/hwrun.sh samples/mcal/eth_lwip --secs 20 --lock-wait 1800
 | `eth iserver [tcp\|udp]` | 启动 iperf2 服务端（端口 5001） |
 | `eth iclient <ip> [tcp\|udp]` | 启动 iperf2 客户端（10 s） |
 | `eth istop` | 中止会话 |
+| `lwipstat` | 打印 lwIP mem/memp 用量（需 `LWIP_STATS/MEM_STATS/MEMP_STATS` 打开，本板默认开） |
+| `tcppcb` | dump TCP pcb 链表（listen/active/timewait/bound），排查池耗尽 |
+| `eth phy` | 读 PHY 的 EXT 0x9001（RXC/TXC 延迟）、BMCR/BMSR/PHYSR（R10） |
+| `eth txdly <0..15>` | 运行时改 RGMII TXC 延迟档位（EXT 0x9001[7:4]）并回读，扫误码用（R10） |
 | `sleep <ms>` | 延时（内部继续轮询 lwIP，脚本化测试用） |
 
 打流示例（板作 server，主机作 client，靠 `--post` 在持锁期间跑上位机）：
@@ -65,7 +69,7 @@ bash scripts/hwrun.sh samples/mcal/eth_lwip --secs 20 --send "eth iclient 192.16
 - `eth ping`：每包打印 `[ping] seq=N 192.168.2.1: rtt=XXX us`，末尾汇总
 - `eth iclient ... udp`：lwiperf 打印 `Ideal frame delay` / `Send 90 frame(s) once per 1000 us`，
   10 s 后打印 `[iperf] type=7 ... => XXX kbit/s`
-- 每 10 s 自动打印一次统计（打流时建议关掉高频打印，见"坑"）
+- 每 10 s 自动打印一次统计（打流时建议关掉高频打印，见"易错点"）
 
 ## 4 实测数据（真实日志，2026-11-02）
 
@@ -92,7 +96,7 @@ bash scripts/hwrun.sh samples/mcal/eth_lwip --secs 20 --send "eth iclient 192.16
 对照第 13 章（SDK enet 驱动 + 同一套 lwIP 内存预算）：下行 935 Mbit/s、TCP 上行 466 Mbit/s、
 UDP 上行 641 Mbit/s。**当前 MCAL 版本 TCP 与 ping 都明显偏差，见第 5 节。**
 
-## 5 坑（都是本机实测踩出来的）
+## 5 易错点（都是本机实测遇到的）
 
 1. **EthTrcv_Init 之前读 MDIO 全是 0**：`Eth_Init` 里才做板级（RGMII 引脚/时钟/PHY 硬复位），
    在那之前 `Eth_ReadMii` 读回 `BMCR/BMSR/GBSR/PHYSR = 0000`，链路永远是 DOWN。
@@ -148,3 +152,54 @@ bash scripts/hwrun.sh samples/mcal/eth_lwip --secs 30 --no-build   --send "sleep
 | 单帧上限 | 1518（含 14 B 头，不含 FCS） | `Eth.h` 的 `ETH_MAX_FRAME_LEN` |
 | 校验和 | 软件计算（未定义 `CHECKSUM_BY_HARDWARE`） | MCAL Eth 无校验和卸载 API |
 | 以太网时钟/引脚 | 由 `Eth_Init` 内部板级钩子配置 | `mcal/Eth/cfg/Eth_PBcfg.c` |
+
+## 7 R9：15 h 耐久测试与 TCP pcb 池修复
+
+2026-11-23 19:40 ~ 11-24 10:44 用本示例跑了 15.05 h 千兆链路耐久测试（36 个周期：TCP 主机→板 600 s、
+板→主机 TCP 10 s×20 burst、UDP 900 Mbit/s 300 s、空载 300 s，全程 ping 5 次/s）。
+结果：TCP 主机→板 249.0 Mbit/s、板→主机 271.6 Mbit/s、720/720 burst 成功、ping 丢 0.213%、
+板端错误计数全 0、吞吐无退化；**但每 10 个周期 TCP 监听会静默失效一次**（共 3 次，靠 J-Link 复位恢复）。
+
+根因：`app_lwip_eth_iperf_report()` 只在 `DONE_*` 清 `s_iperf_session`，`ABORTED_*` 留下悬空指针；
+后续 `eth istop` / 重建监听对已释放的状态调用 `lwiperf_abort()`，遍历被复用的 lwiperf 链表，
+把别的会话摘掉，表现为 lwIP TCP pcb 脱离所有链表且不释放 + lwiperf 状态（192 B）一起泄漏。
+`MEMP_NUM_TCP_PCB` 默认只有 10 个，泄漏 10 个后 `tcp_alloc()` 失败，SYN 被静默丢弃
+（ping 正常、新连接超时、`eth iserver` 回 FAILED）。
+
+修复：报告回调任何终态都清会话指针；`MEMP_NUM_TCP_PCB` 10→24、`MEMP_NUM_TCP_PCB_LISTEN` 5→6。
+验证：修复后 600 s 会话、10 并发连接压测结束 `MEM TCP_PCB used=0`（修复前为 1 个孤儿 pcb + 192 B 堆）。
+诊断命令：`lwipstat`（mem/memp 用量）、`tcppcb`（pcb 链表）。
+
+报告与日志：`logs/soak-20261123-1942/summary.md`；测试工具 `host/soak/`。
+细节见第 49 章 §49.7.7（耐久测试）与 §49.9.17（pcb 泄漏）。
+
+## 8 R10：板→主机 CRC 误码闭环（RGMII TXC 延迟档位）
+
+R8/R9 遗留的"板→主机 1.5% 线上 FCS 误码"已定位并修复：**YT8011AN 的 RGMII TXC 延迟档位 1 采样余量不足**。
+
+- 用新增的 `eth phy` / `eth txdly <0..15>`（运行时改档、立即生效）配合 `host/soak/crc_probe.py` 扫描：
+  档位 0 数据不可用；**档位 1 约 9.1~11.8 kppm（1%）**；档位 2~15 共约 **478 万帧零 CRC 错**。
+- 修复：`mcal/EthTrcv/cfg/EthTrcv_PBcfg.c` 的 `TxDelaySel` 1→**4**，初始化回读 EXT 0x9001=0x0140。
+- 验证：60 s ACK（638 041 帧）+ 40 s ACK（425 313 帧）+ 40 s 板→主机数据（843 311 帧，253 Mbit/s）
+  主机 `rx_crc_errors` 增量全部为 0；1 h 压缩耐久见 `logs/soak-val2-20261124`。
+
+复跑：
+
+```bash
+python3 host/soak/crc_probe.py ack  --secs 30 --txdly 1   # 复现，约 1e4 ppm
+python3 host/soak/crc_probe.py ack  --secs 30 --txdly 4   # 修复后，0
+python3 host/soak/crc_probe.py data --secs 30             # 板->主机 1518 B，0
+```
+
+细节见第 12 章 §12.7.5 与第 49 章 §49.9.16。
+## 9 R10.1：iperf 句柄拆分（长跑不再每个周期漏 pcb）
+
+`eth iserver [tcp|udp]` 的监听句柄现在**常驻**：重复 arm 只回
+`server start FAILED (已有会话在跑?)`，不会再进入 lwiperf 的 `tcp_bind` 失败路径。
+
+背景（详见第 49 章 §49.9.18）：SDK 的 `lwiperf_start_tcp_server_impl()` 在 `tcp_bind` 失败时
+直接返回、不释放已分配的 lwiperf state 与 tcp_pcb；而旧实现每个周期都会重复 arm（因为报告回调
+把 server 监听句柄也清了），于是每 25 min 泄漏 1 个 TCP_PCB + 192 B HEAP。R10 的 15 h 重跑数据面全绿
+（CRC 0 / ping 丢 0.020% / 720/720 burst），仅因该泄漏在 cycle 14 挂死一次。
+
+现在 `eth istop` 会同时中止客户端会话与 TCP/UDP 监听，供恢复/重建监听使用。

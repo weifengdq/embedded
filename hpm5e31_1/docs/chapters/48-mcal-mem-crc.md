@@ -69,7 +69,7 @@ AUTOSAR 的存储访问分三层：上层 NvM/Fee → 中间 MemAcc（Memory Acc
 | 片内 XPI NOR | 0x80000000 ~ 0x800FFFFF（1 MB） | 代码镜像 + 保留数据区 | 全体（只读） |
 | Mem 保留窗口 | 0x800F0000 ~ 0x80100000（64 KB） | Mem 例程擦写 | Mem 例程独占 |
 | CRC 外设 | 0xF0080000，8 通道 | CRC 加速，使用通道 0 | Crc 模块独占 |
-| L1 D-Cache | 写回 + 按地址失效 | 见 §48.11 的坑 | 系统级 |
+| L1 D-Cache | 写回 + 按地址失效 | 见 §48.11 的易错点 | 系统级 |
 
 ## 48.4 工作原理
 
@@ -207,7 +207,7 @@ HPM 类型只出现在 Mem.c 与 Mem_PBcfg.c（契约 §3.2）。
 ## 48.7 例程
 
 四个例程各自解决一个问题，命令表见表 48-5（BSP 已占用 `mem` 做 hexdump，所以 Mem 的命令改为
-`meminfo/memrw/memdet`，这条坑记在 §48.11）。
+`meminfo/memrw/memdet`，这条易错点记在 §48.11）。
 
 表 48-5 四个例程的命令与验证目标
 
@@ -373,7 +373,7 @@ $T/riscv32-unknown-elf-readelf -lW build/eth_raw_echo-debug/output/demo.elf | gr
 > `__fw_size__` 都是 0x14E50、LOAD FileSiz 之和都是 89 216 B，**Flash 差值为 0**；变化的只是
 > `__noncacheable_bss_start__` 从 0x0123_9300 前移到 0x0123_0000，整段进入 startup 清零范围
 > （`soc/HPM5E00/HPM5E31/toolchains/reset.c:119`），描述符另由 `Eth_Init` memset 兜底。
-> 证据与复跑命令：`logs/20261102-181031-eth_noncacheable_bss.log`。见第 49 章坑清单。
+> 证据与复跑命令：`logs/20261102-181031-eth_noncacheable_bss.log`。见第 49 章易错点清单。
 > 同一口径也适用于 Spi 的 4 096 B 非缓存缓冲（`mcal/Spi/src/Spi.c:78-79`）：它同样落在 NOLOAD 段、
 > 不进镜像，所以表 48-8 里 Spi 的 `.data=4 099` 只有 3 B 真正进 Flash。
 
@@ -402,7 +402,7 @@ Mem 作业期间 CPU 不空转：每次 MainFunction 内部由 ROM API 阻塞完
 其余时间主循环可以跑别的任务。crc_integrity 里对 91 KB 镜像算 CRC32（HW）约 1.5 ms 量级，
 对 4 KB 数据算 8 个算法（HW）约 0.55 ms 量级——这些量级足够放进 10 ms 的诊断任务。
 
-## 48.11 坑
+## 48.11 易错点
 
 1. **BSP 的 shell 命令 `mem` 已被占用**。`boards/hpm5e31_1/bsp/bsp_cmds.c` 里有
    `SHELL_EXPORT_CMD(..., mem, cmd_mem, "hexdump memory")`，例程再导出 `mem` 会链接期
@@ -410,7 +410,7 @@ Mem 作业期间 CPU 不空转：每次 MainFunction 内部由 ROM API 阻塞完
    并在 README 说明。通用规则：**例程命令前缀先 `grep` 一遍 BSP**，冲突就换名，不要改 BSP。
 2. **写完 Flash 必须失效 D-Cache**。ROM API 编程后 XIP 直读可能命中 L1 D-Cache 旧行，
    表现为"写成功、读回是旧数据、CRC 对不上"。驱动在每次擦/编后按地址 `l1c_dc_invalidate`，
-   读作业开始前再失效一次。同一个坑在 samples/flash/flash_rw_erase 里也记录了。
+   读作业开始前再失效一次。同一个易错点在 samples/flash/flash_rw_erase 里也记录了。
 3. **Crc 按 SWS 没有开发错误**。SWS_Crc §7.6.1 原文 "There are no development errors"，
    且 [SWS_Crc_00072] 禁止 CRC 库函数调用 BSW（含 Det）。所以 Calculate API 不做 Det 上报，
    这与"每个 API 都要 Dev Error 检查"的一般约定冲突——**SWS 优先**，已在 §48.15 记录。
@@ -513,7 +513,7 @@ Flash 与 CRC 都是"错了会连锁"的模块，本章的几条硬约束：
 
 * SWS 抽取文本：autosar_txt/AUTOSAR_CP_SWS_MemoryDriver.txt、AUTOSAR_CP_SWS_CRCLibrary.txt
 * 本仓库例程：samples/mcal/{mem_flash_rw,mem_bench,crc_bench,crc_integrity}
-* 本仓库既有 Flash 例程（同一 D-Cache 坑）：samples/flash/flash_rw_erase
+* 本仓库既有 Flash 例程（同一 D-Cache 易错点）：samples/flash/flash_rw_erase
 * 日志：logs/20261102-140231-mem_flash_rw.log、logs/20261102-140321-mem_bench.log、
   logs/20261102-135730-crc_bench.log、logs/20261102-140431-crc_integrity.log
 

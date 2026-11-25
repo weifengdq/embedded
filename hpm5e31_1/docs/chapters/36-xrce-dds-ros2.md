@@ -34,7 +34,7 @@ MCU 里只放一个一百多 KB 的**客户端**，由主机上的 **Agent** 替
 3. 36.5 寄存器与驱动 API 对照：XRCE 的每个动作最终落在 ENET/lwIP 的哪一层；
 4. 36.6 例程：两个例程怎么接线、怎么跑；
 5. 36.7 实测 / 36.8 性能：100 Hz 发布、0.10% 丢帧、2.3~3.4 ms 命令往返；
-6. 36.9 坑 / 36.10 对比 / 36.12 待确认项：踩过的 10 个坑（表 36-12）与残留风险（表 36-14）。
+6. 36.9 易错点 / 36.10 对比 / 36.12 待确认项：遇到过的 10 个问题（表 36-12）与残留风险（表 36-14）。
 
 ## 36.3 概述
 
@@ -154,7 +154,7 @@ static uint32_t cdr_u16_multiarray(uint8_t *buf, const uint16_t *v, uint32_t n)
 }
 ```
 
-两个容易踩的点：
+两个容易出错的点：
 
 1. **不要自己加 4 字节封装头**。Agent 的 `TopicPubSubType::serialize()` 会在载荷前插入
    `00 01 00 00`（CDR_LE 封装），收到的 `DATA` 也会先剥掉这 4 字节再回调。板上抓到的
@@ -310,13 +310,13 @@ ROS 2 侧接收指标见表 36-10。
 如果应用需要更细的实时控制，可以把 `uxr_run_session_time(&session, 1)` 的超时改小，
 或改成"每 N 轮跑一次会话"（本工程已把会话等待改成可配 `poll_timeout_ms`，见 36.12 U-36-5）。
 
-## 36.9 坑
+## 36.9 易错点
 
-表 36-12 是本章踩过的 10 个坑，按"现象 → 根因 → 解决"排列。
+表 36-12 是本章遇到过的 10 个问题，按"现象 → 根因 → 解决"排列。
 
-**表 36-12 踩坑清单**
+**表 36-12 易错点清单**
 
-| # | 坑 | 现象 | 根因 | 解决 |
+| # | 易错点 | 现象 | 根因 | 解决 |
 |---|---|---|---|---|
 | 1 | Agent 依赖 spdlog 1.9.2 | 用系统 spdlog 1.15 编译 Agent → `static assertion failed: Cannot format an argument` | Agent 3.0.2 用 `fmt::format` 直接格式化 `CustomEndPoint`，fmt 10 取消了 ostream 回退 | 编译 spdlog 1.9.2（自带 fmt 8）并 `UAGENT_USE_SYSTEM_LOGGER=ON` |
 | 2 | spdlog 静态库必须 PIC | 链接 `libmicroxrcedds_agent.so` 报 `relocation R_X86_64_TPOFF32 ... local-exec` | 静态库默认不开 `-fPIC` | `-DCMAKE_POSITION_INDEPENDENT_CODE=ON` 重编 |

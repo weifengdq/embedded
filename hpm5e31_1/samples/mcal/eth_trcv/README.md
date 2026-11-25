@@ -41,7 +41,7 @@ bash scripts/hwrun.sh mcal/eth_trcv --secs 40 --send "trcv info;trcv regs;trcv s
 - 日志：`logs/<时间戳>-eth_trcv.log`（hwrun 生成，正文第 49 章表 49-13/图 49-3 引用）
 - 复跑：`bash scripts/hwrun.sh mcal/eth_trcv --secs 40 --send "trcv info;trcv s100;trcv s1000"`
 
-## 6. 关键点与坑
+## 6. 关键点与易错点
 
 1. **1000BASE-T1 强制模式必须一端 Master 一端 Slave**；两端同角色建不起链（PHYSR[10] 恒 0）。
 2. **软复位必须带速率编码**：写 BMCR=0x8000 会把速率/主从退回上电 strap 默认；1000M 用 0x8140、100M 用 0xA100。

@@ -214,7 +214,7 @@ static void conn_send_generic_nack(app_doip_conn_t *c, uint8_t code, bool close_
 }
 
 /* 诊断报文应答：0x8002 / 0x8003。SA 写实体地址、TA 写 tester 地址
- * （EcuBus-Pro 的解析按这个方向校验，见第 32 章“坑”）。 */
+ * （EcuBus-Pro 的解析按这个方向校验，见第 32 章“易错点”）。 */
 static void conn_send_diag_ack(app_doip_conn_t *c, uint16_t tester_sa, uint16_t entity_sa,
                                bool positive, uint8_t code)
 {
@@ -371,7 +371,7 @@ static void handle_diag_message(app_doip_t *d, app_doip_conn_t *c,
     if ((len - 4u) > d->cfg.max_diag_uds) {
         /* ISO 13400-2：超过实体处理能力回 0x8003 + 0x04（diagnostic message too large）。
          * 不能把超长 UDS 直接交给上层：app_uds_handle() 对 > APP_UDS_MAX_REQ 的请求直接
-         * 返回 -1，主机侧表现为"收到 ACK 但永远没有响应"（第 32 章坑 10）。 */
+         * 返回 -1，主机侧表现为"收到 ACK 但永远没有响应"（第 32 章易错点 10）。 */
         conn_send_diag_ack(c, sa, d->cfg.entity_addr, false, APP_DOIP_DIAG_NACK_TOO_LARGE);
         return;
     }
@@ -922,7 +922,7 @@ void app_doip_poll(app_doip_t *d)
     }
     /* 踢一次 TCP 输出：ENET 发送环满时 low_level_output 会返回 ERR_MEM，lwIP 把数据留在
      * unsent 队列里，只等 RTO（默认 200 ms）才重发——实测会让诊断往返从 0.3 ms 涨到 279 ms。
-     * 主循环每轮主动 tcp_output()，有数据就发、没数据是空操作（第 32 章坑 3）。 */
+     * 主循环每轮主动 tcp_output()，有数据就发、没数据是空操作（第 32 章易错点 3）。 */
     for (i = 0; i < d->cfg.max_conn; i++) {
         if (d->conn[i].pcb != NULL) {
             (void) tcp_output(d->conn[i].pcb);

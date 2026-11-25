@@ -39,7 +39,7 @@ sdma_test n=2048 sclk=20000000 rc=0 time=822 us bw=2490 KB/s theory=2500 KB/s ef
 sdma_bench: 1M->124 KB/s, 5M->624, 10M->1247, 20M->2490 (均 99%), 40M->3466 (69%), 60M 配置失败
 ```
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. 缓冲区必须 `ATTR_PLACE_AT_NONCACHEABLE`；若用 cacheable 内存要自己做 writeback/invalidate。
 2. TX DMA 前必须先 `spi_disable_tx_dma()`，否则上一次的 DMA 请求可能让 SPI 提前启动（SDK 样例注释里专门提到）。

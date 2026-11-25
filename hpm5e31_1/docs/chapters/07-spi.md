@@ -155,7 +155,7 @@ static uint64_t spi_xfer(uint32_t nbytes)
 | 实测现象 | 2048 B @20 MHz：822 µs、2490 KB/s、效率 99% |
 | 实测日志 | `logs/20261030-113457-spi_dma_bw.log` |
 
-正确的 DMA 启动顺序（踩过坑后总结）：
+正确的 DMA 启动顺序（遇到过易错点后总结）：
 
 ```c
 /* 1) 先配 control(含 dma 使能) */
@@ -328,12 +328,12 @@ MISO 的建立时间不够（从机侧采样相位），而不是主机时序配
 5. 从器件要求 CS 建立/保持时间时，改 `timing_config.master_config.cs2sclk/csht`，
    或直接用 GPIO 作 CS（`init_spi1_pins_with_gpio_as_cs()`）。
 
-## 7.9 坑与注意事项
+## 7.9 易错点与注意事项
 
 0. **现象：slave 能收到 master 数据，但 master 永远收到 0（或全 0x00/全 0xFF）** → 原因：**master（以及 slave）的 SCLK pad 没有开 IOC LOOP_BACK**。
    HPM SPI 的接收移位时钟来自 SCLK pad 的内部回送；不开时 SCLK 仍能输出到外部（从机正常收数），但 master 自己的 RX 移位寄存器没有时钟，
    所以永远采不到 MISO——本板实测把从机 MISO 引脚强拉高也读不到。→ 解决：SCLK 的 FUNC_CTL 加 `IOC_PAD_FUNC_CTL_LOOP_BACK_MASK`
-   （见 `boards/hpm5e31_1/pins/pinmux_core.c` 的 `init_spi1_master_pins()/init_spi3_slave_pins()`）。与第 06 章 I2C 的同类坑一致。
+   （见 `boards/hpm5e31_1/pins/pinmux_core.c` 的 `init_spi1_master_pins()/init_spi3_slave_pins()`）。与第 06 章 I2C 的同类易错点一致。
 0b. **现象：加 LOOP_BACK 后数据整体错位 1 字节** → 原因：slave TX FIFO 在首个时钟到来前 underrun。
    → 解决：slave TX DMA 多发 1 个字节（尾部 spare），本仓库实测这样即 0 错误。
 1. 【待接线】**现象：打开 IOC LOOP_BACK 后 SPI 收到的数据仍不匹配** → 原因：LOOP_BACK 只是"本 PAD 输出回送本 PAD 输入"，

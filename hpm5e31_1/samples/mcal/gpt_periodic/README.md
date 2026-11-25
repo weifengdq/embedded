@@ -67,7 +67,7 @@ bash scripts/hwrun.sh mcal/gpt_periodic --secs 22
 1. AUTOSAR 的 `Gpt_ValueType` 是**定时器 tick 数**（这里 = GPTMR 100 MHz tick，10 ns），
    不是微秒；1 ms 对应 reload=100000。换时钟必须重算。
 2. one-shot 通道即使没使能 notification 也必须开 RLD 中断，否则状态机永远停在 running
-   （见第 44 章坑 45-2）。
+   （见第 44 章易错点 45-2）。
 3. Predef Timer 用 GPTMR0 CH3 自由运行 + 软件整数除法换算 1µs/100µs，不额外占硬件定时器；
    GPTMR3 被 BSP 延时占用，本模块不碰。
 4. 测量窗口内不要轮询 shell：任何 Stop/Start 命令都会让 tick 计数归零。

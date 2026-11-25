@@ -6,7 +6,7 @@
  * 500 kbit/s：prescaler=1，其余相同（实验档）。
  *
  * 接收：默认 MCAN 全局过滤配置把"不匹配"的扩展帧收进 RXFIFO0，所以软件侧
- *       按 PGN/SA 过滤即可；硬件过滤的掩码算法见第 32 章"坑"一节。
+ *       按 PGN/SA 过滤即可；硬件过滤的掩码算法见第 32 章"易错点"一节。
  */
 #include "j1939_port.h"
 #include "board.h"

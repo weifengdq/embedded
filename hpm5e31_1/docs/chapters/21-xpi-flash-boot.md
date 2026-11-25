@@ -14,7 +14,7 @@
 
 - 学到什么：HPM5E31 的 1 MB Flash 是 **片内 SIP Flash**（不是外接 NOR）、如何通过 XPI0 访问它、
   BootROM 的启动流程与镜像布局（nor_cfg_option / boot_header / app）、用 ROM API 读写擦的实测速度、
-  以及"写完 Flash 后 XIP 直读读到旧数据"这类必踩的坑。
+  以及"写完 Flash 后 XIP 直读读到旧数据"这类必遇到的问题。
 - 前置章节：第 02 章（构建/烧写）、第 19 章（DMA）、第 24 章（总线吞吐）。
 - 配套例程：`samples/flash/flash_rw_erase/`（命令 `flashinfo/flashread/flasherase/flashrw/xipbw`）。
 - 一句话结论：擦 2.13 MB/s、写 280 KB/s、ROM API 读 30 MB/s、**XIP 直读 ≈46 MB/s**（dcache 冷），
@@ -245,11 +245,11 @@ GPIMR 初始化代码（含 `board_init_gptmr_clock` + `gptmr_channel_config(...
 4. **写时关中断**：擦除 1.9 ms 期间若中断从 Flash 取指会出问题，建议擦写时关全局中断或把中断向量放 RAM。
 5. **J-Link 烧写会覆盖测试数据**：每次重新烧写都会擦掉 0x800F0000 区域，测试脚本要自包含。
 
-## 21.9 坑与注意事项
+## 21.9 易错点与注意事项
 
 1. **现象**：ROM API 写入成功、`rom_xpi_nor_read()` 读回正确，但按地址直接读 0x800F0000 全是 0xFF。
    **原因**：XIP 直读走 AXI 并经 L1 D-Cache，ROM API 的写不会自动失效 cache，读到的是擦除后的旧 cache line。
-   **解决**：直读前 `l1c_dc_invalidate()`（本仓库第一次实测就踩到，见日志
+   **解决**：直读前 `l1c_dc_invalidate()`（本仓库第一次实测就遇到，见日志
    `logs/20261030-110720-flash_rw_erase.log`）。
 2. **现象**：擦写自己所在扇区后板子跑飞。
    **原因**：代码正在该扇区 XIP 执行，擦除后取指全 0xFF。

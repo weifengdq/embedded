@@ -92,7 +92,7 @@ candump can1                                    # can1  123  [64] 11 11 ...
 ```
 
 > 主机侧需要 `CAP_NET_ADMIN`（`ip link`）与 `CAP_NET_RAW`（`cansend/candump`）→ 用 `sudo -n`。
-> **关闭 autosuspend**（可选，见 §6 坑 1）：`echo -1 | sudo tee /sys/module/usbcore/parameters/autosuspend`；
+> **关闭 autosuspend**（可选，见 §6 易错点 1）：`echo -1 | sudo tee /sys/module/usbcore/parameters/autosuspend`；
 > 端口级：`echo on | sudo tee /sys/bus/usb/devices/1-8/power/control`（设备号按实际 `lsusb -t`）。
 
 ## 5. 实测（2026-11-02，本板）
@@ -103,7 +103,7 @@ candump can1                                    # can1  123  [64] 11 11 ...
 | 2 | 经典 500k 双向 | `cansend can0 123#..` → `candump can1` | 3 帧全对（123/18F/7DF）；反向 321/456 全对；RX/TX errors/dropped 0 | 同上 |
 | 3 | CAN FD 1M/2M 64B BRS 单帧 | `cansend can0 123##1 + 64B` | `can1  123  [64]` 收到，BRS 生效，berr 0/0 | `logs/20261102-103503-gs_usb_candle.log`（wValue 修复前）；修复后见 `/tmp/m2b_fd.log` |
 | 4 | FD 100 帧 | 连续 100 帧 FD 64B BRS | `cansend ok=100 fail=0`，can1 收到 **100/100**，设备不掉线 | 同上 |
-| 5 | 每通道控制请求 | 串口 `[gs] MODE ch=..` trace | wValue 修复后 can0/can1 各自收到 MODE（ch 号正确） | 见 §6 坑 2 |
+| 5 | 每通道控制请求 | 串口 `[gs] MODE ch=..` trace | wValue 修复后 can0/can1 各自收到 MODE（ch 号正确） | 见 §6 易错点 2 |
 | 6 | 硬件时间戳 | SO_TIMESTAMPING + SCM_TIMESTAMPING | 见共享验收日志（tp-gs-host `logs/20261102-*-gs-usb-*`） | — |
 | 7 | 空闲稳定性 | 默认 autosuspend=2 / port power=auto，300 s / 60 次轮询 | **GONE_SAMPLES=0/60 PASS**（旧固件同条件 ~85 s 掉线）；串口 `[usb] pm: ... sdis=1` | `logs/20261102-110528-gs_usb_candle.log` |
 | 8 | 压力（cangen 限速） | `cangen can0 -g 2 -n 2500`（500 fps × 5 s） | can1 收到 **2500/2500**；`ip -s` can0 **TX dropped 0→0** | 同上 |
@@ -116,9 +116,9 @@ candump can1                                    # can1  123  [64] 11 11 ...
 
 > 本表只写**真实测过**的数字；未测项写"—”不编造。完整上位机矩阵见 `host/gs_usb/` 与 `docs/chapters/41-gs-usb-candlelight.md`。
 
-## 6. 坑（都是本轮实测踩过的）
+## 6. 易错点（都是本轮实测遇到过的）
 
-1. **主机 USB autosuspend 会把空闲设备 detach（最重要的坑）**
+1. **主机 USB autosuspend 会把空闲设备 detach（最重要的易错点）**
    现象：设备空闲 ~85 s 后 `USB disconnect`，dmesg 无 oops，串口仍在打印 → 不是固件挂死。
    原因：Linux `usbcore` 默认 `autosuspend=2`（秒），主机挂起端口后，
    HPM USB0 固件若未正确处理 SUSPEND/RESUME（端点未重新 arm），host 判 detach。

@@ -67,12 +67,12 @@ spi master/slave bidirectional bench (n=128, mode0):
 | 10 MHz | 107.28 us | 1193 KB/s | 0 | PASS |
 | 20 MHz | 55.67 us | 2299 KB/s | 1 byte（首字节 1 bit） | 建议 ≤10 MHz |
 
-## 关键点 / 坑（本板实测）
+## 关键点 / 易错点（本板实测）
 
 1. **【最关键】SPI master 和 slave 的 SCLK pad 都必须开 IOC LOOP_BACK！**
    不开时：slave 能正常收到 master 数据（s_rx 正确），但 **master 永远收不到 MISO（m_rx 全 0）**，
    连把 slave MISO 引脚强拉高也读不到 —— 因为 master 的 RX 移位时钟来自 SCLK pad 的内部回送。
-   加上 `IOC_PAD_FUNC_CTL_LOOP_BACK_MASK` 后立即恢复。与 I2C 章节的同类坑一致。
+   加上 `IOC_PAD_FUNC_CTL_LOOP_BACK_MASK` 后立即恢复。与 I2C 章节的同类易错点一致。
 2. **slave TX DMA 要发 n+1 字节**（尾部多一个 spare）：实测只发 n 字节时，slave TX FIFO 在首个时钟前
    underrun，数据整体错位 1 字节；多发 1 字节后标准对齐、全部匹配。
 3. slave 的 DMA 必须在 master 发时钟**之前**武装（`spi_setup_dma_transfer()`），因为 master 的

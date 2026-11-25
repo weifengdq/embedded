@@ -61,7 +61,7 @@ HPM5E31 内有 **2 个 DMAv2 控制器**（RM §33 p.561）：
 
 如图 19-1 所示，两个控制器共享同一套寄存器模型，但"挂在哪条总线上"决定了它们的擅长领域：
 XDMA 直连 AXI fabric，可以打满 AXI SRAM 带宽；HDMA 在 AHB 外设总线上，访问 AXI SRAM 必须
-经过 AHB→AXI 桥，突发长度受桥的限制（见第 7 节坑 2）。
+经过 AHB→AXI 桥，突发长度受桥的限制（见第 7 节易错点 2）。
 
 ### 19.4.2 一次传输的展开
 
@@ -156,7 +156,7 @@ static bool dma_copy_memcpy(DMAV2_Type *ptr, uint8_t ch, uint32_t dst, uint32_t 
 | 路径 | `samples/dma/dma_uart_rx_idle/` |
 | 覆盖特性 | DMAMUX 请求路由、UART TX/RX DMA（handshake）、RX 空闲（IDLE）检测与中断、内部 modem 回环自测 |
 | 关键配置 | UART4 115200 8N1（PC16/PC17）、idle 阈值 10 bit、HDMA 通道 0/1、帧长 1~64 B 变化 |
-| 实测现象 | **IDLE 帧界识别 20/20（loss=0 ppm）**；TX DMA 每帧 avg 470 µs；TX→IDLE 延迟 min 166/avg 2388/max 5038 µs；**RX DMA 数据异常**（见坑 6） |
+| 实测现象 | **IDLE 帧界识别 20/20（loss=0 ppm）**；TX DMA 每帧 avg 470 µs；TX→IDLE 延迟 min 166/avg 2388/max 5038 µs；**RX DMA 数据异常**（见易错点 6） |
 | 实测日志 | `logs/20261030-123512-dma_uart_rx_idle.log` |
 
 关键代码（帧界检测 + DMA 发）：
@@ -190,7 +190,7 @@ dma_setup_handshake(HPM_HDMA, &cfg, true);
 | 帧界识别（IDLE 中断） | **20/20，loss=0 ppm** | 帧间 1 ms 空闲足够分开 |
 | TX DMA 每帧耗时 | avg 470 µs / max 2085 µs | 含每帧重建通道开销 |
 | TX 开始 → IDLE 延迟 | min 166 / avg 2388 / max 5038 µs | 与帧长成正比 |
-| RX DMA 数据正确率 | **0/20**（异常，见坑 6） | 轮询对照同帧可读到正确字节 |
+| RX DMA 数据正确率 | **0/20**（异常，见易错点 6） | 轮询对照同帧可读到正确字节 |
 
 ### 19.6.3 命令一览
 
@@ -225,7 +225,7 @@ dmachain                     # 3 段链式描述符
 |---|---|---|---|
 | AXI SRAM（16 KB） | 8 B | 24.1 MB/s | 桥接开销 |
 | AXI SRAM（16 KB） | 64 B | 117.7 MB/s | HDMA 访问 AXI 的最佳点 |
-| AXI SRAM（16 KB） | 128 B | 25.9 MB/s | **异常掉速，见坑 2** |
+| AXI SRAM（16 KB） | 128 B | 25.9 MB/s | **异常掉速，见易错点 2** |
 | AXI SRAM（16 KB） | 512 B | 25.9 MB/s | 同上 |
 | AHB SRAM（8 KB） | 64 B | 305.3 MB/s | HDMA 的主场 |
 | AHB SRAM（8 KB） | 512 B | 327.7 MB/s | HDMA 峰值 |
@@ -293,7 +293,7 @@ dmachain                     # 3 段链式描述符
 
 硬件层面突发计数就是 2^n 个传输，没有 96 B 这一档；要做到等效 96 B，只能拆成 64 B + 32 B 两次搬。
 
-有效突发的实测曲线（表 19-8）：HDMA 在 64 B 达到 117.7 MB/s，128 B 以上掉到 26 MB/s（跨桥代价，见坑 2）；
+有效突发的实测曲线（表 19-8）：HDMA 在 64 B 达到 117.7 MB/s，128 B 以上掉到 26 MB/s（跨桥代价，见易错点 2）；
 XDMA 从 8 B 的 57.5 单调升到 2048 B 的 407.1，之后平台化。
 
 表 19-8 HDMA / XDMA 有效突发带宽（16 KB 拷贝，logs/20261102-123624-dma_mem2mem-r5b.log）
@@ -317,7 +317,7 @@ XDMA 从 8 B 的 57.5 单调升到 2048 B 的 407.1，之后平台化。
 
 **CPU 单核跑满不影响 DMA 带宽。** 第一版实验报出的"下降 49.8%"是假象：空载基线用的是
 `dma_start_memcpy()` 自动选的 1024 B 突发（405.4 MB/s），负载组用的显式 64 B 突发，差的是突发长度不是 CPU 争用。
-这个坑值得记：**做并发对比必须锁住其他变量**。
+这个易错点值得记：**做并发对比必须锁住其他变量**。
 
 ![图 19-3 DMA 带宽与存储位置/CPU 并发的关系](figures/19/fig-19-3-dma-mem-bw.png)
 
@@ -334,7 +334,7 @@ XDMA 从 8 B 的 57.5 单调升到 2048 B 的 407.1，之后平台化。
 6. **CPU 争抢可以忽略**：同一突发配置下 CPU 纯运算/连续读 AHB 时 XDMA 带宽变化 <1%（表 19-9）。
    真正影响带宽的是"突发长度 + 源/目的在哪个存储"，先把这两个定下来再谈调优。
 
-## 19.9 坑与注意事项
+## 19.9 易错点与注意事项
 
 1. **现象**：`dma_start_memcpy()` 返回 2（`status_invalid_argument`）。
    **原因**：突发不是 2^n 字节，或超过 `位宽上限 × 突发上限`（HDMA 是 4 B × 128 T = 512 B）。
@@ -343,7 +343,7 @@ XDMA 从 8 B 的 57.5 单调升到 2048 B 的 407.1，之后平台化。
    **原因**：HDMA 在 AHB 侧，AXI SRAM 在另一侧，ABH→AXI 桥对大突发的拆分效率骤降。
    **解决**：HDMA 访问 AXI SRAM 时突发 ≤64 B，或改用 XDMA / 把缓冲放 AHB SRAM。
 3. **现象**：链式描述符 `dma_config_linked_descriptor()` 返回失败。
-   **原因**：每段 `size_in_byte` 不能被"位宽 × 突发"整除（本仓库最初用 16384/3 = 5461 B，踩到）。
+   **原因**：每段 `size_in_byte` 不能被"位宽 × 突发"整除（本仓库最初用 16384/3 = 5461 B，遇到）。
    **解决**：段长取突发整数倍（改成 16384/4 = 4096 B 后通过）。
 4. **现象**：CPU 读到的目的缓冲与源不一致。
    **原因**：缓冲在 cacheable 区且读之前没 invalidate。

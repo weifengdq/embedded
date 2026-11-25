@@ -54,7 +54,7 @@ ip / offer / stopoffer / sub
 - 主机 `core`：SD 发现 PASS（组播 Offer + FindService 响应）、RPC 全 PASS、事件订阅 PASS；
 - 日志：`logs/20261030-172454-someip_rpc.log` 等（每次上板一条，含串口自证与上位机输出）。
 
-## 5. 坑
+## 5. 易错点
 
 1. **上位机必须先加组播成员**（`IP_ADD_MEMBERSHIP 224.244.224.245 on 192.168.2.1`），否则收不到 Offer，只能靠 FindService 单播回包发现。
 2. **`Length` 字段按规范填 8+载荷**，填成整包长度会被板端拒（`stat` 里 `malformed` 增加）。

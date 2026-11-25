@@ -83,7 +83,7 @@ bash scripts/hwrun.sh app/can_logger --secs 10 --send "gw on" \
 > 板端 `verify: frames=30 bad_order=0 result=PASS`，日志 `logs/20261102-112054-host-canplayer-replay.log`。
 > 注意：上电自检**不要**再自动发 0x300（会污染校验基线），本版本已移除自检 replay。
 
-## 坑
+## 易错点
 
 1. **RAM 预算**：512 帧 × 32 B = 16 KB，DLM 128 KB；若同时要 lwIP 网关（72%），把 `LOG_CAP` 降到 128；
 2. **MCAN 消息 RAM 必须放 AHB SRAM**：两个通道各一份 `ATTR_PLACE_AT(".ahb_sram")` 缓冲，

@@ -40,7 +40,7 @@ bash scripts/hwrun.sh app/canopen_sdo_seg --secs 14 --lock-wait 1800    # 上电
 即 294 帧平均 124 bit/帧——**总线利用率接近 100%**，应用层有效吞吐 1024 B / 72.9 ms ≈ 112 kbit/s
 （500 kbit/s 的 22.5%）。要更快只能减少每段帧数（block transfer）或换 CAN FD。
 
-## 坑
+## 易错点
 
 1. **分段下行请求必须发到 0x600+ID**（SDO 请求），响应才从 0x580+ID 回——本移植第一版把 segment
    request 发到了 0x580+ID，从站一直等不到分段，1 s 后回 abort `0x05040000`（SDO protocol timed out）；

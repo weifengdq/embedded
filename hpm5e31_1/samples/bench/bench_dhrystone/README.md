@@ -49,7 +49,7 @@ BENCH_STAT metric=dhrystone n=2 mean_dmips=676.22 dmips_per_mhz=1.4088 sd=0.0000
 结论：-O2 → -O3 提升 4.9%；两轮结果几乎完全相同（sd=0.0000），说明裸机 + 串行测试的重复性极好。
 DMIPS/MHz 只有 1.41，是因为按 Dhrystone 规则用了 `-fno-inline`（不允许内联跨过程调用）。
 
-## 坑与注意事项
+## 易错点与注意事项
 
 1. **SDK 自带例程打印的 "DMIPS per Second" 其实是 DMIPS/MHz**：`dhry_1.c` 里
    `DMIPS_Per_Mhz = Dhrystones_Per_Second / 1757 / cpu_frequency_in_mhz`，但 printf 标签写错。
@@ -60,7 +60,7 @@ DMIPS/MHz 只有 1.41，是因为按 Dhrystone 规则用了 `-fno-inline`（不�
 4. **`-fno-inline` 不能省**：Dhrystone 的可比性建立在"过程调用不被内联消掉"上，
    去掉这项分数会虚高（本仓实测未开 -O 时也不同，注意区分）。
 5. **官方 main() 只跑一次**，本仓用 `#define main dhrystone_main_unused` + include 的方式绕开，
-   驱动循环写在 `src/main.c` 里（见第 23 章"坑"第 2 条）。
+   驱动循环写在 `src/main.c` 里（见第 23 章"易错点"第 2 条）。
 
 ## 参考
 

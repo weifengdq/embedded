@@ -29,7 +29,7 @@ HPM SDK v1.13.0 自带 lwIP 2.x 中间件与一整套 baremetal/FreeRTOS/RT-Thre
 
 - 协议栈、网卡收发的适配层（`ethernetif.c`、`common.c`、`netconf.c`、`sys_arch.c`）**直接复用 SDK 源码**；
 - 只在 `samples/enet/enet_lwip_iperf/src/phy_glue.c` 里补 **3 个薄函数**，把 PHY 驱动接进去；
-- 不打开 `CONFIG_ENET_PHY`，避免 `board.c` 编译出基于 RTL8211 的同名函数（第 12 章坑 2）。
+- 不打开 `CONFIG_ENET_PHY`，避免 `board.c` 编译出基于 RTL8211 的同名函数（第 12 章易错点 2）。
 
 典型应用场景：
 
@@ -179,7 +179,7 @@ hpm_stat_t board_init_enet_phy(ENET_Type *ptr)
 | 找到连接转换盒的网卡 | `ethtool <if> \| grep -i "link detected"\|Speed` | 本机为 `enp6s0`（1000 Mb/s Full，carrier=1）；`enx001ec0d1c337` 是 10BASE-T1S 的 USB 网卡（LAN8651 用），不要动 |
 | 配置 IP | `ip addr add 192.168.2.1/24 dev enp6s0` | 保留原有 192.168.0.1/24，避免影响别人 |
 | 清 ARP 缓存 | `ip neigh flush dev enp6s0` | 板子被重新烧写后 MAC/IP 映射可能残留 |
-| 工具 | `iperf`（v2.1+） | **不是 iperf3**，见第 7 节坑 1 |
+| 工具 | `iperf`（v2.1+） | **不是 iperf3**，见第 7 节易错点 1 |
 
 > 注意：主机 `enp3s0` 是 SSH 上行（<host>/24），**任何情况下不要动**；
 > `enp4s0` 无 carrier（未接）；`enx001ec0d1c337` 是 tp-net1 的 10BASE-T1S USB 网卡。
@@ -194,7 +194,7 @@ hpm_stat_t board_init_enet_phy(ENET_Type *ptr)
 |---|---|---|
 | 板卡 | hpm5e31_1（HPM5E31IPB1，CPU 480 MHz） | 本章例程 |
 | PHY | YT8011AN，1000BASE-T1，**Slave** | 第 12 章配置 |
-| MAC 接口 | RGMII，PHY 侧 RXC 2 ns 延迟，ENET 侧 delay 0 | EXT 0x9001=0x0110 |
+| MAC 接口 | RGMII，PHY 侧 RXC 2 ns 延迟，ENET 侧 delay 0 | EXT 0x9001=0x0110（R10 起 TXC 档位 4 → 0x0140，见 §49.9.16） |
 | 协议栈 | lwIP 2.1.2，baremetal（`NO_SYS=1`），轮询模式 | `-DLWIP_DHCP=0` |
 | 收发 | 零拷贝 TX/RX，TX/RX 各 30 个描述符，单缓冲 1536 B | `inc/…` 见 3 节表 |
 | MTU | 1500 | `ethernetif.c` 默认 |
@@ -203,7 +203,7 @@ hpm_stat_t board_init_enet_phy(ENET_Type *ptr)
 | 板端 IP / MAC | 192.168.2.100/24 / 00:00:00:00:D0:0E（OTP 无有效 MAC，走默认/衍生值） | 串口 `ip` 命令 |
 | netif | `en`（netif index = 1） | 串口 `ip` 命令 |
 | 主机网卡 | enp6s0，1000 Mb/s Full，192.168.2.1/24 | `ethtool enp6s0` |
-| 主机工具 | **iperf2 2.2.1**（`/usr/bin/iperf`），内核 7.0.0-38-generic | 不用 iperf3（见第 7 节坑 1） |
+| 主机工具 | **iperf2 2.2.1**（`/usr/bin/iperf`），内核 7.0.0-38-generic | 不用 iperf3（见第 7 节易错点 1） |
 | 方向约定 | `iperf -c` = 主机→板（下行）；主机 `iperf -s` + 板端 `iclient` = 板→主机（上行）；**未使用 `-R`** | |
 | 对端 | 1000BASE-T1↔RJ45 转换盒，拨码 1000M Master | |
 
@@ -309,7 +309,9 @@ TCP 逐秒速率（下行，摘自主机日志）：
 4. **CPU 只增加约 4 个百分点（20.3% → 24.7%）**：说明 ENET DMA + 零拷贝已经把搬运开销降到很低，
    剩余开销集中在协议栈处理（校验和、pbuf 管理、TCP 状态机）。
 5. **未观察到链路层错误**：`link` 命令期间 PHYSR 恒为 0x8400、GBSR 恒为 0x3000，
-   说明 RGMII 时序（PHY 侧 2 ns 延迟 + ENET 侧 0）在 1000M 下稳定。
+   说明 RGMII 时序（当时 PHY 侧 RXC 2 ns + TXC 档位 1 + ENET 侧 0）在 1000M 下稳定。
+   R10 已把 TXC 档位改为 4（档位 1 有约 1% 板→主机 CRC 误码），见第 49 章 §49.9.16。
+   > 注：本条只说明链路能通，不代表 0 误码；误码统计要看主机 `rx_crc_errors`。
 
 ### 13.8.2 可调参数与预期影响
 
@@ -322,7 +324,7 @@ TCP 逐秒速率（下行，摘自主机日志）：
 | `PBUF_POOL_SIZE` | 30 | 必须 ≥ TX 描述符数 | 否则 TX 饿死 |
 | `MEM_SIZE` | 32 KB | ↑ | 更多并发连接；DLM 余量不足 |
 | `-O3` | 开启 | 必开 | 关闭后吞吐下降（未量化） |
-| ENET 侧 RGMII RX delay | 0 | 0~7 档 | 仅影响误码率；当前无错包，无需调 |
+| ENET 侧 RGMII RX delay | 0 | 0~7 档 | 仅影响误码率；R10 后 PHY TXC=4 + RX=0 已零误码，无需调 |
 | 接收中断模式 | 关闭（轮询） | 打开 `__ENABLE_ENET_RECEIVE_INTERRUPT=1` | 小包延迟更低；吞吐可能略降（中断开销） |
 
 
@@ -430,11 +432,12 @@ TCP 下行 935 Mbit/s（CPU 24.7%）、UDP 下行 944 Mbit/s（丢包 ≤0.25%�
 2. **64 B 小包 605 kpps（310 Mbit/s）**：小包吞吐由 PPS 决定，310 Mbit/s ÷ 64 B ≈ 605 kpps，
    对应每包约 790 ns，接近 1000BASE-T1 最小帧间隔下的理论上限（64 B 帧线上时间约 0.67 µs）。
 3. **双向同时打流合计 652 Mbit/s**（369 + 283），低于单向 847/462，但方向间没有出现链路错误或重传风暴。
-4. 上行窗口内**重传 0、超时 0**，说明 RGMII 时序（PHY 侧 2 ns + ENET 0 档）与 lwIP TX 路径稳定。
+4. 上行窗口内**重传 0、超时 0**，说明 RGMII 时序（当时 PHY 侧 TXC 1 + ENET 0 档）与 lwIP TX 路径稳定；
+   R10 起 TXC=4（见 §49.9.16），误码已归零。
 5. UDP 下行这一轮只起了 TCP 服务端，主机 `iperf -u` 的板端计数没有采到（发送 944 Mbit/s 但无 ack）；
    UDP 数据仍以 5.4 节 2026-10-30 的实测为准，复测时板端要先 `iserver udp`。
 
-## 13.9 坑与注意事项
+## 13.9 易错点与注意事项
 
 1. **lwIP 的 lwiperf 是 iperf2 协议，不能用 iperf3 打流**。
    现象：`iperf3 -c 192.168.2.100` 连接被拒或立刻断开；`iperf -c` 正常。

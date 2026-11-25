@@ -74,7 +74,7 @@ bash samples/mcal/eth_irq/host/run_irq_matrix.sh --lock-wait 1800
 python3 tools/figs/mcal_eth_irq.py --log logs/20261102-184310-eth_irq-host.log
 ```
 
-## 6. 关键点与坑
+## 6. 关键点与易错点
 
 1. **ISR 里不要搬数据**：ISR 只计数、记 mcycle、清 W1C 状态位，数据由主循环 `Eth_GetRxBuffer` 取。
 2. **从中断模式切回轮询必须先停 DMA、关 PLIC**：`Eth_Init` 会 `memset` 掉驱动状态（`Base=NULL`），

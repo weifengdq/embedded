@@ -182,7 +182,7 @@ static void run_bench(uint32_t seconds)
     /* 丢弃第一个 tick 的相位误差：先等一个整周期 */
     t0_ms = bsp_uptime_ms();
     tick0 = s_tick;
-    /* 测量窗口内不轮询 shell：其它命令会 Stop/Start 定时器，污染 tick 计数（第 45 章坑 45-2） */
+    /* 测量窗口内不轮询 shell：其它命令会 Stop/Start 定时器，污染 tick 计数（第 45 章易错点 45-2） */
     while ((bsp_uptime_ms() - t0_ms) < (seconds * 1000u))
     {
     }

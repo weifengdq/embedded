@@ -61,7 +61,7 @@ adcdma: 2000 ms, irq=40001 -> 20000.5 SPS (expected 20000)
 对比：软件轮询同一通道 sd≈53 LSB、吞吐 607 kHz 且抖动大；**PWM 触发 + DMA 的间隔抖动只有 1 µs、
 采样率精确 20 kSPS**，适合电流环等"时间对齐要求高"的场景。
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. 触发链路要"先 TRGM、后使能 PWM"，否则先到来的触发会丢（本示例最后才 pwm_trigger_start()）。
 2. PWM 触发源用 PWM0 的计数器 0 + 比较点 16（pwmv2_set_trigout_cmp_index(pwm, 0, 16)），

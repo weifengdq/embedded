@@ -116,7 +116,7 @@ UM §45.2.2（p.744）：`CR[CMPINIT]` 决定计数开始时的输出电平，`C
 
 **捕获引脚从哪来**：通道 0/1 的捕获输入来自 IOC 引脚复用；**通道 2/3 的捕获输入还可以
 来自 TRGM**（`HPM_TRGM0_OUTPUT_SRC_GPTMR0_CAPT_2/3`），这就是第 14 章把 PWM 的
-TRGO 送进 GPTMR 做纯硬件测量的依据。代价见 §15.10 坑 15-3。
+TRGO 送进 GPTMR 做纯硬件测量的依据。代价见 §15.10 易错点 15-3。
 
 ### 15.4.5 输入监测（Monitor）
 
@@ -181,7 +181,7 @@ void gptmr_isr(void)
 | 路径 | `samples/gptmr/gptmr_capture_measure/` |
 | 覆盖特性 | `measure_width` 硬件测周期/占空比、捕获中断、TRGM 内部路由、外部引脚捕获入口 |
 | 关键配置 | CH3 输出比较产生 1 kHz/25% 方波（可 `crate` 改）；CH2 捕获；`mode = gptmr_work_mode_measure_width`；外部入口 PC00(`TRGM_P_00`) |
-| 实测现象 | 片内 GPTMR 比较输出 → TRGM 的**输入源在本板不送达**（cap=0），见坑 15-7；外部 PC00 入口已配好，接信号发生器即可验证 |
+| 实测现象 | 片内 GPTMR 比较输出 → TRGM 的**输入源在本板不送达**（cap=0），见易错点 15-7；外部 PC00 入口已配好，接信号发生器即可验证 |
 | 实测日志 | `20261030-122956-gptmr_capture_measure.log` |
 
 ```c
@@ -203,7 +203,7 @@ hgh = gptmr_channel_get_counter(GPTMR, CAP_CH, gptmr_counter_type_measured_duty_
 | 内部自环（GPTMR_OUT3→TRGM→CAPT_2） | **捕获 0 次** | `cstat` 反复打印"还没有捕获事件" |
 | 外部入口 | PC00→`TRGM_P_00`→CAPT_2 已配置，未接信号 | `csrc 1` |
 
-> 这与第 17 章坑 17-7 / 待确认 17-F 是同一个现象：**本板上 GPTMR 比较输出、PLB 输出
+> 这与第 17 章易错点 17-7 / 待确认 17-F 是同一个现象：**本板上 GPTMR 比较输出、PLB 输出
 > 这类"内部信号源"送到 TRGM 后，GPTMR 捕获通道收不到事件**；而 PWM 的 TRGO 是能送达的
 > （第 14 章 PWM TRGO6→CAPT_2 实测成功）。因此本章例程保留外部 PC00 输入通道作为主用法。
 
@@ -262,7 +262,7 @@ hz_max_realistic ≈ 1 / (ISR 执行时间 + 中断进出开销)
 5. **需要硬件级精度**时改用捕获模式（§15.4.4），让 GPTMR 硬件记录边沿时刻，
    软件只读结果，可把抖动压到 1 tick。
 
-## 15.10 坑与注意事项
+## 15.10 易错点与注意事项
 
 1. **现象**：`clock_get_frequency(clock_gptmr0)` 返回 0，`reload` 算成 0，中断不来。
    **原因**：板级 `init_board_clock()` 只把 PWM/QEI/PLB 等加进 clock group，
@@ -287,7 +287,7 @@ hz_max_realistic ≈ 1 / (ISR 执行时间 + 中断进出开销)
    **原因**：本板实测这些"内部信号源"到 TRGM 后再进捕获通道不生效，而 PWM 的
    `PWM0_TRGO_n` 到 `GPTMR0_CAPT_2` 是能送达的（第 14 章实测成功）。
    **解决**：捕获外部信号请走引脚入口（如 PC00 = `TRGM_P_00`，本例程 `csrc 1`）；
-   纯片内自环请改用"PWM TRGO → 捕获"并接受窄脉冲漏采（见坑 15-3）。
+   纯片内自环请改用"PWM TRGO → 捕获"并接受窄脉冲漏采（见易错点 15-3）。
    完整现象与排查见第 17 章待确认 17-F。
 5. **现象**：用了 GPTMR3 之后 `board_delay_ms()` 变得不准甚至卡死。
    **原因**：本板 `BOARD_DELAY_TIMER = GPTMR3`（`board.h`），被 BSP 占用。
@@ -340,7 +340,7 @@ hz_max_realistic ≈ 1 / (ISR 执行时间 + 中断进出开销)
 |---|---|---|---|
 | 15-A | 100 Hz / 10 kHz / 100 kHz 下的抖动与 ISR 占用率 | **已知限制：本轮板卡排队被别人占满，三档没排上**。1 kHz 数据见表 15-6（σ=0.194 us、pp=1.01 us）；频率升高后的 ISR 占用率可以用 `grate` + `gstat` 直接量，命令已就绪 | `bash scripts/hwrun.sh gptmr/gptmr_timer_irq --secs 24 --send "grate 100;gstat;grate 10000;gstat;grate 100000;gstat"`，对比三档 σ/pp 与主循环吞吐 |
 | 15-B | 定时器硬件抖动（引脚输出） | **已知限制：需要示波器/逻辑分析仪**。片内替代方案行不通——把比较输出经 TRGM 送引脚再 LOOP_BACK 回捕获，量化仍是 10 ns，比要测的 ns 级抖动还粗 | 示波器测 GPTMR 比较输出引脚（`init_gptmr0_channel2_pin_as_output`：OUT2→PD07、OUT3→PD15），用余辉/直方图测边沿抖动；或与 PTPC 秒脉冲比对 |
-| 15-C | 捕获模式下的最小可测脉宽 | **已知限制：需要信号发生器**，本板没有可编程窄脉冲源。理论下限先算清：捕获在 `f_gptmr` 上升沿采样，脉宽 < 2 个周期（10 ns/拍 → 20 ns）必漏 | 信号发生器产生 10 ns~1 us 可调窄脉冲进 PC00（`TRGM_P_00`→CAPT_2），逐步缩窄，记录“开始丢数”的宽度；也可用 PWM 输出经引脚（第 14 章，坑 14-3 已给出 5 ns 漏采的旁证） |
+| 15-C | 捕获模式下的最小可测脉宽 | **已知限制：需要信号发生器**，本板没有可编程窄脉冲源。理论下限先算清：捕获在 `f_gptmr` 上升沿采样，脉宽 < 2 个周期（10 ns/拍 → 20 ns）必漏 | 信号发生器产生 10 ns~1 us 可调窄脉冲进 PC00（`TRGM_P_00`→CAPT_2），逐步缩窄，记录“开始丢数”的宽度；也可用 PWM 输出经引脚（第 14 章，易错点 14-3 已给出 5 ns 漏采的旁证） |
 | 15-D | 输入监测（MONITOR）阈值行为 | **已知限制：试验命令跑到了但窗口被前序命令占满，没留下 `dmon` 输出**。寄存器层面已确认单位：`gptmr_channel_monitor_config()` 把 `min/max` 直接写进 CMP0/CMP1（32 位计数器比较值），**单位是 gptmr 时钟周期（10 ns/tick），不是 ns** | `samples/plb/plb_trgm_diag` 的 `dmon <min> <max>`：1 kHz 输入（周期 100000 tick）时对比 `dmon 500000 200000`（按 tick 判据必然越下限）与 `dmon 50000 200000`（不越界）的 CAP 中断次数 |
 | 15-E | GPTMR1 是否被 RTOS 占用 | **已知限制（与 RTOS 例程冲突）** | **已复核（2026-11-02，静态核查）**：`grep -rn GPTMR1 boards/ samples/ components/` 只命中 `boards/hpm5e31_1/tool_config.hpmpc` 里的**引脚方案**（`init_gptmr1_channel2/3_pin_as_*`），板级 C 代码与所有例程都没有占用 GPTMR1；被 BSP 占用的是 GPTMR3（`board.h` 的 `BOARD_DELAY_TIMER`）。所以 GPTMR1 可以直接用，只要别和 pinmux 里那几组 GPTMR1 引脚方案冲突 |
 | 15-F | GPTMR OUT2/OUT3、PLB 输出经 TRGM 进捕获通道不触发 | **已知限制（现象定位到寄存器层，缺硅片证据）**：2026-11-02 用 `samples/plb/plb_trgm_diag` 复测，GPTMR0 CH2/CH3 的 `CR=0x00000508`（CEN+CMPEN 均在位）、`CNT` 递增、`RLD=99999`、`CMP0=49999`，说明比较输出在片内确实在跑；但 `ddirect`（OUTn 直连 CAPT_2/3）300 ms 捕获 0 次，PLB 软件注入也 0 次。`TRGM_IN/TRGM_OUT` 回读寄存器在本板恒 0（第 17 章 17-G），所以“信号到没到 TRGM”本轮证不出来 | ① 示波器/逻辑分析仪接 PD07（OUT2=TRGM_P7）、PD15（OUT3=TRGM_P15）看引脚是否翻转；② 用已知可用的源（PWM0 TRGO_6→CAPT_2）做对照，确认捕获通道没坏；③ 若引脚翻转而捕获仍 0，需厂商确认 `OUTPUT_SRC_GPTMR0_CAPT_2/3` 的对齐关系 |

@@ -71,7 +71,7 @@ BENCH_STAT metric=coremark n=3 mean=1898.1099 sd=0.02 ... cmhz=3.9544
 3. **mcycle 与 MCHTMR 时间完全一致（diff_ppm=0.0）**：480MHz 与 24MHz 都来自同一 PLL/晶振，
    实测时基可信；CoreMark 报告里 Iterations=30000（自标定结果，单轮 ≥10s，符合官方规则）。
 
-## 坑与注意事项
+## 易错点与注意事项
 
 1. **CoreMark 官方 `core_main.c` 自带 `main()` 只跑一次**，跑完就 return（嵌入式里会跑飞）。
    本仓在构建期生成一个"编译单元包装" `cm_core_main.c`：

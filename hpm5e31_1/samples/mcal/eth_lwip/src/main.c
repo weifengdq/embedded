@@ -85,7 +85,7 @@ int main(void)
 
     /* 3) netif 适配层：静态 IP 192.168.2.100/24
      *    assume_link_up 保持 false：链路状态由 EthTrcv 给出。早期为了在 EthTrcv 就绪前
-     *    先打通 lwIP，曾把它置 true（第 50 章"坑"里记了那次的现象与代价）。 */
+     *    先打通 lwIP，曾把它置 true（第 50 章"易错点"里记了那次的现象与代价）。 */
     {
         app_lwip_eth_cfg_t cfg;
         memset(&cfg, 0, sizeof(cfg));

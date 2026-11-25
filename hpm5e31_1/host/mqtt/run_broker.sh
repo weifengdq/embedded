@@ -7,7 +7,7 @@
 #   - 日志：$HOME/tmp2/mosq_test.log（log_type all，含 PINGREQ/PUBACK）
 #   - 保护：listener 只绑 192.168.2.1，不暴露到内网/外网
 #
-# 注意（Ubuntu 24.04 的坑）：/usr/sbin/mosquitto 被 AppArmor 限定只能读 /etc/mosquitto/**，
+# 注意（Ubuntu 24.04 的易错点）：/usr/sbin/mosquitto 被 AppArmor 限定只能读 /etc/mosquitto/**，
 # 用 /tmp 或 home 下的配置会报 "Unable to open config file"。这里把二进制复制到 temp2 下
 # 运行（路径不匹配 AppArmor profile 即不再受限），不改系统策略、不重启系统服务。
 #

@@ -208,7 +208,7 @@ plb_type_a_set_lut(HPM_PLB, plb_chn0, plb_type_a_table0, &lut);
 ```
 
 > 为什么用 GPTMR 的方波而不是 PWM 的 TRGO 做源？因为 TRGO 是 5 ns 窄脉冲，
-> 跨时钟域会漏采（第 14 章坑 14-3 的实测），而 GPTMR 输出是 500 us 宽脉冲，
+> 跨时钟域会漏采（第 14 章易错点 14-3 的实测），而 GPTMR 输出是 500 us 宽脉冲，
 > 捕获 100% 可靠。
 
 ### 17.8.2 pwm_basic 中的 TRGM 路由实验（反面教材，但价值很高）
@@ -241,7 +241,7 @@ plb_type_a_set_lut(HPM_PLB, plb_chn0, plb_type_a_table0, &lut);
 | 路径 | `samples/plb/plb_lut_blink/` |
 | 覆盖特性 | PLB TYPE A LUT、PLB → TRGM → 引脚输出、IOC LOOP_BACK 回读、GPTMR 捕获验证 |
 | 关键配置 | GPTMR0 CH3 输出 1 kHz → TRGM `PLB_IN_00` → LUT0 直通(0xAAAA) → `TRGM_P_15`(PF15)/`TRGM_P_14`(PF14)；PF15 开 LOOP_BACK → `TRGM_P15` → GPTMR0 CAP2 |
-| 实测现象 | LUT 回读 0xAAAA ✅、PF15 FUNC_CTL=0x00010011（alt=17=TRGM_P_15 + LOOP_BACK）✅、PF14=0x00000011 ✅；**捕获仍为 0**（见坑 17-7） |
+| 实测现象 | LUT 回读 0xAAAA ✅、PF15 FUNC_CTL=0x00010011（alt=17=TRGM_P_15 + LOOP_BACK）✅、PF14=0x00000011 ✅；**捕获仍为 0**（见易错点 17-7） |
 | 实测日志 | `logs/20261030-185324-plb_lut_blink.log` |
 
 ```c
@@ -311,7 +311,7 @@ letter:/$ lstat
 | PLB TYPE A LUT0 | `0x0000AAAA` | 写入生效 |
 | PF15 `FUNC_CTL` | `0x00010011` | alt=0x11(17)=`TRGM_P_15`，bit16=`LOOP_BACK` |
 | PF14 `FUNC_CTL` | `0x00000011` | alt=17=`TRGM_P_14`（镜像输出，供示波器） |
-| GPTMR0 CAP2 捕获数 | 0 | 仍未打通，见坑 17-7 |
+| GPTMR0 CAP2 捕获数 | 0 | 仍未打通，见易错点 17-7 |
 
 表 17-11：PLB 输出到引脚与回读的实测（`logs/20261030-185324-plb_lut_blink.log`）
 
@@ -394,7 +394,7 @@ dmon <min> <max>  GPTMR 捕获 + 输入监测（MONITOR）阈值试验
 5. **TRGM 引脚（`TRGM_Pnn`）是最省事的"内部信号引出脚"**：调试时把一个内部信号
    路由到空闲引脚，用示波器看，比改代码快得多。
 
-## 17.11 坑与注意事项
+## 17.11 易错点与注意事项
 
 1. **现象**：想用 SDM 驱动 LED 亮度，找不到"发送位流"的 API。
    **原因**：HPM 的 SDM 是 ΣΔ **接收**单元，`SDM0_DAT` 是输入引脚（UM §43.2, p.723）。
@@ -408,7 +408,7 @@ dmon <min> <max>  GPTMR 捕获 + 输入监测（MONITOR）阈值试验
    写成 `0x00FF` 之类的直觉值会得到别的逻辑。
    **解决**：先用 `SW_INJECT` 验证输出通路，再逐位推导真值表。
 4. **现象**：TRGO→TRGM→GPTMR 捕获漏事件。
-   **原因**：窄脉冲跨时钟域（第 14 章坑 14-3）。
+   **原因**：窄脉冲跨时钟域（第 14 章易错点 14-3）。
    **解决**：被测信号先在 TRGM 里"展宽"（用 `trgm_output_pulse_at_input_rising_edge`
    只能产生脉冲，不能展宽），更好的是换 GPTMR 输出或改用中断打时间戳。
 5. **现象**：SDM 配好了但 FIFO 永远没数据。

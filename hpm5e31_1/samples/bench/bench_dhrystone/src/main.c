@@ -8,7 +8,7 @@
  *     "Final values"（Int_3_Loc==7 / Enum_Loc==Ident_1 / 两个字符串），PASS 才计入统计。
  *   - DMIPS = Dhrystones/s / 1757；DMIPS/MHz = DMIPS / (CPU MHz)。
  *
- * 注意（坑）: HPM SDK 自带 dhrystone 例程打印的 "DMIPS per Second" 实际算的是
+ * 注意（易错点）: HPM SDK 自带 dhrystone 例程打印的 "DMIPS per Second" 实际算的是
  *   DMIPS/MHz（它把 Dhrystones/s 又除以了 CPU MHz），本仓例程分开打印两个值。
  *
  * 硬件: hpm5e31_1，UART4 921600 8N1

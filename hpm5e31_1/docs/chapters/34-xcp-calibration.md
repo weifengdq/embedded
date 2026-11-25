@@ -24,7 +24,7 @@
 4. 用 **A2L** 把 ELF 里的变量地址交给上位机，并用 a2ltool 校验 A2L 的语法与一致性；
 5. 复现本章的**实测数字**：CAN 1 kHz 事件率 999.0 Hz、3097 frame/s、丢帧 0、每事件打包 3.93 µs；
 6. 把同一个从站扩展到 **XCPonEth（UDP）**：4 B 传输层头、单包多 ODT、CTR 丢包统计，10 kHz/8 ODT 实测 77791 msg/s、6.85 Mbit/s、帧错误 0；
-7. 避开 13 个真实踩过的坑（AHB SRAM 消息缓冲区、CAN 帧填充、LEN 语义/4 B 对齐、UDP 无重传、MTA 推进导致不能盲重发等）。
+7. 避开 13 个真实遇到过的问题（AHB SRAM 消息缓冲区、CAN 帧填充、LEN 语义/4 B 对齐、UDP 无重传、MTA 推进导致不能盲重发等）。
 
 前置章节：第 8/9 章（MCAN/CAN FD）、第 12/13 章（RGMII+lwIP，XCPonEth 的物理/协议底座）、第 28 章（应用层 bench 与 cannelloni 网关）。
 
@@ -84,7 +84,7 @@ CAN 传输层有个容易忽略的细节：**经典 CAN 帧固定 8 字节**，�
 | SET_MTA | 0xF6 | ✓ | ✓ | 绝对地址 + 地址扩展（本板只用 0） |
 | UPLOAD / SHORT_UPLOAD | 0xF5/0xF4 | ✓ | ✓ | UPLOAD 走 MTA 自增；SHORT_UPLOAD 自带地址 |
 | DOWNLOAD | 0xF0 | ✓ | ✓ | 一帧最多 6 字节数据（8-1 命令-1 长度） |
-| MODIFY_BITS | 0xEC | 可选 | ✓ | 位域读改写，公式见 34.6 坑 6 |
+| MODIFY_BITS | 0xEC | 可选 | ✓ | 位域读改写，公式见 34.6 易错点 6 |
 | SET/GET_CAL_PAGE 等 | 0xEB..0xE7 | 可选 | ✓ | 单段单页 RAM 标定，页切换是空操作 |
 | DAQ 全套 | 0xD6..0xD3 | 可选 | ✓ | FREE/ALLOC_DAQ/ALLOC_ODT/ALLOC_ODT_ENTRY |
 | SET_DAQ_PTR/WRITE_DAQ | 0xE2/0xE1 | ✓(DAQ) | ✓ | 指针 + 条目（地址/大小/位偏移） |
@@ -103,7 +103,7 @@ CAN 传输层有个容易忽略的细节：**经典 CAN 帧固定 8 字节**，�
 |---|---|---|
 | 0x00 | CMD_OK | 正常 |
 | 0x20 | CMD_UNKNOWN | 未实现的命令（如 PGM 系列） |
-| 0x21 | CMD_SYNTAX | 命令长度不足（注意：**不能**因为 CAN 帧填充就判错，见坑 2） |
+| 0x21 | CMD_SYNTAX | 命令长度不足（注意：**不能**因为 CAN 帧填充就判错，见易错点 2） |
 | 0x22 | OUT_OF_RANGE | DAQ 列表号/ODT 号/事件号越界 |
 | 0x23 | WRITE_PROTECTED | 写只读区域（XIP Flash） |
 | 0x25 | ACCESS_LOCKED | 未 UNLOCK 就 DOWNLOAD，或 UNLOCK 的 key 错 |
@@ -227,7 +227,7 @@ XCP 是纯软件协议，但它落在 MCAN 的收发链路上。表 34-5 把协�
 | CMD 帧接收（0x555） | `MCAN_RXF0S`（F0FL 填充级） | `mcan_read_rxfifo(base,0,&rx)` | `xcp_port_can.c:can_poll()` |
 | RES/DAQ 帧发送（0x556） | `MCAN_TXFQS`（TFQF/TFQPI）→ `MCAN_TXBUF` | `mcan_transmit_via_txfifo_nonblocking()` | `xcp_port_can.c:can_send_dto()` |
 | 位时序 500 kbit/s SP87.5% | `MCAN_NBTP`（NTSEG1/NTSEG2/NSJW/NBRP） | `mcan_init(cfg.can_timing)` | `xcp_port_can.c:xcp_can_init()` |
-| 消息 RAM（AHB SRAM） | `MCAN_SIDFC/XIDFC/RXF0C/TXBC`（全在 AHB SRAM） | `mcan_set_msg_buf_attr()` + `mcan_config_ram()` | `xcp_port_can.c`（坑 1） |
+| 消息 RAM（AHB SRAM） | `MCAN_SIDFC/XIDFC/RXF0C/TXBC`（全在 AHB SRAM） | `mcan_set_msg_buf_attr()` + `mcan_config_ram()` | `xcp_port_can.c`（易错点 1） |
 | 过滤器（本板不过滤，软件判 ID） | `MCAN_GFC`（ANFS=接受非匹配帧进 FIFO0） | 默认 `mcan_get_default_config()` | `xcp_port_can.c:xcp_can_init()` |
 | 总线状态（bus-off 计数） | `MCAN_PSR`（BO/EP/EW/LEC） | `mcan_is_in_busoff_state()` | `xcp_port_can.c:can_poll()` |
 | DAQ 时间戳（1 µs） | `mcycle` CSR（非 MCAN） | `hpm_csr_get_core_mcycle()/cpu_mhz` | `samples/app/xcp_can_daq/src/main.c:now_us()` |
@@ -374,10 +374,10 @@ s d=0 只在"从站自己看自己"时成立；一过主机链路，1 ms 攒包�
 | 改 CAN FD（1M/2M，DLC≤64） | 一帧塞下大部分变量，帧数降一个数量级 | 需要 CAN FD 收发器/对端支持（本板已支持，见第 09 章） |
 | 改 XCP on UDP | 单包 1472 B、单包多 ODT；实测 6.85 Mbit/s / 77791 msg/s，提升 1~2 个数量级 | 需要以太网链路；UDP 无重传，要接受丢帧并用 CTR 统计（本章 XCP on UDP 一节） |
 
-## 34.9 坑与注意事项
+## 34.9 易错点与注意事项
 
 1. **HPM5E31 的 MCAN 消息 RAM 在 AHB SRAM，必须先注册缓冲区**。现象：`mcan_init()` 返回 2（`status_invalid_argument`），CAN 完全不通。原因：`hpm_soc_feature.h` 里 `MCAN_SOC_MSG_BUF_IN_AHB_RAM=1`，不调 `mcan_set_msg_buf_attr()` 时 `mcan_get_ram_size()` 返回 0 → `mcan_init` 走 `status_invalid_argument` 分支。解决：每个 MCAN 实例各放一份 `ATTR_PLACE_AT(".ahb_sram") uint32_t buf[MCAN_MSG_BUF_SIZE_IN_WORDS]`（640 word = 2560 B），在 `mcan_get_default_config()` **之前**调 `mcan_set_msg_buf_attr()`。本板两个节点用掉 5 KB AHB SRAM（32 KB 的 15.6%）。
-2. **CAN 帧填充 vs 命令长度**。主机（含 pyxcp，`max_dlc_required=true`）会把 CRO 补到 DLC=8，从站读到 `rx.dlc` 永远是 8。若用 `if (len != 期望字节数) 报 SYNTAX` 就永远对不上——**固定长度命令必须用 `len < 期望` 判断**（多出来的都是填充）。本板第一版就踩了这个：CONNECT 一进来就 ERR 0x21。
+2. **CAN 帧填充 vs 命令长度**。主机（含 pyxcp，`max_dlc_required=true`）会把 CRO 补到 DLC=8，从站读到 `rx.dlc` 永远是 8。若用 `if (len != 期望字节数) 报 SYNTAX` 就永远对不上——**固定长度命令必须用 `len < 期望` 判断**（多出来的都是填充）。本板第一版就遇到过这个问题：CONNECT 一进来就 ERR 0x21。
 3. **`ALLOC_ODT_ENTRY` 的 CRO 是 6 字节不是 7 字节**：`cmd, mode, list_lo, list_hi, odt, entry_count`。多写一个字节会让从站读到 0 条目，DAQ 一帧都发不出来，而错误码还是"看起来没问题"的 OK。
 4. **PID 上限**：PID 0x00..0xFB 可给 DAQ，0xFC..0xFF 被 SERV/EV/ERR/RES 占用。第一版把上限写成 `0xFC - 0xFC = 0`，结果所有列表的 `odt_count` 被"合法地"清成 0，表现为"配置全 PASS 但一帧都没有"。
 5. **时间戳吃掉 ODT0 的 4 字节**：`MAX_DTO=8` 时 ODT0 只剩 3 字节，4 字节变量必须排到 ODT1/ODT2；`WRITE_DAQ` 之后打开时间戳要重新校验容量，否则首帧静默丢数据（本板在 `SET_DAQ_LIST_MODE` 里重算，超了报 ERR_DAQ_CONFIG）。
@@ -436,7 +436,7 @@ XCPonEth 标准同时定义 TCP 与 UDP 两种传输层。本实现只做 UDP，
 - **TCP 重传会把"旧数据"迟到送进来**：1 kHz 数据流里，TCP 重传的 200 ms 前旧帧对在线标定没有价值，
   反而让时间戳与数据错位；UDP 丢帧是"看得见的缺口"，主机用 CTR 与测量变量（`g_tick_cnt`）双重判定；
 - **控制命令少而小**：CONNECT/DAQ 配置/标定读写都是几十字节的小命令，UDP 往返在局域网里 p50 只有 83.6 µs（表 34-14），
-  丢包时主机重发一次即可（本客户端对幂等命令自动重试，见"坑 12"）。
+  丢包时主机重发一次即可（本客户端对幂等命令自动重试，见"易错点 12"）。
 
 ### 34.11.2 线上格式：4 B 头 + 多条消息
 
@@ -458,7 +458,7 @@ XCPonEth 标准同时定义 TCP 与 UDP 两种传输层。本实现只做 UDP，
 > 按 ASAM XCP 1.5 与 XCPlite/pyxcp 两份实现，**LEN 不含 4 B 头**。本实现按标准做，
 > 否则 pyxcp 会把多出来的 4 字节当成载荷，命令全部解析错位。这条列进表 34-13 第 1 行，作为"规范以实现为准"的实例。
 
-4 B 对齐的规则比"长度含头"更容易踩：一个数据报里多条消息时，**非最后一条**消息的 LEN 要把填充算进去，
+4 B 对齐的规则比"长度含头"更容易出错：一个数据报里多条消息时，**非最后一条**消息的 LEN 要把填充算进去，
 最后一条保持精确长度。原因在接收侧：pyxcp 的 `EthReceiver::feed_datagram()` 是
 `datagram = datagram.subspan(header_size + length)` 顺序切分的，如果消息之间留有未计入 LEN 的填充，
 下一条消息的头就会从填充字节开始解析，表现为"约 1/4 的命令随机超时"。
@@ -527,7 +527,7 @@ ENET 寄存器/描述符、lwIP 与 SDK API、代码位置对上，和表 34-5�
 | 发响应/DAQ | `ENET_DMA_CH_TXDESC`（TDES0/1，OWN 位） | `pbuf_alloc(PBUF_RAM)` + `udp_sendto()` | `xcp_port_udp.c:eth_flush_internal()` |
 | 校验和 | `ENET_DMA_CH_TXDESC` 的 checksum offload 位 | lwIP 配置 `CHECKSUM_GEN_*=0`（硬件插入） | `components/app_lwip/app_lwip.cmake` |
 | 帧 CRC | `ENET_DMA_CH_TXDESC` 的 CRC 模式 | `ENET_TX_HW_CRC_MODE=0`（append） | `samples/app/xcp_eth/CMakeLists.txt` |
-| MTU/分片 | `ENET_*_MAXFRAMELEN` | 本板 MTU=1500，UDP 载荷上限 1472，超了要自己分片 | 本章"坑 11" |
+| MTU/分片 | `ENET_*_MAXFRAMELEN` | 本板 MTU=1500，UDP 载荷上限 1472，超了要自己分片 | 本章"易错点 11" |
 | 收发缓冲 | `ENET_TX/RX_BUFF_COUNT`（板级宏） | `PBUF_POOL_SIZE=ENET_TX_BUFF_COUNT` | `components/app_lwip/inc/lwipopts_app.h` |
 | 时间戳 | —（CPU `mcycle`，非 ENET） | `hpm_csr_get_core_mcycle()/cpu_mhz` | `samples/app/xcp_eth/src/main.c:now_us()` |
 
@@ -606,7 +606,7 @@ UDP 数据报，响应按源地址回给主机。
 结论要说清楚：**DAQ 丢包不是从站代码丢的**（板端 drop/overload 全 0、daq_frames 与 tick×ODT 对得上），
 而是 1 kHz/10 kHz 的小包突发在"板 ENET TX → 千兆车载以太网盒 → 主机 enp6s0"这段链路上丢了 0.9%~3.1%；
 同一时刻 ping 0% 丢包，说明不是链路误码，而是突发队列/环形缓冲的容量问题。主机侧已把 `SO_RCVBUF`
-调到 1 MiB，仍会丢，说明瓶颈更可能在以太网盒或板端 ENET TX 环（下一节"坑 10"给排查方法）。
+调到 1 MiB，仍会丢，说明瓶颈更可能在以太网盒或板端 ENET TX 环（下一节"易错点 10"给排查方法）。
 XCP 标准本身不提供重传，所以正确做法是：接受丢帧、用 CTR/tick 精确统计，而不是假装 DAQ 无丢包。
 
 标定与命令面在同一轮里也全部复核：CONNECT 返回 `resource=0x05、MAX_CTO=255、MAX_DTO=256、proto=0x14`，

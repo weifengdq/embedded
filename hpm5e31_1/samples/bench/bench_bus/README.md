@@ -62,11 +62,11 @@ UART（`logs/20261030-115014-bench_bus.log`）：
 
 裸写寄存器那次在串口抓包里连一个字母都没看到 —— 字节被丢弃。测 UART 吞吐请用 SDK 发送路径或 DMA。
 
-## 坑与注意事项
+## 易错点与注意事项
 
 1. **cold 必须在循环里 invalidate**：第一版只在拷贝循环外 invalidate 一次，结果 4KB/16KB 的"cold"
    其实是"第一次 cold + 后面全 warm"，测出 153MB/s 的偏高值。只有 64KB（超 cache）才自动每轮 cold。
-2. **UART 吞吐测量坑（已定位）**：直接 `while (!THRE) write(THR)` 逐字节写寄存器只会填 FIFO / 丢字节，
+2. **UART 吞吐测量易错点（已定位）**：直接 `while (!THRE) write(THR)` 逐字节写寄存器只会填 FIFO / 丢字节，
    本地测出 6.3MB/s（理论上限 92KB/s 的 68 倍），明显是假值；而且抓包里连一串字母都没出现，
    说明大量字节被丢弃。正确做法：等 `uart_stat_transmitter_empty`（TEMT）再停表，
    或用 DMA 发送 + 统计完成字节。本仓该项列为"待确认"。

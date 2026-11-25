@@ -105,7 +105,7 @@ case "$STAGE" in
     step python3 host/mqtt/pub_cmd.py --cmd period --arg 1000
     ;;
   stress)
-    # burst：不限速，暴露"上位机 paho 自身瓶颈"（第 38 章坑 6）
+    # burst：不限速，暴露"上位机 paho 自身瓶颈"（第 38 章易错点 6）
     step python3 host/mqtt/stress.py --n 1000 --qos 1 --mode both
     # steady：限速 200 msg/s，测板端稳态往返时延
     step python3 host/mqtt/stress.py --n 1000 --qos 1 --mode throughput --rate 200

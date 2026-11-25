@@ -340,7 +340,7 @@ static void cmd_flashrw(int argc, char *argv[])
     printf("  verify crc32 write=0x%08lx read=0x%08lx -> %s\r\n",
            (unsigned long) crc_w, (unsigned long) crc_r,
            (crc_w == crc_r) ? "MATCH" : "MISMATCH");
-    /* 坑: ROM API 写完 Flash 后, XIP 直读可能命中 L1 D-Cache 里的旧数据, 必须先 invalidate */
+    /* 易错点: ROM API 写完 Flash 后, XIP 直读可能命中 L1 D-Cache 里的旧数据, 必须先 invalidate */
     if (l1c_dc_is_enabled()) {
         uint32_t a0 = HPM_L1C_CACHELINE_ALIGN_DOWN(addr);
         uint32_t a1 = HPM_L1C_CACHELINE_ALIGN_UP(addr + size);

@@ -26,7 +26,7 @@ void bsp_reboot(void)
 
 uint32_t bsp_uptime_ms(void)
 {
-    /* 绝对时基：直接用 mcycle 换算，避免"每轮 <1ms 调用时整数截断为 0、时间冻结"的坑
+    /* 绝对时基：直接用 mcycle 换算，避免"每轮 <1ms 调用时整数截断为 0、时间冻结"的易错点
      * （2026-10-30 由 tp-xrce/tp-ptp 实测发现：旧实现按调用间隔累加，间隔不足 1ms 时截断成 0）。 */
     uint32_t cpu = clock_get_frequency(clock_cpu0);
     return (uint32_t) (hpm_csr_get_core_mcycle() * 1000ULL / (uint64_t) cpu);

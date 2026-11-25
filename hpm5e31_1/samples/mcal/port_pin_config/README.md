@@ -54,7 +54,7 @@ DET: before=0 after=5 delta=5
 
 - **Port 管方向/模式，Dio 管电平**：例程里 `Port_Init` 之后统一用 `Dio_ReadChannel` 读回，
   这就是 AUTOSAR 的分工（Dio 没有 Init API）。
-- **HPM 回读坑**：GPIO 输出必须置 `IOC PADx.FUNC_CTL.LOOP_BACK=1`（"force input on"），DI 才反映真实引脚电平；
+- **HPM 回读易错点**：GPIO 输出必须置 `IOC PADx.FUNC_CTL.LOOP_BACK=1`（"force input on"），DI 才反映真实引脚电平；
   否则 `Dio_ReadChannel` 对输出通道恒返回 0（SWS_Dio_00083 要求真实电平）。驱动已在 GPIO 模式下自动置位。
 - **上下拉要等稳定**：改成内部下拉后立刻读会读到旧电平（100 kΩ 对 pad 电容），例程加了 200 us 等待才通过。
 - 开漏输出写 1 是"释放"，电平由对端上拉决定——这正是 I2C 的电气模型。

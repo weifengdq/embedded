@@ -74,7 +74,7 @@ DET: last mod=80 inst=0 api=0x06 err=0x03
 4. **HTH 语义**：一个 HTH = 一个专用 TX buffer，同一 HTH 未确认前再写返回 `CAN_BUSY`
    （SWS_Can_00213），例程的 `can_send` 在 BUSY 时调用 `Can_MainFunction_Write` 后再重试。
 5. **跨用例要清硬件 FIFO**：`rxq_drain_all()` 先调 8 次 `Can_MainFunction_Read` 把残留帧抽干，
-   否则上一轮的尾帧会串进下一轮的期望序列（这是本次调试里耗时最多的坑）。
+   否则上一轮的尾帧会串进下一轮的期望序列（这是本次调试里耗时最多的易错点）。
 6. 本构建用**轮询模型**（`Can_Cfg.h` 的 `CAN_RX_PROCESSING_INTERRUPT=0`、
    `CAN_TX_CONFIRM_IN_INTERRUPT=0`），收发推进由 `Can_MainFunction_Read/Write` 完成；
    中断模型代码同源，限制见第 46 章"待确认项与风险"。

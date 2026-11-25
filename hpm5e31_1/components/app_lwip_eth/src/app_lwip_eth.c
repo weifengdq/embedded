@@ -589,7 +589,18 @@ void app_lwip_eth_stats_reset(void)
 /* ------------------------------------------------------------------ */
 /* iperf2（lwIP lwiperf，端口 5001）                                    */
 /* ------------------------------------------------------------------ */
-static void *s_iperf_session;
+/* 句柄拆分（R10.1）：旧实现把"服务端监听"和"客户端会话"共用一个 s_iperf_session，并在
+ * 报告回调里无条件清空（R9 为修 ABORTED 悬空指针）。但 lwiperf 的 server 模式里，报告回调是
+ * "每个被接受的连接"结束时调用的，监听本身（server_pcb / listener state）不随连接结束释放。
+ * 连接一结束就清句柄 ⇒ 监听句柄丢失 ⇒ 下个周期 arm_server 再发 eth iserver 会重新走
+ * lwiperf_start_tcp_server_impl → tcp_bind(5001) 失败；而该 SDK 版本的 bind 失败路径不释放
+ * 已分配的 lwiperf state 与 tcp_pcb，于是**每个周期泄漏 1 个 TCP_PCB + 192 B HEAP**
+ * （R10 15 h 实测：22 个孤儿 pcb、池 24 耗尽后 SYN 被静默丢弃 → 板子挂死）。
+ * 修法：客户端、TCP 服务端、UDP 服务端各一个句柄；报告回调只清客户端句柄（服务端连接的
+ * 终态报告里它本来就是 NULL，无副作用），监听句柄常驻，重臂时返回"已监听"，istop 统一释放。 */
+static void *s_iperf_client;       /* 单次客户端会话（DONE/ABORTED 报告后清空） */
+static void *s_iperf_tcp_server;   /* TCP 5001 监听（常驻） */
+static void *s_iperf_udp_server;   /* UDP 5001 服务端状态（常驻） */
 
 static void app_lwip_eth_iperf_report(void *arg, enum lwiperf_report_type report_type,
                                       const ip_addr_t *local_addr, u16_t local_port,
@@ -604,31 +615,32 @@ static void app_lwip_eth_iperf_report(void *arg, enum lwiperf_report_type report
            (int) report_type, ipaddr_ntoa(remote_addr), (unsigned) remote_port,
            (unsigned long) bytes_transferred, (unsigned long) ms_duration,
            (unsigned long) bandwidth_kbitpsec, (double) bandwidth_kbitpsec / 1000.0);
-    if ((report_type == LWIPERF_TCP_DONE_CLIENT) || (report_type == LWIPERF_TCP_DONE_SERVER) ||
-        (report_type == LWIPERF_UDP_DONE_CLIENT) || (report_type == LWIPERF_UDP_DONE_SERVER)) {
-        s_iperf_session = NULL;
-    }
+    /* 客户端会话任何终态（DONE_* 或 ABORTED_*）都清句柄：R9 的悬空指针问题就修在这里。
+     * 服务端监听句柄 s_iperf_tcp_server/s_iperf_udp_server 不受报告影响。 */
+    s_iperf_client = NULL;
 }
 
 int app_lwip_eth_iperf_server(bool udp)
 {
-    if (s_iperf_session != NULL) {
-        return -1;
+    void **slot = udp ? &s_iperf_udp_server : &s_iperf_tcp_server;
+
+    if (*slot != NULL) {
+        return -1;      /* 已监听：不要重复 lwiperf_start_*（会走 bind 失败并泄漏） */
     }
     if (udp) {
-        s_iperf_session = lwiperf_start_udp_server(netif_ip_addr4(&s_netif), LWIPERF_UDP_PORT_DEFAULT,
-                                                   app_lwip_eth_iperf_report, NULL);
+        *slot = lwiperf_start_udp_server(netif_ip_addr4(&s_netif), LWIPERF_UDP_PORT_DEFAULT,
+                                         app_lwip_eth_iperf_report, NULL);
     } else {
-        s_iperf_session = lwiperf_start_tcp_server_default(app_lwip_eth_iperf_report, NULL);
+        *slot = lwiperf_start_tcp_server_default(app_lwip_eth_iperf_report, NULL);
     }
-    return (s_iperf_session != NULL) ? 0 : -2;
+    return (*slot != NULL) ? 0 : -2;
 }
 
 int app_lwip_eth_iperf_client(const char *remote_ip, bool udp)
 {
     ip_addr_t remote;
 
-    if (s_iperf_session != NULL) {
+    if (s_iperf_client != NULL) {
         return -1;
     }
     if (!app_lwip_eth_parse_ip(remote_ip, &remote)) {
@@ -636,28 +648,39 @@ int app_lwip_eth_iperf_client(const char *remote_ip, bool udp)
     }
     APP_LWIP_CORE_LOCK();
     if (udp) {
-        s_iperf_session = lwiperf_start_udp_client(netif_ip_addr4(&s_netif), LWIPERF_UDP_PORT_DEFAULT,
-                                                   &remote, LWIPERF_UDP_PORT_DEFAULT,
-                                                   LWIPERF_CLIENT, -1000, 1000U * 1024U * 1024U, 0,
-                                                   app_lwip_eth_iperf_report, NULL);
+        s_iperf_client = lwiperf_start_udp_client(netif_ip_addr4(&s_netif), LWIPERF_UDP_PORT_DEFAULT,
+                                                  &remote, LWIPERF_UDP_PORT_DEFAULT,
+                                                  LWIPERF_CLIENT, -1000, 1000U * 1024U * 1024U, 0,
+                                                  app_lwip_eth_iperf_report, NULL);
     } else {
-        s_iperf_session = lwiperf_start_tcp_client_default(&remote, app_lwip_eth_iperf_report, NULL);
+        s_iperf_client = lwiperf_start_tcp_client_default(&remote, app_lwip_eth_iperf_report, NULL);
     }
     APP_LWIP_CORE_UNLOCK();
-    return (s_iperf_session != NULL) ? 0 : -2;
+    return (s_iperf_client != NULL) ? 0 : -2;
 }
 
 void app_lwip_eth_iperf_stop(void)
 {
-    if (s_iperf_session != NULL) {
-        lwiperf_abort(s_iperf_session);
-        s_iperf_session = NULL;
+    APP_LWIP_CORE_LOCK();
+    if (s_iperf_client != NULL) {
+        lwiperf_abort(s_iperf_client);
+        s_iperf_client = NULL;
     }
+    if (s_iperf_tcp_server != NULL) {
+        lwiperf_abort(s_iperf_tcp_server);
+        s_iperf_tcp_server = NULL;
+    }
+    if (s_iperf_udp_server != NULL) {
+        lwiperf_abort(s_iperf_udp_server);
+        s_iperf_udp_server = NULL;
+    }
+    APP_LWIP_CORE_UNLOCK();
 }
 
 bool app_lwip_eth_iperf_running(void)
 {
-    return s_iperf_session != NULL;
+    return (s_iperf_client != NULL) || (s_iperf_tcp_server != NULL) ||
+           (s_iperf_udp_server != NULL);
 }
 
 /* ------------------------------------------------------------------ */

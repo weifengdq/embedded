@@ -110,7 +110,7 @@ static void sync_vin_from_uds(void)
  *
  * 为什么不在回调里直接调 app_uds_handle()：lwIP 的回调在收包路径上，而 UDS 慢服务
  * （0x31 例程、擦 Flash、0x78 pending）会阻塞上百 ms。阻塞期间 ENET 发送环不再被处理，
- * 已经 tcp_write 出去的 0x8002 肯定应答会跟着迟到——第 32 章“坑 3”有 tcpdump 实测
+ * 已经 tcp_write 出去的 0x8002 肯定应答会跟着迟到——第 32 章“易错点 3”有 tcpdump 实测
  * （ACK 推迟 150 ms、三条帧被拼进同一个 TCP 段）。入队后回调立即返回，ACK 走独立小包。 */
 #define DIAG_QDEPTH 2u
 
@@ -178,7 +178,7 @@ static int doip_bench_send(uint32_t n, uint32_t cnt)
         uint32_t t0 = app_lwip_now_ms();
         /* TCP_SND_BUF(8*MSS=11.68 KB) 只放得下 2 条 4 KB 报文；第 3 条起 tcp_write
          * 返回 ERR_MEM，要等对端 ACK 腾出窗口。这里在**主循环上下文**里 pump lwIP
-         * （不是在 lwIP 回调里，所以安全），最多等 50 ms/帧（第 32 章坑 5）。 */
+         * （不是在 lwIP 回调里，所以安全），最多等 50 ms/帧（第 32 章易错点 5）。 */
         while (app_doip_send_diag(&s_doip, s_cur_ta, s_bench, n) != 0) {
             app_lwip_poll();
             app_doip_poll(&s_doip);

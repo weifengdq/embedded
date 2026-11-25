@@ -55,7 +55,7 @@ letter:/$ dump 0x1000 48
 80001020: 00 30 00 80 00 00 00 00 00 30 00 80 00 00 00 00
 ```
 
-## 关键点 / 坑（重要）
+## 关键点 / 易错点（重要）
 
 - `fw_info[0].offset = 0x2000` **不是**"应用在 Flash 偏移 0x2000"，而是**相对 boot_header 起点(0x1000)**
   的偏移：实际加载地址 = 0x1000 + 0x2000 = **0x8000_3000**，与 `load_addr/entry=0x80003000` 一致。
@@ -63,4 +63,4 @@ letter:/$ dump 0x1000 48
 - 0x1000 的 0x90 字节 = `boot_header_t`(16 B) + `fw_info_table_t`(0x50 B) + 哈希/IV 区域（本工程 hash 全 0，未签名）。
 - `nor_cfg_option` = `fcf90002 00000005 00001000 00000000`（tag/option0/option1/option2），
   与 `board.c` 的 `option[4]` 一致；`board.h` 的 `BOARD_APP_XPI_NOR_CFG_OPT_OPT0=6` 是 SDK 模板默认值，
-  两者不一致（见第 21 章坑 3）。
+  两者不一致（见第 21 章易错点 3）。

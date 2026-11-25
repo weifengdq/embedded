@@ -40,7 +40,7 @@ for i, (title, body, color) in enumerate(PARTS):
 top = len(PARTS) * 1.28 + 0.55
 ax.text(0.1, top, "本书结构与四条阅读路径", fontsize=13, fontweight="bold", color="#24292F")
 ax.text(0.1, top - 0.42,
-        "入门 00→01→02→03 ｜ 移植 按外设跳读 04~22 ｜ 查错 26 + 各章坑清单 + 52 附录 ｜ 选型 29→42→43（MCAL 从 43 进）",
+        "入门 00→01→02→03 ｜ 移植 按外设跳读 04~22 ｜ 查错 26 + 各章易错点清单 + 51 附录 ｜ 选型 28→42→43（MCAL 从 42 进）",
         fontsize=7.8, color="#57606A")
 
 save(fig, 0, "fig-00-1-book-map")

@@ -32,7 +32,7 @@ A2 = 1
 
 日志：`logs/20261030-104826-letter_shell_basic.log` 等。
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 - `shell_cfg.h` 必须同时使能 **CR 与 LF** 回车，否则串口发 `\r\n` 时 LF 会被当成普通字符塞进下一行命令；
 - 命令表用 GCC 段边界 `__start_shellCommand/__stop_shellCommand`（本仓库已补），否则命令找不到；

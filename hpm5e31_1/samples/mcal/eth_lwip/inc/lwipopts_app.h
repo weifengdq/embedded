@@ -24,6 +24,16 @@
 #define MEMP_NUM_UDP_PCB        (8)
 #define MEMP_NUM_SYS_TIMEOUT    (12)
 
+/* TCP PCB 池：SDK 默认 10。R9 耐久测试里出现"每轮 600 s 长会话泄漏 1 个 pcb（脱离链表、
+ * 不可回收）"，10 个周期后池满 -> 新 SYN 因 tcp_alloc 失败被静默丢弃（监听"还在"但连不上）。
+ * 这里扩到 24 留出余量；根因修复见 app_lwip_eth.c 报告回调（ABORTED 也要清会话指针）。 */
+#ifndef MEMP_NUM_TCP_PCB
+#define MEMP_NUM_TCP_PCB        (24)
+#endif
+#ifndef MEMP_NUM_TCP_PCB_LISTEN
+#define MEMP_NUM_TCP_PCB_LISTEN (6)
+#endif
+
 #define LWIP_UDP                1
 #define LWIP_TCP                1
 #define LWIP_ICMP               1
@@ -44,7 +54,7 @@
 #define LWIP_NETIF_LINK_CALLBACK 1
 #define LWIP_NETIF_STATUS_CALLBACK 0
 
-#define LWIP_DEBUG              1
+#define LWIP_DEBUG              0
 #define LWIP_DBG_MIN_LEVEL      0
 #define NETIF_DEBUG             LWIP_DBG_OFF
 #define PBUF_DEBUG              LWIP_DBG_OFF
@@ -58,5 +68,17 @@
 #define ICMP_DEBUG              LWIP_DBG_OFF
 #define UDP_DEBUG               LWIP_DBG_OFF
 #define ETHARP_DEBUG            LWIP_DBG_OFF
+
+/* ---- 诊断开关（默认全关）----------------------------------------------------
+ * 打开后 lwIP 记账 mem/memp 用量，配合串口命令 lwipstat 可看堆与 pcb/seg 池的
+ * 实时占用，用于定位"长时间多次会话后监听失效"这类资源泄漏。
+ * 发布/性能测试务必保持关闭：这些计数会占用 RAM 并拉低 iperf 吞吐，
+ * 需要排查泄漏时临时改为 1、重编译再测。 */
+#ifndef LWIP_STATS
+#define LWIP_STATS              0
+#endif
+#define MEM_STATS               0
+#define MEMP_STATS              0
+#define LWIP_STATS_DISPLAY      0
 
 #endif /* LWIPOPTS_APP_H */

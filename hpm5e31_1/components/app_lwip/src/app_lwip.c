@@ -118,7 +118,7 @@ void app_lwip_print(void)
            gnetif.hwaddr[0], gnetif.hwaddr[1], gnetif.hwaddr[2],
            gnetif.hwaddr[3], gnetif.hwaddr[4], gnetif.hwaddr[5]);
     /* 注意：ipaddr_ntoa() 返回静态缓冲区，一行 printf 里调 3 次会全部打印成最后一个，
-       所以这里拆成 3 次 printf（第 29 章"坑"里有记录） */
+       所以这里拆成 3 次 printf（第 29 章"易错点"里有记录） */
     printf("[lwip] IP=%s link=%s\r\n", ipaddr_ntoa(netif_ip_addr4(&gnetif)),
            netif_is_link_up(&gnetif) ? "UP" : "DOWN");
     printf("[lwip] MASK=%s\r\n", ipaddr_ntoa(netif_ip_netmask4(&gnetif)));

@@ -182,15 +182,15 @@ bash scripts/hwrun.sh reliability/soak_test --secs 1800 --lock-wait 1800
 
 **救砖顺序**：J-Link 复位烧写（首选）→ 按住 USR BTN 上电进 ISP（PA03=1）→ 检查电源/晶振。
 
-## 25.9 坑与注意事项
+## 25.9 易错点与注意事项
 
 1. **BOOT_MODE 与按键/LED 共用引脚**：复位瞬间按住 BTN 会进 ISP，程序"不跑"（第 01 章）。
-2. **外设时钟未开就访问寄存器**：总线错误/死机（本仓库 `soak_test` 最初就踩了 GPTMR0 时钟未开，
+2. **外设时钟未开就访问寄存器**：总线错误/死机（本仓库 `soak_test` 最初就遇到过 GPTMR0 时钟未开，
    现象是 shell banner 打到一半就停）。访问任何外设前 `clock_add_to_group()`。
 3. **默认 trap 不保存现场**：死机没有信息，建议自写 trap（打印 mcause/mepc/mtval）或 J-Link halt。
 4. **printf 在中断里重入**：newlib `printf` 非可重入，中断里打印可能死锁；用环形缓冲或只在主循环打印。
 5. **cache 与 DMA**：DMA 写内存后 CPU 读可能读到旧值（第 19 章）。
-6. **栈溢出**：DLM 只有 128 KB，大局部数组/深递归会踩到堆；用 `size`/map 检查。
+6. **栈溢出**：DLM 只有 128 KB，大局部数组/深递归会遇到堆；用 `size`/map 检查。
 7. **长稳测试会占住整块板**：用 `--lock-wait` 排队，别让其他任务等太久。
 
 ## 25.10 参考来源

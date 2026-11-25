@@ -47,7 +47,7 @@ CAN 收发器的情况下，自证 HPM5E31 的 4 个 MCAN 实例、消息 RAM �
 | `test` | 重新跑 16 项自检 |
 | `stat` | 打印 4 个实例的 PSR/ECR（活动态、LEC、TEC/REC、bus-off） |
 
-## 关键点 / 坑
+## 关键点 / 易错点
 
 1. **消息 RAM 必须放 AHB_SRAM**：HPM5E31 的 `MCAN_SOC_MSG_BUF_IN_AHB_RAM=1`，
    缓冲区必须用 `ATTR_PLACE_AT(".ahb_sram")` 放 0xF0200000 起 32 KB，并调用

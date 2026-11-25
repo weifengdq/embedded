@@ -409,7 +409,7 @@ static void drain_host_tx(void)
 
         if (app_can_send(&s_can[channel], &af, 0U) != 0) {
             /* MCAN TX FIFO 满（非阻塞发送返回失败）：**保留队尾，下一轮 poll 重试**。
-             * R8 实测坑：旧代码在这里直接丢帧且不回 echo，主机满速发送（cangen -g 0）
+             * R8 实测易错点：旧代码在这里直接丢帧且不回 echo，主机满速发送（cangen -g 0）
              * 到 494 帧时 10 个 TX URB 全部泄漏、netdev TX 队列永久 stop
              * （cansend 报 "No buffer space available"、tx_packets 不再增长）。
              * candleLight 的正确行为是背压：主机本来最多只有 10 帧在途，16 深环足够。 */

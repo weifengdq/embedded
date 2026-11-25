@@ -1,7 +1,7 @@
 /*
  * app_someip_selftest.c —— 协议层自证测试（不需要上位机，串口直接出 PASS/FAIL）
  *
- * 为什么需要它：SOME/IP 的坑大多集中在"字节序 / Length 语义 / SD option 长度 / TP offset"，
+ * 为什么需要它：SOME/IP 的易错点大多集中在"字节序 / Length 语义 / SD option 长度 / TP offset"，
  * 这些都能在板端用"编码 -> 捕获发送 -> 回灌解析"的闭环验证，不必每次都上电连主机。
  * 上板后的第一条命令就是 selftest，10 ms 内出结论。
  *

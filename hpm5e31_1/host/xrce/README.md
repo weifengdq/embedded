@@ -26,7 +26,7 @@ bash host/xrce/build_agent.sh                 # 默认构建到 ${TMPDIR}/xrce_a
 XRCE_BUILD_DIR=$HOME/temp/xrce bash host/xrce/build_agent.sh --prefix $HOME/temp/xrce/prefix
 ```
 
-脚本做的三件事（每一步都是踩坑后的结果）：
+脚本做的三件事（每一步都是易错后的结果）：
 
 1. 下载并 **PIC 静态编译 spdlog 1.9.2**（`-DCMAKE_POSITION_INDEPENDENT_CODE=ON`）；
 2. `cmake` Agent：`-DUAGENT_SUPERBUILD=OFF -DUAGENT_P2P_PROFILE=OFF -DUAGENT_DISCOVERY_PROFILE=OFF

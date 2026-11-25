@@ -173,7 +173,7 @@ int app_uds_init(app_uds_t *u, const app_uds_cfg_t *cfg)
     u->dtc_setting_on = true;
     u->comm_mode = 0u;
     /* 注意：DTC 内存由调用者在 init 之前装填（app_uds_dtc_init + app_uds_dtc_set），
-     * 这里不能 memset，否则会把已经装载的故障码清掉（第一版就踩了这个坑）。 */
+     * 这里不能 memset，否则会把已经装载的故障码清掉（第一版就遇到过这个问题）。 */
     return 0;
 }
 

@@ -65,7 +65,7 @@ def main():
 
     ax.text(0.03, 0.95, "SPI1 <-> SPI3 杜邦线 GPIO 回环（Port/Dio 实测路径）",
             fontsize=12, fontweight="bold", color=COLORS["dark"])
-    ax.text(0.03, 0.05, "坑：IOC PADx.FUNC_CTL.LOOP_BACK=1 才能让 DI 回读真实引脚电平；"
+    ax.text(0.03, 0.05, "易错点：IOC PADx.FUNC_CTL.LOOP_BACK=1 才能让 DI 回读真实引脚电平；"
                         "改内部上下拉后需 ~200 us 稳定再采样。",
             fontsize=8.2, color=COLORS["red"])
     save(fig, "44-mcal-core", "fig-44-2-port-loopback")

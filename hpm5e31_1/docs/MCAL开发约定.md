@@ -7,7 +7,7 @@
 
 在 `autosar` 分支上，为 HPM5E31（hpm5e31_1 板）从零实现一套 **AUTOSAR CP MCAL 子集**（13 个模块），
 每个模块有真实可编译的驱动、AUTOSAR 风格配置、可交互例程、**上板实测数据**，并写成书稿第 42~50 章，
-最终合成 v1.3.0 PDF（带三级书签，不入 git），推 git、写 handover。
+最终合成 v1.3.0 PDF（带三级书签，不入 git），推 git、写交接记录。
 
 用户原话要点：**"实现 hpm5e31 的 mcal，有条件的需要上板测试，文档（也归到 pdf 里面），测试结果、对比要详尽"**。
 
@@ -168,7 +168,7 @@ sdk_app_src(src/main.c)
 2. 硬件要求/接线表（引脚、对端、是否需要外部线）；
 3. 编译/运行命令（含 `hwrun.sh` 一行）与命令表；
 4. **实测现象**（贴串口输出片段）+ **日志路径**（真实 `logs/...`）；
-5. 关键点（AUTOSAR API 用法、坑、与 SDK 直调的区别）；
+5. 关键点（AUTOSAR API 用法、易错点、与 SDK 直调的区别）；
 6. 待确认项（若有）。
 
 ### 6.4 每个例程的验收（缺一不可）
@@ -200,7 +200,7 @@ sdk_app_src(src/main.c)
 
 - 章节文件：`docs/chapters/44-mcal-core.md` 这种命名，**首行 `# 第 44 章 标题`**；
 - 门槛（`tools/check_docs.py` 会查）：≥250 行、≥8 个 `##` 二级标题、≥3 张表、≥2 张图、≥1 段代码、
-  必须含"文档信息 / 本章导览 / 概述 / 工作原理 / 寄存器 / 例程 / 实测 / 性能 / 坑 / 对比 / 参考来源 / 待确认项与风险"关键词；
+  必须含"文档信息 / 本章导览 / 概述 / 工作原理 / 寄存器 / 例程 / 实测 / 性能 / 易错点 / 对比 / 参考来源 / 待确认项与风险"关键词；
 - 文档信息表版本行写：`v1.3.0（2026-11-02，R6 MCAL）`；
 - 图必须由脚本生成：脚本放 `tools/figs/mcal_<短名>.py`，输出到 `docs/figures/<章号>-<短名>/*.png`（300 dpi 白底），
   正文用 `![图 44-1 说明](figures/44-mcal-core/fig-44-1-xxx.png)` 引用；**图号连续、正文必须引用**；
@@ -208,7 +208,7 @@ sdk_app_src(src/main.c)
 - 引用格式：`SWS_Mcu §x.y`（附本地文本路径）、`RM §x.y (p.N)`、`DS §x.y (p.N)`、
   `hpm_sdk/drivers/src/xxx.c:NNN`、`samples/mcal/xxx/`、真实 `logs/...`、上游 URL；
 - **对比要详尽**：与 HPM SDK 直调、与 TC4x MCAL、与 NXP S32K3 RTD 同类模块对比（API 完成度、配置方式、
-  资源开销、性能、坑），数据来源写清；
+  资源开销、性能、易错点），数据来源写清；
 - `## 待确认项与风险`：只允许"已实测 / 已定位 / 已知限制（原因 + 一条复跑命令）"三态，**禁止裸"待确认"**；
 - 去 AI 味：见 `docs/写作规范.md` §4 黑名单词，多用短句、数字、工程口吻；
 - 参考来源必须给上游链接（AUTOSAR、HPM、Infineon、NXP、GitHub），本地路径只作补充。
@@ -250,7 +250,7 @@ sdk_app_src(src/main.c)
 | NXP S32K3 RTD/MCAL 6.0.0 | Windows `D:\NXP\SW32K3_S32M27x_RTD_R21-11_6.0.0\eclipse\plugins\<Mod>_TS_*\`（每个模块含 include/src/doc） |
 | NXP Integration Reference Examples | `D:\NXP\Integration_Reference_Examples_S32K3XX_2023_04\` |
 | HPM SDK v1.13.0 | 远程 `$HOME/sdk_env_v1.13.0/hpm_sdk/`（`drivers/src/hpm_*_drv.c`、`soc/HPM5E31/`、`boards/`） |
-| 本仓库现有例程（外设寄存器级实测、坑） | `samples/gpio gptmr pwm adc spi i2c can flash power ...`、书稿 `docs/chapters/04~22` |
+| 本仓库现有例程（外设寄存器级实测、易错点） | `samples/gpio gptmr pwm adc spi i2c can flash power ...`、书稿 `docs/chapters/04~22` |
 | 板级支持包 | `boards/hpm5e31_1/`（`board.c`/`clock.c`/`pinmux.c`/`bsp/shell*.c`）、`hpm5e31_1.yaml` |
 | 原理图 | 远程 `hardware/hpm5e31_1_refsch.pdf` |
 | 芯片手册/勘误 | 远程 `先楫官方 Doc 包（DS/RM/Errata）`、`先楫官方 Doc 包（DS/RM/Errata）`（Windows 有 PDF） |
@@ -263,7 +263,7 @@ sdk_app_src(src/main.c)
 | T+0~45 min | 各模块头文件 + 核心 API + 第一个例程跑通（上板） |
 | T+45~120 min | 全部例程 PASS、日志落盘、README 完 |
 | T+120~180 min | 章节初稿（含图）、Lead 汇总检查 |
-| T+180~240 min | 集成 demo、PDF v1.3.0、commit/push、handover |
+| T+180~240 min | 集成 demo、PDF、commit/push |
 
 ## 12. 自检清单（提交前每个成员自查）
 

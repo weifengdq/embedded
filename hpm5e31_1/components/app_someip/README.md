@@ -93,7 +93,7 @@ while (1) {
 `stat`（计数器）、`selftest`（7 项协议自证）、`run`（例程自证）、`offer`/`stopoffer`（手动 SD）、
 `sub`（订阅表）、`ip`（netif/PHY）、`tpstat`（TP 状态，仅 someip_tp）。
 
-## 5. 关键约束与坑（详见第 34 章）
+## 5. 关键约束与易错点（详见第 34 章）
 
 - 报文头全大端；`Length = 8 + 载荷`（不含 Message ID 与 Length 自身）。
 - SD option 的 Length 不含 Length/Type 字段（IPv4 endpoint: Length=9，总长 12 B）。

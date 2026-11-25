@@ -19,7 +19,7 @@
 - 学到什么：HPM5E31 的 ENET0 如何以 RGMII 接口连接一颗车载以太网 PHY（YT8011AN）；
   RGMII 的两种时钟延迟模式（DoD/DoS）与"延迟到底该由谁提供"的判断方法；
   MDIO Clause 22 帧格式，以及一颗 PHY 上**三种寄存器空间**（Clause 22 / EXT / MMD）的访问方法；
-  PHY 复位时序、strapping 锁存、速率与主从切换的实操（含一个反直觉的"软复位会把配置冲掉"的坑）。
+  PHY 复位时序、strapping 锁存、速率与主从切换的实操（含一个反直觉的"软复位会把配置冲掉"的易错点）。
 - 前置章节：第 02 章（构建/烧写）、第 03 章（letter-shell 调试命令）。
 - 承接章节：第 13 章（lwIP 协议栈、iperf 与实际吞吐）。
 
@@ -102,6 +102,11 @@ ENET 侧延迟由 `hpm_enet_soc_drv.h:56` 的 `enet_rgmii_set_clock_delay()` 写
 **判断顺序（实战建议）**：先把 PHY 侧 RXC 延迟打开（本板默认已开），ENET 侧 delay 用 0；
 若出现 CRC 错/丢包，再逐档增加 ENET 侧 RX delay。两侧同时加延迟会叠加，反而更容易采样错位。
 
+**R10 实测补充（2026-11-24，重要）**：本板 TX 方向（MAC→PHY）的 TXC 延迟档位 1 采样余量不足——
+板→主机方向实测约 **1% 的帧 FCS 错**（主机 `rx_crc_errors`），而档位 2~15 在约 478 万帧内 **零误码**，
+档位 0 时 TX 数据不可用（主机 iperf 连不通，25 s 内板端只发出 16 帧）。因此 `EthTrcv_PBcfg.c` 的 `TxDelaySel` 已从 1 改为 **4**，详见 §12.7.5 与第 49 章 §49.9.16。
+注意：这是 **TX** 方向（本板发、PHY 收）的延迟，和上面说的 RXC（PHY 发、本板收）不是同一个寄存器位。
+
 ### 12.4.3 MDIO 管理与三种寄存器空间
 
 MDIO 是 Clause 22 的两线串行总线（MDC 时钟 + MDIO 双向数据）。一帧格式如图 12-2(a)：
@@ -144,8 +149,8 @@ YT8011AN 在 RESET_N 释放瞬间锁存 RXD[3:0]/RXDV/RXC 上的电平作为 str
 | RXD2/MII_SEL | 0（PD） | RGMII（非 SGMII） |
 | RXC/RXDLY_EN | 1（PU） | RXC 加 2 ns 延迟 |
 
-完整的初始化时序如图 12-3 所示。注意最后一个方框里的"带速率编码软复位"是实测踩坑后确定的写法
-（见第 7 节坑 3）。
+完整的初始化时序如图 12-3 所示。注意最后一个方框里的"带速率编码软复位"是实测易错后确定的写法
+（见第 7 节易错点 3）。
 
 ![图 12-3 YT8011AN 上电/复位/配置时序流程](figures/12/fig-12-3-phy-init-flow.png)
 
@@ -251,7 +256,7 @@ YT8011AN 的 nINT 是低有效中断输出，板级接 PB28（内部上拉，引
 1. PB28 切成 GPIO 输入 + 内部上拉，`gpio_config_pin_interrupt()` 配**下降沿**触发，`intc_m_enable_irq_with_priority(IRQn_GPIO0_B, 1)` 打开 GPIO0_B 中断；
 2. ISR 只做两件事：清 GPIO 中断标志、置 `s_phy_evt_pending`。读一次 MII 要 ~26 µs，放 ISR 会拖慢 ENET 收包与 lwIP 主循环；
 3. 主循环 `phy_event_poll()` 看到标志后读 **MII 0x13（INTST）/ 0x17（INTST2）/ 0x12（INTMSK）**（读清），再读 0x11 PHYSR 取当前链路/速率/角色，打印一条事件日志；
-4. 应用层据此做 `netif_set_link_up/down()`，替代第 13 章坑 6 里那个 2 s 轮询。
+4. 应用层据此做 `netif_set_link_up/down()`，替代第 13 章易错点 6 里那个 2 s 轮询。
 
 ![图 12-4 YT8011AN nINT 到 netif 的事件驱动链](figures/12/fig-12-4-phy-irq.png)
 
@@ -309,6 +314,9 @@ void isr_phy_nint(void)
 EXT 0x9001=0x0110 与手册默认值完全一致，说明 **EXT 间接访问序列正确**；
 MMD1 0x834=0x8001 与 strapping 一致，说明 **MMD 间接访问序列正确**。
 
+> R10 起 `TxDelaySel=4`，初始化后回读 EXT 0x9001=**0x0140**（RXC 2 ns + TXC 档位 4）。
+> 0x0110（档位 1）就是 R8/R9 那 1.5% 线上 CRC 误码的来源，见 §12.7.5。
+
 ### 12.7.3 速率与主从切换矩阵（实测）
 
 表 12-12 速率与主从切换矩阵
@@ -344,20 +352,49 @@ MMD1 0x834=0x8001 与 strapping 一致，说明 **MMD 间接访问序列正确**
 > 复测命令已固化：`irq on` → `mode 1000 master` → `irq` → `mode 1000 slave` → `irq`，
 > 逐条看 `isr=` 是否递增。
 
+### 12.7.5 RGMII TXC 延迟档位扫描与 CRC 误码闭环（R10，2026-11-24）
+
+R8/R9 遗留的"板→主机 1.5% 线上 FCS 误码"在本轮定位为 **PHY 侧 TXC 采样延迟档位 1（EXT 0x9001[7:4]）余量不足**。
+测量方法（不需要示波器、不需要重烧固件）：
+
+1. 固件新增 `eth phy`（读 EXT 0x9001/BMCR/BMSR/PHYSR）与 `eth txdly <0..15>`（运行时改档位并回读）；
+2. `host/soak/crc_probe.py ack --secs N --txdly K`：板作 iperf2 server，主机打 TCP（板只回 60 B ACK，
+   帧率约 10.5 k/s），同时取主机 `rx_crc_errors` 与板端 `hw_tx_frames`，折算 ppm；
+3. 每档 12~60 s，改档后 0.5 s 稳定再开始。
+
+表 12-16 RGMII TXC 档位扫描（1000M、板发为主方向、主机 enp6s0 计数）
+
+| TXC 档位 | 流量/时长 | 板端发帧 | 主机 CRC 错帧 | 折算 |
+|---|---|---|---|---|
+| 0 | ACK 25 s | 16 | 7 | TX 数据不可用（iperf 连不通） |
+| **1（R8/R9 默认）** | ACK 12.6 s / 20.6 s | 127 663 / 122 349 | 1 509 / 1 118 | **11 820 / 9 138 ppm** |
+| 2 | ACK 12+30+60 s | 1 043 461 | 0 | 0 |
+| 3~7 | ACK 各 12~30 s | 1 913 000 左右 | 0 | 0 |
+| 8~15 | ACK 各 20 s | 1 702 000 左右 | 0 | 0 |
+
+- 档位 2~15 合计约 **478 万帧零 CRC 错**；换档不需要重烧：`eth txdly 4` 后立即生效。
+- 档位 1 时误码随帧型变化：60 B ACK 约 1%（9.1~11.8 kppm）、1518 B 数据帧约 0.08%、98 B ping 回包约 0.05%；
+  修复后 ACK/数据/回包全部为 0。帧型依赖的物理机理没有完全解释，但**档位是决定性因素**已由扫描证明。
+- 最终 `mcal/EthTrcv/cfg/EthTrcv_PBcfg.c` 固定 `TxDelaySel = 4`（窗口 2~15 的中间值，避开启始失效的 0 与有误码的 1）。
+- 复跑：`python3 host/soak/crc_probe.py ack --secs 30 --txdly 1`（应看到 ~1e4 ppm）对比
+  `... --txdly 4`（应为 0）。
+
 ## 12.8 性能与调优
 
 1. **链路建立时间**：硬复位释放后到 link up 实测约 1~2 s（1000BASE-T1 需要训练与主从解析，
    LTT/LRT/RRT 分别 10/4/8 个时间单位）。若上电后立刻发包会丢前几帧，协议栈侧应由
    `enet_self_adaptive_port_speed()`（2 s 周期）把 netif link 置 up 后再开始业务。
-2. **RGMII 延迟调优**：当前 PHY 侧 RXC 2 ns + ENET 侧 0，1000M 可正常收发（第 13 章 iperf 数据）。
-   若换线束/换 PHY 板导致 CRC 错，调优顺序：`rgmii 1 1 0`（确认 PHY 侧）→ ENET 侧 RX delay 1~3 档 →
-   再试 PHY 侧 tx_delay_sel 0~15（每次记录错误计数）。
+2. **RGMII 延迟调优**：当前 PHY 侧 RXC 2 ns + TXC 档位 4 + ENET 侧 0，1000M 双向零误码（R10）。
+   若换线束/换 PHY 板导致 CRC 错，调优顺序：先确认 PHY 侧 RXC（`eth phy` 看 rx_dly_en=1）→
+   再扫 **PHY 侧 TXC 档位**（`eth txdly 0..15`，每档 20~30 s 板→主机打流，同时看主机
+   `rx_crc_errors` 与板端 `hw_tx_frames`，算 ppm）→ 最后才考虑 ENET 侧 TX/RX delay。
+   **档位 0 数据不可用，1 有约 1% 误码，2~15 实测为零**，取 4 居中。
 3. **主从选择对吞吐没有影响**，但对**建链时间与时钟精度**有影响：Master 用本地 25 MHz 晶振，
    Slave 从线路恢复时钟。车载场景通常由交换机/网关做 Master，终端做 Slave（本板默认）。
 4. **不要用自协商**：应用说明 §5.4（p.27）明确指出车载场景一般不用自协商（建链慢、对端兼容性风险）。
    本板默认强制 1000M Slave。
 
-## 12.9 坑与注意事项
+## 12.9 易错点与注意事项
 
 1. **`ENET_SOC_RGMII_EN=0` 是"死宏"，不代表不支持 RGMII**。
    现象：`hpm_sdk/soc/HPM5E00/HPM5E31/hpm_soc_feature.h:110` 写着 `#define ENET_SOC_RGMII_EN (0U)`，
@@ -377,7 +414,7 @@ MMD1 0x834=0x8001 与 strapping 一致，说明 **MMD 间接访问序列正确**
    注意 `board.h` 中这两个函数的声明也在 `CONFIG_ENET_PHY` 保护内，需自行补声明
    （本仓库放在 `samples/enet/enet_lwip_iperf/inc/common_cfg.h`）。
 
-3. **软复位会把刚写的速率配置冲掉**（最容易踩）。
+3. **软复位会把刚写的速率配置冲掉**（最容易出错）。
    现象：按手册 §5.3 顺序"写 MMD1 0x834=0x8000（100M）→ 写 BMCR=0x8000 软复位"，
    回读 MMD1 0x834 又变回 0x8001（1000M）。
    原因：`BMCR=0x8000` 只是纯复位，不携带速率选择；复位后速率回到上电默认 1000BASE-T1。
@@ -419,7 +456,7 @@ MMD1 0x834=0x8001 与 strapping 一致，说明 **MMD 间接访问序列正确**
 
 - 优点：单对线束、支持 1000M/100M 两档、RGMII 接口与 MCU 直连、寄存器沿用 Clause 22 习惯用法；
 - 缺点：**关键功能藏在 EXT/MMD 两层间接寄存器里**，文档对"软件复位与配置生效顺序"描述不完整
-  （坑 3 是实测才发现）；PHY 侧统计计数器不能通过 Clause 22 直接读取，调试手段有限。
+  （易错点 3 是实测才发现）；PHY 侧统计计数器不能通过 Clause 22 直接读取，调试手段有限。
 - 与 STM32/TC397 平台对比：同类车载 PHY 在这些平台上也是 RGMII + MDIO，寄存器配置流程基本一致，
   差异主要在 MCU 侧 ENET 的 delay 与 DMA 描述符实现（本板由 HPM SDK 封装）。
 
@@ -457,7 +494,8 @@ MMD1 0x834=0x8001 与 strapping 一致，说明 **MMD 间接访问序列正确**
 | EXT 0x0000 广播地址寄存器与手册描述不符 | **已定位（2026-11-02）**：手册 §3 说该地址 [4:0] 是广播地址、默认 0x1F 且 [5] 使能，但本板读回 0x0000；MDIO 扫描只有 0/1 应答、0x1F 无响应，说明该寄存器**没有**改变地址映射 | `bcast` 命令：写 0x003F → 回读 → 重扫 0..31；判据是回读值与 0x1F 应答是否变化 |
 | 100BASE-T1 实际吞吐与误码 | **已知限制（需人工拨码）**：转换盒拨码固定在 1000M Master，软件切 100M 必掉链（表 12-12 第 2 行），无人值守无法建链测试 | 现场拨码 100M Master + 板端 `mode 100 slave` 后，按第 13 章命令跑 iperf TCP/UDP，记录 PHYSR/GBSR 与重传 |
 | Board 做 Master 的吞吐/稳定性 | **已知限制（需人工拨码）**：需要转换盒拨成 Slave 才能与本板 Master 配对 | 现场拨码 1000M Slave + 板端 `mode 1000 master`，复测 iperf 与 30 min ping |
-| ENET 侧 RGMII delay 最优点 | **已知限制（本轮无独占窗口）**：当前 PHY 侧 RXC 2 ns + ENET 0 档无错包（第 13 章 iperf 数据），8 档 × 60 s 扫描需要连续窗口 | 固定 PHY 侧 2 ns，`board_note` 用 `rgmii` 改 ENET RX delay 0~7，每档跑 10 s iperf 记重传/CRC 错；判据是最低 delay 且 0 重传的那一档 |
+| RGMII TXC 延迟档位（板→主机 CRC 误码） | **已闭环（R10，2026-11-24）**：档位 1 实测 9.1~11.8 kppm，2~15 共约 478 万帧零误码，0 数据不可用；板级配置已固定为 4（§12.7.5） | `eth txdly 1` 复现、`eth txdly 4` 归零；`host/soak/crc_probe.py ack --secs 30` 看 ppm |
+| ENET 侧 RGMII delay 最优点 | **已知限制（无独占窗口，且 R10 后已无必要）**：PHY 侧 RXC 2 ns + TXC 4 档 + ENET 0 档已双向零误码；ENET 侧 8 档扫描需要连续窗口 | 固定 PHY 侧配置，`board_note` 用 `rgmii` 改 ENET delay 0~7，每档跑 10 s iperf 记 CRC 错 |
 | PHY 中断（PB28 nINT）驱动 | **已实测（实现并自证，2026-11-02）**：GPIO 下降沿中断 + 主循环读 MII 0x13/0x17 + 链路事件日志（4.4 节、图 12-4）；上板自证 IRQn=2 使能、nINT 空闲=1、INTMSK/INTST/INTST2=0x0000。链路变化 ISR 计数未采到（post 串口回读为空，见 5.5 节） | 现场 `irq on` → `mode 1000 master` → `irq` → `mode 1000 slave` → `irq`，看 `isr=` 递增 |
 | PTP/1588 时间戳精度 | **已知限制（无 1PPS 输出条件）**：需要接 PF18 EVTO 的 1PPS 到示波器，或与主机 PTP 主时钟比对；本轮板卡被其他批次占用 | 接 1PPS 后用示波器比对 offset/抖动；或跑第 38 章 PTP 流程读 `ptpstats` 的 offset |
 | MDC 频率与 ENET CSR 时钟的关系 | **已知限制（无示波器）**：驱动把 MDC 固定为 CSR/102（`hpm_enet_drv.c:395/419`），本轮不改 `clock_eth0` 即可正常读写 PHY（表 12-10/12-11） | 改 `clock_eth0` 分频后用探头测 PA31 MDC，验证 ≈CSR/102 且 ≤12.5 MHz |

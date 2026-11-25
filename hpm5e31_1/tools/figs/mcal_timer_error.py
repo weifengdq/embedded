@@ -27,7 +27,7 @@ ax1.plot([0, 105], [0, 105], color=COLORS["gray"], linewidth=0.9, linestyle="--"
 ax1.plot(set_duty, meas_duty, "o-", color=COLORS["blue"], linewidth=1.4, markersize=4.5, label="实测 (Icu 捕获)")
 for x, y in zip(set_duty, meas_duty):
     ax1.annotate("%.2f%%" % y, xy=(x, y), xytext=(x - 3.5, y - 4.5), fontsize=6.8, color=COLORS["blue"])
-ax1.annotate("固定高电平缺 ~0.83 us\n(捕获/输出链路延迟，见章内坑 45-3)",
+ax1.annotate("固定高电平缺 ~0.83 us\n(捕获/输出链路延迟，见章内易错点 45-3)",
              xy=(50, 49.17), xytext=(12, 78), fontsize=6.8, color=COLORS["orange"],
              arrowprops=dict(arrowstyle="->", color=COLORS["orange"], linewidth=0.8))
 ax1.set_xlabel("设定占空比 (%)")

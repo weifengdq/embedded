@@ -71,7 +71,7 @@ bash host/someip/vsomeip_client/run.sh          # 板端 someip_rpc 在跑时
 
 一键互操作脚本（含环境修复）：`bash host/someip/vsomeip_client/run_interop.sh`（板端需在跑 `someip_rpc`）。
 
-**vsomeip 互操作的两个环境坑（实测定位，第 34 章 U-35-1）**：
+**vsomeip 互操作的两个环境易错点（实测定位，第 34 章 U-35-1）**：
 
 1. **主机缺 SD 组播路由**：`ip route get 224.244.224.245` 默认会走 SSH 网口的默认路由，
    vsomeip 因此不会在接板网卡上 IGMP join。修复：

@@ -148,7 +148,7 @@ cd rust/uds27check && cargo run --release -- --selftest
 | 0x12345678 | 2 | 0xE7BC1870 |
 | 0xFFFFFFFF | 2 | 0x82ED851C |
 
-## 5. 坑
+## 5. 易错点
 
 1. **can-isotp 2.x 的 `CanStack` 必须显式 `start()`**，且启动后不能再调 `process()`
    （第一版自己起线程调 process 直接抛 `Cannot call process() after a start()`）。
